@@ -8,65 +8,33 @@ import gtk.glade
 import gnome
 import gnome.ui
 from gnomekofoto.environment import env
-
 from kofoto.imagecache import *
-
-from gnomekofoto.objectselection import *
-from gnomekofoto.objectcontextmenu import *
-from gnomekofoto.albums import *
-from gnomekofoto.objects import *
 from gnomekofoto.mainwindow import *
-from gnomekofoto.tableview import *
-from gnomekofoto.thumbnailview import *
-from gnomekofoto.singleimageview import *
-from gnomekofoto.categories import *
-from gnomekofoto.source import *
-
-######################################################################
-### Classes
 
 class WidgetsWrapper:
     def __init__(self):
-        gnome.init("GKofoto", "0.0001")
+        gnome.init("GKofoto", "0.1")
         self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
     def __getitem__(self, key):
         return self.widgets.get_widget(key)
 
 class Controller:
     def __init__(self):
-        self._clipboard = None
+        self.__clipboard = None
 
     def start(self):
-        env.shelf.begin()
-        self._source = Source()
-        self._selectedObjects = ObjectSelection(self._objectSelectionChanged)
-        self._loadedObjects = Objects(self._selectedObjects)
-        self._objectContextMenu = ObjectContextMenu(self._loadedObjects, self._selectedObjects)
-        self._albums = Albums(self._source)
-        self._categories = Categories(self._loadedObjects,
-                                      self._selectedObjects,
-                                      self._source)
-        self._thumbnailView = ThumbnailView(self._loadedObjects,
-                                            self._selectedObjects,
-                                            self._objectContextMenu)
-        self._tableView = TableView(self._loadedObjects,
-                                    self._selectedObjects,
-                                    self._objectContextMenu)
-        self._singleImageView = SingleImageView(self._loadedObjects,
-                                                self._selectedObjects,
-                                                self._objectContextMenu)
-        self.showThumbnailView()
-        MainWindow()
-        env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
+        self.__mainWindow = MainWindow()
+        env.widgets["mainWindow"].connect('destroy', self.quit, False)
         env.widgets["mainWindow"].show()
+        currentObjects = None
         gtk.main()
 
-    def quit(self, gnomeApp, cancelButton=gtk.TRUE):
+    def quit(self, gnomeApp, cancelButton=True):
         if env.shelf.isModified():
             widgets = gtk.glade.XML(env.gladeFile, "quitDialog")
             quitDialog = widgets.get_widget("quitDialog")
             if not cancelButton:
-                widgets.get_widget("cancel").set_sensitive(gtk.FALSE)
+                widgets.get_widget("cancel").set_sensitive(False)
             result = quitDialog.run()
             if result == 0:
                 print "commit"
@@ -93,63 +61,7 @@ class Controller:
         env.shelf.rollback()
         print "rollback"
         env.shelf.begin()
-        print "TODO: reload application information here"
-
-    def loadObjects(self, objectList):
-        self._selectedObjects.clear()
-        self._currentView.freeze()
-        self._loadedObjects.loadObjectList(objectList)
-        self._loadedObjects.loadThumbnails()
-        self._currentView.thaw()
-
-    def newObjectModelLoaded(self):
-        print "newObjectModelLoaded not yet implemented"
-
-    def _objectSelectionChanged(self):
-        self._currentView.selectionUpdated()
-        self._objectContextMenu.updateContextMenu()
-        self._categories.updateView()
-
-    def _viewChanged(self):
-        self._currentView.show()
-        for hiddenView in self._hiddenViews:
-            hiddenView.hide()
-        self._currentView.selectionUpdated()
-
-    def showTableView(self):
-        self._currentView = self._tableView
-        self._hiddenViews = [self._thumbnailView, self._singleImageView]
-        self._viewChanged()
-
-    def showThumbnailView(self):
-        self._currentView = self._thumbnailView
-        self._hiddenViews = [self._tableView, self._singleImageView]
-        self._viewChanged()
-
-    def showSingleImageView(self):
-        self._currentView = self._singleImageView
-        self._hiddenViews = [self._tableView, self._thumbnailView]
-        self._viewChanged()
-
-    def clipboardSet(self, object):
-        self._clipboard = object
-        self._categories.updateContextMenu()
-
-    def clipboardClear(self):
-        self._clipboard = None
-        self._categories.updateContextMenu()
-
-    def clipboardPop(self):
-        popedItem = self._clipboard
-        self._clipboard = None
-        self._categories.updateContextMenu()
-        return popedItem
-
-    def clipboardHasCategory(self):
-        if isinstance(self._clipboard, ClipboardCategories):
-            return gtk.TRUE
-        else:
-            return gtk.FALSE
+        self.__mainWindow.reload()
 
 ######################################################################
 ### Start

@@ -1,166 +1,298 @@
 import gtk
-
 from environment import env
-from objects import *
 from sets import Set
+from gnomekofoto.objectcollectionview import *
+from sets import Set
+from objectcollection import *
+from menuhandler import *
+class TableView(ObjectCollectionView):
 
-class TableView:
-    _ALBUM_TAG_COLUMN_NAME = u"Album tag"
-    _modelConnections = []
-
-    def __init__(self, loadedObjects, selectedObjects, contextMenu):
-        self._locked = gtk.FALSE
-        self._tableView = env.widgets["tableView"]
-        selection = self._tableView.get_selection()
+###############################################################################            
+### Public
+    
+    def __init__(self):
+        env.debug("Init TableView")
+        ObjectCollectionView.__init__(self, env.widgets["tableView"])
+        selection = self._viewWidget.get_selection()
         selection.set_mode(gtk.SELECTION_MULTIPLE)
-        self._contextMenu = contextMenu
-        self._selectedObjects = selectedObjects
-        self._tableView.connect("button_press_event", self._button_pressed)
-        selection.connect('changed', self._widgetSelectionUpdated)
-        self.setModel(loadedObjects)
-        self._loadedObjects = loadedObjects
+        self.__selectionLocked = False
+        self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
+        self._viewWidget.connect("drag-data-get", self._onDragDataGet)
+        self.__userChoosenColumns = {}
+        self.__createdColumns = {}
+        self.__editedCallbacks = {}
+        # Import the users setting in the configuration file for
+        # which columns that shall be shown.
+        columnLocation = 0
+        for columnName in env.defaultTableViewColumns:
+            self.__userChoosenColumns[columnName] = columnLocation
+            columnLocation += 1
 
-    def setModel(self, loadedObjects):
-        self._model = loadedObjects.model
-        self._tableView.set_model(self._model)
-        for column in self._tableView.get_columns():
-            self._tableView.remove_column(column)
-        self._createThumbnailColumn()
-        self._createIdColumn()
-        self._createLocationColumn()
-        self._createAlbumTagColumn()
-        self._createAttributeColumns(loadedObjects.attributeNamesMap)
-        for c in self._modelConnections:
-            self._model.disconnect(c)
-        del self._modelConnections[:]
-        self._model = loadedObjects.model
-        c = self._model.connect("row_inserted", self._updateAlbumTagColumn)
-        self._modelConnections.append(c)
-        c = self._model.connect("row_deleted", self._updateAlbumTagColumn)
-        self._modelConnections.append(c)
-        
-
-    def _createThumbnailColumn(self):
-        renderer = gtk.CellRendererPixbuf()
-        column = gtk.TreeViewColumn("", renderer, pixbuf=Objects.COLUMN_THUMBNAIL)
-        column.set_reorderable(gtk.TRUE)
-        self._tableView.append_column(column)
-
-    def _createAlbumTagColumn(self):
-        renderer = gtk.CellRendererText()
-        columnName = self._ALBUM_TAG_COLUMN_NAME
-        column = gtk.TreeViewColumn(columnName, renderer, text=Objects.COLUMN_ALBUM_TAG)
-        column.set_reorderable(gtk.TRUE)
-        column.set_resizable(gtk.TRUE)
-        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_ALBUM_TAG, column)
-        self._tableView.append_column(column)
-
-    def _createIdColumn(self):
-        renderer = gtk.CellRendererText()
-        columnName = u"ObjectId"
-        column = gtk.TreeViewColumn(columnName, renderer, text=Objects.COLUMN_OBJECT_ID)
-        column.set_resizable(gtk.TRUE)
-        column.set_reorderable(gtk.TRUE)
-        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_OBJECT_ID, column)
-        self._tableView.append_column(column)
-
-    def _createLocationColumn(self):
-        renderer = gtk.CellRendererText()
-        columnName = u"Location"
-        column = gtk.TreeViewColumn(columnName, renderer,
-                                    text=Objects.COLUMN_LOCATION)
-        column.set_resizable(gtk.TRUE)
-        column.set_reorderable(gtk.TRUE)
-        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_LOCATION, column)
-        self._tableView.append_column(column)        
-
-    def _createAttributeColumns(self, attributeNamesMap):
-        allAttributeNames = attributeNamesMap.keys()
-        allAttributeNames.sort()
-        for attributeName in allAttributeNames:
-            columnNumber = attributeNamesMap[attributeName]
-            renderer = gtk.CellRendererText()
-            column = gtk.TreeViewColumn(attributeName,
-                                        renderer,
-                                        text=columnNumber,
-                                        editable=Objects.COLUMN_ROW_EDITABLE)
-            column.set_resizable(gtk.TRUE)
-            column.set_reorderable(gtk.TRUE)
-            renderer.connect("edited", self._attribute_editing_done,
-                             columnNumber,
-                             attributeName)
-            self._contextMenu.addTableViewColumn(attributeName, columnNumber, column)
-            self._tableView.append_column(column)
-
-    def _attribute_editing_done(self, renderer, path, value, column, attributeName):
-        iter = self._model.get_iter(path)
-        oldValue = self._model.get_value(iter, column)
-        if not oldValue:
-            oldValue = u""
-        value = unicode(value, "utf-8")
-        if oldValue != value:
-            # TODO Show dialog and ask for confirmation?
-            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-            object = env.shelf.getObject(objectId)
-            object.setAttribute(attributeName, value)
-            self._model.set_value(iter, column, value)
-            
-    def freeze(self):
-        pass
-
-    def thaw(self):
-        pass
-
-    def show(self):
-        env.widgets["tableViewScroll"].show()
-        self._contextMenu.tableViewViewItem.show()
-        self._tableView.grab_focus()
-        for object in self._model:
-            if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
-                self._tableView.scroll_to_cell(object.path, None, gtk.TRUE, 0, 0)
-                break
-        self._updateAlbumTagColumn()
-
-    def _updateAlbumTagColumn(self, *foo):
-        viewItem = self._contextMenu.viewMenuItems[self._ALBUM_TAG_COLUMN_NAME]
-        if self._loadedObjects.albumsInList:
-            viewItem.set_active(gtk.TRUE)
-        else:
-            viewItem.set_active(gtk.FALSE)
-            
-    def hide(self):
-        env.widgets["tableViewScroll"].hide()
-        self._contextMenu.tableViewViewItem.hide()
-        
-    def selectionUpdated(self):
-        if not self._locked:
-            self._locked = gtk.TRUE
-            selection = self._tableView.get_selection()
+    def importSelection(self, objectSelection):
+        if not self.__selectionLocked:        
+            env.debug("TableView is importing selection")
+            self.__selectionLocked = True
+            selection = self._viewWidget.get_selection()
             selection.unselect_all()
-            iter = self._model.get_iter_first()
-            index = 0
-            while iter:
-                objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-                if objectId in self._selectedObjects:
-                    selection.select_path(index)
-                index = index + 1
-                iter =  self._model.iter_next(iter)
-            self._locked = gtk.FALSE
+            for rowNr in objectSelection:
+                selection.select_path(rowNr)
+            self.__selectionLocked = False
+        self._updateContextMenu()
 
-    def _widgetSelectionUpdated(self, selection):
-        if not self._locked:
-            self._locked = gtk.TRUE
-            iter = self._model.get_iter_first()
-            objectIdList = []
-            while iter:
-                if selection.iter_is_selected(iter):
-                    objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-                    objectIdList.append(objectId)
-                iter = self._model.iter_next(iter)
-            self._selectedObjects.set(objectIdList)
-            self._locked = gtk.FALSE
+    def fieldsDisabled(self, fields):
+        env.debug("Table view disable fields: " + str(fields))
+        self.__removeColumnsAndUpdateLocation(fields)
+        for columnName in fields:
+            self.__viewGroup[columnName].set_sensitive(False)
+                
+    def fieldsEnabled(self, fields):
+        env.debug("Table view enable fields: " + str(fields))
+        objectMetadataMap = self._objectCollection.getObjectMetadataMap()
+        for columnName in fields:
+            self.__viewGroup[columnName].set_sensitive(True)
+            if columnName not in self.__createdColumns:
+                if columnName in self.__userChoosenColumns:
+                    self.__createColumn(columnName, objectMetadataMap, self.__userChoosenColumns[columnName])
+            
+    def _showHelper(self):
+        env.enter("TableView.showHelper()")
+        env.widgets["tableViewScroll"].show()
+        self._viewWidget.grab_focus()
+        # Scroll to the first selected image
+        rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
+        if rowNr is not None:
+            self._viewWidget.scroll_to_cell(rowNr, None, True, 0, 0)
+        env.exit("TableView.showHelper()")
+            
+    def _hideHelper(self):
+        env.enter("TableView.hideHelper()")        
+        env.widgets["tableViewScroll"].hide()
+        env.exit("TableView.hideHelper()")                
+
+    def _connectObjectCollectionHelper(self):
+        env.enter("Connecting TableView to object collection")
+        # Set model
+        self._viewWidget.set_model(self._objectCollection.getModel())
+        # Create columns
+        objectMetadataMap = self._objectCollection.getObjectMetadataMap()
+        disabledFields = self._objectCollection.getDisabledFields()
+        columnLocationList = self.__userChoosenColumns.items()
+        columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
+        env.debug("Column locations: " + str(columnLocationList))
+        for (columnName, columnLocation) in columnLocationList:
+            if (columnName in objectMetadataMap and
+                columnName not in disabledFields):
+                self.__createColumn(columnName, objectMetadataMap)
+                self.__viewGroup[columnName].activate()
+        # Init drag & drop
+        if self._objectCollection.isReorderable() and not self._objectCollection.isSortable():
+            targetEntries = [("STRING", gtk.TARGET_SAME_WIDGET, 0)]
+            self._viewWidget.enable_model_drag_source(gtk.gdk.BUTTON1_MASK,
+                                                      targetEntries,
+                                                      gtk.gdk.ACTION_MOVE)
+            self._viewWidget.enable_model_drag_dest(targetEntries, gtk.gdk.ACTION_COPY)
+        else:
+            self._viewWidget.unset_rows_drag_source()
+            self._viewWidget.unset_rows_drag_dest()
+        self.fieldsDisabled(self._objectCollection.getDisabledFields())
+        env.exit("Connecting TableView to object collection")
         
-    def _button_pressed(self, widget, event):
-        if event.button == 3:
-            self._contextMenu.popup(None,None,None,event.button,event.time)
-            return gtk.TRUE
+    def _disconnectObjectCollectionHelper(self):
+        env.enter("Disconnecting TableView from object collection")
+        self.__removeColumnsAndUpdateLocation()
+        self._viewWidget.set_model(None)
+        env.exit("Disconnecting TableView from object collection")
+
+    def _freezeHelper(self):
+        env.enter("TableView.freezeHelper()")
+        self._clearAllConnections()        
+        env.exit("TableView.freezeHelper()")
+        
+    def _thawHelper(self):
+        env.enter("TableView.thawHelper()")
+        self._connect(self._viewWidget.get_selection(), 'changed', self._widgetSelectionChanged)
+        env.exit("TableView.thawHelper()")
+        
+    def _createContextMenu(self, objectCollection):
+        ObjectCollectionView._createContextMenu(self, objectCollection)
+        columnNames = list(objectCollection.getObjectMetadataMap().keys())
+        columnNames.sort()
+        self.__viewGroup = MenuGroup("View columns")
+        for columnName in columnNames:
+            self.__viewGroup.addCheckedMenuItem(columnName,
+                                                self._viewColumnToggled,
+                                                columnName)
+        self._contextMenu.add(self.__viewGroup.createGroupMenuItem())
+
+    def _clearContextMenu(self):
+        ObjectCollectionView._clearContextMenu(self)
+        self.__viewGroup = None
+        
+###############################################################################
+### Callback functions registered by this class but invoked from other classes.
+
+    def _widgetSelectionChanged(self, selection):
+        if not self.__selectionLocked:        
+            env.enter("TableView selection changed")
+            self.__selectionLocked = True
+            rowNrs = []
+            selection.selected_foreach(lambda model,
+                                       path,
+                                       iter:
+                                       rowNrs.append(path[0]))
+            self._objectCollection.getObjectSelection().setSelection(rowNrs)
+            self.__selectionLocked = False
+            env.exit("TableView selection changed")        
+            
+    def _onDragDataGet(self, widget, dragContext, selection, info, timestamp):
+        selectedRows = []
+        # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API                
+        self._viewWidget.get_selection().selected_foreach(lambda model,
+                                                          path,
+                                                          iter:
+                                                          selectedRows.append(model[path]))
+        if len(selectedRows) == 1:
+            # Ignore drag & drop if zero or more then one row is selected
+            # Drag & drop of multiple rows will probably come in gtk 2.4.
+            # http://mail.gnome.org/archives/gtk-devel-list/2003-December/msg00160.html
+            sourceRowNumber = str(selectedRows[0].path[0])
+            selection.set_text(sourceRowNumber, len(sourceRowNumber))
+        else:
+            env.debug("Ignoring drag&drop when only one row is selected")
+
+            
+    def _onDragDataReceived(self, treeview, dragContext, x, y, selection, info, eventtime):
+        targetData = treeview.get_dest_row_at_pos(x, y)
+        if targetData == None or selection.get_text() == None:
+            dragContext.finish(False, False, eventtime)
+        else:
+            targetPath, dropPosition = targetData
+            sourceRowNumber = int(selection.get_text())
+            model = self._objectCollection.getModel()
+            if sourceRowNumber == targetPath[0]:
+                # dropped on itself
+                dragContext.finish(False, False, eventtime)
+            else:
+                # The continer must have a getChildren() and a setChildren()
+                # method as for example the album class has.
+                container = self._objectCollection.getContainer()
+                children = list(container.getChildren())
+                sourceRow = model[sourceRowNumber]
+                targetIter = model.get_iter(targetPath)
+                objectSelection = self._objectCollection.getObjectSelection()
+                if (dropPosition == gtk.TREE_VIEW_DROP_INTO_OR_BEFORE
+                    or dropPosition == gtk.TREE_VIEW_DROP_BEFORE):
+                    container.setChildren(self.__moveListItem(children,
+                                                              sourceRowNumber,
+                                                              targetPath[0]))
+                    model.insert_before(sibling=targetIter, row=sourceRow)
+                    model.remove(sourceRow.iter)
+                    # TODO update the album tree widget?
+                elif (dropPosition == gtk.TREE_VIEW_DROP_INTO_OR_AFTER
+                      or dropPosition == gtk.TREE_VIEW_DROP_AFTER):
+                    container.setChildren(self.__moveListItem(children,
+                                                              sourceRowNumber,
+                                                              targetPath[0] + 1))
+                    model.insert_after(sibling=targetIter, row=sourceRow)
+                    model.remove(sourceRow.iter)
+                    # TODO update the album tree widget?                    
+                objectSelection.setSelection([targetPath[0]])
+                # I've experienced that the drag-data-delete signal isn't
+                # always emitted when I drag & drop rapidly in the TreeView.
+                # And when it is missing the source row is not removed as is
+                # should. It is probably an bug in gtk+ (or maybe in pygtk).
+                # It only happens sometimes and I have not managed to reproduce
+                # it with a simpler example. Hence we remove the row ourself
+                # and are not relying on the drag-data-delete-signal.
+                # http://bugzilla.gnome.org/show_bug.cgi?id=134997
+                removeSourceRowAutomatically = False
+                dragContext.finish(True, removeSourceRowAutomatically, eventtime)
+
+    def _viewColumnToggled(self, checkMenuItem, columnName):
+        if checkMenuItem.get_active():
+            if columnName not in self.__createdColumns:
+                self.__createColumn(columnName,
+                                    self._objectCollection.getObjectMetadataMap())
+                # The correct columnLocation is stored when the column is removed
+                # there is no need to store the location when it is created
+                # since the column order may be reordered later before it is removed.
+        else:
+            # Since the column has been removed explicitly by the user
+            # we dont store the column's relative location.
+            try:
+                del self.__userChoosenColumns[columnName]
+            except KeyError:
+                pass
+            if columnName in self.__createdColumns:
+                self.__removeColumn(columnName)
+            
+###############################################################################        
+### Private
+
+    def __createColumn(self, columnName, objectMetadataMap, location=-1):
+        (type, column, editedCallback, editedCallbackData) = objectMetadataMap[columnName]
+        if type == gtk.gdk.Pixbuf:
+            renderer = gtk.CellRendererPixbuf()
+            column = gtk.TreeViewColumn(columnName, renderer, pixbuf=column)
+            env.debug("Created a PixBuf column for " + columnName)
+        elif type == gobject.TYPE_STRING or type == gobject.TYPE_INT:
+            renderer = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(columnName,
+                                        renderer,
+                                        text=column,
+                                        editable=ObjectCollection.COLUMN_ROW_EDITABLE)
+            column.set_resizable(True)
+            if editedCallback:
+                id = renderer.connect("edited",
+                                      editedCallback,
+                                      column,
+                                      editedCallbackData)
+                self.__editedCallbacks[columnName] = (id, renderer)
+                env.debug("Created a Text column with editing callback for " + columnName)
+            else:
+                env.debug("Created a Text column without editing callback for " + columnName)
+        else:
+            print "Warning, unsupported type for column ", columnName
+            return
+        column.set_reorderable(True)
+        self._viewWidget.insert_column(column, location)
+        self.__createdColumns[columnName] = column
+        return column
+
+    def __removeColumn(self, columnName):
+        column = self.__createdColumns[columnName]
+        self._viewWidget.remove_column(column)
+        if columnName in self.__editedCallbacks:
+            (id, renderer) = self.__editedCallbacks[columnName]
+            renderer.disconnect(id)
+            del self.__editedCallbacks[columnName]
+        del self.__createdColumns[columnName]
+        column.destroy()
+        env.debug("Removed column " + columnName)
+
+    def __removeColumnsAndUpdateLocation(self, columnNames=None):
+       # Remove columns and store their relative locations for next time
+       # they are re-created.
+       columnLocation = 0
+       for column in self._viewWidget.get_columns():
+           columnName = column.get_title()
+           # TODO Store the column width and reuse it when the column is
+           #      recreated. I don't know how to store the width since
+           #      column.get_width() return correct values for columns
+           #      containing a gtk.CellRendererPixbuf but only 0 for all
+           #      columns containing a gtk.CellRendererText. It is probably
+           #      a bug in gtk och pygtk. I have not yet reported the bug.
+           if columnNames is None or columnName in columnNames:
+               if columnName in self.__createdColumns:
+                   self.__removeColumn(columnName)
+                   self.__userChoosenColumns[columnName] = columnLocation
+           columnLocation += 1        
+        
+    def __moveListItem(self, list, currentIndex, newIndex):
+        if currentIndex == newIndex:
+            return list
+        if currentIndex < newIndex:
+            newIndex -= 1
+        movingChild = list[currentIndex]
+        del list[currentIndex]
+        return list[:newIndex] + [movingChild] + list[newIndex:]
