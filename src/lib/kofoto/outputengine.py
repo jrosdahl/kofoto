@@ -55,8 +55,7 @@ class OutputEngine:
         self.imagesdest = CacheDir(os.path.join(self.dest, "@images"))
         self.imgref = {}
 
-        albummap = {}
-        _findAlbumPaths(root, [], albummap)
+        albummap = _findAlbumPaths(root)
 
         albumsToGenerate = Set()
         if subalbums:
@@ -115,14 +114,24 @@ class OutputEngine:
 
 ######################################################################
 
-def _findAlbumPaths(album, path, albummap):
-    if album in path:
-        # Already visited album, so break recursion here.
-        return
-    path = path[:] + [album]
-    if not albummap.has_key(album):
-        albummap[album] = []
-    albummap[album].append(path)
-    for child in album.getChildren():
-        if child.isAlbum():
-            _findAlbumPaths(child, path, albummap)
+def _findAlbumPaths(startalbum):
+    """Traverse all albums reachable from a given album and find
+    possible paths to the albums.
+
+    Start recursing at startalbum. The return value is a mapping each
+    key is an Album instance and the associated value is a list of
+    paths, where a path is a list of Album instances."""
+    def helper(album, path):
+        if album in path:
+            # Already visited album, so break recursion here.
+            return
+        path = path[:] + [album]
+        if not albummap.has_key(album):
+            albummap[album] = []
+        albummap[album].append(path)
+        for child in album.getChildren():
+            if child.isAlbum():
+                helper(child, path)
+    albummap = {}
+    helper(startalbum, [])
+    return albummap
