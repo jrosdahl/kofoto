@@ -3,6 +3,7 @@ import gobject
 import gtk
 
 from environment import env
+from kofoto.search import *
 
 class Categories:
     _COLUMN_CATEGORY_ID  = 0
@@ -58,7 +59,8 @@ class Categories:
         if iter:
             category = categoryModel.get_value(iter, self._COLUMN_OBJECT)
             selectedImages = []
-            for child in env.shelf.getObjectsForCategory(category):
+            snf = SearchNodeFactory(env.shelf)
+            for child in env.shelf.search(snf.categoryNode(category.getId())):
                 if not child.isAlbum():
                     selectedImages.append(child)
         env.shelf.rollback()
