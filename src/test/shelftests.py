@@ -193,11 +193,11 @@ class TestShelfTransactions(unittest.TestCase):
         s.create()
         s.begin()
         s.createAlbum(u"foo")
-        assert s.getAlbumById(u"foo")
+        assert s.getAlbumByTag(u"foo")
         s.commit()
         s = Shelf(db, codeset)
         s.begin()
-        assert s.getAlbumById(u"foo")
+        assert s.getAlbumByTag(u"foo")
         s.rollback()
 
     def test_rollback(self):
@@ -208,7 +208,7 @@ class TestShelfTransactions(unittest.TestCase):
         s.rollback()
         s.begin()
         try:
-            s.getAlbumById(u"foo")
+            s.getAlbumByTag(u"foo")
         except AlbumDoesNotExistError:
             pass
         else:
@@ -792,7 +792,7 @@ class TestImage(TestShelfFixture):
             os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
         imageversion2.setImage(image)
         imageversions = list(image.getImageVersions())
-        imageversions.sort(lambda x, y: return cmp(x.getHash(), y.getHash()))
+        imageversions.sort(lambda x, y: cmp(x.getHash(), y.getHash()))
         assert list(image.getImageVersions()) == [imageversion, imageversion2]
         self.shelf.deleteImageVersion(imageversion.getId())
         self.shelf.deleteImageVersion(imageversion2.getId())
