@@ -2081,6 +2081,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">320</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -2357,6 +2358,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">320</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -2681,6 +2683,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">190</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -2737,6 +2740,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
+  <property name="default_width">250</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
