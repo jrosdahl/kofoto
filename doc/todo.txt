@@ -45,6 +45,14 @@
 * When generating an album, store images in per-month directories
   instead of the current two-level hash-based directory structure.
 
+* Write setup.py.
+
+* Write a simple, run-once client that creates a temporary shelf,
+  registers images in given directories, generates an album and
+  removes the shelf?
+
+* Remove compatibility code for Python versions older than 2.3.
+
 Think more about:
 
     * Which auxilliary attributes should be set on import? Specify
