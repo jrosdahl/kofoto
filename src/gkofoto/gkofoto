@@ -91,9 +91,15 @@ class Controller:
         env.shelf.begin()
 
     def revert(self, app):
-        env.shelf.rollback()
-        env.shelf.begin()
-        self.__mainWindow.reload()
+        dialog = gtk.MessageDialog(
+            type=gtk.MESSAGE_QUESTION,
+            buttons=gtk.BUTTONS_YES_NO,
+            message_format="Revert to the previously saved state and lose all changes?")
+        if dialog.run() == gtk.RESPONSE_YES:
+            env.shelf.rollback()
+            env.shelf.begin()
+            self.__mainWindow.reload()
+        dialog.hide()
 
     def registerImages(self, app):
         dialog = RegisterImagesDialog()
