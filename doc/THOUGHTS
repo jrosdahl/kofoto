@@ -22,6 +22,7 @@ Attributes:
     * make: Camera vendor (?) (ex: Canon).
     * model: Camera model (ex: Canon DIGITAL IXUS).
     * orientation: Image orientation in degrees (0, 90, 180 or 270).
+    * photographer: Photographer.
     * timestamp: When the image was taken (UNIX epoch time).
     * width: Image width (could be fetched from EXIF attribute
       ExifImageWidth).
