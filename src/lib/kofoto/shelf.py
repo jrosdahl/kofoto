@@ -2149,9 +2149,9 @@ class SearchAlbum(MagicAlbum):
         parser = kofoto.search.Parser(self.shelf)
         try:
             tree = parser.parse(query)
-        except (CategoryDoesNotExistError,
-                kofoto.search.ParseError,
-                kofoto.search.ScanError):
+        except (AlbumDoesNotExistError,
+                CategoryDoesNotExistError,
+                kofoto.search.ParseError):
             return []
         objects = self.shelf.search(tree)
         if includeimages:

@@ -8,12 +8,15 @@
 #
 # <notexpr> ::= "not" <term> | <term>
 #
-# <term> ::=   <bareword>
-#            | "exactly" <bareword>
+# <term> ::=   <bareword>                           (a category)
+#            | "exactly" <bareword>                 (a category)
+#            | <album>
 #            | <attribute> <attroper> <attrvalue>
 #            | "(" <expr> ")"
 #
 # <bareword> ::= \w [\w-]*
+#
+# <album> ::= "/" \w [\w-]*
 #
 # <attribute> ::= "@" \w [\w-]*
 #
@@ -21,13 +24,14 @@
 #
 # <attrvalue> ::= <quoted string> | <bareword>
 #
+# <quoted string> ::= "\"" .* "\""   (where each backslash and quotation mark in
+#                                     the .* part is preceeded by a backslash)
 # where \w is characters (locale dependent), digits and underscore.
 
 __all__ = [
     "BadTokenError",
     "ParseError",
     "Parser",
-    "ScanError",
     "SearchNodeFactory",
     "UnterminatedStringError",
 ]
@@ -36,28 +40,32 @@ import re
 from kofoto.common import KofotoError
 import kofoto.shelf
 
-class ScanError(KofotoError):
-    pass
-
-class BadTokenError(ScanError):
-    pass
-
-class UnterminatedStringError(ScanError):
-    pass
-
 class ParseError(KofotoError):
+    pass
+
+class BadTokenError(ParseError):
+    pass
+
+class UnterminatedStringError(ParseError):
     pass
 
 class SearchNodeFactory:
     def __init__(self, shelf):
         self._shelf = shelf
 
+    def albumNode(self, tag_or_album):
+        if isinstance(tag_or_album, kofoto.shelf.Album):
+            album = tag_or_album
+        else:
+            album = self._shelf.getAlbum(tag_or_album)
+        return AlbumSearchNode(album.getId())
+
     def andNode(self, subnodes):
-        return And(subnodes)
+        return AndSearchNode(subnodes)
 
     def attrcondNode(self, name, operator, value):
         assert operator in ["=", "!=", "<", ">", "<=", ">="]
-        return AttributeCondition(name, operator, value)
+        return AttributeConditionSearchNode(name, operator, value)
 
     def categoryNode(self, tag_or_category, recursive=False):
         if isinstance(tag_or_category, kofoto.shelf.Category):
@@ -69,13 +77,13 @@ class SearchNodeFactory:
                 category.getId()))
         else:
             catids = [category.getId()]
-        return Category(catids)
+        return CategorySearchNode(catids)
 
     def notNode(self, subnode):
-        return Not(subnode)
+        return NotSearchNode(subnode)
 
     def orNode(self, subnodes):
-        return Or(subnodes)
+        return OrSearchNode(subnodes)
 
 
 class Parser:
@@ -91,7 +99,8 @@ class Parser:
         expr = self.expr()
         kind, token = self._scanner.next()
         if kind != "eof":
-            raise ParseError, "expected end of expression or conjunction, got: " + token
+            raise (ParseError,
+                   "expected end of expression or conjunction, got: " + token)
         return expr
 
     def expr(self):
@@ -136,8 +145,10 @@ class Parser:
             kind, token = self._scanner.next()
             if kind != "bareword":
                 raise ParseError, \
-                      "expected category tag, got: " + token
+                      "expected category tag after \"exactly\", got: " + token
             return self._snfactory.categoryNode(token, recursive=False)
+        elif kind == "album":
+            return self._snfactory.albumNode(token[1:])
         elif kind == "attribute":
             attribute = token
             kind, token = self._scanner.next()
@@ -164,12 +175,30 @@ class Parser:
 
 ######################################################################
 
-class And:
+class AlbumSearchNode:
+    def __init__(self, albumid):
+        self._id = albumid
+
+    def __repr__(self):
+        return "AlbumSearchNode(%r)" % self._id
+
+    __str__ = __repr__
+
+    def getQuery(self):
+        return (" select distinct objectid"
+                " from   member"
+                " where  albumid = %s" % self._id)
+
+    def getIds(self):
+        return self._ids
+
+class AndSearchNode:
     def __init__(self, subnodes):
         self._subnodes = subnodes
 
     def __repr__(self):
-        return "And(%s)" % ", ".join([repr(x) for x in self._subnodes])
+        return "AndSearchNode(%s)" % ", ".join(
+            [repr(x) for x in self._subnodes])
 
     __str__ = __repr__
 
@@ -178,9 +207,9 @@ class And:
         attrconds = []
         others = []
         for node in self._subnodes:
-            if isinstance(node, Category):
+            if isinstance(node, CategorySearchNode):
                 categories.append(node)
-            elif isinstance(node, AttributeCondition):
+            elif isinstance(node, AttributeConditionSearchNode):
                 attrconds.append(node)
             else:
                 others.append(node)
@@ -238,7 +267,7 @@ class And:
                     " and ".join(andclauses)))
 
 
-class AttributeCondition:
+class AttributeConditionSearchNode:
     def __init__(self, attrname, operator, value):
         self._name = attrname
         if operator == "=":
@@ -255,7 +284,7 @@ class AttributeCondition:
             self._value = self._value.replace("?", "*")
 
     def __repr__(self):
-        return "AttributeCondition(%r, %r, %r)" % (
+        return "AttributeConditionSearchNode(%r, %r, %r)" % (
             self._name, self._operator, self._value)
 
     __str__ = __repr__
@@ -277,12 +306,12 @@ class AttributeCondition:
                     self._operator,
                     self._value.replace("'", "''")))
 
-class Category:
+class CategorySearchNode:
     def __init__(self, ids):
         self._ids = ids
 
     def __repr__(self):
-        return "Category(%r)" % self._ids
+        return "CategorySearchNode(%r)" % self._ids
 
     __str__ = __repr__
 
@@ -295,12 +324,13 @@ class Category:
     def getIds(self):
         return self._ids
 
-class Or:
+class OrSearchNode:
     def __init__(self, subnodes):
         self._subnodes = subnodes
 
     def __repr__(self):
-        return "Or(%s)" % ", ".join([repr(x) for x in self._subnodes])
+        return "OrSearchNode(%s)" % ", ".join(
+            [repr(x) for x in self._subnodes])
 
     __str__ = __repr__
 
@@ -309,9 +339,9 @@ class Or:
         attrconds = []
         others = []
         for node in self._subnodes:
-            if isinstance(node, Category):
+            if isinstance(node, CategorySearchNode):
                 catids += node.getIds()
-            elif isinstance(node, AttributeCondition):
+            elif isinstance(node, AttributeConditionSearchNode):
                 attrconds.append(node)
             else:
                 others.append(node)
@@ -340,12 +370,12 @@ class Or:
             selects += [x.getQuery() for x in others]
         return " union ".join(selects)
 
-class Not:
+class NotSearchNode:
     def __init__(self, subnode):
         self._subnode = subnode
 
     def __repr__(self):
-        return "Not(%r)" % self._subnode
+        return "NotSearchNode(%r)" % self._subnode
 
     __str__ = __repr__
 
@@ -361,8 +391,10 @@ class Scanner:
         for (x, y) in [
             (r"\(", "lparen"),
             (r"\)", "rparen"),
+            (r"/\w[\w-]*", "album"),
             (r"@\w[\w-]*", "attribute"),
-            (r'"([^\\]|\\(.|$))*?("|$)', "string"),
+            (r'"([^\\]|\\(.|$))*?"', "string"),
+            (r'"([^\\]|\\(.|$))*$', "untermstring"),
             (r"!=", "ne"),
             (r"=", "eq"),
             (r"<=", "le"),
@@ -407,9 +439,9 @@ class Scanner:
             m = tokenregexp.match(self._string)
             if m:
                 token = m.group(0)
+                if kind == "untermstring":
+                    raise UnterminatedStringError, self._pos
                 if kind == "string":
-                    if len(token) == 1 or token[-1] != '"':
-                        raise UnterminatedStringError, self._pos
                     token = re.sub(r"\\(.)", r"\1", token[1:-1])
                 self._pos += m.end()
                 self._string = self._string[m.end():]

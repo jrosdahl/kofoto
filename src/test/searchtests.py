@@ -31,7 +31,7 @@ from shelftests import TestShelfFixture
 class TestSearch(TestShelfFixture):
     def setUp(self):
         TestShelfFixture.setUp(self)
-        images = list(self.shelf.getAllImages())
+        images = list(self.shelf.getAlbum(u"alpha").getChildren())
         self.image1, self.image2, self.image3 = images[0:3]
         cat_a = self.shelf.getCategory(u"a")
         cat_b = self.shelf.getCategory(u"b")
@@ -50,7 +50,7 @@ class TestSearch(TestShelfFixture):
 
     def test_search(self):
         tests = [
-            (u"a", [self.image2, self.image1]),
+            (u"a", [self.image1, self.image2]),
             (u"b", [self.image1]),
             (u"c", [self.image2]),
             (u"d", []),
@@ -65,16 +65,34 @@ class TestSearch(TestShelfFixture):
             (u"not exactly a and c", [self.image2]),
             (u"not (a and b) and a", [self.image2]),
             (u"not a and not b and @fie=fum", [self.image3]),
-            (u"a and b or c", [self.image2, self.image1]),
+            (u"a and b or c", [self.image1, self.image2]),
             (u"b or c and d", [self.image1]),
-            (u"a or b or c or d", [self.image2, self.image1]),
-            (ur' ((a and not b) or @gazonk != "hej \"ju\"") and c ', [self.image2])]
+            (u"a or b or c or d", [self.image1, self.image2]),
+            (ur' ((a and not b) or @gazonk != "hej \"ju\"") and c ', [self.image2]),
+            (u"/alpha and a", [self.image1, self.image2]),
+            ]
         parser = Parser(self.shelf)
         for expression, expectedResult in tests:
             parseTree = parser.parse(expression)
             result = list(self.shelf.search(parseTree))
-            result.sort(lambda x, y: cmp(x.getLocation(), y.getLocation()))
+            result.sort(lambda x, y: cmp(x.getId(), y.getId()))
             assert result == expectedResult, (expression, expectedResult, result)
+
+    def test_parseErrors(self):
+        tests = [
+            (u"+", BadTokenError),
+            (u":a and +", BadTokenError),
+            (u'"', UnterminatedStringError),
+            (ur'"\"\\\"', UnterminatedStringError),
+            ]
+        parser = Parser(self.shelf)
+        for expression, expectedException in tests:
+            try:
+                parser.parse(expression)
+            except expectedException:
+                pass
+            except Exception, e:
+                assert False, (expression, expectedException, e)
 
 ######################################################################
 
