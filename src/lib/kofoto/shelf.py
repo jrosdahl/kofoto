@@ -1,7 +1,7 @@
 """Interface to a Kofoto shelf."""
 
 ######################################################################
-### Libraries
+### Libraries.
 
 import sqlite as sql
 import Image as PILImage
@@ -9,6 +9,9 @@ from kofoto.common import KofotoError
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
+
+######################################################################
+### Database schema.
 
 schema = """
     -- EER diagram without attributes:
@@ -942,11 +945,3 @@ class OrphansAlbum(MagicAlbum):
         for (imageid,) in self.shelf.cursor.fetchall():
             images.append(Image(self.shelf, imageid))
         return albums + images
-
-
-######################################################################
-# Internal functions.
-
-def _latin1(unicodeString):
-    """Converts a Unicode string to Latin1."""
-    return unicodeString.encode("latin1")
