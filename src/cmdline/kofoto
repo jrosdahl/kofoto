@@ -22,6 +22,7 @@ from kofoto.config import *
 from kofoto.imagecache import *
 from kofoto.search import *
 from kofoto.shelf import *
+from kofoto.clientutils import *
 
 ######################################################################
 ### Locale.
@@ -33,7 +34,6 @@ CODESET = locale.getpreferredencoding()
 ### Constants.
 
 PRINT_ALBUMS_INDENT = 4
-_DIRECTORIES_TO_IGNORE = [".svn", ".xvpics", ".jimageviewpics", ".thumbnails" ]
 
 ######################################################################
 ### Exceptions.
@@ -52,22 +52,6 @@ def _from_uc(s):
 
 def _to_uc(s):
     return s.decode(CODESET)
-
-def _walk_files(paths):
-    for x in paths:
-        if os.path.isfile(x):
-            yield x
-        elif os.path.isdir(x):
-            if os.path.basename(x) in _DIRECTORIES_TO_IGNORE:
-                continue
-            for dirpath, dirnames, filenames in os.walk(x):
-                for igndir in _DIRECTORIES_TO_IGNORE:
-                    try:
-                        dirnames.remove(igndir)
-                    except ValueError:
-                        pass
-                for filename in filenames:
-                    yield os.path.join(dirpath, filename)
 
 def displayHelp():
     sys.stdout.write(
@@ -366,7 +350,7 @@ def cmdInspectLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
     import Image as PILImage
-    for filepath in _walk_files(args):
+    for filepath in walk_files(args):
         try:
             image = env.shelf.getImage(filepath)
             if image.getLocation() == os.path.realpath(filepath):
@@ -490,7 +474,7 @@ def registerHelper(env, destalbum, paths):
             env.out("Processing %s ...\n" % path)
         if os.path.isdir(path):
             tag = os.path.basename(path)
-            if tag in _DIRECTORIES_TO_IGNORE:
+            if tag in DIRECTORIES_TO_IGNORE:
                 if env.verbose:
                     env.out("Ignoring.\n")
                 continue
@@ -610,7 +594,7 @@ def cmdSort(env, args):
 def cmdUpdateContents(env, args):
     if len(args) < 1:
         raise ArgumentError
-    for filepath in _walk_files(args):
+    for filepath in walk_files(args):
         try:
             image = env.shelf.getImage(
                 filepath, identifyByLocation=True)
@@ -634,7 +618,7 @@ def cmdUpdateContents(env, args):
 def cmdUpdateLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
-    for filepath in _walk_files(args):
+    for filepath in walk_files(args):
         try:
             image = env.shelf.getImage(filepath)
             oldlocation = image.getLocation()
