@@ -88,13 +88,18 @@ class Albums:
         # TODO update objectCollection?
 
     def _destroyAlbum(self, *dummies):
-        # TODO add confirmation dialog?
-        albumModel, iterator =  self.__albumView.get_selection().get_selected()
-        selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
-        env.shelf.deleteAlbum(selectedAlbumTag.decode("utf-8"))
-        # TODO The whole tree should not be reloaded
-        self.loadAlbumTree()
-        # TODO update objectCollection?
+        dialogId = "destroyAlbumsDialog"
+        widgets = gtk.glade.XML(env.gladeFile, dialogId)
+        dialog = widgets.get_widget(dialogId)
+        result = dialog.run()
+        if result == gtk.RESPONSE_OK:
+            albumModel, iterator =  self.__albumView.get_selection().get_selected()
+            selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
+            env.shelf.deleteAlbum(selectedAlbumTag.decode("utf-8"))
+            # TODO The whole tree should not be reloaded
+            self.loadAlbumTree()
+            # TODO update objectCollection?
+        dialog.destroy()
 
     def _editAlbum(self, *dummies):
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
