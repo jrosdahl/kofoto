@@ -3,9 +3,8 @@
 ######################################################################
 ### Libraries
 
-import md5
-import os
 import sqlite as sql
+import Image as PILImage
 from kofoto.common import KofotoError
 
 import warnings
@@ -132,18 +131,23 @@ class ImageExistsError(ObjectExistsError):
     pass
 
 
-class ObjectDoesNotExist(KofotoError):
+class ObjectDoesNotExistError(KofotoError):
     """Object does not exist in the album."""
     pass
 
 
-class AlbumDoesNotExist(ObjectDoesNotExist):
+class AlbumDoesNotExistError(ObjectDoesNotExistError):
     """Album does not exist in the album."""
     pass
 
 
-class ImageDoesNotExist(ObjectDoesNotExist):
+class ImageDoesNotExistError(ObjectDoesNotExistError):
     """Image does not exist in the album."""
+    pass
+
+
+class NotAnImageError(KofotoError):
+    """Could not recognise file as an image."""
     pass
 
 
@@ -177,6 +181,7 @@ class UnimplementedError(KofotoError):
 
 def computeImageHash(filename):
     """Compute the canonical image ID for an image file."""
+    import md5
     m = md5.new()
     f = open(filename)
     m.update(f.read(2**16))
@@ -302,7 +307,7 @@ class Shelf:
             if self.cursor.rowcount > 0:
                 albumtype = self.cursor.fetchone()[0]
             else:
-                raise AlbumDoesNotExist, tag
+                raise AlbumDoesNotExistError, tag
         except ValueError:
             self.cursor.execute(
                 " select albumid, type"
@@ -312,7 +317,7 @@ class Shelf:
             if self.cursor.rowcount > 0:
                 albumid, albumtype = self.cursor.fetchone()
             else:
-                raise AlbumDoesNotExist, tag
+                raise AlbumDoesNotExistError, tag
         return self._albumFactory(albumid, albumtype)
 
 
@@ -356,7 +361,7 @@ class Shelf:
                 locals())
             row = self.cursor.fetchone()
             if not row:
-                raise AlbumDoesNotExist, tag
+                raise AlbumDoesNotExistError, tag
             albumid, albumtype = row
         if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
@@ -366,7 +371,7 @@ class Shelf:
             " where  albumid = %(albumid)s",
             locals())
         if self.cursor.rowcount == 0:
-            raise AlbumDoesNotExist, tag
+            raise AlbumDoesNotExistError, tag
         self._deleteObjectFromParents(albumid)
         self.cursor.execute(
             " delete from object"
@@ -382,23 +387,40 @@ class Shelf:
         """Add a new, orphaned image to the shelf.
 
         The ID of the image is returned."""
+        try:
+            pilimg = PILImage.open(path)
+        except IOError:
+            raise NotAnImageError, path
+
+        import os
         location = os.path.abspath(path)
-        imageid = computeImageHash(location)
+        hash = computeImageHash(location)
         try:
             self.cursor.execute(
                 " insert into object"
                 " values (null)",
                 locals())
-            lastrowid = self.cursor.lastrowid
+            imageid = self.cursor.lastrowid
             self.cursor.execute(
                 " insert into image"
-                " values (%(lastrowid)s, %(imageid)s, %(location)s)",
+                " values (%(imageid)s, %(hash)s, %(location)s)",
                 locals())
-            return Image(self, lastrowid)
+            width, height = pilimg.size
+            self.cursor.execute(
+                " insert into attribute"
+                " values (%(imageid)s, 'width', %(width)s)",
+                locals())
+            self.cursor.execute(
+                " insert into attribute"
+                " values (%(imageid)s, 'height', %(height)s)",
+                locals())
+            image = Image(self, imageid)
+            image.importExifTags()
+            return image
         except sql.IntegrityError:
             self.cursor.execute(
                 " delete from object"
-                " where objectid = %(lastrowid)s",
+                " where objectid = %(imageid)s",
                 locals())
             raise ImageExistsError, path
 
@@ -416,7 +438,7 @@ class Shelf:
                 " where imageid = %(imageid)s",
                 locals())
             if self.cursor.rowcount == 0:
-                raise ImageDoesNotExist, hash
+                raise ImageDoesNotExistError, hash
         except ValueError:
             self.cursor.execute(
                 " select imageid"
@@ -426,7 +448,7 @@ class Shelf:
             if self.cursor.rowcount > 0:
                 imageid = self.cursor.fetchone()[0]
             else:
-                raise ImageDoesNotExist, hash
+                raise ImageDoesNotExistError, hash
         return Image(self, imageid)
 
 
@@ -442,14 +464,14 @@ class Shelf:
                 locals())
             row = self.cursor.fetchone()
             if not row:
-                raise ImageDoesNotExist, hash
+                raise ImageDoesNotExistError, hash
             imageid = row[0]
         self.cursor.execute(
             " delete from image"
             " where  imageid = %(imageid)s",
             locals())
         if self.cursor.rowcount == 0:
-            raise ImageDoesNotExist, hash
+            raise ImageDoesNotExistError, hash
         self._deleteObjectFromParents(imageid)
         self.cursor.execute(
             " delete from object"
@@ -465,22 +487,22 @@ class Shelf:
         """Get the object for a given object tag/ID."""
         try:
             return self.getImage(objid)
-        except ImageDoesNotExist:
+        except ImageDoesNotExistError:
             try:
                 return self.getAlbum(objid)
-            except AlbumDoesNotExist:
-                raise ObjectDoesNotExist, objid
+            except AlbumDoesNotExistError:
+                raise ObjectDoesNotExistError, objid
 
 
     def deleteObject(self, objid):
         """Get the object for a given object tag/ID."""
         try:
             self.deleteImage(objid)
-        except ImageDoesNotExist:
+        except ImageDoesNotExistError:
             try:
                 self.deleteAlbum(objid)
-            except AlbumDoesNotExist:
-                raise ObjectDoesNotExist, objid
+            except AlbumDoesNotExistError:
+                raise ObjectDoesNotExistError, objid
 
 
     ##############################
@@ -760,6 +782,58 @@ class Image(_Object):
             locals())
 
 
+    def importExifTags(self):
+        """Read known EXIF tags and add them as attributes."""
+        import EXIF
+        tags = EXIF.process_file(open(self.getLocation()))
+
+        for tag in ["Image DateTime",
+                    "EXIF DateTimeOriginal",
+                    "EXIF DateTimeDigitized"]:
+            value = tags.get(tag)
+            if value:
+                a = str(value).split(":")
+                if len(a) == 5:
+                    value = "-".join(a[0:2] + [":".join(a[2:5])])
+                    self.setAttribute("timestamp", value)
+
+        value = tags.get("EXIF ExposureTime")
+        if value:
+            self.setAttribute("exposuretime", str(value))
+        value = tags.get("EXIF FNumber")
+        if value:
+            self.setAttribute("fnumber", str(value))
+        value = tags.get("EXIF Flash")
+        if value:
+            self.setAttribute("flash", str(value))
+        value = tags.get("EXIF FocalLength")
+        if value:
+            self.setAttribute("focallength", str(value))
+        value = tags.get("Image Make")
+        if value:
+            self.setAttribute("cameramake", str(value))
+        value = tags.get("Image Model")
+        if value:
+            self.setAttribute("cameramodel", str(value))
+        value = tags.get("Image Orientation")
+        if value:
+            try:
+                m = {"1": "up",
+                     "2": "up",
+                     "3": "down",
+                     "4": "up",
+                     "5": "up",
+                     "6": "left",
+                     "7": "up",
+                     "8": "right",
+                     }
+                self.setAttribute("orientation", m[str(value)])
+            except KeyError:
+                pass
+        value = tags.get("")
+        if value:
+            self.setAttribute("up", str(value))
+
     ##############################
     # Internal methods.
 
@@ -779,7 +853,7 @@ class MagicAlbum(Album):
     # Public methods.
 
     def setChildren(self, children):
-        raise UnsettableChildrenError, self.albumid
+        raise UnsettableChildrenError, self.getTag()
 
 
 class AllAlbumsAlbum(MagicAlbum):

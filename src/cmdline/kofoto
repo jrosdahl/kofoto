@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import Image as PILImage
 import os
 import sys
 import getopt
@@ -8,10 +7,8 @@ import time
 
 ######################################################################
 
-# Find libraries when run from the source tree.
-sys.path[0:0] = [os.path.join("src", "lib"),
-                 "lib",
-                 os.path.join("..", "lib")]
+# Find libraries if installed in ../lib (like in the source tree).
+sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "..", "lib"))
 
 try:
     from kofoto.common import *
@@ -32,18 +29,8 @@ except ImportError:
 ### Constants.
 
 DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
-VERBATIM_EXIF_HEADERS = (
-    "Make",
-    "Model",
-    "ExposureTime",
-    "FNumber",
-    "Flash",
-    "ExifImageWidth",
-    "ExifImageHeight",
-)
 PRINT_GRAPH_INDENT = 4
-
-_directories_to_ignore = [".svn"]
+_DIRECTORIES_TO_IGNORE = [".svn"]
 
 ######################################################################
 ### Exceptions.
@@ -119,7 +106,7 @@ def displayHelp():
         "Album types:\n"
         "\n"
         "    allalbums    All albums, sorted by tag.\n"
-        "    allimages    All images, sorted by timestamp attribute.\n"
+        "    allimages    All images, sorted by timestamp.\n"
         "    orphans      All albums and images that don't exist in any plain album.\n"
         "    plain        An ordinary container that holds albums and images.\n"
         "\n"
@@ -236,7 +223,7 @@ def importHelper(env, destalbum, paths):
             env.out("Processing %s ...\n" % path)
         if os.path.isdir(path):
             tag = os.path.basename(path)
-            if tag in _directories_to_ignore:
+            if tag in _DIRECTORIES_TO_IGNORE:
                 if env.verbose:
                     env.out("Ignoring.\n")
                 continue
@@ -253,18 +240,15 @@ def importHelper(env, destalbum, paths):
                          [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
             try:
-                PILImage.open(path)
-            except IOError:
+                image = env.shelf.createImage(path)
+                newchildren.append(image)
+                if env.verbose:
+                    env.out("Imported image: %s\n" % path)
+            except NotAnImageError, x:
                 if env.verbose:
                     env.out("Ignoring non-image file: %s\n" % path)
-            else:
-                try:
-                    image = env.shelf.createImage(path)
-                    newchildren.append(image)
-                    if env.verbose:
-                        env.out("Imported image: %s\n" % path)
-                except ImageExistsError, x:
-                    env.err("Ignoring already imported image: %s\n" % path)
+            except ImageExistsError, x:
+                env.err("Ignoring already imported image: %s\n" % path)
         else:
             env.err("No such file or directory (ignored): %s\n" % path)
     addHelper(env, destalbum, newchildren)
@@ -381,7 +365,7 @@ def cmdUpdateLocations(env, args):
 
 
 def updateLocationsHelper(env, dir, files):
-    for x in _directories_to_ignore:
+    for x in _DIRECTORIES_TO_IGNORE:
         files.remove(x)
     for file in files:
         location = os.path.join(dir, file)
@@ -400,7 +384,7 @@ def updateLocationsHelper(env, dir, files):
             except IOError, x:
                 if env.verbose:
                     env.out("Failed to read: %s\n" % location)
-            except ImageDoesNotExist, x:
+            except ImageDoesNotExistError, x:
                 if env.verbose:
                     env.out("Image does not exist: %s\n" % location)
 
@@ -563,14 +547,16 @@ def main(argv):
         printError("Reserved album tag: \"%s\".\n" % x)
     except AlbumExistsError, x:
         printError("Album already exists: \"%s\".\n" % x)
-    except ImageDoesNotExist, x:
+    except ImageDoesNotExistError, x:
         printError("Image does not exist: \"%s\".\n" % x)
-    except AlbumDoesNotExist, x:
+    except AlbumDoesNotExistError, x:
         printError("Album does not exist: \"%s\".\n" % x)
-    except ObjectDoesNotExist, x:
+    except ObjectDoesNotExistError, x:
         printError("Object does not exist: \"%s\".\n" % x)
     except UnknownAlbumTypeError, x:
         printError("Unknown album type: \"%s\".\n" % x)
+    except UnsettableChildrenError, x:
+        printError("Cannot add children to \"%s\" (children are created virtually).\n" % x)
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     shelf.rollback()
