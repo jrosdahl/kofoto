@@ -51,7 +51,8 @@ class RegisterImagesDialog(gtk.FileSelection):
                 nonImagesCount.set_text(str(nonImages))
             filesInvestigated += 1
             filesInvestigatedCount.set_text(str(filesInvestigated))
-            gtk.main_iteration()
+            while gtk.events_pending():
+                gtk.main_iteration()
         if self.__albumToAddTo:
             children = list(self.__albumToAddTo.getChildren())
             self.__albumToAddTo.setChildren(children + images)

@@ -73,7 +73,8 @@ class HandleImagesDialog(gtk.FileSelection):
                     unknownFilesCount.set_text(str(unknownFiles))
             investigatedFiles += 1
             investigatedFilesCount.set_text(str(investigatedFiles))
-            gtk.main_iteration()
+            while gtk.events_pending():
+                gtk.main_iteration()
 
         okButton.set_sensitive(True)
         handleImagesProgressDialog.run()
