@@ -88,6 +88,10 @@ class TableView(ObjectCollectionView):
                 columnName not in disabledFields):
                 self.__createColumn(columnName, objectMetadataMap)
                 self.__viewGroup[columnName].activate()
+        self.fieldsDisabled(self._objectCollection.getDisabledFields())
+        env.exit("Connecting TableView to object collection")
+
+    def _initDragAndDrop(self):
         # Init drag & drop
         if self._objectCollection.isReorderable() and not self._objectCollection.isSortable():
             targetEntries = [("STRING", gtk.TARGET_SAME_WIDGET, 0)]
@@ -98,9 +102,7 @@ class TableView(ObjectCollectionView):
         else:
             self._viewWidget.unset_rows_drag_source()
             self._viewWidget.unset_rows_drag_dest()
-        self.fieldsDisabled(self._objectCollection.getDisabledFields())
-        env.exit("Connecting TableView to object collection")
-        
+
     def _disconnectObjectCollectionHelper(self):
         env.enter("Disconnecting TableView from object collection")
         self.__removeColumnsAndUpdateLocation()
@@ -114,6 +116,7 @@ class TableView(ObjectCollectionView):
         
     def _thawHelper(self):
         env.enter("TableView.thawHelper()")
+        self._initDragAndDrop()
         self._connect(self._viewWidget.get_selection(), 'changed', self._widgetSelectionChanged)
         env.exit("TableView.thawHelper()")
         

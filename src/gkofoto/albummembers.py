@@ -17,10 +17,10 @@ class AlbumMembers(ObjectCollection):
         self._loadObjectList(album.getChildren())
         
     def isReorderable(self):
-        return True
+        return self.__album and self.__album.isMutable()
 
     def isMutable(self):
-        return True
+        return self.__album and self.__album.isMutable()
 
     def getContainer(self):
         return self.__album
