@@ -244,11 +244,10 @@ def importHelper(env, destalbum, paths):
                 try:
                     album = env.shelf.createAlbum(tag)
                     break
-                except AlbumExistsError:
+                except (AlbumExistsError, ReservedAlbumTagError):
                     tag = tag + "_"
             newchildren.append(album)
-            if env.verbose:
-                env.out("Imported album: %s with tag %s\n" % (path, tag))
+            env.out("Imported directory %s as an album with tag %s\n" % (path, tag))
             importHelper(env,
                          album,
                          [os.path.join(path, x) for x in os.listdir(path)])
@@ -258,13 +257,14 @@ def importHelper(env, destalbum, paths):
             except IOError:
                 if env.verbose:
                     env.out("Ignoring non-image file: %s\n" % path)
-            try:
-                image = env.shelf.createImage(path)
-                newchildren.append(image)
-                if env.verbose:
-                    env.out("Imported image: %s\n" % path)
-            except ImageExistsError, x:
-                env.err("Ignoring already imported image: %s\n" % path)
+            else:
+                try:
+                    image = env.shelf.createImage(path)
+                    newchildren.append(image)
+                    if env.verbose:
+                        env.out("Imported image: %s\n" % path)
+                except ImageExistsError, x:
+                    env.err("Ignoring already imported image: %s\n" % path)
         else:
             env.err("No such file or directory (ignored): %s\n" % path)
     addHelper(env, destalbum, newchildren)
@@ -571,6 +571,8 @@ def main(argv):
         printError("Object does not exist: \"%s\".\n" % x)
     except UnknownAlbumTypeError, x:
         printError("Unknown album type: \"%s\".\n" % x)
+    except KeyboardInterrupt:
+        printOutput("Interrupted.\n")
     shelf.rollback()
     sys.exit(1)
 
