@@ -95,6 +95,7 @@ class MainWindow(gtk.Window):
     def registerImages(self, widget, data):
         dialog = RegisterImagesDialog()
         dialog.run()
+        dialog.destroy()
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))

@@ -10,7 +10,6 @@ class RegisterImagesDialog(gtk.FileSelection):
         self.__albumToAddTo = albumToAddTo
         self.set_select_multiple(True)
         self.ok_button.connect("clicked", self._ok)
-        self.cancel_button.connect("clicked", self._cancel)
 
     def _ok(self, widget):
         images = []
@@ -23,7 +22,3 @@ class RegisterImagesDialog(gtk.FileSelection):
         if self.__albumToAddTo:
             children = list(self.__albumToAddTo.getChildren())
             self.__albumToAddTo.setChildren(children + images)
-        self.destroy()
-
-    def _cancel(self, widget):
-        self.destroy()
