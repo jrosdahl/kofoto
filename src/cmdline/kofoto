@@ -453,12 +453,12 @@ def cmdRemove(env, args):
         try:
             positions.append(int(pos))
         except ValueError:
-            env.errexit("Bad position: %s\n" % _from_uc(pos))
+            env.errexit("Bad position: %s.\n" % _from_uc(pos))
     positions.sort()
     positions.reverse()
     children = list(album.getChildren())
     if not (0 <= positions[0] < len(children)):
-        env.errexit("Bad position: %d\n" % positions[0])
+        env.errexit("Bad position: %d.\n" % positions[0])
     for pos in positions:
         del children[pos]
     album.setChildren(children)
