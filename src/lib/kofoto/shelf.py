@@ -417,6 +417,10 @@ class Shelf:
         self.inTransaction = False
         self.objectcache = {}
         self.categorycache = {}
+        self.orphanAlbumsCache = None
+        self.orphanImagesCache = None
+        self.allAlbumsCache = None
+        self.allImagesCache = None
         self.modified = False
         self.modificationCallbacks = []
 
@@ -524,6 +528,10 @@ class Shelf:
         """Flush the object cache."""
         assert self.inTransaction
         self.objectcache = {}
+        self.orphanAlbumsCache = None
+        self.orphanImagesCache = None
+        self.allAlbumsCache = None
+        self.allImagesCache = None
 
 
     def getStatistics(self):
@@ -559,6 +567,7 @@ class Shelf:
                 tag,
                 albumtype)
             self._setModified()
+            self.allAlbumsCache = None
             return self.getAlbum(lastrowid)
         except sql.IntegrityError:
             cursor.execute(
@@ -709,6 +718,7 @@ class Shelf:
             if x in self.objectcache:
                 del self.objectcache[x]
         self._setModified()
+        self.allAlbumsCache = None
 
 
     def createImage(self, path):
@@ -761,6 +771,7 @@ class Shelf:
         image = self.getImage(imageid)
         image.importExifTags()
         self._setModified()
+        self.allImagesCache = None
         return image
 
 
@@ -926,6 +937,7 @@ class Shelf:
             if x in self.objectcache:
                 del self.objectcache[x]
         self._setModified()
+        self.allImagesCache = None
 
 
     def getObject(self, objid):
@@ -1201,6 +1213,46 @@ class Shelf:
     def _getConnection(self):
         assert self.inTransaction
         return self.connection
+
+
+    def _getOrphanAlbumsCache(self):
+        assert self.inTransaction
+        return self.orphanAlbumsCache
+
+
+    def _setOrphanAlbumsCache(self, albums):
+        assert self.inTransaction
+        self.orphanAlbumsCache = albums
+
+
+    def _getOrphanImagesCache(self):
+        assert self.inTransaction
+        return self.orphanImagesCache
+
+
+    def _setOrphanImagesCache(self, images):
+        assert self.inTransaction
+        self.orphanImagesCache = images
+
+
+    def _getAllAlbumsCache(self):
+        assert self.inTransaction
+        return self.allAlbumsCache
+
+
+    def _setAllAlbumsCache(self, albums):
+        assert self.inTransaction
+        self.allAlbumsCache = albums
+
+
+    def _getAllImagesCache(self):
+        assert self.inTransaction
+        return self.allImagesCache
+
+
+    def _setAllImagesCache(self, images):
+        assert self.inTransaction
+        self.allImagesCache = images
 
 
 class Category:
@@ -1679,6 +1731,8 @@ class PlainAlbum(Album):
             albumid,
             newchcnt)
         self.shelf._setModified()
+        self.shelf._setOrphanAlbumsCache([])
+        self.shelf._setOrphanImagesCache([])
         self.children = children[:]
 
     ##############################
@@ -1865,13 +1919,22 @@ class AllAlbumsAlbum(MagicAlbum):
 
         Returns an iterable returning the albums.
         """
-        cursor = self.shelf._getConnection().cursor()
-        cursor.execute(
-            " select   albumid"
-            " from     album"
-            " order by tag")
-        for (albumid,) in cursor:
-            yield self.shelf.getAlbum(albumid)
+        albums = self.shelf._getAllAlbumsCache()
+        if albums != None:
+            for album in albums:
+                yield album
+        else:
+            cursor = self.shelf._getConnection().cursor()
+            cursor.execute(
+                " select   albumid"
+                " from     album"
+                " order by tag")
+            albums = []
+            for (albumid,) in cursor:
+                album = self.shelf.getAlbum(albumid)
+                albums.append(album)
+                yield album
+            self.shelf._setOrphanAlbumsCache(albums)
 
 
     def getAlbumChildren(self):
@@ -1893,17 +1956,26 @@ class AllImagesAlbum(MagicAlbum):
 
         Returns an iterable returning the images.
         """
-        cursor = self.shelf._getConnection().cursor()
-        cursor.execute(
-            " select   imageid, hash, directory, filename, mtime,"
-            "          width, height"
-            " from     image left join attribute"
-            " on       imageid = objectid and name = 'captured'"
-            " order by lcvalue, directory, filename")
-        for imageid, hash, directory, filename, mtime, width, height in cursor:
-            location = os.path.join(directory, filename)
-            yield self.shelf._imageFactory(
-                imageid, hash, location, mtime, width, height)
+        images = self.shelf._getAllImagesCache()
+        if images != None:
+            for image in images:
+                yield image
+        else:
+            cursor = self.shelf._getConnection().cursor()
+            cursor.execute(
+                " select   imageid, hash, directory, filename, mtime,"
+                "          width, height"
+                " from     image left join attribute"
+                " on       imageid = objectid and name = 'captured'"
+                " order by lcvalue, directory, filename")
+            images = []
+            for imageid, hash, directory, filename, mtime, width, height in cursor:
+                location = os.path.join(directory, filename)
+                image = self.shelf._imageFactory(
+                    imageid, hash, location, mtime, width, height)
+                images.append(image)
+                yield image
+            self.shelf._setOrphanImagesCache(images)
 
 
     def getAlbumChildren(self):
@@ -1940,29 +2012,48 @@ class OrphansAlbum(MagicAlbum):
     # Internal methods.
 
     def _getChildren(self, includeimages):
-        cursor = self.shelf._getConnection().cursor()
-        cursor.execute(
-            " select   albumid"
-            " from     album"
-            " where    albumid not in (select objectid from member) and"
-            "          albumid != %s"
-            " order by tag",
-            _ROOT_ALBUM_ID)
-        for (albumid,) in cursor:
-            yield self.shelf.getAlbum(albumid)
-        if includeimages:
+        albums = self.shelf._getOrphanAlbumsCache()
+        if albums != None:
+            for album in albums:
+                yield album
+        else:
+            cursor = self.shelf._getConnection().cursor()
             cursor.execute(
-                " select   imageid, hash, directory, filename, mtime,"
-                "          width, height"
-                " from     image left join attribute"
-                " on       imageid = objectid and name = 'captured'"
-                " where    imageid not in (select objectid from member)"
-                " order by lcvalue, directory, filename")
-            for (imageid, hash, directory, filename, mtime, width,
-                 height) in cursor:
-                location = os.path.join(directory, filename)
-                yield self.shelf._imageFactory(
-                    imageid, hash, location, mtime, width, height)
+                " select   albumid"
+                " from     album"
+                " where    albumid not in (select objectid from member) and"
+                "          albumid != %s"
+                " order by tag",
+                _ROOT_ALBUM_ID)
+            albums = []
+            for (albumid,) in cursor:
+                album = self.shelf.getAlbum(albumid)
+                albums.append(album)
+                yield album
+            self.shelf._setOrphanAlbumsCache(albums)
+        if includeimages:
+            images = self.shelf._getOrphanImagesCache()
+            if images != None:
+                for image in images:
+                    yield image
+            else:
+                cursor = self.shelf._getConnection().cursor()
+                cursor.execute(
+                    " select   imageid, hash, directory, filename, mtime,"
+                    "          width, height"
+                    " from     image left join attribute"
+                    " on       imageid = objectid and name = 'captured'"
+                    " where    imageid not in (select objectid from member)"
+                    " order by lcvalue, directory, filename")
+                images = []
+                for (imageid, hash, directory, filename, mtime, width,
+                     height) in cursor:
+                    location = os.path.join(directory, filename)
+                    image = self.shelf._imageFactory(
+                        imageid, hash, location, mtime, width, height)
+                    images.append(image)
+                    yield image
+                self.shelf._setOrphanImagesCache(images)
 
 
 ######################################################################
