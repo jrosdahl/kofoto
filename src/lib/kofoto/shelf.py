@@ -2091,6 +2091,11 @@ class ImageVersion:
         self.shelf._setModified()
 
 
+    def isPrimary(self):
+        """Whether the image version is primary."""
+        return self.getImage().getPrimaryVersion() == self
+
+
     def contentChanged(self):
         """Record new image information for an edited image version.
 
