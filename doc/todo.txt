@@ -73,6 +73,17 @@
                       [A] 19 March 2003
                           [I] Image2
 
+* Generate details page.
+
+* Make sure that the cache can handle lots of images (they are all
+  stored in a single directory right now). And likewise for generated
+  albums.
+
+* Create configuration module. Use ConfigParser.
+
+* Make it possible to generate an album with images symlinked to a
+  local image store, not the system-wide cache.
+
 Think more about:
 
     * Which auxilliary attributes should be set on import? Specify
