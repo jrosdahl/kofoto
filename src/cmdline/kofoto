@@ -419,12 +419,13 @@ def registerHelper(env, destalbum, paths):
                 if env.verbose:
                     env.out("Ignoring.\n")
                 continue
+            tag = makeValidTag(tag)
             while True:
                 try:
-                    album = env.shelf.createAlbum(unicode(tag, env.codeset))
+                    album = env.shelf.createAlbum(_to_uc(tag))
                     break
-                except (AlbumExistsError, BadAlbumTagError):
-                    tag = tag + "_"
+                except AlbumExistsError:
+                    tag += "_"
             newchildren.append(album)
             env.out("Registered directory %s as an album with tag %s\n" % (
                 path,
@@ -434,7 +435,7 @@ def registerHelper(env, destalbum, paths):
                            [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
             try:
-                image = env.shelf.createImage(unicode(path, env.codeset))
+                image = env.shelf.createImage(_to_uc(path))
                 newchildren.append(image)
                 if env.verbose:
                     env.out("Registered image: %s\n" % path)

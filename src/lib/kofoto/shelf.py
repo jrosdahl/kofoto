@@ -29,6 +29,7 @@ __all__ = [
     "UnsettableChildrenError",
     "UnsupportedShelfError",
     "computeImageHash",
+    "makeValidTag",
     "verifyValidAlbumTag",
     "verifyValidCategoryTag",
 ]
@@ -368,6 +369,14 @@ def verifyValidCategoryTag(tag):
             raise BadCategoryTagError, tag
     else:
         raise BadCategoryTagError, tag
+
+
+def makeValidTag(tag):
+    tag = tag.lstrip("@")
+    tag = re.sub(r"\s", "", tag)
+    if not tag:
+        tag = "_"
+    return tag
 
 
 ######################################################################
