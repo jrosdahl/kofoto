@@ -173,7 +173,7 @@ class ObjectCollectionView:
     def __createCommandMenuGroup(self, oc):
         menuGroup = MenuGroup()
         menuGroup.addMenuItem("Open image", oc.open)
-        menuGroup.addMenuItem("Rotate JPEG right", oc.rotate, 90)
         menuGroup.addMenuItem("Rotate JPEG left", oc.rotate, 270)
+        menuGroup.addMenuItem("Rotate JPEG right", oc.rotate, 90)        
         menuGroup.addSeparator()
         return menuGroup        
