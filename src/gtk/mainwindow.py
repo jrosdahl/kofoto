@@ -6,7 +6,7 @@ from albumview import *
 class MainWindow(gtk.Window):
     _imageView = None
     _albumView = None
-    
+
     def __init__(self, albumModel, albumView, imagelistModel, imageListView, imageView):
         gtk.Window.__init__(self)
         self.set_default_size(300, 200)
@@ -50,12 +50,11 @@ class MainWindow(gtk.Window):
         notebook.append_page(widget, l)
         
     def keyPressEventHandler(self, widget, gdkEvent):
-        # Were are the gtk constans for the different buttons? 
         if gdkEvent.type == gtk.gdk.KEY_PRESS:
-            if gdkEvent.keyval == 122: # z,
+            if gdkEvent.keyval == gtk.keysyms.z:
                 self._imageView.fitToWindow()
-            if gdkEvent.keyval == 65451: # +
+            if gdkEvent.keyval == gtk.keysyms.plus or gdkEvent.keyval == 65451:
                 self._imageView.zoomIn()
-            if gdkEvent.keyval == 65453: # -
+            if gdkEvent.keyval == gtk.keysyms.minus or gdkEvent.keyval == 65453:
                 self._imageView.zoomOut()
         return gtk.FALSE

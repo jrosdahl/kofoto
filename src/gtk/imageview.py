@@ -1,10 +1,13 @@
 import gtk
+import gtk.gdk
 import math
 import gobject
 from gtk import TRUE, FALSE
 
 class ImageView(gtk.ScrolledWindow):
-    _INTERPOLATION_TYPE = 3 # Is there a gtk-constant contining this value?
+    # TODO: Read from configuration file?
+    _INTERPOLATION_TYPE = gtk.gdk.INTERP_BILINEAR
+    # gtk.gdk.INTERP_HYPER is slower but gives better quality.
     _MAX_IMAGE_SIZE = 2000
     _MIN_IMAGE_SIZE = 1
     _MIN_ZOOM = -10
@@ -108,9 +111,9 @@ class ImageView(gtk.ScrolledWindow):
         
     def scrollEventHandler(self, widget, gdkEvent):
         if gdkEvent.type == gtk.gdk.SCROLL:
-            if gdkEvent.direction == 0:
+            if gdkEvent.direction == gtk.gdk.SCROLL_UP:
                 self.zoomOut()
-            elif gdkEvent.direction == 1:
+            elif gdkEvent.direction == gtk.gdk.SCROLL_DOWN:
                 self.zoomIn()
             return TRUE
         else:
