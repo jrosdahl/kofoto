@@ -37,8 +37,8 @@ binary-indep: build install
 
 	dh_python -i
 	dh_installman -i doc/gkofoto.1 doc/kofoto.1
-	dh_installdocs -i
-	dh_installchangelogs -i
+	dh_installdocs -i README.txt
+	dh_installchangelogs -i CHANGES.txt
 	dh_link -i
 	dh_compress -i
 	dh_fixperms -i
