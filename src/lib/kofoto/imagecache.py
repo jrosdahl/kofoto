@@ -62,7 +62,7 @@ class ImageCache:
 
 
     def _getCacheImageName(self, image, limit):
-        extension = image.getLocation().split(".")[-1]
+        extension = os.path.splitext(image.getLocation())[1]
         orientation = image.getAttribute("orientation")
         if orientation not in ("up", "down", "left", "right"):
             orientation = "up"
