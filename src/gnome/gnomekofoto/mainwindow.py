@@ -19,7 +19,7 @@ class MainWindow(gtk.Window):
         self.__sourceEntry = env.widgets["sourceEntry"]
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
-        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
+#        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
         env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
         env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
         env.widgets["save"].connect("activate", env.controller.save)
@@ -28,11 +28,6 @@ class MainWindow(gtk.Window):
         env.widgets["save"].set_sensitive(False)
         env.widgets["revert"].set_sensitive(False)
         self.__sourceEntry.connect("activate", self._sourceEntryActivated)
-        
-        # Gray out not yet implemented stuff...
-        env.widgets["new"].set_sensitive(False)
-        env.widgets["open"].set_sensitive(False)
-        env.widgets["save_as"].set_sensitive(False)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
 
@@ -43,7 +38,7 @@ class MainWindow(gtk.Window):
         self.__singleObjectView = SingleObjectView()
         self.__factory = ObjectCollectionFactory()
         self.loadUrl("album://" + str(env.shelf.getRootAlbum().getTag()))
-        self.__showThumbnailView()
+        self.__showTableView()
 
     def _sourceEntryActivated(self, widget):
         self.__setObjectCollection(self.__factory.getObjectCollection(widget.get_text()))

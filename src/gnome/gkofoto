@@ -5,16 +5,14 @@ import gtk
 import gtk.gdk
 import gobject
 import gtk.glade
-import gnome
-import gnome.ui
 from gnomekofoto.environment import env
 from kofoto.imagecache import *
 from gnomekofoto.mainwindow import *
 
 class WidgetsWrapper:
     def __init__(self):
-        gnome.init("GKofoto", "0.1")
         self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
+
     def __getitem__(self, key):
         return self.widgets.get_widget(key)
 
@@ -29,7 +27,7 @@ class Controller:
         currentObjects = None
         gtk.main()
 
-    def quit(self, gnomeApp, cancelButton=True):
+    def quit(self, app, cancelButton=True):
         if env.shelf.isModified():
             widgets = gtk.glade.XML(env.gladeFile, "quitDialog")
             quitDialog = widgets.get_widget("quitDialog")
@@ -52,12 +50,12 @@ class Controller:
             env.shelf.rollback()
             gtk.main_quit()
 
-    def save(self, gnomeApp):
+    def save(self, app):
         env.shelf.commit()
         print "commit"
         env.shelf.begin()
 
-    def revert(self, gnomeApp):
+    def revert(self, app):
         env.shelf.rollback()
         print "rollback"
         env.shelf.begin()

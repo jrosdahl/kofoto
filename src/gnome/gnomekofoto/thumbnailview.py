@@ -10,10 +10,13 @@ class ThumbnailView(ObjectCollectionView):
     
     def __init__(self):
         env.debug("Init ThumbnailView")        
+##        ObjectCollectionView.__init__(self,
+##                                      env.widgets["thumbnailList"])
         ObjectCollectionView.__init__(self,
-                                      env.widgets["thumbnailList"])
+                                      env.widgets["thumbnailView"])
         self.__currentMaxWidth = env.thumbnailSize[0]
         self.__selectionLocked = False
+        return
         self._viewWidget.connect("select_icon", self._widgetIconSelected)
         self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
 
