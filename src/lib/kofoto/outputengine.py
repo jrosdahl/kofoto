@@ -89,27 +89,6 @@ class OutputEngine:
             return width, height
 
 
-    def _calculateImageReferences(self, album):
-        #
-        # Generate and remember different sizes for images in the album.
-        #
-        imagechildren = [x for x in album.getChildren() if not x.isAlbum()]
-        for child in imagechildren:
-            if self.env.verbose:
-                self.env.out("Generating image %d..." % child.getId())
-            for size in [self.env.thumbnailsize] + self.env.imagesizes:
-                if self.env.verbose:
-                    self.env.out(" %s" % size)
-                imgabsloc = self.env.imagecache.get(child, size)
-                imgloc = self.imagesdest.getFilepath(os.path.basename(imgabsloc))
-                if not os.path.isfile(imgloc):
-                    symlinkOrCopyFile(imgabsloc, imgloc)
-                self.imgref[(child.getHash(), size)] = "/".join(
-                    imgloc.split(os.sep)[-4:])
-            if self.env.verbose:
-                self.env.out("\n")
-
-
     def _generateAlbumHelper(self, album, paths):
         if self.env.verbose:
             self.env.out("Generating album page for %s...\n" %
