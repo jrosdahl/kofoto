@@ -346,6 +346,8 @@ def computeImageHash(filename):
 
 
 def verifyValidAlbumTag(tag):
+    if not isinstance(tag, (str, unicode)):
+        raise BadAlbumTagError, tag
     try:
         int(tag)
     except ValueError:
@@ -356,6 +358,8 @@ def verifyValidAlbumTag(tag):
 
 
 def verifyValidCategoryTag(tag):
+    if not isinstance(tag, (str, unicode)):
+        raise BadCategoryTagError, tag
     try:
         int(tag)
     except ValueError:
