@@ -159,6 +159,8 @@ def displayHelp():
         "                                     other directories and images, which also\n"
         "                                     will be registered.\n"
         "    remove ALBUM POS [POS ...]       Remove the given objects from ALBUM.\n"
+        "    sort ALBUM [ATTR]                Sort the contents of ALBUM by the\n"
+        "                                     attribute named ATTR (default: captured).\n"
         "\n"
         "    For categories\n"
         "    ==============\n"
@@ -556,6 +558,20 @@ def cmdSetCategoryDescription(env, args):
     env.shelf.getCategory(args[0]).setDescription(args[1])
 
 
+def cmdSort(env, args):
+    if not 1 <= len(args) <= 2:
+        raise ArgumentError
+    if len(args) == 2:
+        attr = args[1]
+    else:
+        attr = u"captured"
+    album = env.shelf.getAlbum(args[0])
+    children = list(album.getChildren())
+    children.sort(
+        lambda x, y: cmp(x.getAttribute(attr), y.getAttribute(attr)))
+    album.setChildren(children)
+
+
 def cmdUpdateContents(env, args):
     if len(args) < 1:
         raise ArgumentError
@@ -630,6 +646,7 @@ commandTable = {
     "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
     "set-category-description": cmdSetCategoryDescription,
+    "sort": cmdSort,
     "update-contents": cmdUpdateContents,
     "update-locations": cmdUpdateLocations,
 }
@@ -807,7 +824,7 @@ def main(argv):
     except UnknownAlbumTypeError, x:
         printError("Unknown album type: \"%s\".\n" % _from_uc(x.args[0]))
     except UnsettableChildrenError, x:
-        printError("Cannot add children to \"%s\" (children are created virtually).\n" % _from_uc(x.args[0]))
+        printError("Cannot modify children of \"%s\" (children are created virtually).\n" % _from_uc(x.args[0]))
     except CategoryExistsError, x:
         printError("Category already exists: \"%s\".\n" % _from_uc(x.args[0]))
     except CategoryDoesNotExistError, x:
