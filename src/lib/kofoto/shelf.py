@@ -462,10 +462,10 @@ class Shelf:
         try:
             self.connection.commit()
         finally:
-            self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
             self._unsetModified()
+            self.transactionLock.release()
 
 
     def rollback(self):
@@ -475,10 +475,10 @@ class Shelf:
         try:
             self.connection.rollback()
         finally:
-            self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
             self._unsetModified()
+            self.transactionLock.release()
 
 
     def isModified(self):
