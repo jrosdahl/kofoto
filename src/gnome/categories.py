@@ -5,8 +5,10 @@ import string
 
 from environment import env
 from images import Images
+from categorydialog import CategoryDialog
 from kofoto.search import *
 from kofoto.shelf import *
+
 
 class Categories:
     _COLUMN_CATEGORY_ID  = 0
@@ -18,6 +20,7 @@ class Categories:
     _toggleColumn = None
     _ignoreSelectEvent = gtk.FALSE
     _selectedCategories = []
+    _selectedCategoryPaths = []
     _selectionHandler = None
     
     def __init__(self):
@@ -72,9 +75,14 @@ class Categories:
         self._removeItem.connect("activate", self._removeCategory, None)
         self._contextMenu.append(self._removeItem)
 
+        self._disconnectItem = gtk.MenuItem("Disconnect selected categories")
+        self._disconnectItem.show()
+        self._disconnectItem.connect("activate", self._disconnectCategory, None)
+        self._contextMenu.append(self._disconnectItem)
+
         self._propertiesItem = gtk.MenuItem("Properties")
         self._propertiesItem.show()
-        self._propertiesItem.set_sensitive(gtk.FALSE)
+        self._propertiesItem.connect("activate", self._editProperties, None)
         self._contextMenu.append(self._propertiesItem)
 
         self._updateContextMenu()
@@ -125,8 +133,9 @@ class Categories:
     def _buildQuery(self, categoryList, selection, query):
         for row in categoryList:
             if selection.iter_is_selected(row.iter):
-                self._selectedCategories.append(row[self._COLUMN_CATEGORY_ID])
-                query = self._addToQuery(query, row[self._COLUMN_TAG])
+                if not row[self._COLUMN_CATEGORY_ID] in self._selectedCategories:
+                    self._selectedCategories.append(row[self._COLUMN_CATEGORY_ID])
+                    query = self._addToQuery(query, row[self._COLUMN_TAG])
             childQuery = self._buildQuery(row.iterchildren(), selection, "")
             query = self._addToQuery(query, childQuery)
         return query
@@ -150,7 +159,11 @@ class Categories:
         else:
             self._removeItem.set_sensitive(gtk.TRUE)
             self._createChildItem.set_sensitive(gtk.TRUE)
-    
+        if len(self._selectedCategories) == 1:
+            self._propertiesItem.set_sensitive(gtk.TRUE)
+        else:
+            self._propertiesItem.set_sensitive(gtk.FALSE)
+            
     def imagesSelected(self, imageModel):
         nrSelectedImagesInCategory = {}
         nrSelectedImages = 0
@@ -245,46 +258,23 @@ class Categories:
         print "not yet implemented!"
             
     def _createRootCategory(self, item, data):
-        widgets = gtk.glade.XML(env.gladeFile, "categoryProperties")
-        dialog = widgets.get_widget("categoryProperties")
-        tag = widgets.get_widget("tag")
-        description = widgets.get_widget("description")
-        description.connect("changed", self._descriptionChanged, tag)
-        tag.connect("changed", self._tagChanged, widgets.get_widget("okbutton"))
-        result = dialog.run()
-        if result == gtk.RESPONSE_OK:
-            tagString = tag.get_text().decode("utf-8")
-            descriptionString = description.get_text().decode("utf-8")
-            dialog.destroy()
-            env.shelf.createCategory(tagString, descriptionString)
-            self.reload()
-        else:
-            dialog.destroy()
-
-    def _descriptionChanged(self, description, tag):
-        # Remove all whitespaces in description and then use it as tag
-        tag.set_text(string.translate(description.get_text(),
-                                      string.maketrans("", ""),
-                                      string.whitespace))
-
-    def _tagChanged(self, tag, button):
-        tagString = tag.get_text().decode("utf-8")
-        try:
-           # Check that the tag name is valid
-           verifyValidCategoryTag(tagString)
-        except(BadCategoryTagError):
-            button.set_sensitive(gtk.FALSE)
-            return
-        try:
-            # Make sure that the tag name is not already taken
-            env.shelf.getCategory(tagString)
-            button.set_sensitive(gtk.FALSE)
-        except(CategoryDoesNotExistError):
-            button.set_sensitive(gtk.TRUE)
+        dialog = CategoryDialog("Create root category")
+        dialog.run(self._createRootCategoryHelper)
+       
+    def _createRootCategoryHelper(self, tag, desc):
+        env.shelf.createCategory(tag, desc)
+        self.reload()
 
     def _createChildCategory(self, item, data):
-        print "create child category not yet imlemented"
+        dialog = CategoryDialog("Create child category")
+        dialog.run(self._createChildCategoryHelper)
 
+    def _createChildCategoryHelper(self, tag, desc):
+        newCategory = env.shelf.createCategory(tag, desc)
+        for categoryId in self._selectedCategories:
+            env.shelf.getCategory(categoryId).connectChild(newCategory)
+        self.reload()
+        
     def _removeCategory(self, item, data):
         selection = env.widgets["categoryView"].get_selection()
         selection.handler_block(self._selectionHandler)
@@ -292,6 +282,31 @@ class Categories:
             env.shelf.deleteCategory(categoryId)
         self.reload()
         selection.handler_unblock(self._selectionHandler)
+
+    def _disconnectCategory(self, item, data):
+        selection = env.widgets["categoryView"].get_selection()
+        selection.handler_block(self._selectionHandler)
+        selection.selected_foreach(self._disconnectFromParent, None)
+        self.reload()
+        selection.handler_unblock(self._selectionHandler)
+
+    def _disconnectFromParent(self, model, path, iter, data):
+        if len(path) > 1:
+            parentCategoryId = model[path[:-1]][self._COLUMN_CATEGORY_ID]
+            parentCategory = env.shelf.getCategory(parentCategoryId)
+            categoryId = model[path][self._COLUMN_CATEGORY_ID]
+            category = env.shelf.getCategory(categoryId)
+            parentCategory.disconnectChild(category)
+
+    def _editProperties(self, item, data):
+        dialog = CategoryDialog("Change properties", self._selectedCategories[0])
+        dialog.run(self._editPropertiesHelper)
+
+    def _editPropertiesHelper(self, tag, desc):
+         category = env.shelf.getCategory(self._selectedCategories[0])
+         category.setTag(tag)
+         category.setDescription(desc)
+         self.reload()
         
     def _selectionFunction(self, path, b):
         if self._ignoreSelectEvent:
