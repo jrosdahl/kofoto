@@ -2,29 +2,29 @@ Attributes:
 
     For both albums and images:
 
-    * shortdesc: Short description, suitable for link text.
+    * keyword (multivalue): A keyword for the image/album.
     * longdesc: Image/album text, 0 to many rows, not suitable for
       link text.
-    * keyword (multivalue): A keyword for the image/album.
+    * shortdesc: Short description, suitable for link text.
 
     For images only:
 
+    * aperture: Aperture (could be fetched from EXIF attribute
+      FNumber).
     * cached-location: Volatile cache of last known filesystem
       location of the image.
-    * timestamp: When the image was taken (UNIX epoch time).
-    * orientation: Image orientation in degrees (0, 90, 180 or 270).
-    * height: Image height (could be fetched from EXIF attribute
-      ExifImageHeight).
-    * width: Image width (could be fetched from EXIF attribute
-      ExifImageWidth).
-    * make: Camera vendor (?) (ex: Canon).
-    * model: Camera model (ex: Canon DIGITAL IXUS).
     * exposure-time: Exposure time (could be fetched from EXIF
       attribute ExposureTime).
     * flash: Whether flash was fired (could be fetched from EXIF
       attribute Flash).
-    * aperture: Aperture (could be fetched from EXIF attribute
-      FNumber).
+    * height: Image height (could be fetched from EXIF attribute
+      ExifImageHeight).
+    * make: Camera vendor (?) (ex: Canon).
+    * model: Camera model (ex: Canon DIGITAL IXUS).
+    * orientation: Image orientation in degrees (0, 90, 180 or 270).
+    * timestamp: When the image was taken (UNIX epoch time).
+    * width: Image width (could be fetched from EXIF attribute
+      ExifImageWidth).
 
 ======================================================================
 
