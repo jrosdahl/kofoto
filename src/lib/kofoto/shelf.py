@@ -172,9 +172,10 @@ schema = """
         
         FOREIGN KEY (image) REFERENCES image,
         UNIQUE      (hash),
-        PRIMARY KEY (id, version)
+        PRIMARY KEY (id)
     );
 
+    CREATE INDEX image_version_image_index ON image_version (image);
     CREATE INDEX image_version_location_index ON image_version (directory, filename);
 
     -- Members in an album.
