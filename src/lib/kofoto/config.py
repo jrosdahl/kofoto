@@ -177,10 +177,14 @@ other_image_size_limits = 400 1024x800
 thumbnail_size_limit = 128
 
 # The columns that should be shown in the table view by default.
-default_table_columns = captured description title
+default_table_columns = thumbnail @captured @title @description albumtag
 
 # The column to sort on by default.
-default_sort_column = captured
+default_sort_column = @captured
+
+open_command = gimp-remote %(locations)s
+rotate_right_command = jpegtran -rotate 90 -perfect -copy all -outfile %(location)s %(location)s
+rotate_left_command = jpegtran -rotate 270 -perfect -copy all -outfile %(location)s %(location)s
 
 ######################################################################
 ## Configuration for the default output module "woolly".
