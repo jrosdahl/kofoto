@@ -41,7 +41,10 @@ class HandleImagesDialog(gtk.FileSelection):
         modifiedImages = []
         movedImages = []
         for filepath in walk_files(self.get_selections()):
-            filepath = filepath.decode("utf-8")
+            try:
+                filepath = filepath.decode("utf-8")
+            except UnicodeDecodeError:
+                filepath = filepath.decode("latin1")
             try:
                 image = env.shelf.getImage(filepath)
                 if image.getLocation() == os.path.realpath(filepath):
