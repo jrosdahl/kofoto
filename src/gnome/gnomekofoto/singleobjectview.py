@@ -27,11 +27,10 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self.connect("button_press_event", self._button_pressed)
 
     def setObjectCollection(self, objectCollection):
-        self._clearAllConnections()
-        self._objectCollection = objectCollection
-        self._connect("row_changed", self.__importSelection)
-        self._connect("row_inserted", self.__importSelection)
-        self._connect("row_deleted", self.__importSelection)
+        ObjectCollectionView.setObjectCollection(self, objectCollection)
+        # self._connect("row_changed", self.__importSelection)
+        # self._connect("row_inserted", self.__importSelection)
+        # self._connect("row_deleted", self.__importSelection)
         self.__importSelection()
 
     def show(self):
@@ -56,7 +55,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
 ###############################################################################        
 ### Private        
 
-    def __importSelection(self):
+    def __importSelection(self, *foo):
         rows = self._objectCollection.getSelectedRows()
         if rows:
             self.__row = rows[0]

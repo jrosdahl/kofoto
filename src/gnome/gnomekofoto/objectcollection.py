@@ -24,12 +24,17 @@ class ObjectCollection(object):
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
 
+    # Return true if the objects has a defined order and may
+    # be reordered. An object that is reorderable is not
+    # allowed to also be sortable.
     def isReorderable(self):
         return gtk.FALSE
 
+    # Return true if the objects may be sorted.
     def isSortable(self):
         return gtk.FALSE
 
+    # Return true if objects may be added and removed from the collection.
     def isMutable(self):
         return gtk.FALSE
 
@@ -141,6 +146,7 @@ class ObjectCollection(object):
 ### Only for subbclasses
         
     def _loadObjectList(self, objectList):
+        self.__treeModel.clear()
         for object in objectList:
             iter = self.__treeModel.append()
             self.__treeModel.set_value(iter, self.COLUMN_OBJECT_ID, object.getId())
@@ -159,6 +165,9 @@ class ObjectCollection(object):
             # TODO set COLUMN_ROW_EDITABLE?
         self.unselectAll()
         self.loadThumbnails()
+
+    def _getTreeModel(self):
+        return self.__treeModel
 
 
 ###############################################################################

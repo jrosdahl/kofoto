@@ -20,29 +20,39 @@ class ThumbnailView(ObjectCollectionView):
         self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
         
     def setObjectCollection(self, objectCollection):
-        self._clearAllConnections()
-        self._objectCollection = objectCollection
-        self._reloadAllFromModel()
-        # TODO Improve. Avoid reloading all when not necessery?
-        self._connect("row_inserted", self._reloadAllFromModel)
-        self._connect("row_changed", self._reloadRowFromModel)
-        self._connect("row_deleted", self._reloadAllFromModel)
-        self._connect("rows_reordered", self._reloadAllFromModel)
+        ObjectCollectionView.setObjectCollection(self, objectCollection)
+        if not self.__hidden:
+            self._connect("row_inserted",   self._reloadAllFromModel)
+            self._connect("row_deleted",    self._reloadAllFromModel)
+            self._connect("rows_reordered", self._reloadAllFromModel)
+            self._connect("row_changed",    self._reloadRowFromModel)
+            self._reloadAllFromModel()
 
     def show(self):
+        self.__hidden = gtk.FALSE
         env.widgets["thumbnailView"].show()
         self._viewWidget.grab_focus()
-        self.setObjectCollection(self._objectCollection) # TODO Improve?
+        self.setObjectCollection(self._objectCollection)
         self.__importSelection()
         self.__selectionLocked = gtk.FALSE
-        for row in self._objectCollection.getModel():
-            if row[ObjectCollection.COLUMN_OBJECT_ID] in self._objectCollection.getSelectedIds():
-                self._viewWidget.moveto(row.path[0], 0.0)
-                break
+        numberOfIcons = self._viewWidget.get_num_icons()
+        if numberOfIcons > 1:
+            # First check that the widget contains icons because I don't know
+            # how icon_is_visible() is handled if the view is empty.
+            if self._viewWidget.icon_is_visible(0) == gtk.VISIBILITY_FULL and self._viewWidget.icon_is_visible(numberOfIcons - 1) == gtk.VISIBILITY_FULL:
+                # All icons already visible. No need to scroll widget.
+                pass
+            else:
+                # Scroll widget to first selected icon
+                for row in self._objectCollection.getModel():
+                    if row[ObjectCollection.COLUMN_OBJECT_ID] in self._objectCollection.getSelectedIds():
+                        self._viewWidget.moveto(row.path[0], 0.4)
+                        break
 
     def hide(self):
-        self._clearAllConnections() # TODO Improve?
-        self._viewWidget.clear()    # TODO Improve?
+        self.__hidden = gtk.TRUE
+        self._clearAllConnections()
+        self._viewWidget.clear()
         self.__selectionLocked = gtk.TRUE
         env.widgets["thumbnailView"].hide()        
 
@@ -50,11 +60,11 @@ class ThumbnailView(ObjectCollectionView):
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
         
-    def _reloadRowFromModel(self, model, path, iter):
+    def _reloadRowFromModel(self, model, path, *foo):
         savedLockedState = self.__selectionLocked
         self.__selectionLocked = gtk.TRUE
         self._viewWidget.remove(path[0])
-        self._loadThumbnail(model[path[0]])
+        self.__loadRow(model[path[0]])
         if path[0] in self._objectCollection.getSelectedIds():
             self._viewWidget.select_icon(path[0])
         self.__selectionLocked = savedLockedState
@@ -79,6 +89,7 @@ class ThumbnailView(ObjectCollectionView):
 
     __selectionLocked = gtk.FALSE
     __maxWidth = env.thumbnailSize[0]
+    __hidden = gtk.TRUE
 
     def __importSelection(self):
         self._viewWidget.unselect_all()        

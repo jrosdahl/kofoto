@@ -21,6 +21,9 @@ class ObjectCollectionView:
     def thaw(self):
         pass
 
+    def setObjectCollection(self, objectCollection):
+        self._clearAllConnections
+        self._objectCollection = objectCollection
     
 ###############################################################################
 ### Only for subbclasses
@@ -54,5 +57,3 @@ class ObjectCollectionView:
 ### Private
         
     __connections = []
-
-                
