@@ -1113,6 +1113,7 @@
 	  <child>
 	    <widget class="GtkEntry" id="sourceEntry">
 	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Search query</property>
 	      <property name="can_focus">True</property>
 	      <property name="editable">True</property>
 	      <property name="visibility">True</property>
@@ -1132,7 +1133,7 @@
 	  <child>
 	    <widget class="GtkCheckButton" id="isFilterEnabledCheckbox">
 	      <property name="visible">True</property>
-	      <property name="tooltip" translatable="yes">Enable or disable search filter</property>
+	      <property name="tooltip" translatable="yes">Enable/disable search filter</property>
 	      <property name="can_focus">True</property>
 	      <property name="label" translatable="yes"></property>
 	      <property name="use_underline">True</property>
