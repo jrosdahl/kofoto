@@ -1183,27 +1183,6 @@
       <property name="homogeneous">False</property>
       <property name="spacing">0</property>
 
-      <child>
-	<widget class="GtkLabel" id="label34">
-	  <property name="visible">True</property>
-	  <property name="label" translatable="yes">Throw away all knowledge about the selected album(s)?</property>
-	  <property name="use_underline">False</property>
-	  <property name="use_markup">False</property>
-	  <property name="justify">GTK_JUSTIFY_CENTER</property>
-	  <property name="wrap">True</property>
-	  <property name="selectable">False</property>
-	  <property name="xalign">0.5</property>
-	  <property name="yalign">0.5</property>
-	  <property name="xpad">0</property>
-	  <property name="ypad">0</property>
-	</widget>
-	<packing>
-	  <property name="padding">10</property>
-	  <property name="expand">False</property>
-	  <property name="fill">False</property>
-	</packing>
-      </child>
-
       <child internal-child="action_area">
 	<widget class="GtkHButtonBox" id="hbuttonbox1">
 	  <property name="visible">True</property>
@@ -1240,6 +1219,29 @@
 	  <property name="expand">False</property>
 	  <property name="fill">True</property>
 	  <property name="pack_type">GTK_PACK_END</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkLabel" id="label34">
+	  <property name="visible">True</property>
+	  <property name="label" translatable="yes">Throw away all knowledge about the selected album(s)?
+
+The album's children will not be destroyed.</property>
+	  <property name="use_underline">False</property>
+	  <property name="use_markup">False</property>
+	  <property name="justify">GTK_JUSTIFY_LEFT</property>
+	  <property name="wrap">True</property>
+	  <property name="selectable">False</property>
+	  <property name="xalign">0.5</property>
+	  <property name="yalign">0.5</property>
+	  <property name="xpad">0</property>
+	  <property name="ypad">0</property>
+	</widget>
+	<packing>
+	  <property name="padding">10</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
 	</packing>
       </child>
     </widget>
