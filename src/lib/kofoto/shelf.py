@@ -314,6 +314,8 @@ def verifyValidCategoryTag(tag):
 ######################################################################
 ### Public classes.
 
+_DEBUG = False
+
 class Shelf:
     """A Kofoto shelf."""
 
@@ -329,8 +331,14 @@ class Shelf:
         how data is stored in the database.)"""
         self.location = location
         self.codeset = codeset
+        if _DEBUG:
+            logfile = file("sql.log", "a")
+        else:
+            logfile = None
         self.connection = _UnicodeConnectionDecorator(
-            sql.connect(location, client_encoding="UTF-8"),
+            sql.connect(location,
+                        client_encoding="UTF-8",
+                        command_log_file=logfile),
             "UTF-8")
         try:
             cursor = self.connection.cursor()
