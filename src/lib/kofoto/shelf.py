@@ -1,5 +1,8 @@
 """Interface to a Kofoto shelf."""
 
+# Be compatible with Python 2.2.
+from __future__ import generators
+
 ######################################################################
 ### Libraries.
 
@@ -441,23 +444,25 @@ class Shelf:
 
 
     def getAllAlbums(self):
+        """Get all albums in the shelf (unsorted).
+
+        Returns an iterator returning the albums."""
         self.cursor.execute(
             " select albumid, type"
             " from   album")
-        albums = []
-        for albumid, albumtype in self.cursor.fetchall():
-            albums.append(self._albumFactory(albumid, albumtype))
-        return albums
+        for albumid, albumtype in _cursoriter(self.cursor):
+            yield self._albumFactory(albumid, albumtype)
 
 
     def getAllImages(self):
+        """Get all images in the shelf (unsorted).
+
+        Returns an iterator returning the images."""
         self.cursor.execute(
             " select imageid"
             " from   image")
-        images = []
-        for (imageid,) in self.cursor.fetchall():
-            images.append(Image(self, imageid))
-        return images
+        for (imageid,) in _cursoriter(self.cursor):
+            yield Image(self, imageid)
 
 
     def deleteAlbum(self, tag):
@@ -586,15 +591,15 @@ class Shelf:
 
 
     def getAllAttributeNames(self):
-        """Returns a sorted list of all existing attribute names."""
+        """Get all used attribute names in the shelf (sorted).
+
+        Returns an iterator the attribute names."""
         self.cursor.execute(
             " select distinct name"
             " from   attribute"
             " order by name")
-        attributes = []
-        for name in self.cursor.fetchall():
-            attributes.append(name[0])
-        return attributes
+        for (name,) in _cursoriter(self.cursor):
+            yield name
 
 
     def createCategory(self, tag, desc):
@@ -658,23 +663,21 @@ class Shelf:
     def getRootCategories(self):
         """Get the categories that are roots, i.e. have no parents.
 
-        Returns a list of Category instances."""
+        Returns an iterator returning Category instances."""
         self.cursor.execute(
             " select categoryid"
             " from   category"
             " where  categoryid not in (select child from category_child)"
             " order by description",
             locals())
-        categories = []
-        for (catid,) in self.cursor.fetchall():
-            categories.append(Category(self, catid))
-        return categories
+        for (catid,) in _cursoriter(self.cursor):
+            yield Category(self, catid)
 
 
     def getObjectsForCategory(self, category, recursive=False):
         """Get all objects for a category.
 
-        Returns a list of Album/Image instances."""
+        Returns an iterator returning Album/Image instances."""
         catid = category.getId()
         if recursive:
             categoryset = self._recursiveComputeCategoryIds([catid],
@@ -695,21 +698,20 @@ class Shelf:
             " where  objectid = imageid and"
             "        categoryid in (select * from %(categorysetTablename)s)",
             locals())
-        objects = []
-        for objtype, objid, atype in self.cursor.fetchall():
+        for objtype, objid, atype in _cursoriter(self.cursor):
             if objtype == "album":
-                child = self._albumFactory(objid, atype)
+                yield self._albumFactory(objid, atype)
             else:
-                child = Image(self, objid)
-            objects.append(child)
-        return objects
+                yield Image(self, objid)
 
 
     def search(self, expr):
         """Search for objects matching an expression.
 
         Currently, you can only search for objects matching a single
-        category tag."""
+        category tag.
+
+        Returns an iterator returning the objects."""
         try:
             category = self.getCategory(expr)
             return self.getObjectsForCategory(category, True)
@@ -900,38 +902,46 @@ class Category:
         """Get child categories.
 
         If recursive is true, get all descendants. If recursive is
-        false, get only immediate children. Returns an unordered list
-        of Category instances."""
+        false, get only immediate children. Returns an iterator
+        returning of Category instances (unordered)."""
         catid = self.getId()
         if recursive:
-            catidlist = self.shelf._getDescendantCategoryIds(catid)
+            childids = self.shelf._getDescendantCategoryIds(catid)
         else:
-            self.shelf.cursor.execute(
-                " select child"
-                " from   category_child"
-                " where  parent = %(catid)s",
-                locals())
-            catidlist = [x[0] for x in self.shelf.cursor.fetchall()]
-        return [Category(self.shelf, x) for x in catidlist]
+            def helper():
+                self.shelf.cursor.execute(
+                    " select child"
+                    " from   category_child"
+                    " where  parent = %(catid)s",
+                    {"catid": catid})
+                for (childid,) in _cursoriter(self.shelf.cursor):
+                    yield childid
+            childids = helper()
+        for childid in childids:
+            yield Category(self.shelf, childid)
 
 
     def getParents(self, recursive=False):
         """Get parent categories.
 
         If recursive is true, get all ancestors. If recursive is
-        false, get only immediate parents. Returns an unordered list
-        of Category instances."""
+        false, get only immediate parents. Returns an iterator
+        returning of Category instances (unordered)."""
         catid = self.getId()
         if recursive:
-            catidlist = self.shelf._getAncestorCategoryIds(catid)
+            parentids = self.shelf._getAncestorCategoryIds(catid)
         else:
-            self.shelf.cursor.execute(
-                " select parent"
-                " from   category_child"
-                " where  child = %(catid)s",
-                locals())
-            catidlist = [x[0] for x in self.shelf.cursor.fetchall()]
-        return [Category(self.shelf, x) for x in catidlist]
+            def helper():
+                self.shelf.cursor.execute(
+                    " select parent"
+                    " from   category_child"
+                    " where  child = %(catid)s",
+                    {"catid": catid})
+                for (parentid,) in self._cursoriter(self.shelf.cursor):
+                    yield parentid
+            parentids = helper()
+        for parentid in parentids:
+            yield Category(self.shelf, parentid)
 
 
     def isChildOf(self, category, recursive=False):
@@ -1028,7 +1038,7 @@ class _Object:
 
 
     def getAttributeMap(self):
-        """Returns a map of available attributes."""
+        """Get a map of all attributes."""
         objid = self.objid
         self.shelf.cursor.execute(
             " select name, value"
@@ -1042,7 +1052,9 @@ class _Object:
 
 
     def getAttributeNames(self):
-        """Returns a sorted list of available attributes."""
+        """Get all attribute names.
+
+        Returns an iterator returning the attributes."""
         objid = self.objid
         self.shelf.cursor.execute(
             " select name"
@@ -1050,7 +1062,8 @@ class _Object:
             " where  objectid = %(objid)s"
             " order by name",
             locals())
-        return [x[0] for x in self.shelf.cursor.fetchall()]
+        for (name,) in _cursoriter(self.shelf.cursor):
+            yield name
 
 
     def setAttribute(self, name, value):
@@ -1105,17 +1118,21 @@ class _Object:
     def getCategories(self, recursive=False):
         """Get categories for this object.
 
-        Returns a list of categories."""
-        objid = self.getId()
-        self.shelf.cursor.execute(
-            " select categoryid from object_category"
-            " where  objectid = %(objid)s",
-            locals())
-        categoryids = [x[0] for x in self.shelf.cursor.fetchall()]
+        Returns an iterator returning the categories."""
+        def helper():
+            objid = self.getId()
+            self.shelf.cursor.execute(
+                " select categoryid from object_category"
+                " where  objectid = %(objid)s",
+                locals())
+            for (catid,) in _cursoriter(self.shelf.cursor):
+                yield catid
+        categoryids = helper()
         if recursive:
             categoryids = self.shelf._recursiveComputeCategoryIds(categoryids,
                                                                   True)
-        return [Category(self.shelf, x) for x in categoryids]
+        for catid in categoryids:
+            yield Category(self.shelf, catid)
 
 
 class Album(_Object):
@@ -1180,7 +1197,7 @@ class PlainAlbum(Album):
     def getChildren(self):
         """Get the album's children.
 
-        Returns a list of Albums and Images.
+        Returns an iterator returning Album/Images instances.
         """
         albumid = self.getId()
         self.shelf.cursor.execute(
@@ -1195,14 +1212,11 @@ class PlainAlbum(Album):
             "        member.objectid = image.imageid"
             " order by position",
             locals())
-        objects = []
-        for objtype, position, objid, atype in self.shelf.cursor.fetchall():
+        for objtype, position, objid, atype in _cursoriter(self.shelf.cursor):
             if objtype == "album":
-                child = self.shelf._albumFactory(objid, atype)
+                yield self.shelf._albumFactory(objid, atype)
             else:
-                child = Image(self.shelf, objid)
-            objects.append(child)
-        return objects
+                yield Image(self.shelf, objid)
 
 
     def setChildren(self, children):
@@ -1371,16 +1385,14 @@ class AllAlbumsAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns a list of all albums.
+        Returns an iterator returning the albums.
         """
-        objects = []
         self.shelf.cursor.execute(
             " select   albumid, type"
             " from     album"
             " order by tag")
-        for (objid, albumtype) in self.shelf.cursor.fetchall():
-            objects.append(self.shelf._albumFactory(objid, albumtype))
-        return objects
+        for (objid, albumtype) in _cursoriter(self.shelf.cursor):
+            yield self.shelf._albumFactory(objid, albumtype)
 
 
 class AllImagesAlbum(MagicAlbum):
@@ -1392,18 +1404,16 @@ class AllImagesAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns a list of all images.
+        Returns an iterator returning the images.
         """
-        objects = []
         self.shelf.cursor.execute(
             " select   imageid"
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    name = 'timestamp'"
             " order by value, location")
-        for (objid,) in self.shelf.cursor.fetchall():
-            objects.append(Image(self.shelf, objid))
-        return objects
+        for (objid,) in _cursoriter(self.shelf.cursor):
+            yield Image(self.shelf, objid)
 
 
 class OrphansAlbum(MagicAlbum):
@@ -1415,10 +1425,9 @@ class OrphansAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns a list of all images.
+        Returns an iterator returning the images.
         """
         rootid = _ROOT_ALBUM_ID
-        albums = []
         self.shelf.cursor.execute(
             " select   albumid, type"
             " from     album"
@@ -1426,9 +1435,8 @@ class OrphansAlbum(MagicAlbum):
             "          albumid != %(rootid)s"
             " order by tag",
             locals())
-        for albumid, albumtype in self.shelf.cursor.fetchall():
-            albums.append(self.shelf._albumFactory(albumid, albumtype))
-        images = []
+        for albumid, albumtype in _cursoriter(self.shelf.cursor):
+            yield self.shelf._albumFactory(albumid, albumtype)
         self.shelf.cursor.execute(
             " select   imageid"
             " from     image left join attribute"
@@ -1436,6 +1444,17 @@ class OrphansAlbum(MagicAlbum):
             " where    imageid not in (select objectid from member) and"
             "          name = 'timestamp'"
             " order by value, location")
-        for (imageid,) in self.shelf.cursor.fetchall():
-            images.append(Image(self.shelf, imageid))
-        return albums + images
+        for (imageid,) in _cursoriter(self.shelf.cursor):
+            yield Image(self.shelf, imageid)
+
+
+######################################################################
+### Internal helper functions.
+
+def _cursoriter(cursor):
+    while True:
+        rows = cursor.fetchmany(17)
+        if not rows:
+            break
+        for row in rows:
+            yield row
