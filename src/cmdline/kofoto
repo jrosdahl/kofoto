@@ -446,8 +446,7 @@ def registerHelper(env, destalbum, paths):
                 if env.verbose:
                     env.out("Registered image: %s\n" % path)
             except NotAnImageError, x:
-                if env.verbose:
-                    env.out("Ignoring non-image file: %s\n" % path)
+                env.out("Ignoring non-image file: %s\n" % path)
             except ImageExistsError, x:
                 env.err("Ignoring already registered image: %s\n" % path)
         else:
