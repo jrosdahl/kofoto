@@ -26,7 +26,7 @@ class OutputEngine:
 
 
     def generate(self, root, dest):
-        self.dest = dest
+        self.dest = dest.encode(self.env.codeset)
         self.imgref = {}
 
         try:
