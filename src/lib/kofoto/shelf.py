@@ -401,17 +401,18 @@ class Shelf:
         return {"nalbums": nalbums, "nimages": nimages}
 
 
-    def createAlbum(self, tag, albumtype="plain"):
+    def createAlbum(self, tag, albumtype=u"plain"):
         """Create an empty, orphaned album."""
         verifyValidAlbumTag(tag)
         try:
             self.cursor.execute(
                 " insert into object"
                 " values (null)")
+            lastrowid = self.cursor.lastrowid
             self.cursor.execute(
                 " insert into album"
                 " values (%s, %s, 1, %s)",
-                self.cursor.lastrowid,
+                lastrowid,
                 tag,
                 albumtype)
             return self._albumFactory(lastrowid, albumtype)
@@ -743,7 +744,7 @@ class Shelf:
     ##############################
     # Internal methods.
 
-    def _albumFactory(shelf, albumid, albumtype="plain"):
+    def _albumFactory(shelf, albumid, albumtype=u"plain"):
         albumtypemap = {
             "allalbums": AllAlbumsAlbum,
             "allimages": AllImagesAlbum,
@@ -1326,7 +1327,7 @@ class Image(_Object):
         """Read known EXIF tags and add them as attributes."""
         import EXIF
         tags = EXIF.process_file(
-            file(self.getLocation().encode(self.codeset), "rb"))
+            file(self.getLocation().encode(self.shelf.codeset), "rb"))
 
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",
@@ -1335,7 +1336,7 @@ class Image(_Object):
             if value:
                 a = str(value).split(":")
                 if len(a) == 5:
-                    value = "-".join(a[0:2] + [":".join(a[2:5])])
+                    value = u"-".join(a[0:2] + [":".join(a[2:5])])
                     self.setAttribute(u"timestamp", value)
 
         value = tags.get("EXIF ExposureTime")
