@@ -19,7 +19,7 @@ class TableView(ObjectCollectionView):
         self.__selectionLocked = False
         self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
         self._viewWidget.connect("drag-data-get", self._onDragDataGet)
-        self.__userChoosenColumns = {}
+        self.__userChosenColumns = {}
         self.__createdColumns = {}
         self.__editedCallbacks = {}
         self._connectedOids = []
@@ -27,7 +27,7 @@ class TableView(ObjectCollectionView):
         # which columns that shall be shown.
         columnLocation = 0
         for columnName in env.defaultTableViewColumns:
-            self.__userChoosenColumns[columnName] = columnLocation
+            self.__userChosenColumns[columnName] = columnLocation
             columnLocation += 1
 
     def importSelection(self, objectSelection):
@@ -62,8 +62,8 @@ class TableView(ObjectCollectionView):
         for columnName in fields:
             self.__viewGroup[columnName].set_sensitive(True)
             if columnName not in self.__createdColumns:
-                if columnName in self.__userChoosenColumns:
-                    self.__createColumn(columnName, objectMetadataMap, self.__userChoosenColumns[columnName])
+                if columnName in self.__userChosenColumns:
+                    self.__createColumn(columnName, objectMetadataMap, self.__userChosenColumns[columnName])
 
     def _showHelper(self):
         env.enter("TableView.showHelper()")
@@ -83,7 +83,7 @@ class TableView(ObjectCollectionView):
         # Create columns
         objectMetadataMap = self._objectCollection.getObjectMetadataMap()
         disabledFields = self._objectCollection.getDisabledFields()
-        columnLocationList = self.__userChoosenColumns.items()
+        columnLocationList = self.__userChosenColumns.items()
         columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
         env.debug("Column locations: " + str(columnLocationList))
         for (columnName, columnLocation) in columnLocationList:
@@ -283,7 +283,7 @@ class TableView(ObjectCollectionView):
             # Since the column has been removed explicitly by the user
             # we dont store the column's relative location.
             try:
-                del self.__userChoosenColumns[columnName]
+                del self.__userChosenColumns[columnName]
             except KeyError:
                 pass
             if columnName in self.__createdColumns:
@@ -348,7 +348,7 @@ class TableView(ObjectCollectionView):
            if columnNames is None or columnName in columnNames:
                if columnName in self.__createdColumns:
                    self.__removeColumn(columnName)
-                   self.__userChoosenColumns[columnName] = columnLocation
+                   self.__userChosenColumns[columnName] = columnLocation
            columnLocation += 1
 
     def __moveListItem(self, list, currentIndex, newIndex):
