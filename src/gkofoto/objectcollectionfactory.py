@@ -15,18 +15,18 @@ class ObjectCollectionFactory:
         self.__searchResult = SearchResult()
         self.__albumMembers = AlbumMembers()
 
-    def getObjectCollection(self, url):
-        env.debug("Object collection factory loading URL: " + url);
+    def getObjectCollection(self, query):
+        env.debug("Object collection factory loading query: " + query);
         self.__clear()
-        l = string.split(url, u"://", 1)
-        if l[0] == u"query":
-            self.__searchResult.loadQuery(l[1])
-            return self.__searchResult
-        elif l[0] == u"album":
-            self.__albumMembers.loadAlbum(env.shelf.getAlbum(l[1]))
-            return self.__albumMembers
-        else:
-            raise "Unkown protocol" # TODO
+        if query and query[0] == "/":
+            try:
+                verifyValidAlbumTag(query[1:])
+                self.__albumMembers.loadAlbum(env.shelf.getAlbum(query[1:]))
+                return self.__albumMembers
+            except BadAlbumTagError:
+                pass
+        self.__searchResult.loadQuery(query)
+        return self.__searchResult
 
 ######################################################################
 ### Private functions

@@ -41,25 +41,26 @@ class MainWindow(gtk.Window):
         self.__tableView = TableView()
         self.__singleObjectView = SingleObjectView()
         self.__factory = ObjectCollectionFactory()
-        self.loadUrl("album://" + str(env.shelf.getRootAlbum().getTag()))
+        self.loadQuery("/" + env.shelf.getRootAlbum().getTag())
         self.__showTableView()
 
     def _sourceEntryActivated(self, widget):
-        self.__setObjectCollection(self.__factory.getObjectCollection(widget.get_text()))
+        self.__setObjectCollection(self.__factory.getObjectCollection(
+            widget.get_text().decode("utf-8")))
         self.__sourceEntry.grab_remove()
         
-    def setUrl(self, url):
-        self.__url = url
-        self.__sourceEntry.set_text(url)
+    def setQuery(self, query):
+        self.__query = query
+        self.__sourceEntry.set_text(query)
         
-    def loadUrl(self, url):
-        self.setUrl(url)
-        self.__setObjectCollection(self.__factory.getObjectCollection(url))
+    def loadQuery(self, query):
+        self.setQuery(query)
+        self.__setObjectCollection(self.__factory.getObjectCollection(query))
 
     def reload(self):
         self.__albums.loadAlbumTree()
         self.__categories.loadCategoryTree()
-        self.loadUrl(self.__url)
+        self.loadQuery(self.__query)
         
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))

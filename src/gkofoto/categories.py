@@ -129,7 +129,7 @@ class Categories:
     def _executeQuery(self, *foo):
         query = self.__buildQueryFromSelection()
         if query:
-            self.__mainWindow.loadUrl("query://" + query)
+            self.__mainWindow.loadQuery(query)
 
     def _categorySelectionChanged(self, selection):
         selectedCategoryRows = []
@@ -314,13 +314,8 @@ class Categories:
             operator = " or "
         else:
             operator = " and "
-        query = ""
-        for categoryId in self.__selectedCategoriesIds:
-            categoryTag = env.shelf.getCategory(categoryId).getTag()
-            if query:
-                query += operator
-            query += categoryTag
-        return query
+        return operator.join([env.shelf.getCategory(x).getTag()
+                              for x in self.__selectedCategoriesIds])
 
     def __updateContextMenu(self):
         # TODO Create helper functions to use from this method

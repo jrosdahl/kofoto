@@ -59,7 +59,7 @@ class Albums:
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iter:
             albumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
-            self.__mainWindow.loadUrl("album://" + albumTag)
+            self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
             destroyMenuItem.set_sensitive(True)
             editMenuItem.set_sensitive(True)            
         else:
