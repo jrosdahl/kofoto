@@ -10,7 +10,10 @@ setup(
         "gnomekofoto": "src/gnome/gnomekofoto"},
     packages=["kofoto", "kofoto.output", "gnomekofoto"],
     py_modules=["EXIF"],
-    scripts=["src/cmdline/kofoto", "src/gnome/gkofoto"],
+    scripts=[
+        "src/cmdline/renameimage",
+        "src/cmdline/kofoto",
+        "src/gnome/gkofoto"],
     data_files=[
         ("share/gnomekofoto/glade", ["src/gnome/glade/gkofoto.glade"]),
         ("share/gnomekofoto/icons", ["src/gnome/icons/fullscreen-24.png"])],
