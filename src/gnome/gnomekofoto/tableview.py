@@ -2,7 +2,7 @@ import gtk
 
 from environment import env
 from images import *
-from kofoto.sets import *
+from sets import Set
 
 class TableView:
 

@@ -1,5 +1,5 @@
 from environment import env
-from kofoto.sets import *
+from sets import Set
 
 class ImageSelection:
     def __init__(self, changedCallback):
@@ -32,4 +32,3 @@ class ImageSelection:
 
     def __iter__(self):
         return self._set.__iter__()
-        
