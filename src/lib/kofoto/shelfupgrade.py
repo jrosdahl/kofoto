@@ -59,6 +59,25 @@ def tryUpgrade(location, toVersion):
             "        mtime, width, height"
             " from   old.image")
         cursor.execute(
+            " select id"
+            " from   album"
+            " where  type in ('allalbums', 'allimages')")
+        aids = [x[0] for x in cursor]
+        if aids:
+            aids_str = ",".join(map(str, aids))
+            cursor.execute(
+                " delete from album"
+                " where  id in (%s)" % aids_str)
+            cursor.execute(
+                " delete from object"
+                " where  id in (%s)" % aids_str)
+            cursor.execute(
+                " delete from member"
+                " where  album in (%s)" % aids_str)
+            cursor.execute(
+                " delete from attribute"
+                " where  object in (%s)" % aids_str)
+        cursor.execute(
             " update dbinfo"
             " set    version = %s",
             toVersion)

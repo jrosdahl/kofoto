@@ -6,6 +6,7 @@
 __all__ = [
     "AlbumDoesNotExistError",
     "AlbumExistsError",
+    "AlbumType",
     "BadAlbumTagError",
     "BadCategoryTagError",
     "CategoriesAlreadyConnectedError",
@@ -15,11 +16,12 @@ __all__ = [
     "CategoryPresentError",
     "FailedWritingError",
     "ImageDoesNotExistError",
-    "ImageExistsError",
-    "MultipleImagesAtOneLocationError",
-    "NotAnImageError",
+    "ImageVersionDoesNotExistError",
+    "ImageVersionExistsError",
+    "ImageVersionType",
+    "MultipleImageVersionsAtOneLocationError",
+    "NotAnImageFileError",
     "ObjectDoesNotExistError",
-    "ObjectExistsError",
     "SearchExpressionParseError",
     "Shelf",
     "ShelfLockedError",
@@ -27,6 +29,7 @@ __all__ = [
     "UndeletableAlbumError",
     "UnimplementedError",
     "UnknownAlbumTypeError",
+    "UnknownImageVersionTypeError",
     "UnsettableChildrenError",
     "UnsupportedShelfError",
     "computeImageHash",
@@ -48,6 +51,7 @@ from sets import Set
 from kofoto.common import KofotoError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
+from kofoto.alternative import Alternative
 import kofoto.shelfupgrade
 
 import warnings
@@ -90,7 +94,7 @@ schema = """
     --                  <  has  > <primary>
     --                   '.   .'   '.   .'
     --                     'v'       'v'
-    --                     N \       / 1
+    --                     N \       / 0..1
     --                      +---------+
     --                      | version |
     --                      +---------+
@@ -134,8 +138,8 @@ schema = """
         -- object.
         id          INTEGER NOT NULL,
 
-        -- The primary version.
-        primary_version INTEGER NOT NULL,
+        -- The primary version. NULL if no such version exists.
+        primary_version INTEGER,
 
         FOREIGN KEY (id) REFERENCES object,
         FOREIGN KEY (primary_version) REFERENCES image_version,
@@ -259,40 +263,6 @@ _SHELF_FORMAT_VERSION = 3
 ######################################################################
 ### Exceptions.
 
-class FailedWritingError(KofotoError):
-    """Kofoto shelf already exists."""
-    pass
-
-
-class ShelfNotFoundError(KofotoError):
-    """Kofoto shelf not found."""
-    pass
-
-
-class UnsupportedShelfError(KofotoError):
-    """Unsupported shelf database format."""
-
-
-class ShelfLockedError(KofotoError):
-    """The shelf is locked by another process."""
-    pass
-
-
-class ObjectExistsError(KofotoError):
-    """Object already exists in the shelf."""
-    pass
-
-
-class AlbumExistsError(ObjectExistsError):
-    """Album already exists in the shelf."""
-    pass
-
-
-class ImageExistsError(ObjectExistsError):
-    """Album already exists in the shelf."""
-    pass
-
-
 class ObjectDoesNotExistError(KofotoError):
     """Object does not exist in the album."""
     pass
@@ -303,29 +273,8 @@ class AlbumDoesNotExistError(ObjectDoesNotExistError):
     pass
 
 
-class ImageDoesNotExistError(ObjectDoesNotExistError):
-    """Image does not exist in the album."""
-    pass
-
-
-class NotAnImageError(KofotoError):
-    """Could not recognise file as an image."""
-    pass
-
-
-class MultipleImagesAtOneLocationError(KofotoError):
-    """Failed to identify image by location since the location isn't
-    unique."""
-    pass
-
-
-class UnknownAlbumTypeError(KofotoError):
-    """The album type is unknown."""
-    pass
-
-
-class UndeletableAlbumError(KofotoError):
-    """Album is not deletable."""
+class AlbumExistsError(KofotoError):
+    """Album already exists in the shelf."""
     pass
 
 
@@ -334,28 +283,8 @@ class BadAlbumTagError(KofotoError):
     pass
 
 
-class UnsettableChildrenError(KofotoError):
-    """The album is magic and doesn't have any explicit children."""
-    pass
-
-
-class CategoryExistsError(KofotoError):
-    """Category already exists."""
-    pass
-
-
-class CategoryDoesNotExistError(KofotoError):
-    """Category does not exist."""
-    pass
-
-
 class BadCategoryTagError(KofotoError):
     """Bad category tag."""
-    pass
-
-
-class CategoryPresentError(KofotoError):
-    """The object is already associated with this category."""
     pass
 
 
@@ -364,8 +293,54 @@ class CategoriesAlreadyConnectedError(KofotoError):
     pass
 
 
+class CategoryDoesNotExistError(KofotoError):
+    """Category does not exist."""
+    pass
+
+
+class CategoryExistsError(KofotoError):
+    """Category already exists."""
+    pass
+
+
 class CategoryLoopError(KofotoError):
     """Connecting the categories would create a loop in the category DAG."""
+    pass
+
+
+class CategoryPresentError(KofotoError):
+    """The object is already associated with this category."""
+    pass
+
+
+class FailedWritingError(KofotoError):
+    """Kofoto shelf already exists."""
+    pass
+
+
+class ImageDoesNotExistError(KofotoError):
+    """Image does not exist."""
+    pass
+
+
+class ImageVersionDoesNotExistError(KofotoError):
+    """Image version does not exist."""
+    pass
+
+
+class ImageVersionExistsError(KofotoError):
+    """Image version already exists in the shelf."""
+    pass
+
+
+class MultipleImageVersionsAtOneLocationError(KofotoError):
+    """Failed to identify image version by location since the location
+    isn't unique."""
+    pass
+
+
+class NotAnImageFileError(KofotoError):
+    """Could not recognise file as an image file."""
     pass
 
 
@@ -374,9 +349,43 @@ class SearchExpressionParseError(KofotoError):
     pass
 
 
+class ShelfLockedError(KofotoError):
+    """The shelf is locked by another process."""
+    pass
+
+
+class ShelfNotFoundError(KofotoError):
+    """Kofoto shelf not found."""
+    pass
+
+
+class UndeletableAlbumError(KofotoError):
+    """Album is not deletable."""
+    pass
+
+
 class UnimplementedError(KofotoError):
     """Unimplemented action."""
     pass
+
+
+class UnknownAlbumTypeError(KofotoError):
+    """The album type is unknown."""
+    pass
+
+
+class UnknownImageVersionTypeError(KofotoError):
+    """The image version type is unknown."""
+    pass
+
+
+class UnsettableChildrenError(KofotoError):
+    """The album is magic and doesn't have any explicit children."""
+    pass
+
+
+class UnsupportedShelfError(KofotoError):
+    """Unsupported shelf database format."""
 
 
 ######################################################################
@@ -431,9 +440,14 @@ def makeValidTag(tag):
 
 
 ######################################################################
-### Public classes.
+### Public alternatives.
 
-_DEBUG = False
+AlbumType = Alternative("Orphans", "Plain", "Search")
+ImageVersionType = Alternative("Important", "Original", "Other")
+
+
+######################################################################
+### Public classes.
 
 class Shelf:
     """A Kofoto shelf."""
@@ -453,12 +467,13 @@ class Shelf:
         self.transactionLock = threading.Lock()
         self.inTransaction = False
         self.objectcache = {}
+        self.imageversioncache = {}
         self.categorycache = {}
         self.orphanAlbumsCache = None
         self.orphanImagesCache = None
         self.modified = False
         self.modificationCallbacks = []
-        if _DEBUG:
+        if False: # Set to True for debug log.
             self.logfile = file("sql.log", "a")
         else:
             self.logfile = None
@@ -534,6 +549,7 @@ class Shelf:
         finally:
             self.flushCategoryCache()
             self.flushObjectCache()
+            self.flushImageVersionCache()
             self._unsetModified()
             self.inTransaction = False
             self.transactionLock.release()
@@ -549,6 +565,7 @@ class Shelf:
         finally:
             self.flushCategoryCache()
             self.flushObjectCache()
+            self.flushImageVersionCache()
             self._unsetModified()
             self.inTransaction = False
             self.transactionLock.release()
@@ -592,6 +609,12 @@ class Shelf:
         self.orphanImagesCache = None
 
 
+    def flushImageVersionCache(self):
+        """Flush the image version cache."""
+        assert self.inTransaction
+        self.imageversioncache = {}
+
+
     def getStatistics(self):
         assert self.inTransaction
         cursor = self.connection.cursor()
@@ -603,10 +626,18 @@ class Shelf:
             " select count(*)"
             " from   image")
         nimages = int(cursor.fetchone()[0])
-        return {"nalbums": nalbums, "nimages": nimages}
+        cursor.execute(
+            " select count(*)"
+            " from   image_version")
+        nimageversions = int(cursor.fetchone()[0])
+        return {
+            "nalbums": nalbums,
+            "nimages": nimages,
+            "nimageversions": nimageversions,
+            }
 
 
-    def createAlbum(self, tag, albumtype=u"plain"):
+    def createAlbum(self, tag, albumtype=AlbumType.Plain):
         """Create an empty, orphaned album.
 
         Returns an Album instance."""
@@ -623,7 +654,7 @@ class Shelf:
                 " values (%s, %s, 1, %s)",
                 lastrowid,
                 tag,
-                albumtype)
+                _albumTypeToIdentifier(albumtype))
             self._setModified()
             self.orphanAlbumsCache = None
             return self.getAlbum(lastrowid)
@@ -635,42 +666,48 @@ class Shelf:
             raise AlbumExistsError, tag
 
 
-    def getAlbum(self, tag):
-        """Get the album for a given album tag/ID.
+    def getAlbum(self, albumid):
+        """Get the album for a given album ID.
 
         Returns an Album instance.
         """
         assert self.inTransaction
-        if tag in self.objectcache:
-            album = self.objectcache[tag]
+        if albumid in self.objectcache:
+            album = self.objectcache[albumid]
             if not album.isAlbum():
-                raise AlbumDoesNotExistError, tag
+                raise AlbumDoesNotExistError, albumid
             return album
-        try:
-            albumid = int(tag)
-        except ValueError:
-            albumid = None
         cursor = self.connection.cursor()
-        if albumid is None:
-            # Tag.
-            cursor.execute(
-                " select id, tag, type"
-                " from   album"
-                " where  tag = %s",
-                tag)
-        else:
-            # ID.
-            cursor.execute(
-                " select id, tag, type"
-                " from   album"
-                " where  id = %s",
-                albumid)
+        cursor.execute(
+            " select id, tag, type"
+            " from   album"
+            " where  id = %s",
+            albumid)
+        row = cursor.fetchone()
+        if not row:
+            raise AlbumDoesNotExistError, albumid
+        albumid, tag, albumtype = row
+        albumtype = _albumTypeIdentifierToType(albumtype)
+        album = self._albumFactory(albumid, tag, albumtype)
+        return album
+
+
+    def getAlbumByTag(self, tag):
+        """Get the album for a given album tag.
+
+        Returns an Album instance.
+        """
+        assert self.inTransaction
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id"
+            " from   album"
+            " where  tag = %s",
+            tag)
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError, tag
-        albumid, tag, albumtype = row
-        album = self._albumFactory(albumid, tag, albumtype)
-        return album
+        return self.getAlbum(int(row[0]))
 
 
     def getRootAlbum(self):
@@ -695,6 +732,7 @@ class Shelf:
             if albumid in self.objectcache:
                 yield self.objectcache[albumid]
             else:
+                albumtype = _albumTypeIdentifierToType(albumtype)
                 yield self._albumFactory(albumid, tag, albumtype)
 
 
@@ -705,66 +743,75 @@ class Shelf:
         assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
-            " select id, hash, directory, filename, mtime, width, height"
+            " select id, primary_version"
             " from   image")
-        for (imageid, imghash, directory, filename, mtime, width,
-             height) in cursor:
-            location = os.path.join(directory, filename)
+        for (imageid, primary_version_id) in cursor:
             if imageid in self.objectcache:
                 yield self.objectcache[imageid]
             else:
-                yield self._imageFactory(
-                    imageid, imghash, location, mtime, width, height)
+                yield self._imageFactory(imageid, primary_version_id)
 
 
-    def getImagesInDirectory(self, directory):
-        """Get all images that are expected to be in a given directory
-        (unsorted).
+    def getAllImageVersions(self):
+        """Get all image versions in the shelf (unsorted).
 
-        Returns an iterable returning the images."""
+        Returns an iterable returning the image versions."""
+        assert self.inTransaction
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id, image, type, hash, directory, filename, mtime,"
+            "        width, height"
+            " from   image_version")
+        for (ivid, imageid, ivtype, ivhash, directory,
+             filename, mtime, width, height) in cursor:
+            location = os.path.join(directory, filename)
+            if ivid in self.imageversioncache:
+                yield self.imageversioncache[ivid]
+            else:
+                ivtype = _imageVersionTypeIdentifierToType(ivtype)
+                yield self._imageVersionFactory(
+                    ivid, imageid, ivtype, ivhash, location, mtime,
+                    width, height)
+
+
+    def getImageVersionsInDirectory(self, directory):
+        """Get all image versions that are expected to be in a given
+        directory (unsorted).
+
+        Returns an iterable returning the image versions."""
         assert self.inTransaction
         directory = unicode(os.path.realpath(directory))
         cursor = self.connection.cursor()
         cursor.execute(
-            " select id, hash, directory, filename, mtime, width, height"
-            " from   image"
+            " select id, image, type, hash, directory, filename, mtime,"
+            "        width, height"
+            " from   image_version"
             " where  directory = %s",
             directory)
-        for (imageid, imghash, directory, filename, mtime, width,
-             height) in cursor:
+        for (ivid, imageid, ivtype, ivhash, directory, filename,
+             mtime, width, height) in cursor:
             location = os.path.join(directory, filename)
-            if imageid in self.objectcache:
-                yield self.objectcache[imageid]
+            if ivid in self.imageversioncache:
+                yield self.imageversioncache[ivid]
             else:
-                yield self._imageFactory(
-                    imageid, imghash, location, mtime, width, height)
+                ivtype = _imageVersionTypeIdentifierToType(ivtype)
+                yield self._imageVersionFactory(
+                    ivid, imageid, ivtype, imghash, location, mtime,
+                    width, height)
 
 
-    def deleteAlbum(self, tag):
-        """Delete the album for a given album tag/ID."""
+    def deleteAlbum(self, albumid):
+        """Delete an album."""
         assert self.inTransaction
         cursor = self.connection.cursor()
-        try:
-            albumid = int(tag)
-        except ValueError:
-            albumid = None
-        if albumid is None:
-            # Tag.
-            cursor.execute(
-                " select id, tag"
-                " from   album"
-                " where  tag = %s",
-                tag)
-        else:
-            # ID.
-            cursor.execute(
-                " select id, tag"
-                " from   album"
-                " where  id = %s",
-                albumid)
+        cursor.execute(
+            " select id, tag"
+            " from   album"
+            " where  id = %s",
+            albumid)
         row = cursor.fetchone()
         if not row:
-            raise AlbumDoesNotExistError, tag
+            raise AlbumDoesNotExistError, albumid
         albumid, tag = row
         if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
@@ -790,204 +837,202 @@ class Shelf:
             " delete from object_category"
             " where  object = %s",
             albumid)
-        for x in albumid, tag:
-            if x in self.objectcache:
-                del self.objectcache[x]
+        if albumid in self.objectcache:
+            del self.objectcache[albumid]
         self._setModified()
         self.orphanAlbumsCache = None
 
 
-    def createImage(self, path):
-        """Add a new, orphaned image to the shelf.
+    def createImage(self):
+        """Create a new, orphaned image.
 
         Returns an Image instance."""
         assert self.inTransaction
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " insert into object (id)"
+            " values (null)")
+        imageid = cursor.lastrowid
+        cursor.execute(
+            " insert into image (id, primary_version)"
+            " values (%s, NULL)",
+            imageid)
+        self._setModified()
+        self.orphanImagesCache = None
+        return self.getImage(imageid)
+
+
+    def getImage(self, imageid):
+        """Get the image for a given ID.
+
+        Returns an Image instance.
+        """
+        assert self.inTransaction
+        if imageid in self.objectcache:
+            image = self.objectcache[imageid]
+            if image.isAlbum():
+                raise ImageDoesNotExistError, imageid
+            return image
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id, primary_version"
+            " from   image"
+            " where  id = %s",
+            imageid)
+        row = cursor.fetchone()
+        if not row:
+            raise ImageDoesNotExistError, imageid
+        imageid, primary_version_id = row
+        image = self._imageFactory(imageid, primary_version_id)
+        return image
+
+
+    def createImageVersion(self, image, location, ivtype):
+        """Create a new image version.
+
+        Returns an ImageVersion instance."""
+        assert ivtype in ImageVersionType
+        assert self.inTransaction
         import Image as PILImage
         try:
-            pilimg = PILImage.open(path)
+            pilimg = PILImage.open(location)
             if not pilimg.mode in ("L", "RGB", "CMYK"):
                 pilimg = pilimg.convert("RGB")
 #        except IOError:
         except: # Work-around for buggy PIL.
-            raise NotAnImageError, path
+            raise NotAnImageFileError, location
         width, height = pilimg.size
-        location = unicode(os.path.realpath(path.encode(self.codeset)),
-                           self.codeset)
+        location = unicode(
+            os.path.realpath(location.encode(self.codeset)), self.codeset)
         mtime = os.path.getmtime(location)
-        imghash = computeImageHash(location.encode(self.codeset))
+        ivhash = computeImageHash(location.encode(self.codeset))
         cursor = self.connection.cursor()
         try:
             cursor.execute(
-                " insert into object (id)"
-                " values (null)")
-            imageid = cursor.lastrowid
-            cursor.execute(
-                " insert into image (id, hash, directory, filename, mtime,"
-                "                    width, height)"
-                " values (%s, %s, %s, %s, %s, %s, %s)",
-                imageid,
-                imghash,
+                " insert into image_version"
+                "     (image, type, hash, directory, filename,"
+                "      mtime, width, height)"
+                " values"
+                "     (%s, %s, %s, %s, %s, %s, %s, %s)",
+                image.getId(),
+                _imageVersionTypeToIdentifier(ivtype),
+                ivhash,
                 os.path.dirname(location),
                 os.path.basename(location),
                 mtime,
                 width,
                 height)
         except sql.IntegrityError:
-            cursor.execute(
-                " delete from object"
-                " where id = %s",
-                imageid)
-            raise ImageExistsError, path
-        image = self._imageFactory(
-            imageid, imghash, location, mtime, width, height)
-        image = self.getImage(imageid)
-        image.importExifTags()
+            raise ImageVersionExistsError, location
+        ivid = cursor.lastrowid
+        imageversion = self._imageVersionFactory(
+            ivid, image.getId(), ivtype, ivhash, location, mtime,
+            width, height)
+        imageversion.importExifTags(False)
+        if image.getPrimaryVersion() == None:
+            image._makeNewPrimaryVersion()
         self._setModified()
-        self.orphanImagesCache = None
-        return image
+        return imageversion
 
 
-    def getImage(self, ref, identifyByLocation=False):
-        """Get the image for a given image ID/hash/location.
+    def getImageVersion(self, ivid):
+        """Get the image version for a given ID.
 
-        ref should be a reference to an image registered with Kofoto.
-        It should be one of the following:
-
-        * An integer (or long) representing an image ID.
-        * A string convertible to an integer representing an image ID.
-        * A string containing an image hash.
-        * A location (path) to an image.
-
-        If ref is a location and identifyByLocation is False (the
-        default), the checksum of the image at the given location will
-        be computed and used for identification. If ref is a location
-        and identifyByLocation is True, the image is identified just
-        by the location. Note, though, that an image location is not
-        required to be unique in the shelf; if several images have the
-        same location, MultipleImagesAtOneLocationError is raised. If
-        ref isn't a location, the value of identifyByLocation is
-        irrelevant.
-
-        Returns an Image instance.
+        Returns an ImageVersion instance.
         """
         assert self.inTransaction
-        # Image ID or stringified image ID of an image already in the
-        # cache?
-        try:
-            imageid = int(ref)
-        except ValueError:
-            imageid = None
-        else:
-            if imageid in self.objectcache:
-                img = self.objectcache[imageid]
-                if img.isAlbum():
-                    raise ImageDoesNotExistError, imageid
-                return img
 
-        queryHeader = (
-            " select id, hash, directory, filename, mtime, width, height"
-            " from   image")
-        if imageid is None:
-            #
-            # It's a hash or location.
-            #
+        if ivid in self.imageversioncache:
+            return self.imageversioncache[ivid]
 
-            # Hash of an image already in the cache?
-            if ref in self.objectcache:
-                img = self.objectcache[ref]
-                if img.isAlbum():
-                    raise ImageDoesNotExistError, ref
-                return img
-
-            # A path to an image in the cache?
-            location = ref.encode(self.codeset)
-            if os.path.isfile(location):
-                if identifyByLocation:
-                    location = os.path.realpath(location)
-                    cursor = self.connection.cursor()
-                    cursor.execute(queryHeader +
-                                   " where  directory = %s and filename = %s",
-                                   os.path.dirname(
-                                       location.decode(self.codeset)),
-                                   os.path.basename(
-                                       location.decode(self.codeset)))
-                    if cursor.rowcount > 1:
-                        raise MultipleImagesAtOneLocationError, \
-                              location.decode(self.codeset)
-                else:
-                    imghash = computeImageHash(location)
-                    if imghash in self.objectcache:
-                        img = self.objectcache[imghash]
-                        if img.isAlbum():
-                            raise ImageDoesNotExistError, imghash
-                        return img
-                    cursor = self.connection.cursor()
-                    cursor.execute(queryHeader + " where  hash = %s", imghash)
-            else:
-                imghash = ref
-                cursor = self.connection.cursor()
-                cursor.execute(queryHeader + " where  hash = %s", imghash)
-        else:
-            #
-            # It's an image ID, but the image wasn't in the cache.
-            #
-            cursor = self.connection.cursor()
-            cursor.execute(queryHeader + " where  id = %s", imageid)
-        row = cursor.fetchone()
-        if not row:
-            raise ImageDoesNotExistError, ref
-        imageid, imghash, directory, filename, mtime, width, height = row
-        if identifyByLocation:
-            if imageid in self.objectcache:
-                return self.objectcache[imageid]
-        location = os.path.join(directory, filename)
-        return self._imageFactory(
-            imageid, imghash, location, mtime, width, height)
-
-
-    def deleteImage(self, ref):
-        """Delete the image for a given image ID/hash/location.
-
-        ref should be a reference to an image registered with Kofoto.
-        It should be one of the following:
-
-        * An integer (or long) representing an image ID.
-        * A string convertible to an integer representing an image ID.
-        * A string containing an image hash.
-        * A location (path) to an image.
-        """
-        assert self.inTransaction
-        try:
-            imageid = int(ref)
-        except ValueError:
-            imageid = None
-
-        queryHeader = (
-            " select id, hash"
-            " from   image")
-        assert self.inTransaction
         cursor = self.connection.cursor()
-        if imageid is None:
-            #
-            # It's a hash or location.
-            #
-
-            # A path to an image in the cache?
-            location = ref.encode(self.codeset)
-            if os.path.isfile(location):
-                imghash = computeImageHash(location)
-            else:
-                imghash = ref
-            cursor.execute(queryHeader + " where  hash = %s", imghash)
-        else:
-            #
-            # It's an image ID.
-            #
-            cursor.execute(queryHeader + " where  id = %s", imageid)
+        cursor.execute(
+            " select id, image, type, hash, directory, filename, mtime,"
+            "        width, height"
+            " from   image_version"
+            " where  id = %s",
+            ivid)
         row = cursor.fetchone()
         if not row:
-            raise ImageDoesNotExistError, ref
-        imageid, imghash = row
+            raise ImageVersionDoesNotExistError, ivid
+        ivid, imageid, ivtype, ivhash, directory, filename, mtime, \
+            width, height = row
+        location = os.path.join(directory, filename)
+        ivtype = _imageVersionTypeIdentifierToType(ivtype)
+        return self._imageVersionFactory(
+            ivid, imageid, ivtype, ivhash, location, mtime,
+            width, height)
+
+
+    def getImageVersionByHash(self, ivhash):
+        """Get the image version for a given hash.
+
+        Returns an ImageVersion instance.
+        """
+        assert self.inTransaction
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id"
+            " from   image_version"
+            " where  hash = %s",
+            ivhash)
+        row = cursor.fetchone()
+        if not row:
+            raise ImageVersionDoesNotExistError, ivhash
+        return self.getImageVersion(row[0])
+
+
+    def getImageVersionByLocation(self, location):
+        """Get the image version for a given location.
+
+        Note, though, that an image location is not required to be
+        unique in the shelf; if several image versions have the same
+        location, MultipleImageVersionsAtOneLocationError is raised.
+
+        Returns an ImageVersion instance.
+        """
+        assert self.inTransaction
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id"
+            " from   image_version"
+            " where  directory = %s and filename = %s",
+            os.path.dirname(location),
+            os.path.basename(location))
+        if cursor.rowcount > 1:
+            raise MultipleImageVersionsAtOneLocationError, location
+        row = cursor.fetchone()
+        if not row:
+            raise ImageVersionDoesNotExistError, location
+        return self.getImageVersion(row[0])
+
+
+    def deleteImage(self, imageid):
+        """Delete an image."""
+        assert self.inTransaction
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select 1"
+            " from   image"
+            " where  id = %s",
+            imageid)
+        if cursor.rowcount == 0:
+            raise ImageDoesNotExistError, imageid
+        cursor.execute(
+            " select id"
+            " from   image_version"
+            " where  image = %s",
+            imageid)
+        for (ivid,) in cursor:
+            if ivid in self.imageversioncache:
+                del self.imageversioncache[ivid]
+        cursor.execute(
+            " delete from image_version"
+            " where  image = %s",
+            imageid)
         cursor.execute(
             " delete from image"
             " where  id = %s",
@@ -1005,15 +1050,32 @@ class Shelf:
             " delete from object_category"
             " where  object = %s",
             imageid)
-        for x in imageid, imghash:
-            if x in self.objectcache:
-                del self.objectcache[x]
+        if imageid in self.objectcache:
+            del self.objectcache[imageid]
         self._setModified()
         self.orphanImagesCache = None
 
 
+    def deleteImageVersion(self, ivid):
+        """Delete an image version."""
+        assert self.inTransaction
+
+        image = self.getImageVersion(ivid).getImage()
+        primary_version_id = image.getPrimaryVersion().getId()
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " delete from image_version"
+            " where  id = %s",
+            ivid)
+        if primary_version_id == ivid:
+            image._makeNewPrimaryVersion()
+        if ivid in self.imageversioncache:
+            del self.imageversioncache[ivid]
+        self._setModified()
+
+
     def getObject(self, objid):
-        """Get the object for a given object tag/ID."""
+        """Get the object for a given object ID."""
         assert self.inTransaction
         if objid in self.objectcache:
             return self.objectcache[objid]
@@ -1027,7 +1089,7 @@ class Shelf:
 
 
     def deleteObject(self, objid):
-        """Get the object for a given object tag/ID."""
+        """Get the object for a given object ID."""
         assert self.inTransaction
         try:
             self.deleteImage(objid)
@@ -1072,32 +1134,20 @@ class Shelf:
             raise CategoryExistsError, tag
 
 
-    def deleteCategory(self, tag):
-        """Delete a category for a given category tag/ID."""
+    def deleteCategory(self, catid):
+        """Delete a category for a given category ID."""
         assert self.inTransaction
+
         cursor = self.connection.cursor()
-        try:
-            catid = int(tag)
-        except ValueError:
-            catid = None
-        if catid is None:
-            # Tag.
-            cursor.execute(
-                " select id, tag"
-                " from   category"
-                " where  tag = %s",
-                tag)
-        else:
-            # ID.
-            cursor.execute(
-                " select id, tag"
-                " from   category"
-                " where  id = %s",
-                catid)
+        cursor.execute(
+            " select tag"
+            " from   category"
+            " where  id = %s",
+            catid)
         row = cursor.fetchone()
         if not row:
-            raise CategoryDoesNotExistError, tag
-        catid, tag = row
+            raise CategoryDoesNotExistError, catid
+        (tag,) = row
         cursor.execute(
             " delete from category_child"
             " where  parent = %s",
@@ -1124,46 +1174,50 @@ class Shelf:
         catdag = self.categorydag.get()
         if catid in catdag:
             catdag.remove(catid)
-        for x in catid, tag:
-            if x in self.categorycache:
-                del self.categorycache[x]
+        if catid in self.categorycache:
+            del self.categorycache[catid]
         self._setModified()
 
 
-    def getCategory(self, tag):
+    def getCategory(self, catid):
         """Get a category for a given category tag/ID.
 
         Returns a Category instance."""
         assert self.inTransaction
-        if tag in self.categorycache:
-            return self.categorycache[tag]
+
+        if catid in self.categorycache:
+            return self.categorycache[catid]
         cursor = self.connection.cursor()
-        try:
-            catid = int(tag)
-        except ValueError:
-            catid = None
-        if catid is None:
-            # Tag.
-            cursor.execute(
-                " select id, tag, description"
-                " from   category"
-                " where  tag = %s",
-                tag)
-        else:
-            # ID.
-            cursor.execute(
-                " select id, tag, description"
-                " from   category"
-                " where  id = %s",
-                catid)
+        cursor.execute(
+            " select tag, description"
+            " from   category"
+            " where  id = %s",
+            catid)
+        row = cursor.fetchone()
+        if not row:
+            raise CategoryDoesNotExistError, catid
+        tag, desc = row
+        category = Category(self, catid, tag, desc)
+        self.categorycache[catid] = category
+        return category
+
+
+    def getCategoryByTag(self, tag):
+        """Get a category for a given category tag.
+
+        Returns a Category instance."""
+        assert self.inTransaction
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select id"
+            " from   category"
+            " where  tag = %s",
+            tag)
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError, tag
-        catid, tag, desc = row
-        category = Category(self, catid, tag, desc)
-        self.categorycache[catid] = category
-        self.categorycache[tag] = category
-        return category
+        return self.getCategory(row[0])
 
 
     def getRootCategories(self):
@@ -1225,7 +1279,7 @@ class Shelf:
         self.begin()
         rootalbum = self.getRootAlbum()
         rootalbum.setAttribute(u"title", u"Root album")
-        orphansalbum = self.createAlbum(u"orphans", u"orphans")
+        orphansalbum = self.createAlbum(u"orphans", AlbumType.Orphans)
         orphansalbum.setAttribute(u"title", u"Orphans")
         orphansalbum.setAttribute(
             u"description",
@@ -1255,40 +1309,43 @@ class Shelf:
 
     def _albumFactory(self, albumid, tag, albumtype):
         albumtypemap = {
-            "orphans": OrphansAlbum,
-            "plain": PlainAlbum,
-            "search": SearchAlbum,
+            AlbumType.Orphans: OrphansAlbum,
+            AlbumType.Plain: PlainAlbum,
+            AlbumType.Search: SearchAlbum,
         }
-        try:
-            album = albumtypemap[albumtype](self, albumid, tag, albumtype)
-        except KeyError:
-            raise UnknownAlbumTypeError, albumtype
+        album = albumtypemap[albumtype](self, albumid, tag, albumtype)
         self.objectcache[albumid] = album
-        self.objectcache[tag] = album
         return album
 
 
-    def _imageFactory(self, imageid, imghash, location, mtime, width, height):
-        image = Image(self, imageid, imghash, location, mtime, width, height)
+    def _imageFactory(self, imageid, primary_version_id):
+        image = Image(self, imageid, primary_version_id)
         self.objectcache[imageid] = image
-        self.objectcache[unicode(imageid)] = image
-        self.objectcache[imghash] = image
         return image
+
+
+    def _imageVersionFactory(self, ivid, imageid, ivtype, ivhash,
+                             location, mtime, width, height):
+        imageversion = ImageVersion(
+            self, ivid, imageid, ivtype, ivhash, location, mtime, width,
+            height)
+        self.imageversioncache[ivid] = imageversion
+        return imageversion
 
 
     def _deleteObjectFromParents(self, objid):
         cursor = self.connection.cursor()
         cursor.execute(
             " select distinct album.id, album.tag"
-            " from member, album"
-            " where member.object = %s and member.album = album.id",
+            " from   member, album"
+            " where  member.object = %s and member.album = album.id",
             objid)
         parentinfolist = cursor.fetchall()
         for parentid, parenttag in parentinfolist:
             cursor.execute(
-                " select   position"
-                " from     member"
-                " where    album = %s and object = %s"
+                " select position"
+                " from   member"
+                " where  album = %s and object = %s"
                 " order by position desc",
                 parentid,
                 objid)
@@ -1305,9 +1362,8 @@ class Shelf:
                     " where  album = %s and position > %s",
                     parentid,
                     position)
-            for x in parentid, parenttag:
-                if x in self.objectcache:
-                    del self.objectcache[x]
+            if parentid in self.objectcache:
+                del self.objectcache[parentid]
 
 
     def _setModified(self):
@@ -1373,8 +1429,6 @@ class Category:
             " where  id = %s",
             newtag,
             self.getId())
-        del self.shelf.categorycache[self.tag]
-        self.shelf.categorycache[newtag] = self
         self.tag = newtag
         self.shelf._setModified()
 
@@ -1583,27 +1637,29 @@ class _Object:
         return self.attributes.iterkeys()
 
 
-    def setAttribute(self, name, value):
-        """Set an attribute value."""
+    def setAttribute(self, name, value, overwrite=True):
+        """Set an attribute value.
+
+        Iff overwrite is true, an existing attribute will be
+        overwritten.
+        """
+        if overwrite:
+            method = "replace"
+        else:
+            method = "ignore"
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
-            " update attribute"
-            " set    value = %s, lcvalue = %s"
-            " where  object = %s and name = %s",
-            value,
-            value.lower(),
+            " insert or " + method + " into attribute"
+            "     (object, name, value, lcvalue)"
+            " values"
+            "     (%s, %s, %s, %s)",
             self.getId(),
-            name)
-        if cursor.rowcount == 0:
-            cursor.execute(
-                " insert into attribute (object, name, value, lcvalue)"
-                " values (%s, %s, %s, %s)",
-                self.getId(),
-                name,
-                value,
-                value.lower())
-        self.attributes[name] = value
-        self.shelf._setModified()
+            name,
+            value,
+            value.lower())
+        if cursor.rowcount > 0:
+            self.attributes[name] = value
+            self.shelf._setModified()
 
 
     def deleteAttribute(self, name):
@@ -1885,41 +1941,171 @@ class Image(_Object):
     ##############################
     # Public methods.
 
+    def isAlbum(self):
+        return False
+
+
+    def getImageVersions(self):
+        """Get the image versions for the image.
+
+        Returns an iterable returning ImageVersion instances.
+        """
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " select id"
+            " from   image_version"
+            " where  image = %s"
+            " order by id",
+            self.getId())
+        for (ivid,) in cursor:
+            yield self.shelf.getImageVersion(ivid)
+
+
+    def getPrimaryVersion(self):
+        """Get the image's primary version.
+
+        Returns an ImageVersion instance, or None if the image has no
+        versions.
+        """
+        if self.primary_version_id is None:
+            return None
+        else:
+            return self.shelf.getImageVersion(self.primary_version_id)
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, imageid, primary_version_id):
+        _Object.__init__(self, shelf, imageid)
+        self.shelf = shelf
+        self.primary_version_id = primary_version_id
+
+
+    def _makeNewPrimaryVersion(self):
+        ivs = list(self.getImageVersions())
+        if len(ivs) > 0:
+            # The last version is probably the best.
+            self.primary_version_id = ivs[-1].getId()
+        else:
+            self.primary_version_id = None
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image"
+            " set    primary_version = %s"
+            " where  id = %s",
+            self.primary_version_id,
+            self.getId())
+
+
+    def _setPrimaryVersion(self, imageversion):
+        self.primary_version_id = imageversion.getId()
+
+
+class ImageVersion:
+    """A Kofoto image version."""
+
+    ##############################
+    # Public methods.
+
+    def getId(self):
+        """Get the ID of the image version."""
+        return self.id
+
+
+    def getImage(self):
+        """Get the image associated with the image version."""
+        return self.shelf.getImage(self.imageid)
+
+
+    def getType(self):
+        """Get the type of the image version.
+
+        Returns ImageVersionType.Important, ImageVersionType.Original
+        or ImageVersionType.Other."""
+        return self.type
+
+
     def getHash(self):
-        """Get the hash of the image."""
+        """Get the hash of the image version."""
         return self.hash
 
 
     def getLocation(self):
-        """Get the last known location of the image."""
+        """Get the last known location of the image version."""
         return self.location
 
 
     def getModificationTime(self):
+        """Get the last known modification time of the image version."""
         return self.mtime
 
 
     def getSize(self):
+        """Get the size of the image version."""
         return self.size
 
 
+    def setImage(self, image):
+        oldimage = self.getImage()
+        if image == oldimage:
+            return
+        if oldimage.getPrimaryVersion() == self:
+            oldimage._makeNewPrimaryVersion()
+        self.imageid = image.getId()
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image_version"
+            " set    image = %s"
+            " where  id = %s",
+            self.imageid,
+            self.id)
+        if image.getPrimaryVersion() == None:
+            image._makeNewPrimaryVersion()
+        self.shelf._setModified()
+
+
+    def setType(self, ivtype):
+        self.type = ivtype
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image_version"
+            " set    type = %s"
+            " where  id = %s",
+            _imageVersionTypeToIdentifier(ivtype),
+            self.id)
+        self.shelf._setModified()
+
+
+    def makePrimary(self):
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image"
+            " set    primary_version = %s"
+            " where  id = %s",
+            self.id,
+            self.imageid)
+        self.getImage()._setPrimaryVersion(self)
+        self.shelf._setModified()
+
+
     def contentChanged(self):
-        """Record new image information for an edited image.
+        """Record new image information for an edited image version.
 
         Checksum, width, height and mtime are updated.
 
-        It is assumed that the image location is still correct."""
+        It is assumed that the image version location is still correct."""
         self.hash = computeImageHash(self.location)
         import Image as PILImage
         try:
             pilimg = PILImage.open(self.location)
         except IOError:
-            raise NotAnImageError, self.location
+            raise NotAnImageFileError, self.location
         self.size = pilimg.size
         self.mtime = os.path.getmtime(self.location)
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
-            " update image"
+            " update image_version"
             " set    hash = %s, width = %s, height = %s, mtime = %s"
             " where  id = %s",
             self.hash,
@@ -1931,7 +2117,7 @@ class Image(_Object):
 
 
     def locationChanged(self, location):
-        """Set the last known location of the image.
+        """Set the last known location of the image version.
 
         The mtime is also updated."""
         cursor = self.shelf._getConnection().cursor()
@@ -1941,7 +2127,7 @@ class Image(_Object):
         except OSError:
             self.mtime = 0
         cursor.execute(
-            " update image"
+            " update image_version"
             " set    directory = %s, filename = %s, mtime = %s"
             " where  id = %s",
             os.path.dirname(location),
@@ -1952,13 +2138,14 @@ class Image(_Object):
         self.shelf._setModified()
 
 
-    def isAlbum(self):
-        return False
+    def importExifTags(self, overwrite):
+        """Read known EXIF tags and add them as attributes.
 
-
-    def importExifTags(self):
-        """Read known EXIF tags and add them as attributes."""
+        Iff overwrite is true, existing attributes will be
+        overwritten.
+        """
         from kofoto import EXIF
+        image = self.getImage()
         tags = EXIF.process_file(
             file(self.getLocation().encode(self.shelf.codeset), "rb"))
 
@@ -1971,28 +2158,28 @@ class Image(_Object):
                     r"(\d{4})[:/-](\d{2})[:/-](\d{2}) (\d{2}):(\d{2}):(\d{2})",
                     str(value))
                 if m:
-                    self.setAttribute(
+                    image.setAttribute(
                         u"captured",
                         u"%s-%s-%s %s:%s:%s" % m.groups())
 
         value = tags.get("EXIF ExposureTime")
         if value:
-            self.setAttribute(u"exposuretime", unicode(value))
+            image.setAttribute(u"exposuretime", unicode(value), overwrite)
         value = tags.get("EXIF FNumber")
         if value:
-            self.setAttribute(u"fnumber", unicode(value))
+            image.setAttribute(u"fnumber", unicode(value), overwrite)
         value = tags.get("EXIF Flash")
         if value:
-            self.setAttribute(u"flash", unicode(value))
+            image.setAttribute(u"flash", unicode(value), overwrite)
         value = tags.get("EXIF FocalLength")
         if value:
-            self.setAttribute(u"focallength", unicode(value))
+            image.setAttribute(u"focallength", unicode(value), overwrite)
         value = tags.get("Image Make")
         if value:
-            self.setAttribute(u"cameramake", unicode(value))
+            image.setAttribute(u"cameramake", unicode(value), overwrite)
         value = tags.get("Image Model")
         if value:
-            self.setAttribute(u"cameramodel", unicode(value))
+            image.setAttribute(u"cameramodel", unicode(value), overwrite)
         value = tags.get("Image Orientation")
         if value:
             try:
@@ -2005,41 +2192,45 @@ class Image(_Object):
                      "7": "up",
                      "8": "right",
                      }
-                self.setAttribute(u"orientation", unicode(m[str(value)]))
+                image.setAttribute(
+                    u"orientation", unicode(m[str(value)]), overwrite)
             except KeyError:
                 pass
         value = tags.get("EXIF ExposureProgram")
         if value:
-            self.setAttribute(u"exposureprogram", unicode(value))
+            image.setAttribute(u"exposureprogram", unicode(value), overwrite)
         value = tags.get("EXIF ISOSpeedRatings")
         if value:
-            self.setAttribute(u"iso", unicode(value))
+            image.setAttribute(u"iso", unicode(value), overwrite)
         value = tags.get("EXIF ExposureBiasValue")
         if value:
-            self.setAttribute(u"exposurebias", unicode(value))
+            image.setAttribute(u"exposurebias", unicode(value), overwrite)
         value = tags.get("MakerNote SpecialMode")
         if value:
-            self.setAttribute(u"specialmode", unicode(value))
+            image.setAttribute(u"specialmode", unicode(value), overwrite)
         value = tags.get("MakerNote JPEGQual")
         if value:
-            self.setAttribute(u"jpegquality", unicode(value))
+            image.setAttribute(u"jpegquality", unicode(value), overwrite)
         value = tags.get("MakerNote Macro")
         if value:
-            self.setAttribute(u"macro", unicode(value))
+            image.setAttribute(u"macro", unicode(value), overwrite)
         value = tags.get("MakerNote DigitalZoom")
         if value:
-            self.setAttribute(u"digitalzoom", unicode(value))
+            image.setAttribute(u"digitalzoom", unicode(value), overwrite)
+        self.shelf._setModified()
 
     ##############################
     # Internal methods.
 
     def __init__(
-        self, shelf, imageid, imghash, location, mtime, width,
+        self, shelf, ivid, imageid, ivtype, ivhash, location, mtime, width,
         height):
-        """Constructor of an Image."""
-        _Object.__init__(self, shelf, imageid)
+        """Constructor of an ImageVersion."""
         self.shelf = shelf
-        self.hash = imghash
+        self.id = ivid
+        self.imageid = imageid
+        self.type = ivtype
+        self.hash = ivhash
         self.location = location
         self.mtime = mtime
         self.size = width, height
@@ -2112,18 +2303,15 @@ class OrphansAlbum(MagicAlbum):
             else:
                 cursor = self.shelf._getConnection().cursor()
                 cursor.execute(
-                    " select   i.id, i.hash, i.directory, i.filename, i.mtime,"
-                    "          i.width, i.height"
+                    " select   i.id, i.primary_version"
                     " from     image as i left join attribute as a"
                     " on       i.id = a.object and a.name = 'captured'"
                     " where    i.id not in (select object from member)"
-                    " order by a.lcvalue, i.directory, i.filename")
+                    " order by a.lcvalue")
                 images = []
-                for (imageid, imghash, directory, filename, mtime, width,
-                     height) in cursor:
-                    location = os.path.join(directory, filename)
+                for (imageid, primary_version_id) in cursor:
                     image = self.shelf._imageFactory(
-                        imageid, imghash, location, mtime, width, height)
+                        imageid, primary_version_id)
                     images.append(image)
                     yield image
                 self.shelf._setOrphanImagesCache(images)
@@ -2183,9 +2371,30 @@ class SearchAlbum(MagicAlbum):
         return objectlist
 
 
-
 ######################################################################
 ### Internal helper functions and classes.
+
+def _albumTypeIdentifierToType(atid):
+    try:
+        return {
+            u"orphans": AlbumType.Orphans,
+            u"plain": AlbumType.Plain,
+            u"search": AlbumType.Search,
+            }[atid]
+    except KeyError:
+        raise UnknownAlbumTypeError, atid
+
+
+def _albumTypeToIdentifier(atype):
+    try:
+        return {
+            AlbumType.Orphans: u"orphans",
+            AlbumType.Plain: u"plain",
+            AlbumType.Search: u"search",
+            }[atype]
+    except KeyError:
+        raise UnknownAlbumTypeError, atype
+
 
 def _createCategoryDAG(connection):
     cursor = connection.cursor()
@@ -2199,6 +2408,28 @@ def _createCategoryDAG(connection):
     for parent, child in cursor:
         dag.connect(parent, child)
     return dag
+
+
+def _imageVersionTypeIdentifierToType(ivtype):
+    try:
+        return {
+            u"important": ImageVersionType.Important,
+            u"original": ImageVersionType.Original,
+            u"other": ImageVersionType.Other,
+            }[ivtype]
+    except KeyError:
+        raise UnknownImageVersionTypeError, ivtype
+
+
+def _imageVersionTypeToIdentifier(ivtype):
+    try:
+        return {
+            ImageVersionType.Important: u"important",
+            ImageVersionType.Original: u"original",
+            ImageVersionType.Other: u"other",
+            }[ivtype]
+    except KeyError:
+        raise UnknownImageVersionTypeError, ivtype
 
 
 class _UnicodeConnectionDecorator:

@@ -57,7 +57,7 @@ class SearchNodeFactory:
         if isinstance(tag_or_album, kofoto.shelf.Album):
             album = tag_or_album
         else:
-            album = self._shelf.getAlbum(tag_or_album)
+            album = self._shelf.getAlbumByTag(tag_or_album)
         return AlbumSearchNode(self._shelf, album)
 
     def andNode(self, subnodes):
@@ -71,7 +71,7 @@ class SearchNodeFactory:
         if isinstance(tag_or_category, kofoto.shelf.Category):
             category = tag_or_category
         else:
-            category = self._shelf.getCategory(tag_or_category)
+            category = self._shelf.getCategoryByTag(tag_or_category)
         if recursive:
             catids = list(self._shelf.categorydag.get().getDescendants(
                 category.getId()))
@@ -187,17 +187,17 @@ class AlbumSearchNode:
 
     def getQuery(self):
         t = self._album.getType()
-        if t == "orphans":
+        if t == kofoto.shelf.AlbumType.Orphans:
             return (" select i.id"
                     " from   image as i left join attribute as a"
                     " on     i.id = a.object and a.name = 'captured'"
                     " where  i.id not in (select object from member)"
-                    " order by a.lcvalue, i.directory, i.filename")
-        elif t == "plain":
+                    " order by a.lcvalue")
+        elif t == kofoto.shelf.AlbumType.Plain:
             return (" select distinct object"
                     " from   member"
                     " where  album = %s" % self._album.getId())
-        elif t == "search":
+        elif t == kofoto.shelf.AlbumType.Search:
             query = self._album.getAttribute(u"query")
             if not query:
                 return ""
