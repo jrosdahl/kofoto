@@ -101,7 +101,6 @@ def displayHelp():
         "    =============\n"
         "    clean-cache                      Clean up the image cache (remove\n"
         "                                     left-over generated images).\n"
-        "    create-configfile                Create a template configuration file.\n"
         "\n"
         "Album types:\n"
         "\n"
@@ -551,58 +550,47 @@ def main(argv):
         printErrorAndExit(
             "No command given. See \"kofoto --help\" for help.\n")
 
-    if args[0] == "create-configfile":
-        if os.path.exists(configFilename):
-            printErrorAndExit(
-                "%s already exists.\n" % configFilename)
-        else:
-            confdir = os.path.dirname(configFilename)
-            if not os.path.exists(confdir):
-                os.mkdir(confdir)
-                sys.stdout.write("Created directory \"%s\".\n" % confdir)
-            file = open(configFilename, "w")
-            file.write(
-                "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
-                "\n"
-                "# Default location of the shelf. This is where information about\n"
-                "# albums and images is stored.\n"
-                "shelf_location = \"~/.kofoto/shelf\"\n"
-                "\n"
-                "# Default location of the image cache. This is where generated images\n"
-                "# images are stored.\n"
-                "imagecache_location = \"~/.kofoto/imagecache\"\n"
-                "\n"
-                "# Size of thumbnails.\n"
-                "thumbnail_image_size = 128\n"
-                "\n"
-                "# The image size that will be used when first entering an album.\n"
-                "default_image_size = 640\n"
-                "\n"
-                "# A list of image sizes (other than thumbnail_image_size and\n"
-                "# default_image_size) to include in albums.\n"
-                "other_image_sizes = [400, 1024]\n")
-            file.close()
-            sys.stdout.write("Created configuration file \"%s\".\n" %
-                             configFilename)
-            sys.exit(0)
+    if not os.path.exists(configFilename):
+        confdir = os.path.dirname(configFilename)
+        if confdir and not os.path.exists(confdir):
+            os.mkdir(confdir)
+            sys.stdout.write("Created directory \"%s\".\n" % confdir)
+        file = open(configFilename, "w")
+        file.write(
+            "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
+            "\n"
+            "# Default location of the shelf. This is where information about\n"
+            "# albums and images is stored.\n"
+            "shelf_location = \"~/.kofoto/shelf\"\n"
+            "\n"
+            "# Default location of the image cache. This is where generated images\n"
+            "# images are stored.\n"
+            "imagecache_location = \"~/.kofoto/imagecache\"\n"
+            "\n"
+            "# Size of thumbnails.\n"
+            "thumbnail_image_size = 128\n"
+            "\n"
+            "# The image size that will be used when first entering an album.\n"
+            "default_image_size = 640\n"
+            "\n"
+            "# A list of image sizes (other than thumbnail_image_size and\n"
+            "# default_image_size) to include in albums.\n"
+            "other_image_sizes = [400, 1024]\n")
+        file.close()
+        sys.stdout.write("Created configuration file \"%s\".\n" %
+                         configFilename)
+        sys.exit(0)
 
-    if os.access(configFilename, os.R_OK):
-        conf = readConfig(configFilename)
-    else:
-        printErrorAndExit(
-            ("Configuration file \"%s\" not found.\n" +
-             "You can create a new one by running " +
-             "\"kofoto create-configfile\"\n") % configFilename)
+    conf = readConfig(configFilename)
 
     if not shelfLocation and conf.has_key("shelf_location"):
         shelfLocation = conf["shelf_location"]
     if shelfLocation:
         shelfLocation = os.path.expanduser(shelfLocation)
     else:
-        if args[0] != "create-configfile":
-            printErrorAndExit(
-                ("Don't know which shelf to use; none defined in %s and no\n" +
-                 "--shelf parameter given.\n") % configFilename)
+        printErrorAndExit(
+            ("Don't know which shelf to use; none defined in %s and no\n" +
+             "--shelf parameter given.\n") % configFilename)
 
     if args[0] == "create-shelf":
         try:
