@@ -26,7 +26,11 @@ from kofoto.config import *
 ### Locale.
 
 locale.setlocale(locale.LC_ALL, "")
-CODESET = locale.nl_langinfo(locale.CODESET)
+try:
+    CODESET = locale.nl_langinfo(locale.CODESET)
+except AttributeError:
+    # Assume Windows.
+    CODESET = "cp1252"
 
 ######################################################################
 ### Constants.

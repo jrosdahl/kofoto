@@ -325,9 +325,14 @@ class OutputGenerator(OutputEngine):
             pass
 
 
-    def generateIndex(self, root):
+    def preGeneration(self, root):
         self.iconsdir = "@icons"
         os.mkdir(os.path.join(self.dest, self.iconsdir))
+        
+
+    def postGeneration(self, root):
+        if self.env.verbose:
+            self.env.out("Generating index page, style sheet and icons...\n")
         self.symlinkFile(
             "%s.html" % root.getTag().encode(self.charEnc),
             "index.html")
@@ -357,20 +362,10 @@ class OutputGenerator(OutputEngine):
 
     def generateAlbum(self, album, subalbums, images, paths):
         # ------------------------------------------------------------
-        # Create album symlink to default size.
-        # ------------------------------------------------------------
-
-        self.makeDirectory(str(album.getId()))
-        self.symlinkFile(
-            "%s-%s.html" % (album.getTag().encode(self.charEnc),
-                            self.env.defaultsize),
-            "%s.html" % album.getTag().encode(self.charEnc))
-        self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
-
-        # ------------------------------------------------------------
         # Create album overview pages, one per size.
         # ------------------------------------------------------------
 
+        self.makeDirectory(str(album.getId()))
         for size in self.env.imagesizes:
             # Create path text, used in top of the album overview.
             pathtextElements = []
@@ -498,6 +493,16 @@ class OutputGenerator(OutputEngine):
                     "entries": thumbnailstext})
             self._maybeMakeUTF8Symlink(
                 os.path.join(str(album.getId()), "thumbnails-%s.html" % size))
+
+        # ------------------------------------------------------------
+        # Create album symlink to default size.
+        # ------------------------------------------------------------
+
+        self.symlinkFile(
+            "%s-%s.html" % (album.getTag().encode(self.charEnc),
+                            self.env.defaultsize),
+            "%s.html" % album.getTag().encode(self.charEnc))
+        self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
 
 
     def generateImage(self, album, image, images, number, paths):

@@ -42,13 +42,12 @@ class OutputEngine:
 
         albummap = {}
         _findAlbumPaths(root, [], albummap)
-        if self.env.verbose:
-            self.env.out("Generating index page...\n")
-        self.generateIndex(root)
+        self.preGeneration(root)
         for tag, paths in albummap.items():
             self._calculateImageReferences(self.env.shelf.getAlbum(tag))
         for tag, paths in albummap.items():
             self._generateAlbumHelper(self.env.shelf.getAlbum(tag), paths)
+        self.postGeneration(root)
 
 
     def getLimitedSize(self, image, limit):

@@ -30,6 +30,9 @@ def symlinkOrCopyFile(source, destination):
         os.symlink(source, destination)
     except AttributeError:
         import shutil
+        if not os.path.dirname(source):
+            # Handle the case of "ln -s foo dir/bar".
+            source = os.path.join(os.path.dirname(destination), source)
         shutil.copy(source, destination)
 
 def pathSplit(path):
