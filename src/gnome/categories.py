@@ -18,6 +18,7 @@ class Categories:
     _toggleColumn = None
     _ignoreSelectEvent = gtk.FALSE
     _selectedCategories = []
+    _selectionHandler = None
     
     def __init__(self):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
@@ -82,7 +83,7 @@ class Categories:
         categorySelection = categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
-        categorySelection.connect('changed', self._queryUpdated)
+        self._selectionHandler = categorySelection.connect('changed', self._queryUpdated)
 
         # Connect events
         categoryView.connect("button_press_event", self._button_pressed)
@@ -285,9 +286,12 @@ class Categories:
         print "create child category not yet imlemented"
 
     def _removeCategory(self, item, data):
+        selection = env.widgets["categoryView"].get_selection()
+        selection.handler_block(self._selectionHandler)
         for categoryId in self._selectedCategories:
             env.shelf.deleteCategory(categoryId)
         self.reload()
+        selection.handler_unblock(self._selectionHandler)
         
     def _selectionFunction(self, path, b):
         if self._ignoreSelectEvent:
