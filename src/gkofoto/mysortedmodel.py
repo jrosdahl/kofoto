@@ -13,6 +13,13 @@ class MySortedModel(gtk.TreeModelSort):
         else:
             raise IndexError
 
+    def __delitem__(self, path):
+        child_path = self.convert_path_to_child_path(path)
+        if child_path:
+            del self._model[child_path]
+        else:
+            raise IndexError
+
     def set_value(self, iter, column, value):
         childIter = self._model.get_iter_first()
         self.convert_iter_to_child_iter(childIter, iter)

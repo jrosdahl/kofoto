@@ -107,10 +107,26 @@ class ObjectCollectionView:
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
         else:
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(False)
-        if len(self._objectCollection.getObjectSelection()) > 0:
+        objectSelection = self._objectCollection.getObjectSelection()
+        if objectSelection:
+            model = self._objectCollection.getModel()
+
+            albumsSelected = False
+            imagesSelected = False
+            for position in objectSelection:
+                iterator = model.get_iter(position)
+                isAlbum = model.get_value(
+                    iterator, self._objectCollection.COLUMN_IS_ALBUM)
+                if isAlbum:
+                    albumsSelected = True
+                else:
+                    imagesSelected = True
+
             self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(True)
             self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable)
             self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable)
+            self.__clipboardMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(
+                imagesSelected ^ albumsSelected)
             self.__commandMenuGroup["Open image"].set_sensitive(True)
             self.__commandMenuGroup[90].set_sensitive(True)
             self.__commandMenuGroup[270].set_sensitive(True)
@@ -118,6 +134,7 @@ class ObjectCollectionView:
             self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(False)
             self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(False)
             self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(False)
+            self.__clipboardMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
             self.__commandMenuGroup["Open image"].set_sensitive(False)
             self.__commandMenuGroup[90].set_sensitive(False)
             self.__commandMenuGroup[270].set_sensitive(False)

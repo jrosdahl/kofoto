@@ -123,7 +123,52 @@ class ObjectCollection(object):
         raise Exception("Error. Not allowed to delete objects from objectCollection.") # TODO
 
     def destroy(self, *foo):
-        raise Exception("Destroy not implemented.") #TODO
+        model = self.getModel()
+
+        albumsSelected = False
+        imagesSelected = False
+        for position in self.__objectSelection:
+            iterator = model.get_iter(position)
+            isAlbum = model.get_value(
+                iterator, self.COLUMN_IS_ALBUM)
+            if isAlbum:
+                albumsSelected = True
+            else:
+                imagesSelected = True
+
+        assert albumsSelected ^ imagesSelected
+
+        self._freezeViews()
+        if albumsSelected:
+            dialogId = "destroyAlbumsDialog"
+        else:
+            dialogId = "destroyImagesDialog"
+        widgets = gtk.glade.XML(env.gladeFile, dialogId)
+        dialog = widgets.get_widget(dialogId)
+        result = dialog.run()
+        if result == gtk.RESPONSE_OK:
+            if albumsSelected:
+                deleteFiles = False
+            else:
+                checkbutton = widgets.get_widget("deleteImageFilesCheckbutton")
+                deleteFiles = checkbutton.get_active()
+            for obj in self.__objectSelection.getSelectedObjects():
+                if deleteFiles:
+                    try:
+                        os.remove(obj.getLocation())
+                        # TODO: Delete from image cache too?
+                    except OSError:
+                        pass
+                env.shelf.deleteObject(obj.getId())
+            locations = list(self.getObjectSelection())
+            locations.sort()
+            locations.reverse()
+            for loc in locations:
+                del model[loc]
+            self.getObjectSelection().unselectAll()
+        dialog.destroy()
+        # TODO: If the removed objects are albums, update the album widget.
+        self._thawViews()
 
     COLUMN_VALID_LOCATION = 0
     COLUMN_VALID_CHECKSUM = 1
@@ -158,13 +203,15 @@ class ObjectCollection(object):
         self._thawViews()
         env.exit("Object collection loading objects. (albums=" + str(self.__nrOfAlbums) + " images=" + str(self.__nrOfImages) + ")")
 
-    def _insertObjectList(self, objectList, iterator=None):
+    def _insertObjectList(self, objectList, location=None):
+        # location = None means insert last, otherwise insert before
+        # location.
+        #
         # Note that this methods does NOT update objectSelection.
+        if location == None:
+            location = len(self.__treeModel)
         for obj in objectList:
-            if iterator is None:
-                iterator = self.__treeModel.append(None)
-            else:
-                iterator = self.__treeModel.insert_after(iterator, None)
+            iterator = self.__treeModel.insert(location)
             self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
             if obj.isAlbum():
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, True)
@@ -182,6 +229,7 @@ class ObjectCollection(object):
                 self.__treeModel.set_value(iterator, column, value)
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
             self.__loadThumbnail(self.__treeModel, iterator)
+            location += 1
         self. _handleNrOfObjectsUpdate()
 
     def _handleNrOfObjectsUpdate(self):

@@ -34,23 +34,20 @@ class AlbumMembers(ObjectCollection):
         # and mutable model.
         self._freezeViews()
         locations = list(self.getObjectSelection())
-        if len(locations) > 0:
-            locations.sort()
-            insertLocation = locations[len(locations) - 1]
-            # Since the pasted objects are inserted AFTER the LAST
-            # selected object it is not needed to update the
-            # row numbers of the selected objects in the objectSelection.
-            iterator =  self.getModel().get_iter(insertLocation)
-        else:
-            insertLocation = 0
-            iterator = None
         newObjects = list(env.clipboard)
         currentChildren = list(self.__album.getChildren())
-        self.__album.setChildren(currentChildren[:insertLocation + 1] +
+        if len(locations) > 0:
+            locations.sort()
+            insertLocation = locations[0]
+        else:
+            # Insert last.
+            insertLocation = len(currentChildren)
+        self.__album.setChildren(currentChildren[:insertLocation] +
                                  newObjects +
-                                 currentChildren[insertLocation + 1:])
-        self._insertObjectList(newObjects, iterator)
-        # TODO If the added object is an album, update the album widget
+                                 currentChildren[insertLocation:])
+        self._insertObjectList(newObjects, insertLocation)
+        # TODO: If the added object is an album, update the album widget.
+        self.getObjectSelection().unselectAll()
         self._thawViews()
 
     def delete(self, *foo):
@@ -67,7 +64,7 @@ class AlbumMembers(ObjectCollection):
             del model[loc]
         self.__album.setChildren(albumMembers)
         self.getObjectSelection().unselectAll()
-        # TODO If the removed objects are albums, update the album widget
+        # TODO: If the removed objects are albums, update the album widget.
         self._thawViews()
 
 ######################################################################
