@@ -67,6 +67,8 @@ class SortableObjectCollection(ObjectCollection):
             # ignore the callback when the radio menu item is unselected
             return
         if self.__sortColumnName != columnName:
+            if not columnName in self.getObjectMetadataMap():
+                columnName = "id"
             env.debug("Setting sort column to: " + columnName)
             self.__sortColumnName = columnName
             self.__configureSortedModel(self.__sortColumnName, self.__sortOrder)
