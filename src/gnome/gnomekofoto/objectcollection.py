@@ -292,7 +292,7 @@ class ObjectCollection(object):
         else:
             try:
                 thumbnailLocation = env.imageCache.get(
-                    object, env.thumbnailSize[0], env.thumbnailSize[1])
+                    object, env.thumbnailSize[0], env.thumbnailSize[1])[0]
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:
