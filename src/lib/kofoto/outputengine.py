@@ -72,6 +72,12 @@ class OutputEngine:
 
 
     def generate(self, root, subalbums, dest):
+        def addDescendants(albumset, album):
+            if not album in albumset:
+                albumset.add(album)
+                for child in album.getAlbumChildren():
+                    addDescendants(albumset, child)
+
         self.dest = dest.encode(self.env.codeset)
         try:
             os.mkdir(self.dest)
@@ -84,7 +90,8 @@ class OutputEngine:
 
         albumsToGenerate = Set()
         if subalbums:
-            albumsToGenerate |= Set(subalbums)
+            for subalbum in subalbums:
+                addDescendants(albumsToGenerate, subalbum)
             for subalbum in subalbums:
                 albumsToGenerate |= Set(subalbum.getAlbumParents())
         else:
