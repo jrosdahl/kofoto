@@ -415,14 +415,14 @@ class Shelf:
             if create:
                 cursor.execute(schema)
                 cursor.execute(
-                    " insert into dbinfo"
+                    " insert into dbinfo (version)"
                     " values (0)")
                 cursor.execute(
-                    " insert into object"
+                    " insert into object (objectid)"
                     " values (%s)",
                     _ROOT_ALBUM_ID)
                 cursor.execute(
-                    " insert into album"
+                    " insert into album (albumid, tag, deletable, type)"
                     " values (%s, %s, 0, 'plain')",
                     _ROOT_ALBUM_ID,
                     _ROOT_ALBUM_DEFAULT_TAG)
@@ -506,11 +506,11 @@ class Shelf:
         cursor = self.connection.cursor()
         try:
             cursor.execute(
-                " insert into object"
+                " insert into object (objectid)"
                 " values (null)")
             lastrowid = cursor.lastrowid
             cursor.execute(
-                " insert into album"
+                " insert into album (albumid, tag, deletable, type)"
                 " values (%s, %s, 1, %s)",
                 lastrowid,
                 tag,
@@ -645,31 +645,31 @@ class Shelf:
         try:
             cursor = self.connection.cursor()
             cursor.execute(
-                " insert into object"
+                " insert into object (objectid)"
                 " values (null)")
             imageid = cursor.lastrowid
             cursor.execute(
-                " insert into image"
+                " insert into image (imageid, hash, location)"
                 " values (%s, %s, %s)",
                 imageid,
                 hash,
                 location)
             width, height = pilimg.size
             cursor.execute(
-                " insert into attribute"
+                " insert into attribute (objectid, name, value, lcvalue)"
                 " values (%s, 'width', %s, %s)",
                 imageid,
                 width,
                 width)
             cursor.execute(
-                " insert into attribute"
+                " insert into attribute (objectid, name, value, lcvalue)"
                 " values (%s, 'height', %s, %s)",
                 imageid,
                 height,
                 height)
             now = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
             cursor.execute(
-                " insert into attribute"
+                " insert into attribute (objectid, name, value, lcvalue)"
                 " values (%s, 'registered', %s, %s)",
                 imageid,
                 now,
@@ -826,8 +826,8 @@ class Shelf:
         try:
             cursor = self.connection.cursor()
             cursor.execute(
-                " insert into category"
-                " values (null, %s, %s)",
+                " insert into category (tag, description)"
+                " values (%s, %s)",
                 tag,
                 desc)
             self.categorydag.get().add(cursor.lastrowid)
@@ -1108,7 +1108,7 @@ class Category:
             raise CategoryLoopError, (self.getTag(), category.getTag())
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " insert into category_child"
+            " insert into category_child (parent, child)"
             " values (%s, %s)",
             parentid,
             childid)
@@ -1216,7 +1216,7 @@ class _Object:
             name)
         if cursor.rowcount == 0:
             cursor.execute(
-                " insert into attribute"
+                " insert into attribute (objectid, name, value, lcvalue)"
                 " values (%s, %s, %s, %s)",
                 self.getId(),
                 name,
@@ -1245,7 +1245,7 @@ class _Object:
         try:
             cursor = self.shelf.connection.cursor()
             cursor.execute(
-                " insert into object_category"
+                " insert into object_category (objectid, categoryid)"
                 " values (%s, %s)",
                 objid,
                 catid)
@@ -1438,7 +1438,7 @@ class PlainAlbum(Album):
                     ix)
             else:
                 cursor.execute(
-                    " insert into member"
+                    " insert into member (albumid, position, objectid)"
                     " values (%s, %s, %s)",
                     albumid,
                     ix,
