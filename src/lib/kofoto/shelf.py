@@ -1188,6 +1188,7 @@ class Shelf:
             "allimages": AllImagesAlbum,
             "orphans": OrphansAlbum,
             "plain": PlainAlbum,
+            "search": SearchAlbum,
         }
         try:
             album = albumtypemap[albumtype](self, albumid, tag, albumtype)
@@ -2109,6 +2110,54 @@ class OrphansAlbum(MagicAlbum):
                     images.append(image)
                     yield image
                 self.shelf._setOrphanImagesCache(images)
+
+
+class SearchAlbum(MagicAlbum):
+    """An album whose content is defined by a search string."""
+
+    ##############################
+    # Public methods.
+
+    def getChildren(self):
+        """Get the album's children.
+
+        Returns an iterable returning the children.
+        """
+        return self._getChildren(True)
+
+
+    def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterable returning the children.
+        """
+        return self._getChildren(False)
+
+
+    ##############################
+    # Internal methods.
+
+    def _getChildren(self, includeimages):
+        query = self.getAttribute(u"query")
+        if not query:
+            return []
+        import kofoto.search
+        parser = kofoto.search.Parser(self.shelf)
+        try:
+            tree = parser.parse(query)
+        except (CategoryDoesNotExistError,
+                kofoto.search.ParseError,
+                kofoto.search.ScanError):
+            return []
+        objects = self.shelf.search(tree)
+        if includeimages:
+            objectlist = list(objects)
+        else:
+            objectlist = [x for x in objects if x.isAlbum()]
+        objectlist.sort(lambda x, y: cmp(x.getAttribute(u"captured"),
+                                         y.getAttribute(u"captured")))
+        return objectlist
+
 
 
 ######################################################################

@@ -775,6 +775,45 @@ class TestOrphansAlbum(TestShelfFixture):
     def test_isAlbum(self):
         assert self.shelf.getAlbum(u"orphans").isAlbum()
 
+class TestSearchAlbum(TestShelfFixture):
+    def test_getChildren(self):
+        alpha = self.shelf.getAlbum(u"alpha")
+        image1, image2 = list(alpha.getChildren())[0:2]
+        cat_a = self.shelf.getCategory(u"a")
+        cat_b = self.shelf.getCategory(u"b")
+        image1.addCategory(cat_a)
+        image2.addCategory(cat_b)
+        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        assert searchalbum
+        searchalbum.setAttribute(u"query", u"b")
+        children = searchalbum.getChildren()
+        assert list(children) == [image2]
+
+    def test_getAlbumChildren(self):
+        alpha = self.shelf.getAlbum(u"alpha")
+        image1, image2 = list(alpha.getChildren())[0:2]
+        cat_a = self.shelf.getCategory(u"a")
+        cat_b = self.shelf.getCategory(u"b")
+        image1.addCategory(cat_a)
+        image2.addCategory(cat_b)
+        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        assert searchalbum
+        searchalbum.setAttribute(u"query", u"b")
+        children = searchalbum.getAlbumChildren()
+        assert list(children) == []
+
+    def test_setChildren(self):
+        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        try:
+            searchalbum.setChildren([])
+        except UnsettableChildrenError:
+            pass
+        else:
+            assert False
+
+    def test_isAlbum(self):
+        assert self.shelf.getAlbum(u"orphans").isAlbum()
+
 ######################################################################
 
 removeTmpDb()

@@ -186,10 +186,15 @@ def displayHelp():
         "\n"
         "Album types:\n"
         "\n"
+        "    Type         Description\n"
+        "    ------------------------\n"
         "    allalbums    All albums, sorted by tag.\n"
         "    allimages    All images, sorted by capture timestamp.\n"
         "    orphans      All albums and images that don't exist in any plain album.\n"
         "    plain        An ordinary container that holds albums and images.\n"
+        "    search       An album containing the albums and images that match a search\n"
+        "                 string (sorted by capture timestamp). The search string is\n"
+        "                 read from the album's \"query\" attribute.\n"
         "\n"
         % DEFAULT_CONFIGFILE)
 #                                                                 79 characters here:  |
