@@ -98,14 +98,9 @@
 
 * Read "directories to ignore" from configuration.
 
-* Add command for listing files in given directories that are known
-  (registered) or unknown to Kofoto.
-
 * Specify (in configuration) default attributes (like photographer) to
   add when registering images? Ability to supply more/override
   attributes when importing?
-
-* Add switch for specifying search result format (id, filename, ...).
 
 * Make gkofoto aware of the orientation attribute. Alternatively,
   remove handling of orientation from Kofoto altogether. Or make it
