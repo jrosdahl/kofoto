@@ -13,7 +13,7 @@ from os.path import join, isdir, basename
 options = {
     "py2exe": {
         "includes": "pango,atk,gobject",
-        "packages": ["encodings"],
+        "packages": ["encodings", "PIL"],
         },
     }
 
