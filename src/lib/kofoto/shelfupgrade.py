@@ -91,13 +91,17 @@ def upgradeShelf(connection, fromVersion, toVersion):
                 " where  objectid = %s and name = 'height'",
                 imageid)
             height = cursor2.fetchone()[0]
+            try:
+                mtime = os.path.getmtime(os.path.join(directory, filename))
+            except OSError:
+                mtime = 0
             cursor2.execute(
                 "insert into tmp_image values (%s, %s, %s, %s, %s, %s, %s)",
                 imageid,
                 hash,
                 directory,
                 filename,
-                os.path.getmtime(os.path.join(directory, filename)),
+                mtime,
                 width,
                 height)
         cursor.execute(
