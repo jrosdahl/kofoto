@@ -20,6 +20,7 @@ class MainWindow(gtk.Window):
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
 #        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
+        env.widgets["thumbnailsViewToggleButton"].set_sensitive(False)
         env.widgets["thumbnailsViewToggleButton"].get_child().add(self.getIconImage("thumbnailsview.png"))
         env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
         env.widgets["objectViewToggleButton"].get_child().add(self.getIconImage("objectview.png"))
