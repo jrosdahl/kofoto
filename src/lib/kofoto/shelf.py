@@ -1193,6 +1193,24 @@ class _Object:
         return self.objid
 
 
+    def getParents(self):
+        """Get the parent albums of an object.
+
+        Returns an iterable returning the albums.
+        
+        Note that the object may be included multiple times in a
+        parent album."""
+        cursor = self.shelf.connection.cursor()
+        cursor.execute(
+            " select distinct album.albumid, album.tag, album.type"
+            " from   member, album"
+            " where  member.objectid = %s and"
+            "        member.albumid = album.albumid",
+            self.getId())
+        for albumid, albumtag, albumtype in cursor:
+            yield self._albumFactory(albumid, albumtag, albumtype)
+
+
     def getAttribute(self, name):
         """Get the value of an attribute.
 
