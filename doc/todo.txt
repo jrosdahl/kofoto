@@ -131,3 +131,8 @@
 
 * Define a transport format (XML-based?) for metadata. Add import and
   export commands.
+
+* Create a home page for Kofoto. Maybe a Wiki?
+
+* Store a log of changes to the shelf and add possibility of backing
+  out changes.
