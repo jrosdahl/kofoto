@@ -56,9 +56,9 @@ def tryUpgrade(location, toVersion):
         cursor.execute(
             " insert into image_version"
             "     (id, image, type, hash, directory, filename, mtime,"
-            "      width, height)"
+            "      width, height, comment)"
             " select imageid, imageid, 'original', hash, directory, filename,"
-            "        mtime, width, height"
+            "        mtime, width, height, ''"
             " from   old.image")
         cursor.execute(
             " select id"

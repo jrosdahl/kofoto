@@ -837,6 +837,14 @@ class TestImageVersion(TestShelfFixture):
     # ImageVersion.makePrimary tested in TestImage.test_getPrimaryversion.
     # ImageVersion.setImage tested in TestImage.test_getPrimaryversion.
     # ImageVersion.setType tested in TestImageVersion.test_getType.
+    # ImageVersion.setComment tested in TestImageVersion.test_getComment.
+
+    def test_getComment(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert imageversion.getComment() == ""
+        imageversion.setComment(u"a comment")
+        assert imageversion.getComment() == u"a comment"
 
     def test_getHash(self):
         imageversion = self.shelf.getImageVersionByLocation(

@@ -157,6 +157,9 @@ schema = """
         -- Type (original, important or other).
         type        VARCHAR(20) NOT NULL,
 
+        -- Arbitrary comment about the version.
+        comment     TEXT NOT NULL,
+
         -- Identifier string which is derived from the image data and
         -- identifies the image uniquely. Currently an MD5 checksum
         -- (in hex format) of all image data.
@@ -762,10 +765,10 @@ class Shelf:
         cursor = self.connection.cursor()
         cursor.execute(
             " select id, image, type, hash, directory, filename, mtime,"
-            "        width, height"
+            "        width, height, comment"
             " from   image_version")
         for (ivid, imageid, ivtype, ivhash, directory,
-             filename, mtime, width, height) in cursor:
+             filename, mtime, width, height, comment) in cursor:
             location = os.path.join(directory, filename)
             if ivid in self.imageversioncache:
                 yield self.imageversioncache[ivid]
@@ -773,7 +776,7 @@ class Shelf:
                 ivtype = _imageVersionTypeIdentifierToType(ivtype)
                 yield self._imageVersionFactory(
                     ivid, imageid, ivtype, ivhash, location, mtime,
-                    width, height)
+                    width, height, comment)
 
 
     def getImageVersionsInDirectory(self, directory):
@@ -786,12 +789,12 @@ class Shelf:
         cursor = self.connection.cursor()
         cursor.execute(
             " select id, image, type, hash, directory, filename, mtime,"
-            "        width, height"
+            "        width, height, comment"
             " from   image_version"
             " where  directory = %s",
             directory)
         for (ivid, imageid, ivtype, ivhash, directory, filename,
-             mtime, width, height) in cursor:
+             mtime, width, height, comment) in cursor:
             location = os.path.join(directory, filename)
             if ivid in self.imageversioncache:
                 yield self.imageversioncache[ivid]
@@ -799,7 +802,7 @@ class Shelf:
                 ivtype = _imageVersionTypeIdentifierToType(ivtype)
                 yield self._imageVersionFactory(
                     ivid, imageid, ivtype, imghash, location, mtime,
-                    width, height)
+                    width, height, comment)
 
 
     def deleteAlbum(self, albumid):
@@ -913,9 +916,9 @@ class Shelf:
             cursor.execute(
                 " insert into image_version"
                 "     (image, type, hash, directory, filename,"
-                "      mtime, width, height)"
+                "      mtime, width, height, comment)"
                 " values"
-                "     (%s, %s, %s, %s, %s, %s, %s, %s)",
+                "     (%s, %s, %s, %s, %s, %s, %s, %s, '')",
                 image.getId(),
                 _imageVersionTypeToIdentifier(ivtype),
                 ivhash,
@@ -929,7 +932,7 @@ class Shelf:
         ivid = cursor.lastrowid
         imageversion = self._imageVersionFactory(
             ivid, image.getId(), ivtype, ivhash, location, mtime,
-            width, height)
+            width, height, u"")
         imageversion.importExifTags(False)
         if image.getPrimaryVersion() == None:
             image._makeNewPrimaryVersion()
@@ -950,7 +953,7 @@ class Shelf:
         cursor = self.connection.cursor()
         cursor.execute(
             " select id, image, type, hash, directory, filename, mtime,"
-            "        width, height"
+            "        width, height, comment"
             " from   image_version"
             " where  id = %s",
             ivid)
@@ -958,12 +961,12 @@ class Shelf:
         if not row:
             raise ImageVersionDoesNotExistError, ivid
         ivid, imageid, ivtype, ivhash, directory, filename, mtime, \
-            width, height = row
+            width, height, comment = row
         location = os.path.join(directory, filename)
         ivtype = _imageVersionTypeIdentifierToType(ivtype)
         return self._imageVersionFactory(
             ivid, imageid, ivtype, ivhash, location, mtime,
-            width, height)
+            width, height, comment)
 
 
     def getImageVersionByHash(self, ivhash):
@@ -1328,10 +1331,10 @@ class Shelf:
 
 
     def _imageVersionFactory(self, ivid, imageid, ivtype, ivhash,
-                             location, mtime, width, height):
+                             location, mtime, width, height, comment):
         imageversion = ImageVersion(
             self, ivid, imageid, ivtype, ivhash, location, mtime, width,
-            height)
+            height, comment)
         self.imageversioncache[ivid] = imageversion
         return imageversion
 
@@ -2029,6 +2032,11 @@ class ImageVersion:
         return self.type
 
 
+    def getComment(self):
+        """Get the comment of the image version."""
+        return self.comment
+
+
     def getHash(self):
         """Get the hash of the image version."""
         return self.hash
@@ -2076,6 +2084,18 @@ class ImageVersion:
             " set    type = %s"
             " where  id = %s",
             _imageVersionTypeToIdentifier(ivtype),
+            self.id)
+        self.shelf._setModified()
+
+
+    def setComment(self, comment):
+        self.comment = comment
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image_version"
+            " set    comment = %s"
+            " where  id = %s",
+            comment,
             self.id)
         self.shelf._setModified()
 
@@ -2232,7 +2252,7 @@ class ImageVersion:
 
     def __init__(
         self, shelf, ivid, imageid, ivtype, ivhash, location, mtime, width,
-        height):
+        height, comment):
         """Constructor of an ImageVersion."""
         self.shelf = shelf
         self.id = ivid
@@ -2242,6 +2262,7 @@ class ImageVersion:
         self.location = location
         self.mtime = mtime
         self.size = width, height
+        self.comment = comment
 
 
 class MagicAlbum(Album):

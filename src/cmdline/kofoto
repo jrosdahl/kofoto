@@ -135,6 +135,8 @@ imageversionCommandsDefinitionList = [
      "Traverse the given paths and print whether each found file is a registered, modified, moved or unregistered image version or a non-image."),
     ("make-primary IMAGEVERSION [IMAGEVERSION ...]",
      "Make an image version the primary version."),
+    ("set-imageversion-comment VALUE IMAGEVERSION [IMAGEVERSION ...]",
+     "Set comment of the given image versions."),
     ("set-imageversion-image IMAGE IMAGEVERSION [IMAGEVERSION ...]",
      "Set the image to which the given image versions belong."),
     ("set-imageversion-type IMAGEVERSIONTYPE IMAGEVERSION [IMAGEVERSION ...]",
@@ -566,10 +568,12 @@ def cmdGetImageVersions(env, args):
         if env.printIDs:
             env.out("%s\n" % iv.getId())
         elif env.verbose:
-            env.out("%s%s\n  %s\n" % (
+            env.out("%s\n  %s%s\n" % (
+                iv.getLocation(),
                 iv.isPrimary() and "Primary, " or "",
-                iv.getType(),
-                iv.getLocation()))
+                iv.getType()))
+            if iv.getComment():
+                env.out("  %s\n" % iv.getComment())
         else:
             env.out("%s\n" % iv.getLocation())
 
@@ -842,6 +846,14 @@ def cmdSetCategoryDescription(env, args):
     env.shelf.getCategoryByTag(args[0]).setDescription(args[1])
 
 
+def cmdSetImageVersionComment(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    comment = args[0]
+    for iv in args[1:]:
+        sloppyGetImageVersion(env, iv).setComment(comment)
+
+
 def cmdSetImageVersionImage(env, args):
     if len(args) < 2:
         raise ArgumentError
@@ -952,6 +964,7 @@ commandTable = {
     "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
     "set-category-description": cmdSetCategoryDescription,
+    "set-imageversion-comment": cmdSetImageVersionComment,
     "set-imageversion-image": cmdSetImageVersionImage,
     "set-imageversion-type": cmdSetImageVersionType,
     "sort-album": cmdSortAlbum,
