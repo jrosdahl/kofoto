@@ -401,7 +401,6 @@ class Shelf:
         # command is executed, so execute a dummy command here.
         cursor = self.connection.cursor()
         cursor.execute("select * from dbinfo")
-        self.categorydag.invalidate()
 
 
     def commit(self):
@@ -410,6 +409,8 @@ class Shelf:
             self.connection.commit()
         finally:
             self.transactionLock.release()
+            self.flushCategoryCache()
+            self.flushObjectCache()
 
 
     def rollback(self):
@@ -420,6 +421,19 @@ class Shelf:
             self.connection.rollback()
         finally:
             self.transactionLock.release()
+            self.flushCategoryCache()
+            self.flushObjectCache()
+
+
+    def flushCategoryCache(self):
+        """Flush the category cache."""
+        self.categorydag.invalidate()
+        self.categorycache = {}
+
+
+    def flushObjectCache(self):
+        """Flush the object cache."""
+        self.objectcache = {}
 
 
     def getStatistics(self):
