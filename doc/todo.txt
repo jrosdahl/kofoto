@@ -48,7 +48,7 @@
   imagecache (copies on Windows). A third mode that makes image copies
   regardless of platform could also be useful.
 
-* Write a test suite.
+* Write test suites for modules that miss one.
 
 * When generating an album, store images in per-month directories
   instead of the current two-level hash-based directory structure.

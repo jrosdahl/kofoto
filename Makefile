@@ -12,3 +12,6 @@ clean:
 
 install:
 	python setup.py install --prefix=$(PREFIX)
+
+check:
+	python src/test/alltests.py
