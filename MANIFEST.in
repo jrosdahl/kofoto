@@ -4,4 +4,7 @@ include doc/gkofoto.1
 include doc/kofoto.1
 include src/gkofoto/glade/*.glade
 include src/gkofoto/icons/*.png
+include src/gkofoto/*.py
+include src/gkofoto/*.pyw
+include src/gkofoto/scripts/*.py
 prune src/web

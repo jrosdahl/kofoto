@@ -12,10 +12,8 @@ if os.path.islink(sys.argv[0]):
 else:
     bindir = os.path.dirname(sys.argv[0])
 
-# Find kofoto libraries (../lib) and gkofoto libraries (..) in the
-# source tree.
+# Find kofoto libraries (../lib) in the source tree.
 sys.path.insert(0, os.path.join(bindir, "..", "lib"))
-sys.path.insert(0, os.path.join(bindir, ".."))
 
 from gkofoto.main import main
 main(bindir, sys.argv)

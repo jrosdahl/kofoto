@@ -14,7 +14,7 @@ else:
 
 package_dir = {
     "kofoto": "src/lib/kofoto",
-    "gkofoto": "src/gkofoto",
+    "gkofoto": "src/gkofoto/gkofoto",
     }
 packages = [
     "kofoto",
@@ -27,17 +27,18 @@ data_files = [
     ]
 
 if windows_mode:
-    shutil.copy("src/gkofoto/start-on-windows.py", "src/gkofoto/gkofoto-start.pyw")
+    shutil.copy("src/gkofoto/start-on-windows.py",
+                "src/gkofoto/scripts/gkofoto-start.pyw")
     scripts = [
         "src/cmdline/kofoto",
-        "src/gkofoto/gkofoto-start.pyw",
+        "src/gkofoto/scripts/gkofoto-start.pyw",
         "src/gkofoto/scripts/gkofoto-windows-postinstall.py",
         ]
 else:
-    shutil.copy("src/gkofoto/start-on-unix.py", "src/gkofoto/gkofoto")
+    shutil.copy("src/gkofoto/start-on-unix.py", "src/gkofoto/scripts/gkofoto")
     scripts = [
         "src/cmdline/kofoto",
-        "src/gkofoto/gkofoto",
+        "src/gkofoto/scripts/gkofoto",
         ]
 
 versionDict = {}
@@ -57,6 +58,6 @@ setup(
     )
 
 if windows_mode:
-    os.unlink("src/gkofoto/gkofoto-start.pyw")
+    os.unlink("src/gkofoto/scripts/gkofoto-start.pyw")
 else:
-    os.unlink("src/gkofoto/gkofoto")
+    os.unlink("src/gkofoto/scripts/gkofoto")
