@@ -170,12 +170,16 @@ class TableView(ObjectCollectionView):
             
     def _onDragDataReceived(self, treeview, dragContext, x, y, selection, info, eventtime):
         targetData = treeview.get_dest_row_at_pos(x, y)
-        if targetData == None or selection.get_text() == None:
+        if selection.get_text() == None:
             dragContext.finish(False, False, eventtime)
         else:
-            targetPath, dropPosition = targetData
-            sourceRowNumber = int(selection.get_text())
             model = self._objectCollection.getModel()
+            if targetData == None:
+                targetPath = (len(model) - 1,)
+                dropPosition = gtk.TREE_VIEW_DROP_AFTER
+            else:
+                targetPath, dropPosition = targetData
+            sourceRowNumber = int(selection.get_text())
             if sourceRowNumber == targetPath[0]:
                 # dropped on itself
                 dragContext.finish(False, False, eventtime)
