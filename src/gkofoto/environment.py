@@ -40,7 +40,8 @@ class Environment:
         self.albumIconFileName = os.path.join(self.iconDir, "album.png")
         self.albumIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.albumIconFileName)
         self.loadingPixbuf = self.albumIconPixbuf # TODO: create another icon with a hour-glass or something
-        self.thumbnailErrorIconPixbuf = self.albumIconPixbuf # TODO: create another icon
+        self.unknownImageIconFileName = os.path.join(self.iconDir, "unknownimage.png")
+        self.unknownImageIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.unknownImageIconFileName)
         from clipboard import Clipboard
         self.clipboard = Clipboard()
 

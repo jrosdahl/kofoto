@@ -301,6 +301,6 @@ class ObjectCollection(object):
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:
-                pixbuf = env.thumbnailErrorIconPixbuf
+                pixbuf = env.unknownImageIconPixbuf
         model.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
 

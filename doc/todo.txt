@@ -124,9 +124,6 @@
 
 * Preload next and previous image in gkofoto by a separate thread.
 
-* Handle that an image is missing on the disk, at least by displaying
-  a "not found" icon.
-
 * Make it possible to mark images as being off-line. If an image is
   off-line, don't look for it in the recorded location but instead
   make use of the largest available image in the image cache.

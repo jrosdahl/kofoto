@@ -25,7 +25,8 @@ data_files = [
                              "src/gkofoto/icons/fullscreen-24.png",
                              "src/gkofoto/icons/objectview.png",
                              "src/gkofoto/icons/tableview.png",
-                             "src/gkofoto/icons/thumbnailsview.png"])
+                             "src/gkofoto/icons/thumbnailsview.png",
+                             "src/gkofoto/icons/unknownimage.png"])
     ]
 if os.name == "posix":
     if os.system("cd src/web && make") != 0:

@@ -41,14 +41,14 @@ class ImageView(gtk.ScrolledWindow):
             self.clear()
             env.debug("ImageView is loading image from file: " + fileName)
             self.__pixBuf = gtk.gdk.pixbuf_new_from_file(fileName)
-            self._image.show()
-            self._newImageLoaded = True
-            self.fitToWindow()
             self.__loadedFileName = fileName
         except gobject.GError, e:
             print "Error while loading image:", e # TODO show error dialog box.
-            self.__pixBuf = None
-            self._image.hide()
+            self.__pixBuf = env.unknownImageIconPixbuf
+            self.__loadedFileName = None
+        self._newImageLoaded = True
+        self._image.show()
+        self.fitToWindow()
 
     def clear(self):
         self._image.hide()
