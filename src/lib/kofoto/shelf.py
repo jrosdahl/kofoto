@@ -1158,6 +1158,8 @@ class Shelf:
         self.connection.commit()
 
         self.begin()
+        rootalbum = self.getRootAlbum()
+        rootalbum.setAttribute(u"title", u"Root album")
         orphansalbum = self.createAlbum(u"orphans", u"orphans")
         orphansalbum.setAttribute(u"title", u"Orphans")
         orphansalbum.setAttribute(
