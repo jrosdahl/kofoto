@@ -40,29 +40,33 @@ class OutputEngine:
 
         albummap = {}
         _findAlbumPaths(root, [], albummap)
-        while 1:
-            if len(albummap) == 0:
-                break
-            tag, paths = albummap.popitem()
+        for tag, paths in albummap.items():
+            self._calculateImageReferences(self.env.shelf.getAlbum(tag))
+        for tag, paths in albummap.items():
             self._generateAlbumHelper(self.env.shelf.getAlbum(tag), paths)
         if self.env.verbose:
             self.env.out("Generating index page...\n")
         self.generateIndex(root)
 
 
-    def _generateAlbumHelper(self, album, paths):
-        if self.env.verbose:
-            self.env.out("Generating album page for %s...\n" % album.getTag())
+    def getLimitedSize(self, image, limit):
+        width = int(image.getAttribute("width"))
+        height = int(image.getAttribute("height"))
+        largest = max(height, width)
+        if limit < largest:
+           if width > height:
+               return limit, (limit * height) / width
+           else:
+               return (limit * width) / height, limit
+        else:
+            return width, height
 
-        # Design choice: This output engine sorts subalbums before
-        # images.
-        children = album.getChildren()
-        albumchildren = [x for x in children if x.isAlbum()]
-        imagechildren = [x for x in children if not x.isAlbum()]
 
+    def _calculateImageReferences(self, album):
         #
         # Generate and remember different sizes for images in the album.
         #
+        imagechildren = [x for x in album.getChildren() if not x.isAlbum()]
         for child in imagechildren:
             if self.env.verbose:
                 self.env.out("Generating image %s..." % (child.getId()))
@@ -82,6 +86,17 @@ class OutputEngine:
             if self.env.verbose:
                 self.env.out("\n")
 
+
+    def _generateAlbumHelper(self, album, paths):
+        if self.env.verbose:
+            self.env.out("Generating album page for %s...\n" % album.getTag())
+
+        # Design choice: This output engine sorts subalbums before
+        # images.
+        children = album.getChildren()
+        albumchildren = [x for x in children if x.isAlbum()]
+        imagechildren = [x for x in children if not x.isAlbum()]
+
         self.generateAlbum(
             album, albumchildren, imagechildren, paths)
 
@@ -89,7 +104,7 @@ class OutputEngine:
             child = imagechildren[ix]
             if self.env.verbose:
                 self.env.out(
-                    "Generating image page for %s in album %s...\n" % (
+                    "Generating image page for image %s in album %s...\n" % (
                         child.getId(),
                         album.getTag()))
             self.generateImage(album, child, imagechildren, ix, paths)
