@@ -52,7 +52,7 @@ mask:
 
     def contentframe(self):
         <py-eval="self.header()">
-        <p>content</p>
+        <p>Welcome to Kofoto.</p>
         <py-eval="self.footer()">
 
     def album(self, albumid):
