@@ -4,7 +4,7 @@
 # <bousch@topo.math.u-psud.fr> and released into the public domain.
 #
 # Updated and turned into general-purpose library by Gene Cash
-# <gcash@cfl.rr.com>
+# <email gcash at cfl.rr.com>
 #
 # This copyright license is intended to be similar to the FreeBSD license. 
 #
@@ -57,16 +57,16 @@
 # 25-JAN-02 CEC Discovered JPEG thumbnail in Olympus TIFF MakerNote.
 # 26-JAN-02 CEC Added ability to extract TIFF thumbnails.
 #               Added Nikon, Fujifilm, Casio MakerNotes.
+# 30-NOV-03 CEC Fixed problem with canon_decode_tag() not creating an
+#               IFD_Tag() object.
+# 15-FEB-04 CEC Finally fixed bit shift warning by converting Y to 0L.
 #
 # To do:
-# * Finish Canon MakerNote format
 # * Better printing of ratios
-
-import struct
 
 # field type descriptions as (length, abbreviation, full name) tuples
 FIELD_TYPES=(
-    (0, 'X',  'Dummy'), # no such type
+    (0, 'X',  'Proprietary'), # no such type
     (1, 'B',  'Byte'),
     (1, 'A',  'ASCII'),
     (2, 'S',  'Short'),
@@ -144,7 +144,8 @@ EXIF_TAGS={
     0x8825: ('GPSInfo', ),
     0x8827: ('ISOSpeedRatings', ),
     0x8828: ('OECF', ),
-    0x9000: ('ExifVersion', ),
+    # print as string
+    0x9000: ('ExifVersion', lambda x: ''.join(map(chr, x))),
     0x9003: ('DateTimeOriginal', ),
     0x9004: ('DateTimeDigitized', ),
     0x9101: ('ComponentsConfiguration',
@@ -196,11 +197,13 @@ EXIF_TAGS={
                        32: 'Not Available'}),
     0x920A: ('FocalLength', ),
     0x927C: ('MakerNote', ),
-    0x9286: ('UserComment', ),
+    # print as string
+    0x9286: ('UserComment', lambda x: ''.join(map(chr, x))),
     0x9290: ('SubSecTime', ),
     0x9291: ('SubSecTimeOriginal', ),
     0x9292: ('SubSecTimeDigitized', ),
-    0xA000: ('FlashPixVersion', ),
+    # print as string
+    0xA000: ('FlashPixVersion', lambda x: ''.join(map(chr, x))),
     0xA001: ('ColorSpace', ),
     0xA002: ('ExifImageWidth', ),
     0xA003: ('ExifImageLength', ),
@@ -325,22 +328,22 @@ MAKERNOTE_NIKON_OLDER_TAGS={
 
 # decode Olympus SpecialMode tag in MakerNote
 def olympus_special_mode(v):
+    a={
+        0: 'Normal',
+        1: 'Unknown',
+        2: 'Fast',
+        3: 'Panorama'}
+    b={
+        0: 'Non-panoramic',
+        1: 'Left to right',
+        2: 'Right to left',
+        3: 'Bottom to top',
+        4: 'Top to bottom'}
     try:
-        a={
-            0: 'Normal',
-            1: 'Unknown',
-            2: 'Fast',
-            3: 'Panorama'}
-        b={
-            0: 'Non-panoramic',
-            1: 'Left to right',
-            2: 'Right to left',
-            3: 'Bottom to top',
-            4: 'Top to bottom'}
         return '%s - sequence %d - %s' % (a[v[0]], v[1], b[v[2]])
-    except(KeyError):
+    except KeyError:
         return ''
-    
+
 MAKERNOTE_OLYMPUS_TAGS={
     # ah HAH! those sneeeeeaky bastids! this is how they get past the fact
     # that a JPEG thumbnail is not allowed in an uncompressed TIFF file
@@ -658,11 +661,17 @@ class Ratio:
 class IFD_Tag:
     def __init__(self, printable, tag, field_type, values, field_offset,
                  field_length):
+        # printable version of data
         self.printable=printable
+        # tag ID number
         self.tag=tag
+        # field type as index into FIELD_TYPES
         self.field_type=field_type
+        # offset of start of field in bytes from beginning of IFD
         self.field_offset=field_offset
+        # length of data field in bytes
         self.field_length=field_length
+        # either a string or array of data items
         self.values=values
         
     def __str__(self):
@@ -920,7 +929,10 @@ class EXIF_header:
                 val=x[1].get(value[i], 'Unknown')
             else:
                 val=value[i]
-            self.tags['MakerNote '+name]=val
+            # it's not a real IFD Tag but we fake one to make everybody
+            # happy. this will have a "proprietary" type
+            self.tags['MakerNote '+name]=IFD_Tag(str(val), None, 0, None,
+                                                 None, None)
 
 # process an image file (expects an open file object)
 # this is the function that has to deal with all the arbitrary nasty bits
@@ -985,7 +997,7 @@ def process_file(file, debug=0):
                 hdr.dump_IFD(intr_off.values[0], 'EXIF Interoperability',
                              dict=INTR_TAGS)
         # GPS IFD
-        gps_off=hdr.tags.get(IFD_name+' GPSInfoOffset')
+        gps_off=hdr.tags.get(IFD_name+' GPSInfo')
         if gps_off:
             if debug:
                 print ' GPS SubIFD at offset %d:' % gps_off.values[0]
@@ -1035,7 +1047,7 @@ if __name__ == '__main__':
             continue
         print filename+':'
         # data=process_file(file, 1) # with debug info
-        data=process_file(file, 1)
+        data=process_file(file)
         if not data:
             print 'No EXIF information found'
             continue
@@ -1045,8 +1057,11 @@ if __name__ == '__main__':
         for i in x:
             if i in ('JPEGThumbnail', 'TIFFThumbnail'):
                 continue
-            print '   %s (%s): %s' % \
-                  (i, FIELD_TYPES[data[i].field_type][2], data[i].printable)
+            try:
+                print '   %s (%s): %s' % \
+                      (i, FIELD_TYPES[data[i].field_type][2], data[i].printable)
+            except:
+                print 'error', i, '"', data[i], '"'
         if data.has_key('JPEGThumbnail'):
             print 'File has JPEG thumbnail'
         print
