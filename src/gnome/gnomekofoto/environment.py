@@ -35,7 +35,7 @@ if not os.path.exists(dataDir):
 
 env.imageCacheLocation = genconf["imagecache_location"]
 env.imageSizes = genconf["image_sizes"]
-env.thumbnailSize = conf.get("gnome client", "thumbnail_size")
+env.thumbnailSize = conf.getint("gnome client", "thumbnail_size")
 env.defaultTableViewColumns = re.findall(
     "\w+",
     conf.get("gnome client", "default_table_columns"))
