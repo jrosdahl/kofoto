@@ -44,6 +44,7 @@ from __future__ import generators
 
 import re
 import threading
+import time
 import sqlite as sql
 from types import *
 from kofoto.common import KofotoError
@@ -639,6 +640,11 @@ class Shelf:
                 " values (%s, 'height', %s)",
                 imageid,
                 height)
+            cursor.execute(
+                " insert into attribute"
+                " values (%s, 'registered', %s)",
+                imageid,
+                unicode(time.strftime("%Y-%m-%d %H:%M:%S")))
             image = self.getImage(imageid)
             image.importExifTags()
             return image
