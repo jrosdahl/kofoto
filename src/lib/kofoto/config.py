@@ -30,7 +30,7 @@ else:
     DEFAULT_CONFIGFILE_LOCATION = os.path.join(
         "~", ".kofoto", "config")
     DEFAULT_SHELF_LOCATION = os.path.join(
-        "~", ".kofoto", "metadata")
+        "~", ".kofoto", "metadata.db")
     DEFAULT_IMAGECACHE_LOCATION = os.path.join(
         "~", ".kofoto", "imagecache")
 
