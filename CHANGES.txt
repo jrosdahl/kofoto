@@ -8,6 +8,15 @@
 VERSION HISTORY
 ===============
 
+0.3.1 (2005-03-31)
+
+    Fixed bugs:
+
+      * Made a work-around for bug in PyGTK 2.6.1 (ticket #94).
+      * Update the Album menu in the menu bar correctly (ticket #95).
+      * Be more permissive about the Image Model EXIF tag. Patch by
+        Chris Clark.
+
 0.3 (2005-02-12)
 
     New features:
