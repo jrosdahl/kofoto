@@ -623,7 +623,7 @@ class OutputGenerator(OutputEngine):
                             dispcat.getDescription().encode(self.charEnc),
                             ", ".join(matching)))
             infotextElements.append('</td><td align="right">')
-            timestamp = image.getAttribute(u"timestamp")
+            timestamp = image.getAttribute(u"captured")
             if timestamp:
                 infotextElements.append(
                     "<small>%s</small><br />" % (

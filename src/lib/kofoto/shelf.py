@@ -1381,7 +1381,7 @@ class Image(_Object):
                 a = str(value).split(":")
                 if len(a) == 5:
                     value = u"-".join(a[0:2] + [":".join(a[2:5])])
-                    self.setAttribute(u"timestamp", value)
+                    self.setAttribute(u"captured", value)
 
         value = tags.get("EXIF ExposureTime")
         if value:
@@ -1460,7 +1460,7 @@ class AllAlbumsAlbum(MagicAlbum):
 
 
 class AllImagesAlbum(MagicAlbum):
-    """An album with all images, sorted by timestamp."""
+    """An album with all images, sorted by capture timestamp."""
 
     ##############################
     # Public methods.
@@ -1475,7 +1475,7 @@ class AllImagesAlbum(MagicAlbum):
             " select   imageid"
             " from     image left join attribute"
             " on       imageid = objectid"
-            " where    name = 'timestamp'"
+            " where    name = 'captured'"
             " order by value, location")
         for (imageid,) in cursor:
             yield self.shelf.getImage(imageid)
@@ -1507,7 +1507,7 @@ class OrphansAlbum(MagicAlbum):
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    imageid not in (select objectid from member) and"
-            "          name = 'timestamp'"
+            "          name = 'captured'"
             " order by value, location")
         for (imageid,) in cursor:
             self.shelf.getImage(imageid)

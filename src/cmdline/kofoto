@@ -160,7 +160,7 @@ def displayHelp():
         "Album types:\n"
         "\n"
         "    allalbums    All albums, sorted by tag.\n"
-        "    allimages    All images, sorted by timestamp.\n"
+        "    allimages    All images, sorted by capture timestamp.\n"
         "    orphans      All albums and images that don't exist in any plain album.\n"
         "    plain        An ordinary container that holds albums and images.\n"
         "\n"

@@ -26,6 +26,9 @@
         -----------------------------------------------------------------------
         cameramake    EXIF tag "Make"          Camera vendor
         cameramodel   EXIF tag "Model"         Camera model
+        captured      EXIF tag "DateTime",     When the image was created
+                      "DateTimeOriginal" or
+                      "DateTimeDigitized"
         exposuretime  EXIF tag "ExposureTime"  Exposure time (fraction)
         flash         EXIF tag "Flash"         Set to "Fired" if flash was used
         fnumber       EXIF tag "FNumber"       FNumber (aperture) used
@@ -33,9 +36,7 @@
         height        Image data               Image height
         orientation   EXIF tag "Orientation"   Image orientation (up, right,
                                                left or down); defaults to up
-        timestamp     EXIF tag "DateTime",     When the image was created
-                      "DateTimeOriginal" or
-                      "DateTimeDigitized"
+        registered    System clock             Time of registration
         width         Image data               Image width
 
 Key features (why we can't use J. Random Photo Album software):
