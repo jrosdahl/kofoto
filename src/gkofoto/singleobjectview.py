@@ -140,7 +140,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())
 
-    def _rowChanged(self, model, path, iter):
+    def _rowChanged(self, model, path, iter, arg, *unused):
         if path[0] == self.__selectedRowNr:
             env.debug("selected object in SingleObjectView changed")
             objectSelection = self._objectCollection.getObjectSelection()
