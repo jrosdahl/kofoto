@@ -579,8 +579,6 @@ class Shelf:
             raise AlbumDoesNotExistError, tag
         albumid, tag, albumtype = row
         album = self._albumFactory(albumid, tag, albumtype)
-        self.objectcache[albumid] = album
-        self.objectcache[tag] = album
         return album
 
 
@@ -620,7 +618,10 @@ class Shelf:
             " from   image")
         for imageid, hash, directory, filename in cursor:
             location = os.path.join(directory, filename)
-            yield Image(self, imageid, hash, location)
+            if imageid in self.objectcache:
+                yield self.objectcache[imageid]
+            else:
+                yield self._imageFactory(self, imageid, hash, location)
 
 
     def getImagesInDirectory(self, directory):
@@ -638,7 +639,10 @@ class Shelf:
             directory)
         for imageid, hash, directory, filename in cursor:
             location = os.path.join(directory, filename)
-            yield Image(self, imageid, hash, location)
+            if imageid in self.objectcache:
+                yield self.objectcache[imageid]
+            else:
+                yield self._imageFactory(self, imageid, hash, location)
 
 
     def deleteAlbum(self, tag):
@@ -736,7 +740,7 @@ class Shelf:
                 imageid,
                 now,
                 now)
-            image = self.getImage(imageid)
+            image = self._imageFactory(imageid, hash, location)
             image.importExifTags()
             self._setModified()
             return image
@@ -780,11 +784,7 @@ class Shelf:
                 raise ImageDoesNotExistError, ref
         imageid, hash, directory, filename = row
         location = os.path.join(directory, filename)
-        image = Image(self, imageid, hash, location)
-        self.objectcache[imageid] = image
-        self.objectcache[unicode(imageid)] = image
-        self.objectcache[hash] = image
-        return image
+        return self._imageFactory(imageid, hash, location)
 
 
     def deleteImage(self, ref):
@@ -1055,9 +1055,20 @@ class Shelf:
             "plain": PlainAlbum,
         }
         try:
-            return albumtypemap[albumtype](self, albumid, tag, albumtype)
+            album = albumtypemap[albumtype](self, albumid, tag, albumtype)
         except KeyError:
             raise UnknownAlbumTypeError, albumtype
+        self.objectcache[albumid] = album
+        self.objectcache[tag] = album
+        return album
+
+
+    def _imageFactory(self, imageid, hash, location):
+        image = Image(self, imageid, hash, location)
+        self.objectcache[imageid] = image
+        self.objectcache[unicode(imageid)] = image
+        self.objectcache[hash] = image
+        return image
 
 
     def _deleteObjectFromParents(self, objid):
@@ -1782,12 +1793,13 @@ class AllImagesAlbum(MagicAlbum):
         """
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
-            " select   imageid"
+            " select   imageid, hash, directory, filename"
             " from     image left join attribute"
             " on       imageid = objectid and name = 'captured'"
             " order by lcvalue, directory, filename")
-        for (imageid,) in cursor:
-            yield self.shelf.getImage(imageid)
+        for imageid, hash, directory, filename in cursor:
+            location = os.path.join(directory, filename)
+            yield self.shelf._imageFactory(imageid, hash, location)
 
 
     def getAlbumChildren(self):
@@ -1836,13 +1848,14 @@ class OrphansAlbum(MagicAlbum):
             yield self.shelf.getAlbum(albumid)
         if includeimages:
             cursor.execute(
-                " select   imageid"
+                " select   imageid, hash, directory, filename"
                 " from     image left join attribute"
                 " on       imageid = objectid and name = 'captured'"
                 " where    imageid not in (select objectid from member)"
                 " order by lcvalue, directory, filename")
-            for (imageid,) in cursor:
-                yield self.shelf.getImage(imageid)
+            for imageid, hash, directory, filename in cursor:
+                location = os.path.join(directory, filename)
+                yield self.shelf._imageFactory(imageid, hash, location)
 
 
 ######################################################################
