@@ -118,7 +118,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             objectSelection = self._objectCollection.getObjectSelection()
             object = objectSelection[path[0]]
             if not object.isAlbum():
-                self.loadFile(object.getLocation(), False)
+                self.loadFile(object.getLocation(), True)
         
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()

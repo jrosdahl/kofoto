@@ -47,6 +47,9 @@ env.defaultTableViewColumns = re.findall(
     "\S+",
     conf.get("gnome client", "default_table_columns"))
 env.defaultSortColumn = conf.get("gnome client", "default_sort_column")
+env.openCommand = conf.get("gnome client", "open_command", True)
+env.rotateRightCommand = conf.get("gnome client", "rotate_right_command", True)
+env.rotateLeftCommand = conf.get("gnome client", "rotate_left_command", True)
 
 dataDir = os.path.join(bindir, "..", "share", "gnomekofoto")
 if not os.path.exists(dataDir):

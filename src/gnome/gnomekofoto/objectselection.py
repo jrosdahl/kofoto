@@ -55,7 +55,10 @@ class ObjectSelection:
             return rowNrs[0]
         else:
             return None
-    
+
+    def getMap(self):
+        return self.__selectedObjects
+        
     def __contains__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         return unsortedRowNr in self.__selectedObjects.keys()

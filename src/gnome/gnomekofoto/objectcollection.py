@@ -243,6 +243,36 @@ class ObjectCollection(object):
             # TODO Show dialog error box?
             print "Not allowed to set album tag on image"
 
+    def rotate(self, widget, angle):
+        for (rowNr, object) in self.__objectSelection.getMap().items():
+            if not object.isAlbum():
+                location = object.getLocation().encode(env.codeset)
+                if angle == 90:
+                    commandString = env.rotateRightCommand
+                else:
+                    commandString = env.rotateLeftCommand
+                command = commandString.encode(env.codeset) % { "location":location }
+                result = os.system(command)
+                if result == 0:
+                    object.contentChanged()
+                    model = self.getUnsortedModel()
+                    self.__loadThumbnail(model, model.get_iter(rowNr))
+                else:
+                    print "failed to execute:", command
+
+    def open(self, widget, data):
+        locations = ""
+        for object in self.__objectSelection.getSelectedObjects():
+            if not object.isAlbum():
+                location = object.getLocation()
+                locations += location + " "
+        if locations != "":
+            command = env.openCommand % { "locations":locations }
+            # GIMP does not seem to be able to open locations containing swedish
+            # characters. I tried latin-1 and utf-8 without success.
+            result = os.system(command + " &")
+            if result != 0:
+                print "failed to execute:", command                    
         
 ######################################################################
 ### Private
@@ -269,24 +299,3 @@ class ObjectCollection(object):
                 pixbuf = env.thumbnailErrorIconPixbuf
         model.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
 
-
-
-##    def rotate(self, button, angle):
-##        # TODO: Make it possible for the user to configure if a rotation
-##        # shall rotate the object or only update the orientation attribute?
-##        for row in self._unsortedModel:
-##            if row[self.COLUMN_OBJECT_ID] in self._selectedObjects:
-##                object = env.shelf.getObject(row[self.COLUMN_OBJECT_ID])
-##                if not object.isAlbum():
-##                    location = object.getLocation().encode(env.codeset)
-##                    # TODO: Read command from configuration file?
-##                    command = "jpegtran -rotate %(angle)s -perfect -copy all -outfile %(location)s %(location)s" % { "angle":angle, "location":location}
-##                    result = os.system(command)
-##                    if result == 0:
-##                        object.contentChanged()
-##                    else:
-##                        print "failed to execute:", command
-##
-## Joel upptackte en bugg. (11009090) Det bor inte sta 100 nedan:
-##
-##                    self._loadThumbnail(100, row.iter, reload=True)

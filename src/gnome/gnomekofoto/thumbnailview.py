@@ -73,7 +73,10 @@ class ThumbnailView(ObjectCollectionView):
         env.debug("ThumbnailView row changed.")
         self.__selectionLocked = True
         self._viewWidget.remove(path[0])
-        self.__loadRow(model[path])
+        # For some reason that I don't understand model[path].path != path
+        # Hence we pass by path as the location where the icon shall be
+        # inserted.
+        self.__loadRow(model[path[0]], path[0])
         if path[0] in self._objectCollection.getObjectSelection():
             self._viewWidget.select_icon(path[0])
         self.__selectionLocked = False
@@ -112,7 +115,9 @@ class ThumbnailView(ObjectCollectionView):
 ###############################################################################        
 ### Private
 
-    def __loadRow(self, row):
+    def __loadRow(self, row, location=None):
+        if location is None:
+            location = row.path[0]
         if row[ObjectCollection.COLUMN_IS_ALBUM]:
             text = row[ObjectCollection.COLUMN_ALBUM_TAG]
         else:
@@ -124,7 +129,7 @@ class ThumbnailView(ObjectCollectionView):
             # the thumbnail is loaded. The temporary icon will be removed
             # when we receive the row changed event.
             pixbuf = env.loadingPixbuf
-        self._viewWidget.insert_pixbuf(row.path[0], pixbuf, "", str(text))
+        self._viewWidget.insert_pixbuf(location, pixbuf, "", str(text))
         self.__currentMaxWidth = max(self.__currentMaxWidth, pixbuf.get_width())
         self._viewWidget.set_icon_width(self.__currentMaxWidth)
 
