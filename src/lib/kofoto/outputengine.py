@@ -118,9 +118,10 @@ def _findAlbumPaths(startalbum):
     """Traverse all albums reachable from a given album and find
     possible paths to the albums.
 
-    Start recursing at startalbum. The return value is a mapping each
-    key is an Album instance and the associated value is a list of
-    paths, where a path is a list of Album instances."""
+    The traversal is started at startalbum. The return value is a
+    mapping where each key is an Album instance and the associated
+    value is a list of paths, where a path is a list of Album
+    instances."""
     def helper(album, path):
         if album in path:
             # Already visited album, so break recursion here.
