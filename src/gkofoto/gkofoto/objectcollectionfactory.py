@@ -15,7 +15,7 @@ class ObjectCollectionFactory:
         self.__searchResult = SearchResult()
         self.__albumMembers = AlbumMembers()
 
-    def getObjectCollection(self, query):
+    def getObjectCollection(self, query, filterText=""):
         env.debug("Object collection factory loading query: " + query);
         self.__clear()
         validAlbumTag = False
@@ -26,12 +26,17 @@ class ObjectCollectionFactory:
             except BadAlbumTagError:
                 pass
         try:
-            if validAlbumTag:
+            if validAlbumTag and not filterText:
                 self.__albumMembers.loadAlbum(env.shelf.getAlbum(query[1:]))
                 return self.__albumMembers
             else:
-                self.__searchResult.loadQuery(query)
-                env.mainwindow.unselectAlbumTree()
+                if filterText:
+                    queryWithFilter = "(%s) and (%s)" % (query, filterText)
+                else:
+                    queryWithFilter = query
+                self.__searchResult.loadQuery(queryWithFilter)
+                if not validAlbumTag:
+                    env.mainwindow.unselectAlbumTree()
                 return self.__searchResult
         except AlbumDoesNotExistError, tag:
             errorText = "No such album tag: \"%s\"." % tag

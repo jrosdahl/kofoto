@@ -97,14 +97,13 @@ class MainWindow(gtk.Window):
         self.__query = query
         self.__sourceEntry.set_text(query)
         useFilter = self.__isFilterEnabledCheckbox.get_active()
-        filterText = self.__filterEntry.get_text().decode("utf-8")
         self.__filterEntry.set_sensitive(useFilter)
-        if useFilter and len(filterText) > 0:
-            queryWithFilter = "(%s) and (%s)" % (query, filterText)
+        if useFilter:
+            filterText = self.__filterEntry.get_text().decode("utf-8")
         else:
-            queryWithFilter = query
+            filterText = ""
         self.__setObjectCollection(
-            self.__factory.getObjectCollection(queryWithFilter))
+            self.__factory.getObjectCollection(query, filterText))
 
     def reload(self):
         self.__albums.loadAlbumTree()
