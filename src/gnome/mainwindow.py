@@ -18,12 +18,6 @@ class MainWindow(gtk.Window):
 
         # Gray out not yet implemented stuff...
         env.widgets["revert"].set_sensitive(gtk.FALSE)
-        env.widgets["zoom100"].set_sensitive(gtk.FALSE)
-        env.widgets["zoomToFit"].set_sensitive(gtk.FALSE)
-        env.widgets["zoomIn"].set_sensitive(gtk.FALSE)
-        env.widgets["zoomOut"].set_sensitive(gtk.FALSE)
-        env.widgets["back"].set_sensitive(gtk.FALSE)
-        env.widgets["forward"].set_sensitive(gtk.FALSE)
         env.widgets["copy"].set_sensitive(gtk.FALSE)
         env.widgets["paste"].set_sensitive(gtk.FALSE)
         env.widgets["preferences"].set_sensitive(gtk.FALSE)
@@ -47,18 +41,13 @@ class MainWindow(gtk.Window):
         else:
             env.widgets["attributeView"].hide()
 
-    # TODO: Refactoring...
     def _toggleThumbnailsView(self, button):
         if not self._toggleLock:
-            env.controller.thumbnailView.loadNewSelection()
             self._toggleLock = gtk.TRUE
             button.set_active(gtk.TRUE)
             env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
             env.widgets["tableViewToggleButton"].set_active(gtk.FALSE)
-            env.widgets["thumbnailView"].show()
-            env.widgets["thumbnailList"].grab_focus()
-            env.widgets["imageView"].hide()
-            env.widgets["tableViewScroll"].hide()
+            env.controller.showThumbnailView()
             self._toggleLock = gtk.FALSE
 
     def _toggleImageView(self, button):
@@ -67,21 +56,14 @@ class MainWindow(gtk.Window):
             button.set_active(gtk.TRUE)
             env.widgets["tableViewToggleButton"].set_active(gtk.FALSE)
             env.widgets["thumbnailsViewToggleButton"].set_active(gtk.FALSE)
-            env.widgets["imageView"].show()
-            env.widgets["imageView"].grab_focus()
-            env.widgets["tableViewScroll"].hide()        
-            env.widgets["thumbnailView"].hide()
+            env.controller.showSingleImageView()
             self._toggleLock = gtk.FALSE
             
     def _toggleTableView(self, button):
         if not self._toggleLock:
-            env.controller.tableView.loadNewSelection()
             self._toggleLock = gtk.TRUE
             button.set_active(gtk.TRUE)
             env.widgets["thumbnailsViewToggleButton"].set_active(gtk.FALSE)
             env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
-            env.widgets["tableViewScroll"].show()
-            env.widgets["tableView"].grab_focus()
-            env.widgets["thumbnailView"].hide()
-            env.widgets["imageView"].hide()
+            env.controller.showTableView()
             self._toggleLock = gtk.FALSE

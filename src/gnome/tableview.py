@@ -34,6 +34,19 @@ class TableView:
         column = gtk.TreeViewColumn("Location", renderer, text=Images.COLUMN_LOCATION)
         env.widgets["tableView"].append_column(column)        
 
+    def freeze(self):
+        pass
+
+    def thaw(self):
+        pass
+
+    def show(self):
+        env.widgets["tableViewScroll"].show()
+        env.widgets["tableView"].grab_focus()
+
+    def hide(self):
+        env.widgets["tableViewScroll"].hide()
+        
     def setAttributes(self, attributeNamesMap):
         for attributeName, value in attributeNamesMap.items():
             renderer = gtk.CellRendererText()

@@ -41,7 +41,14 @@ class ThumbnailView:
 
     def thaw(self):
         self._thumbnailList.thaw()
-            
+
+    def show(self):
+        env.widgets["thumbnailView"].show()
+        env.widgets["thumbnailList"].grab_focus()
+
+    def hide(self):
+        env.widgets["thumbnailView"].hide()
+        
     def setAttributes(self, attributeNamesMap):
         pass
 
@@ -69,8 +76,11 @@ class ThumbnailView:
     def _iconUnselected(self, widget, index, event):
         iter = self._model.get_iter(index)
         imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-        env.controller.selection.remove(imageId)
-        env.controller.selectionUpdated()
+        try:
+            env.controller.selection.remove(imageId)
+            env.controller.selectionUpdated()
+        except(KeyError):
+            pass
 
     def loadNewSelection(self):
         self._thumbnailList.handler_block(self._selectSignalHandler)

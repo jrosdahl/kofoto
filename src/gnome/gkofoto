@@ -17,6 +17,7 @@ from images import *
 from mainwindow import *
 from tableview import *
 from thumbnailview import *
+from singleimageview import *
 from categories import *
 
 
@@ -36,10 +37,13 @@ class Controller:
     loadedImages = None
     _loadedImagesTitel = ""
     _wantedThumbnailSize = None
-    tableView = None
-    thumbnailView = None
+    _tableView = None
+    _thumbnailView = None
+    _singleImageView = None
     _categories = None
     selection = Set()
+    _currentImageView = None
+    _hiddenImageViews = []
     _clipboard = None
 
     def __init__(self):
@@ -48,9 +52,11 @@ class Controller:
     def start(self):
         albums = Albums()
         self._categories = Categories()
-        self.tableView = TableView()
-        self.thumbnailView = ThumbnailView()
+        self._thumbnailView = ThumbnailView()
+        self._tableView = TableView()
+        self._singleImageView = SingleImageView()
         self.newDataModel()
+        self.showThumbnailView()
         MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
         env.widgets["mainWindow"].show()
@@ -87,25 +93,45 @@ class Controller:
         
     def newDataModel(self):
         self.loadedImages = Images()
-        self.tableView.setModel(self.loadedImages.sortedModel)
-        self.tableView.setAttributes(self.loadedImages.attributeNamesMap)
-        self.thumbnailView.setModel(self.loadedImages.sortedModel)
+        self._tableView.setModel(self.loadedImages.sortedModel)
+        self._tableView.setAttributes(self.loadedImages.attributeNamesMap)
+        self._thumbnailView.setModel(self.loadedImages.sortedModel)
+        self._singleImageView.setModel(self.loadedImages.sortedModel)
         
     def loadImages(self, imageList, source):
         env.widgets["sourceEntry"].set_text(source)
-        self._selection = Set()
-        self.tableView.loadNewSelection()
-        self.thumbnailView.loadNewSelection()
-        self.thumbnailView.freeze()
+        self.selection.clear()
+        self._currentView.freeze()
         self.loadedImages.loadImageList(imageList)
         self.loadedImages.loadThumbnails(self._wantedThumbnailSize)
-        self.thumbnailView.thaw()
-
+        self._currentView.thaw()
+        self._currentView.loadNewSelection()
+        
     def selectionUpdated(self):
-        self.thumbnailView.loadNewSelection()
-        self.tableView.loadNewSelection()
+        self._currentView.loadNewSelection()
         self._categories.updateView()
 
+    def _viewChanged(self):
+        self._currentView.loadNewSelection()
+        self._currentView.show()
+        for hiddenView in self._hiddenViews:
+            hiddenView.hide()
+        
+    def showTableView(self):
+        self._currentView = self._tableView
+        self._hiddenViews = [self._thumbnailView, self._singleImageView]
+        self._viewChanged()
+        
+    def showThumbnailView(self):
+        self._currentView = self._thumbnailView
+        self._hiddenViews = [self._tableView, self._singleImageView]
+        self._viewChanged()
+
+    def showSingleImageView(self):
+        self._currentView = self._singleImageView
+        self._hiddenViews = [self._tableView, self._thumbnailView]
+        self._viewChanged()
+        
     def clipboardSet(self, object):
         self._clipboard = object
         self._categories.updateContextMenu()
