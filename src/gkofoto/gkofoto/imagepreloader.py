@@ -108,6 +108,9 @@ class ImagePreloader(object):
         # Discard old preloaded images.
         for filename in self.__preloadStates.keys():
             if not filename in filenames:
+                pixbufLoader = self.__preloadStates[filename].pixbufLoader
+                if pixbufLoader:
+                    pixbufLoader.close()
                 del self.__preloadStates[filename]
 
         # Preload the new images.
