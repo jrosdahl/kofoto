@@ -116,4 +116,33 @@
 * Store a log of changes to the shelf and add possibility of backing
   out changes.
 
-* Create an extension module wrapping the jpegtran code.
+* Create an extension module wrapping the jpegtran code so that we
+  don't have to rely on an external jpegtran program.
+
+* Load thumbnails in a separate thread in gkofoto to avoid locking up
+  the UI.
+
+* Preload next and previous image in gkofoto by a separate thread.
+
+* Handle that an image is missing on the disk, at least by displaying
+  a "not found" icon.
+
+* Make it possible to mark images as being off-line. If an image is
+  off-line, don't look for it in the recorded location but instead
+  make use of the largest available image in the image cache.
+
+* Store a bit larger (default 256x256 or so) thumbnails in the image
+  cache. Make it possible in gkofoto to choose an arbitrary thumbnail
+  size not larger than the "large thumbnail" size.
+
+* Add image registration dialog to gkofoto.
+
+* Add HTML generation dialog to gkofoto.
+
+* Add "update locations" dialog to gkofoto.
+
+* Add configuration dialog to gkofoto.
+
+* Add a possibility of defining a filter in gkofoto. A filter of "not
+  private" would for instance exclude images with the category
+  "private" from search results.
