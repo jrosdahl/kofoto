@@ -9,6 +9,7 @@ __all__ = [
     "MissingSectionHeaderError",
     "createConfigTemplate",
 ]
+
 from ConfigParser import *
 ConfigParserMissingSectionHeaderError = MissingSectionHeaderError
 import os

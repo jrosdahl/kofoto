@@ -1,3 +1,5 @@
+__all__ = ["ImageCache"]
+
 import os
 import Image as PILImage
 from kofoto.cachedir import CacheDir

@@ -1,5 +1,7 @@
 """A non-generator version of a subset of sets.py in Python 2.3."""
 
+__all__ = ["Set"]
+
 class Set:
     def __init__(self, initlist=None):
         self._elements = {}

@@ -1,3 +1,5 @@
+__all__ = ["Generator", "OutputTypeError"]
+
 from kofoto.common import KofotoError
 
 class OutputTypeError(KofotoError):

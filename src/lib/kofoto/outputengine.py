@@ -1,3 +1,5 @@
+__all__ = ["OutputEngine"]
+
 import os
 import time
 from kofoto.cachedir import CacheDir

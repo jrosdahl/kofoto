@@ -1,3 +1,5 @@
+__all__ = ["CachedObject"]
+
 class CachedObject:
     def __init__(self, constructor, args=()):
         self.constructor = constructor

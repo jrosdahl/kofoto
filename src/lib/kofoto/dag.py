@@ -1,5 +1,7 @@
 """A directed, acyclic graph."""
 
+__all__ = ["DAG", "LoopError"]
+
 from __future__ import generators
 
 # TODO: Remove when Python 2.3 or higher is required.

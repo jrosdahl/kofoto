@@ -1,5 +1,41 @@
 """Interface to a Kofoto shelf."""
 
+######################################################################
+### Public names.
+
+__all__ = [
+    "AlbumDoesNotExistError",
+    "AlbumExistsError",
+    "BadAlbumTagError",
+    "BadCategoryTagError",
+    "CategoriesAlreadyConnectedError",
+    "CategoryDoesNotExistError",
+    "CategoryExistsError",
+    "CategoryLoopError",
+    "CategoryPresentError",
+    "FailedWritingError",
+    "ImageDoesNotExistError",
+    "ImageExistsError",
+    "NotAnImageError",
+    "ObjectDoesNotExistError",
+    "ObjectExistsError",
+    "SearchExpressionParseError",
+    "Shelf",
+    "ShelfLockedError",
+    "ShelfNotFoundError",
+    "UndeletableAlbumError",
+    "UnimplementedError",
+    "UnknownAlbumTypeError",
+    "UnsettableChildrenError",
+    "UnsupportedShelfError",
+    "computeImageHash",
+    "verifyValidAlbumTag",
+    "verifyValidCategoryTag",
+]
+
+######################################################################
+### Pragmas.
+
 # Be compatible with Python 2.2.
 from __future__ import generators
 
@@ -192,6 +228,7 @@ class ShelfNotFoundError(KofotoError):
 
 class UnsupportedShelfError(KofotoError):
     """Unsupported shelf database format."""
+
 
 class ShelfLockedError(KofotoError):
     """The shelf is locked by another process."""
