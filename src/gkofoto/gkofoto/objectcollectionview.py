@@ -129,6 +129,12 @@ class ObjectCollectionView:
         self.__imageMenuGroup = self.__createImageMenuGroup(objectCollection)
         for item in self.__imageMenuGroup:
             self._contextMenu.add(item)
+        self.__singleImageMenuGroup = self.__createSingleImageMenuGroup(objectCollection)
+        for item in self.__singleImageMenuGroup:
+            self._contextMenu.add(item)
+        self.__multipleImagesMenuGroup = self.__createMultipleImagesMenuGroup(objectCollection)
+        for item in self.__multipleImagesMenuGroup:
+            self._contextMenu.add(item)
         self.__sortMenuGroup = self.__createSortMenuGroup(objectCollection)
         self._contextMenu.add(self.__sortMenuGroup.createGroupMenuItem())
 
@@ -139,6 +145,8 @@ class ObjectCollectionView:
         self.__objectMenuGroup = None
         self.__albumMenuGroup = None
         self.__imageMenuGroup = None
+        self.__singleImageMenuGroup = None
+        self.__multipleImagesMenuGroup = None
         self.__sortMenuGroup = None
 
     def _updateContextMenu(self, *foo):
@@ -205,6 +213,16 @@ class ObjectCollectionView:
                 env.widgets["menubarOpenImage"].set_sensitive(True)
                 env.widgets["menubarRotateLeft"].set_sensitive(True)
                 env.widgets["menubarRotateRight"].set_sensitive(True)
+                if imagesSelected == 1:
+                    self.__singleImageMenuGroup.enable()
+                    env.widgets["menubarImageVersions"].set_sensitive(True)
+                    self.__multipleImagesMenuGroup.disable()
+                    env.widgets["menubarMergeImages"].set_sensitive(False)
+                else:
+                    self.__singleImageMenuGroup.disable()
+                    env.widgets["menubarImageVersions"].set_sensitive(False)
+                    self.__multipleImagesMenuGroup.enable()
+                    env.widgets["menubarMergeImages"].set_sensitive(True)
             else:
                 self.__imageMenuGroup.disable()
                 env.widgets["menubarOpenImage"].set_sensitive(False)
@@ -229,6 +247,10 @@ class ObjectCollectionView:
             env.widgets["menubarOpenImage"].set_sensitive(False)
             env.widgets["menubarRotateLeft"].set_sensitive(False)
             env.widgets["menubarRotateRight"].set_sensitive(False)
+            self.__singleImageMenuGroup.disable()
+            env.widgets["menubarImageVersions"].set_sensitive(False)
+            self.__multipleImagesMenuGroup.disable()
+            env.widgets["menubarMergeImages"].set_sensitive(False)
 
         if env.clipboard.hasObjects():
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
@@ -326,5 +348,16 @@ class ObjectCollectionView:
             oc.getRotateImageRightLabel(),
             os.path.join(env.iconDir, "rotateright.png"),
             oc.rotateImage, 90)
+        menuGroup.addSeparator()
+        return menuGroup
+
+    def __createSingleImageMenuGroup(self, oc):
+        menuGroup = MenuGroup()
+        menuGroup.addMenuItem(oc.getImageVersionsLabel(), oc.imageVersions)
+        return menuGroup
+
+    def __createMultipleImagesMenuGroup(self, oc):
+        menuGroup = MenuGroup()
+        menuGroup.addMenuItem(oc.getMergeImagesLabel(), oc.mergeImages)
         menuGroup.addSeparator()
         return menuGroup

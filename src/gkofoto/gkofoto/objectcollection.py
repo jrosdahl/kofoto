@@ -9,6 +9,7 @@ from environment import env
 from objectselection import *
 from albumdialog import AlbumDialog
 from registerimagesdialog import RegisterImagesDialog
+from imageversionsdialog import ImageVersionsDialog
 
 class ObjectCollection(object):
 
@@ -93,6 +94,12 @@ class ObjectCollection(object):
 
     def getRotateImageRightLabel(self):
         return "Rotate image right"
+
+    def getImageVersionsLabel(self):
+        return "Image versions..."
+
+    def getMergeImagesLabel(self):
+        return "Merge images..."
 
     def getObjectMetadataMap(self):
         return self.__objectMetadataMap
@@ -426,6 +433,18 @@ class ObjectCollection(object):
         env.mainwindow.reloadAlbumTree()
         # TODO: Update objectCollection.
 
+    def imageVersions(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1
+        dialog = ImageVersionsDialog()
+        dialog.runViewImageVersions(selectedObjects[0])
+
+    def mergeImages(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) > 1
+        dialog = ImageVersionsDialog()
+        dialog.runMergeImages(selectedObjects)
+
     def rotateImage(self, widget, angle):
         env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
@@ -453,13 +472,13 @@ class ObjectCollection(object):
                     dialog.run()
                     dialog.destroy()
 
-    def rotateImageLeft(self, widget, data):
+    def rotateImageLeft(self, widget, *unused):
         self.rotateImage(widget, 270)
 
-    def rotateImageRight(self, widget, data):
+    def rotateImageRight(self, widget, *unused):
         self.rotateImage(widget, 90)
 
-    def openImage(self, widget, data):
+    def openImage(self, widget, *unused):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
             if not obj.isAlbum():

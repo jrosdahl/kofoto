@@ -165,6 +165,8 @@ class TableView(ObjectCollectionView):
                 ("menubarOpenImage", oc.openImage),
                 ("menubarRotateLeft", oc.rotateImageLeft),
                 ("menubarRotateRight", oc.rotateImageRight),
+                ("menubarImageVersions", oc.imageVersions),
+                ("menubarMergeImages", oc.mergeImages),
                 ]:
             w = env.widgets[widgetName]
             oid = w.connect("activate", function)
@@ -197,6 +199,8 @@ class TableView(ObjectCollectionView):
                 "menubarOpenImage",
                 "menubarRotateLeft",
                 "menubarRotateRight",
+                "menubarImageVersions",
+                "menubarMergeImages",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 

@@ -112,6 +112,9 @@ class MainWindow(gtk.Window):
         self.__categories.loadCategoryTree()
         self.loadQuery(self.__query)
 
+    def reloadObjectList(self):
+        self.loadQuery(self.__query)
+
     def reloadAlbumTree(self):
         self.__albums.loadAlbumTree()
 
