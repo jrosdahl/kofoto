@@ -1,0 +1,57 @@
+#! /usr/bin/env python
+
+import sqlite
+import sys
+from sets import Set
+
+if len(sys.argv) != 2:
+    print "Usage: kofoto-check-integrity <path-to-database>"
+    sys.exit(1)
+
+def getIds(connection, idMapping, tableColumn):
+    cursor = connection.cursor()
+    s = Set()
+    table, column = tableColumn.split(".")
+    cursor.execute("select %s from %s" % (column, table))
+    for row in cursor.fetchall():
+        s.add(row[0])
+    idMapping[tableColumn] = s
+
+def checkSubset(idMapping, subsetName, supersetName):
+    subset = idMapping[subsetName]
+    superset = idMapping[supersetName]
+    if not subset.issubset(superset):
+        print "%s not in %s: %s" % (
+            subsetName,
+            supersetName,
+            ", ".join([str(x) for x in subset.difference(superset)]))
+
+connection = sqlite.connect(sys.argv[1])
+idMapping = {}
+
+getIds(connection, idMapping, "object.id")
+getIds(connection, idMapping, "album.id")
+getIds(connection, idMapping, "image.id")
+getIds(connection, idMapping, "image.primary_version")
+getIds(connection, idMapping, "image_version.id")
+getIds(connection, idMapping, "image_version.image")
+getIds(connection, idMapping, "member.album")
+getIds(connection, idMapping, "member.object")
+getIds(connection, idMapping, "attribute.object")
+getIds(connection, idMapping, "category.id")
+getIds(connection, idMapping, "category_child.parent")
+getIds(connection, idMapping, "category_child.child")
+getIds(connection, idMapping, "object_category.object")
+getIds(connection, idMapping, "object_category.category")
+
+checkSubset(idMapping, "album.id", "object.id")
+checkSubset(idMapping, "image.id", "object.id")
+checkSubset(idMapping, "image.primary_version", "image_version.id")
+checkSubset(idMapping, "image_version.image", "image.id")
+checkSubset(idMapping, "member.album", "album.id")
+checkSubset(idMapping, "member.object", "object.id")
+checkSubset(idMapping, "attribute.object", "object.id")
+checkSubset(idMapping, "category_child.parent", "category.id")
+checkSubset(idMapping, "category_child.child", "category.id")
+checkSubset(idMapping, "object_category.object", "object.id")
+checkSubset(idMapping, "object_category.category", "category.id")
