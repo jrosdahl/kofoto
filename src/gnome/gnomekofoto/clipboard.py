@@ -2,7 +2,7 @@ from sets import Set
 from environment import env
 from kofoto.shelf import Image
 from kofoto.shelf import Album
-from kofoto.shelf import Category
+from categories import ClipboardCategories
 
 class Clipboard:
 
@@ -31,15 +31,14 @@ class Clipboard:
                 raise "Object is not an Image nor an Album" # TODO
         self.__invokeChangedCallbacks()
 
-    def setCategories(self, iter):
+    def setCategories(self, clipboardCategories):
         self.__objects = []
+        if isinstance(clipboardCategories, ClipboardCategories):
+            self.__objects.append(clipboardCategories)
+        else:
+            self.clear()
+            raise "Object is not a ClipboardCategories" # TODO
         self.__types = Clipboard.CATEGORIES
-        for object in iter:
-            if isinstance(object, Category):
-                self.__objects.append(object)
-            else:
-                self.clear()
-                raise "Object is not a Category" # TODO
         self.__invokeChangedCallbacks()
         
     def clear(self):
@@ -58,6 +57,9 @@ class Clipboard:
 
     def __iter__(self):
         return self.__objects.__iter__()
+
+    def __getitem__(self, index):
+        return self.__objects.__getitem__(index)
 
     def __invokeChangedCallbacks(self):
         for callback in self.__changedCallbacks:

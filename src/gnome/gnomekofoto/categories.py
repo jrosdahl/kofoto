@@ -15,7 +15,7 @@ class Categories:
     def __init__(self, objectCollection):
         self.__toggleColumn = None
         self.__ignoreSelectEvent = False
-        self.__selectedCategoryRows = {}
+        self.__selectedCategoriesIds  = {}
         self.__categoryModel = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                              gobject.TYPE_STRING,   # DESCRIPTION
                                              gobject.TYPE_BOOLEAN,  # CONNECTED
@@ -194,35 +194,43 @@ class Categories:
         cc = ClipboardCategories()
         cc.type = cc.COPY
         cc.categories = self.__selectedCategoriesIds
-        env.controller.clipboardSet(cc)
+        env.clipboard.setCategories(cc)
 
     def _cutCategory(self, item, data):
         cc = ClipboardCategories()
         cc.type = cc.CUT
-        cc.categories = self.__selectedCategoriesIds        
-        env.controller.clipboardSet(cc)
+        cc.categories = self.__selectedCategoriesIds
+        env.clipboard.setCategories(cc)
         
     def _pasteCategory(self, item, data):
-        clipboardCategories = env.controller.clipboardPop()
-        # TODO Check that the clipboardCategories is an
-        # instance of the ClipboardCategories class. Show an
-        # error dialog box if it is not.
+        if not env.clipboard.hasCategories():
+            raise "No categories in clipboard" # TODO
+        clipboardCategories = env.clipboard[0]
+        env.clipboard.clear()
         try:
-            for (categoryId, previousParentIds) in clipboardCategories.categories:
-                for newParentId in self.__getSelectedCategoriesWithParentIds:
+            for (categoryId, previousParentIds) in clipboardCategories.categories.items():
+                for newParentId in self.__selectedCategoriesIds:
                     if clipboardCategories.type == ClipboardCategories.COPY:
                         self.__connectChildToCategory(categoryId, newParentId)
+                        for parentId in previousParentIds:
+                            if parentId is None:
+                                self.__disconnectChildHelper(categoryId, None,
+                                                             None, self.__categoryModel)
                     else:
                         if newParentId in previousParentIds:
                             previousParentIds.remove(newParentId)
                         else:
                             self.__connectChildToCategory(categoryId, newParentId)
                         for parentId in previousParentIds:
-                            self.__disconnectChild(categoryId, previousParentId)
+                            if parentId is None:
+                                self.__disconnectChildHelper(categoryId, None,
+                                                             None, self.__categoryModel)
+                            else:
+                                self.__disconnectChild(categoryId, parentId)
         except CategoryLoopError:
             print "Error: Category loop detected"
             # TODO: Show dialog box with error message
-        self.__expandAndCollapseRows(false, false)
+        self.__expandAndCollapseRows(False, False)
         
     def _createRootCategory(self, item, data):
         dialog = CategoryDialog("Create root category")
@@ -239,8 +247,8 @@ class Categories:
     def _createChildCategoryHelper(self, tag, desc):
         newCategory = env.shelf.createCategory(tag, desc)
         for selectedCategoryId in self.__selectedCategoriesIds:
-            self._connectChild(newCategory.getId(), selectedCategoryId)
-        self.__expandAndCollapseRows(false, false)
+            self.__connectChildToCategory(newCategory.getId(), selectedCategoryId)
+        self.__expandAndCollapseRows(False, False)
 
     def _deleteCategories(self, item, data):
         # TODO: Add confirmation dialog box
@@ -250,10 +258,9 @@ class Categories:
                 # The backend automatically disconnects childs when a category
                 # is deleted, but we do it ourself to make sure that the
                 # treeview widget is updated
-                self._disconnectChild(child.getId(), categoryId)
+                self.__disconnectChild(child.getId(), categoryId)
             env.shelf.deleteCategory(categoryId)
             env.shelf.flushCategoryCache()
-            self._deleteCategoryHelper(categoryId)
             self.__forEachCategoryRow(self.__deleteCategoriesHelper, categoryId)
 
     def __deleteCategoriesHelper(self, categoryRow, categoryIdToDelete):
@@ -267,7 +274,7 @@ class Categories:
                     self.__disconnectChild(categoryId, parentId)
 
     def _editProperties(self, item, data):
-        for categoryId in __selectedCategoryIds:
+        for categoryId in self.__selectedCategoriesIds:
             dialog = CategoryDialog("Change properties", categoryId)
             dialog.run(self._editPropertiesHelper, data=categoryId)
 
@@ -275,6 +282,7 @@ class Categories:
          category = env.shelf.getCategory(categoryId)
          category.setTag(tag)
          category.setDescription(desc)
+         env.shelf.flushCategoryCache()
          self.__forEachCategoryRow(self.__updatePropertiesFromShelf, categoryId)
 
     def _selectionFunction(self, path, b):
@@ -314,7 +322,7 @@ class Categories:
 
     def __updateContextMenu(self):
         # TODO Create helper functions to use from this method
-        if len(self.__selectedCategoryRows) == 0:
+        if len(self.__selectedCategoriesIds) == 0:
             self._deleteItem.set_sensitive(False)
             self._createChildItem.set_sensitive(False)
             self._copyItem.set_sensitive(False)
@@ -326,12 +334,12 @@ class Categories:
             self._createChildItem.set_sensitive(True)
             self._copyItem.set_sensitive(True)
             self._cutItem.set_sensitive(True)
-            if env.controller.clipboardHasCategory():
+            if env.clipboard.hasCategories():
                 self._pasteItem.set_sensitive(True)
             else:
                 self._pasteItem.set_sensitive(False)
             self._disconnectItem.set_sensitive(True)
-        if len(self.__selectedCategoryRows) == 1:
+        if len(self.__selectedCategoriesIds) == 1:
             self._propertiesItem.set_sensitive(True)
         else:
             self._propertiesItem.set_sensitive(False)
@@ -402,40 +410,55 @@ class Categories:
             return False
                 
     def __connectChildToCategory(self, childId, parentId):
-        # Update shelf
-        childCategory = env.shelf.getCategory(childId)
-        parentCategory = env.shelf.getCategory(parentId)
-        parentCategory.connectChild(childCategory)
-        # Update widget modell
-        # If we reload the whole category tree from the shelf, we would lose
-        # the widgets information about current selected categories,
-        # expanded categories and the widget's scroll position. Hence,
-        # we update our previously loaded model instead.        
-        self.__connectChildToCategoryHelper(parentId,
-                                            childCategory,
-                                            self.__categoryModel)
+        try:
+            # Update shelf
+            childCategory = env.shelf.getCategory(childId)
+            parentCategory = env.shelf.getCategory(parentId)
+            parentCategory.connectChild(childCategory)
+            env.shelf.flushCategoryCache()
+            # Update widget modell
+            # If we reload the whole category tree from the shelf, we would lose
+            # the widgets information about current selected categories,
+            # expanded categories and the widget's scroll position. Hence,
+            # we update our previously loaded model instead.        
+            self.__connectChildToCategoryHelper(parentId,
+                                                childCategory,
+                                                self.__categoryModel)
+        except CategoriesAlreadyConnectedError:
+            print "Error: Categories already connected"
+            # TODO: Show dialog box with error message
 
     def __connectChildToCategoryHelper(self, parentId, childCategory, categoryRows):
         for categoryRow in categoryRows:
             if categoryRow[self.__COLUMN_CATEGORY_ID] == parentId:
                 self.__loadCategorySubTree(categoryRow.iter, childCategory)
             else:
-                self.__connectChildToCategoryHelper(parentId, childCategory, categoryRow.getChildren())
+                self.__connectChildToCategoryHelper(parentId, childCategory, categoryRow.iterchildren())
                                      
     def __disconnectChild(self, childId, parentId):
         # Update shelf
         childCategory = env.shelf.getCategory(childId)
         parentCategory = env.shelf.getCategory(parentId)
+        if childCategory in env.shelf.getRootCategories():
+            alreadyWasRootCategory = True
+        else:
+            alreadyWasRootCategory = False
         parentCategory.disconnectChild(childCategory)
+        env.shelf.flushCategoryCache()
         # Update widget modell.
         # If we reload the whole category tree from the shelf, we would lose
         # the widgets information about current selected categories,
         # expanded categories and the widget's scroll position. Hence,
         # we update our previously loaded model instead.
-        self._disconnectChildHelper(childId,
+        self.__disconnectChildHelper(childId,
                                     parentId,
                                     None,
                                     self.__categoryModel)
+        if not alreadyWasRootCategory:
+            for c in env.shelf.getRootCategories():
+                if c.getId() == childCategory.getId():
+                    self.__loadCategorySubTree(None, childCategory)
+                    break
 
     def __disconnectChildHelper(self, wantedChildId, wantedParentId,
                                 parentId, categoryRows):
@@ -443,7 +466,7 @@ class Categories:
             id = categoryRow[self.__COLUMN_CATEGORY_ID]
             if id == wantedChildId and parentId == wantedParentId:
                 self.__categoryModel.remove(categoryRow.iter)
-            self._disconnectChildHelper(wantedChildId, wantedParentId, id, categoryRow.getChildren())
+            self.__disconnectChildHelper(wantedChildId, wantedParentId, id, categoryRow.iterchildren())
             
     def __updatePropertiesFromShelf(self, categoryRow, categoryId):
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryId:

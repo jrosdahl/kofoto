@@ -75,30 +75,6 @@ class Controller:
         # TODO Move method to mainWindow?
         self.__mainWindow.setObjectCollection(self.__factory.getObjectCollection(url))
 
-    def clipboardSet(self, object):
-        self._clipboard = object
-        # TODO
-        # self._categories.updateContextMenu()
-
-    def clipboardClear(self):
-        self._clipboard = None
-        # TODO        
-        # self._categories.updateContextMenu()
-
-    def clipboardPop(self):
-        popedItem = self._clipboard
-        self._clipboard = None
-        # TODO        
-        # self._categories.updateContextMenu()
-        return popedItem
-
-    def clipboardHasCategory(self):
-        # TODO        
-        if isinstance(self._clipboard, ClipboardCategories):
-            return True
-        else:
-            return False
-
 ######################################################################
 ### Start
 
