@@ -260,7 +260,7 @@ class Categories:
         if result == gtk.RESPONSE_OK:
             for categoryId in self.__selectedCategoriesIds:
                 category = env.shelf.getCategory(categoryId)
-                for child in category.getChildren():
+                for child in list(category.getChildren()):
                     # The backend automatically disconnects childs
                     # when a category is deleted, but we do it ourself
                     # to make sure that the treeview widget is
