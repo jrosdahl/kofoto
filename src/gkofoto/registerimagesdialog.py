@@ -20,4 +20,4 @@ class RegisterImagesDialog(gtk.FileSelection):
         self.hide()
 
     def _cancel(self, widget):
-        self.hide()
+        self.destroy()

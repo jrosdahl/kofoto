@@ -99,7 +99,7 @@ class Controller:
             env.shelf.rollback()
             env.shelf.begin()
             self.__mainWindow.reload()
-        dialog.hide()
+        dialog.destroy()
 
     def registerImages(self, app):
         dialog = RegisterImagesDialog()
