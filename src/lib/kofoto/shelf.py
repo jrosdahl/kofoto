@@ -613,7 +613,8 @@ class Shelf:
             raise NotAnImageError, path
 
         import os
-        location = os.path.abspath(path)
+        location = unicode(os.path.abspath(path.encode(self.codeset)),
+                           self.codeset)
         hash = computeImageHash(location.encode(self.codeset))
         try:
             cursor = self.connection.cursor()
