@@ -13,7 +13,7 @@ clean:
 	rm -rf build dist
 	find . \( -name '*~' -o -name '.*~' -o -name '.#*' -o -name '*.pyc' \
 		  -o -name '*.orig' -o -name '*.bak' -o -name '*.rej' \
-                  -o -name MANIFEST \
+		  -o -name MANIFEST \
 	       \) -exec rm -f {} \;
 
 install:
@@ -45,6 +45,7 @@ dist_debian:
 	cp dist/kofoto-$(VERSION).tar.gz dist/debiantmp/kofoto_$(VERSION).orig.tar.gz
 	cd dist/debiantmp && tar xzf kofoto_$(VERSION).orig.tar.gz
 	cp -r packaging/debian dist/debiantmp/kofoto-$(VERSION)
+	rm -rf dist/debiantmp/kofoto-$(VERSION)/debian/.svn
 	cd dist/debiantmp/kofoto-$(VERSION) && debuild
 	mkdir -p dist/debian
 	mv dist/debiantmp/kofoto_$(VERSION)-*.deb dist/debian
