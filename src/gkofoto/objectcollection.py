@@ -111,19 +111,19 @@ class ObjectCollection(object):
             self._thawViews()
 
     def cut(self, *foo):
-        raise "Error. Not allowed to cut objects into objectCollection." # TODO
+        raise Exception("Error. Not allowed to cut objects into objectCollection.") # TODO
 
     def copy(self, *foo):
         env.clipboard.setObjects(self.__objectSelection.getSelectedObjects())
 
     def paste(self, *foo):
-        raise "Error. Not allowed to paste objects into objectCollection." # TODO
+        raise Exception("Error. Not allowed to paste objects into objectCollection.") # TODO
 
     def delete(self, *foo):
-        raise "Error. Not allowed to delete objects from objectCollection." # TODO        
+        raise Exception("Error. Not allowed to delete objects from objectCollection.") # TODO
 
     def destroy(self, *foo):
-        raise "Destroy not implemented." #TODO
+        raise Exception("Destroy not implemented.") #TODO
 
     COLUMN_VALID_LOCATION = 0
     COLUMN_VALID_CHECKSUM = 1
@@ -158,30 +158,30 @@ class ObjectCollection(object):
         self._thawViews()
         env.exit("Object collection loading objects. (albums=" + str(self.__nrOfAlbums) + " images=" + str(self.__nrOfImages) + ")")
 
-    def _insertObjectList(self, objectList, iter=None):
+    def _insertObjectList(self, objectList, iterator=None):
         # Note that this methods does NOT update objectSelection.
-        for object in objectList:
-            if iter is None:
-                iter = self.__treeModel.append(None)
+        for obj in objectList:
+            if iterator is None:
+                iterator = self.__treeModel.append(None)
             else:
-                iter = self.__treeModel.insert_after(iter, None)
-            self.__treeModel.set_value(iter, self.COLUMN_OBJECT_ID, object.getId())
-            if object.isAlbum():
-                self.__treeModel.set_value(iter, self.COLUMN_IS_ALBUM, True)
-                self.__treeModel.set_value(iter, self.COLUMN_ALBUM_TAG, object.getTag())
-                self.__treeModel.set_value(iter, self.COLUMN_LOCATION, None)
+                iterator = self.__treeModel.insert_after(iterator, None)
+            self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
+            if obj.isAlbum():
+                self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, True)
+                self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, obj.getTag())
+                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, None)
                 self.__nrOfAlbums += 1
             else:
-                self.__treeModel.set_value(iter, self.COLUMN_IS_ALBUM, False)
-                self.__treeModel.set_value(iter, self.COLUMN_ALBUM_TAG, None)
-                self.__treeModel.set_value(iter, self.COLUMN_LOCATION, object.getLocation())
+                self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, False)
+                self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, None)
+                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, obj.getLocation())
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
-            for attribute, value in object.getAttributeMap().items():
+            for attribute, value in obj.getAttributeMap().items():
                 column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
-                self.__treeModel.set_value(iter, column, value)
-            self.__treeModel.set_value(iter, self.COLUMN_ROW_EDITABLE, True)
-            self.__loadThumbnail(self.__treeModel, iter)
+                self.__treeModel.set_value(iterator, column, value)
+            self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
+            self.__loadThumbnail(self.__treeModel, iterator)
         self. _handleNrOfObjectsUpdate()
 
     def _handleNrOfObjectsUpdate(self):
@@ -214,34 +214,34 @@ class ObjectCollection(object):
     def _attributeEdited(self, renderer, path, value, column, attributeName):
         model = self.getModel()
         columnNumber = self.__objectMetadataMap["@" + attributeName][self.COLUMN_NR]
-        iter = model.get_iter(path)
-        oldValue = model.get_value(iter, columnNumber)
+        iterator = model.get_iter(path)
+        oldValue = model.get_value(iterator, columnNumber)
         if not oldValue:
             oldValue = u""
         value = unicode(value, "utf-8")
         if oldValue != value:
             # TODO Show dialog and ask for confirmation?
-            objectId = model.get_value(iter, self.COLUMN_OBJECT_ID)
-            object = env.shelf.getObject(objectId)
-            object.setAttribute(attributeName, value)
-            model.set_value(iter, columnNumber, value)
+            objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
+            obj = env.shelf.getObject(objectId)
+            obj.setAttribute(attributeName, value)
+            model.set_value(iterator, columnNumber, value)
             env.debug("Object attribute edited")
             
     def _albumTagEdited(self, renderer, path, value, column, columnNumber):
         model = self.getModel()
-        iter = model.get_iter(path)
-        if model.get_value(iter, self.COLUMN_IS_ALBUM):
-            oldValue = model.get_value(iter, columnNumber)
+        iterator = model.get_iter(path)
+        if model.get_value(iterator, self.COLUMN_IS_ALBUM):
+            oldValue = model.get_value(iterator, columnNumber)
             if not oldValue:
                 oldValue = u""
             value = unicode(value, "utf-8")
             if oldValue != value:
                 # TODO Show dialog and ask for confirmation?
-                objectId = model.get_value(iter, self.COLUMN_OBJECT_ID)
-                object = env.shelf.getAlbum(objectId)
-                object.setTag(value)
+                objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
+                obj = env.shelf.getAlbum(objectId)
+                obj.setTag(value)
                 # TODO Handle invalid album tag?
-                model.set_value(iter, columnNumber, value)
+                model.set_value(iterator, columnNumber, value)
                 # TODO Update the album tree widget.
                 env.debug("Album tag edited")                
         else:
@@ -249,9 +249,9 @@ class ObjectCollection(object):
             print "Not allowed to set album tag on image"
 
     def rotate(self, widget, angle):
-        for (rowNr, object) in self.__objectSelection.getMap().items():
-            if not object.isAlbum():
-                location = object.getLocation().encode(env.codeset)
+        for (rowNr, obj) in self.__objectSelection.getMap().items():
+            if not obj.isAlbum():
+                location = obj.getLocation().encode(env.codeset)
                 if angle == 90:
                     commandString = env.rotateRightCommand
                 else:
@@ -259,7 +259,7 @@ class ObjectCollection(object):
                 command = commandString.encode(env.codeset) % { "location":location }
                 result = os.system(command)
                 if result == 0:
-                    object.contentChanged()
+                    obj.contentChanged()
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
                 else:
@@ -267,9 +267,9 @@ class ObjectCollection(object):
 
     def open(self, widget, data):
         locations = ""
-        for object in self.__objectSelection.getSelectedObjects():
-            if not object.isAlbum():
-                location = object.getLocation()
+        for obj in self.__objectSelection.getSelectedObjects():
+            if not obj.isAlbum():
+                location = obj.getLocation()
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
@@ -289,18 +289,18 @@ class ObjectCollection(object):
                                                 name)
         self.__columnsType.append(gobject.TYPE_STRING)
 
-    def __loadThumbnail(self, model, iter):
-        objectId = model.get_value(iter, self.COLUMN_OBJECT_ID)
-        object = env.shelf.getObject(objectId)
-        if object.isAlbum():
+    def __loadThumbnail(self, model, iterator):
+        objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
+        obj = env.shelf.getObject(objectId)
+        if obj.isAlbum():
             pixbuf = env.albumIconPixbuf
         else:
             try:
                 thumbnailLocation = env.imageCache.get(
-                    object, env.thumbnailSize[0], env.thumbnailSize[1])[0]
+                    obj, env.thumbnailSize[0], env.thumbnailSize[1])[0]
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:
                 pixbuf = env.unknownImageIconPixbuf
-        model.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
+        model.set_value(iterator, self.COLUMN_THUMBNAIL, pixbuf)
 

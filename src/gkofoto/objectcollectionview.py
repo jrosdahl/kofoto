@@ -66,17 +66,19 @@ class ObjectCollectionView:
         if event.button == 3:
             self._contextMenu.popup(None, None, None, event.button, event.time)
             return True
-        
+        else:
+            return False
+
 ##############################################################################
 ### Methods used by and overloaded by subbclasses
 
-    def _connect(self, object, signal, function):
-        id = object.connect(signal, function)
-        self.__connections.append((object, id))
+    def _connect(self, obj, signal, function):
+        oid = obj.connect(signal, function)
+        self.__connections.append((obj, oid))
 
     def _clearAllConnections(self):
-        for (object, id) in self.__connections:
-            object.disconnect(id)
+        for (obj, oid) in self.__connections:
+            obj.disconnect(oid)
         self.__connections = []
 
     def _createContextMenu(self, objectCollection):

@@ -116,9 +116,9 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         if path[0] == self.__selectedRowNr:
             env.debug("selected object in SingleObjectView changed")
             objectSelection = self._objectCollection.getObjectSelection()
-            object = objectSelection[path[0]]
-            if not object.isAlbum():
-                self.loadFile(object.getLocation(), True)
+            obj = objectSelection[path[0]]
+            if not obj.isAlbum():
+                self.loadFile(obj.getLocation(), True)
         
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()

@@ -241,12 +241,12 @@ class TableView(ObjectCollectionView):
 ### Private
 
     def __createColumn(self, columnName, objectMetadataMap, location=-1):
-        (type, column, editedCallback, editedCallbackData) = objectMetadataMap[columnName]
-        if type == gtk.gdk.Pixbuf:
+        (objtype, column, editedCallback, editedCallbackData) = objectMetadataMap[columnName]
+        if objtype == gtk.gdk.Pixbuf:
             renderer = gtk.CellRendererPixbuf()
             column = gtk.TreeViewColumn(columnName, renderer, pixbuf=column)
             env.debug("Created a PixBuf column for " + columnName)
-        elif type == gobject.TYPE_STRING or type == gobject.TYPE_INT:
+        elif objtype == gobject.TYPE_STRING or objtype == gobject.TYPE_INT:
             renderer = gtk.CellRendererText()
             column = gtk.TreeViewColumn(columnName,
                                         renderer,
@@ -254,11 +254,11 @@ class TableView(ObjectCollectionView):
                                         editable=ObjectCollection.COLUMN_ROW_EDITABLE)
             column.set_resizable(True)
             if editedCallback:
-                id = renderer.connect("edited",
-                                      editedCallback,
-                                      column,
-                                      editedCallbackData)
-                self.__editedCallbacks[columnName] = (id, renderer)
+                cid = renderer.connect("edited",
+                                       editedCallback,
+                                       column,
+                                       editedCallbackData)
+                self.__editedCallbacks[columnName] = (cid, renderer)
                 env.debug("Created a Text column with editing callback for " + columnName)
             else:
                 env.debug("Created a Text column without editing callback for " + columnName)
@@ -274,8 +274,8 @@ class TableView(ObjectCollectionView):
         column = self.__createdColumns[columnName]
         self._viewWidget.remove_column(column)
         if columnName in self.__editedCallbacks:
-            (id, renderer) = self.__editedCallbacks[columnName]
-            renderer.disconnect(id)
+            (cid, renderer) = self.__editedCallbacks[columnName]
+            renderer.disconnect(cid)
             del self.__editedCallbacks[columnName]
         del self.__createdColumns[columnName]
         column.destroy()

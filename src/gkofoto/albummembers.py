@@ -40,16 +40,16 @@ class AlbumMembers(ObjectCollection):
             # Since the pasted objects are inserted AFTER the LAST
             # selected object it is not needed to update the
             # row numbers of the selected objects in the objectSelection.
-            iter =  self.getModel().get_iter(insertLocation)
+            iterator =  self.getModel().get_iter(insertLocation)
         else:
             insertLocation = 0
-            iter = None
+            iterator = None
         newObjects = list(env.clipboard)
         currentChildren = list(self.__album.getChildren())
         self.__album.setChildren(currentChildren[:insertLocation + 1] +
                                  newObjects +
                                  currentChildren[insertLocation + 1:])
-        self._insertObjectList(newObjects, iter)
+        self._insertObjectList(newObjects, iterator)
         # TODO If the added object is an album, update the album widget
         self._thawViews()        
 

@@ -447,7 +447,6 @@ class Shelf:
 
     def begin(self):
         """Begin working with the shelf."""
-        import threading
         assert not self.inTransaction
         self.transactionLock.acquire()
         self.inTransaction = True
@@ -649,13 +648,14 @@ class Shelf:
         cursor.execute(
             " select imageid, hash, directory, filename, mtime, width, height"
             " from   image")
-        for imageid, hash, directory, filename, mtime, width, height in cursor:
+        for (imageid, imghash, directory, filename, mtime, width,
+             height) in cursor:
             location = os.path.join(directory, filename)
             if imageid in self.objectcache:
                 yield self.objectcache[imageid]
             else:
                 yield self._imageFactory(
-                    imageid, hash, location, mtime, width, height)
+                    imageid, imghash, location, mtime, width, height)
 
 
     def getImagesInDirectory(self, directory):
@@ -671,13 +671,14 @@ class Shelf:
             " from   image"
             " where  directory = %s",
             directory)
-        for imageid, hash, directory, filename, mtime, width, height in cursor:
+        for (imageid, imghash, directory, filename, mtime, width,
+             height) in cursor:
             location = os.path.join(directory, filename)
             if imageid in self.objectcache:
                 yield self.objectcache[imageid]
             else:
                 yield self._imageFactory(
-                    imageid, hash, location, mtime, width, height)
+                    imageid, imghash, location, mtime, width, height)
 
 
     def deleteAlbum(self, tag):
@@ -752,7 +753,7 @@ class Shelf:
         location = unicode(os.path.realpath(path.encode(self.codeset)),
                            self.codeset)
         mtime = os.path.getmtime(location)
-        hash = computeImageHash(location.encode(self.codeset))
+        imghash = computeImageHash(location.encode(self.codeset))
         cursor = self.connection.cursor()
         try:
             cursor.execute(
@@ -764,7 +765,7 @@ class Shelf:
                 "                    width, height)"
                 " values (%s, %s, %s, %s, %s, %s, %s)",
                 imageid,
-                hash,
+                imghash,
                 os.path.dirname(location),
                 os.path.basename(location),
                 mtime,
@@ -784,7 +785,7 @@ class Shelf:
             now,
             now)
         image = self._imageFactory(
-            imageid, hash, location, mtime, width, height)
+            imageid, imghash, location, mtime, width, height)
         image = self.getImage(imageid)
         image.importExifTags()
         self._setModified()
@@ -861,18 +862,18 @@ class Shelf:
                         raise MultipleImagesAtOneLocationError, \
                               location.decode(self.codeset)
                 else:
-                    hash = computeImageHash(location)
-                    if hash in self.objectcache:
-                        img = self.objectcache[hash]
+                    imghash = computeImageHash(location)
+                    if imghash in self.objectcache:
+                        img = self.objectcache[imghash]
                         if img.isAlbum():
-                            raise ImageDoesNotExistError, hash
+                            raise ImageDoesNotExistError, imghash
                         return img
                     cursor = self.connection.cursor()
-                    cursor.execute(queryHeader + " where  hash = %s", hash)
+                    cursor.execute(queryHeader + " where  hash = %s", imghash)
             else:
-                hash = ref
+                imghash = ref
                 cursor = self.connection.cursor()
-                cursor.execute(queryHeader + " where  hash = %s", hash)
+                cursor.execute(queryHeader + " where  hash = %s", imghash)
         else:
             #
             # It's an image ID, but the image wasn't in the cache.
@@ -882,13 +883,13 @@ class Shelf:
         row = cursor.fetchone()
         if not row:
             raise ImageDoesNotExistError, ref
-        imageid, hash, directory, filename, mtime, width, height = row
+        imageid, imghash, directory, filename, mtime, width, height = row
         if identifyByLocation:
             if imageid in self.objectcache:
                 return self.objectcache[imageid]
         location = os.path.join(directory, filename)
         return self._imageFactory(
-            imageid, hash, location, mtime, width, height)
+            imageid, imghash, location, mtime, width, height)
 
 
     def deleteImage(self, ref):
@@ -921,10 +922,10 @@ class Shelf:
             # A path to an image in the cache?
             location = ref.encode(self.codeset)
             if os.path.isfile(location):
-                hash = computeImageHash(location)
+                imghash = computeImageHash(location)
             else:
-                hash = ref
-            cursor.execute(queryHeader + " where  hash = %s", hash)
+                imghash = ref
+            cursor.execute(queryHeader + " where  hash = %s", imghash)
         else:
             #
             # It's an image ID.
@@ -933,7 +934,7 @@ class Shelf:
         row = cursor.fetchone()
         if not row:
             raise ImageDoesNotExistError, ref
-        imageid, hash = row
+        imageid, imghash = row
         cursor.execute(
             " delete from image"
             " where  imageid = %s",
@@ -951,7 +952,7 @@ class Shelf:
             " delete from object_category"
             " where  objectid = %s",
             imageid)
-        for x in imageid, hash:
+        for x in imageid, imghash:
             if x in self.objectcache:
                 del self.objectcache[x]
         self._setModified()
@@ -1203,11 +1204,11 @@ class Shelf:
         return album
 
 
-    def _imageFactory(self, imageid, hash, location, mtime, width, height):
-        image = Image(self, imageid, hash, location, mtime, width, height)
+    def _imageFactory(self, imageid, imghash, location, mtime, width, height):
+        image = Image(self, imageid, imghash, location, mtime, width, height)
         self.objectcache[imageid] = image
         self.objectcache[unicode(imageid)] = image
-        self.objectcache[hash] = image
+        self.objectcache[imghash] = image
         return image
 
 
@@ -1957,11 +1958,13 @@ class Image(_Object):
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, imageid, hash, location, mtime, width, height):
+    def __init__(
+        self, shelf, imageid, imghash, location, mtime, width,
+        height):
         """Constructor of an Image."""
         _Object.__init__(self, shelf, imageid)
         self.shelf = shelf
-        self.hash = hash
+        self.hash = imghash
         self.location = location
         self.mtime = mtime
         self.size = width, height
@@ -2042,10 +2045,11 @@ class AllImagesAlbum(MagicAlbum):
                 " on       imageid = objectid and name = 'captured'"
                 " order by lcvalue, directory, filename")
             images = []
-            for imageid, hash, directory, filename, mtime, width, height in cursor:
+            for (imageid, imghash, directory, filename, mtime, width,
+                 height) in cursor:
                 location = os.path.join(directory, filename)
                 image = self.shelf._imageFactory(
-                    imageid, hash, location, mtime, width, height)
+                    imageid, imghash, location, mtime, width, height)
                 images.append(image)
                 yield image
             self.shelf._setAllImagesCache(images)
@@ -2119,11 +2123,11 @@ class OrphansAlbum(MagicAlbum):
                     " where    imageid not in (select objectid from member)"
                     " order by lcvalue, directory, filename")
                 images = []
-                for (imageid, hash, directory, filename, mtime, width,
+                for (imageid, imghash, directory, filename, mtime, width,
                      height) in cursor:
                     location = os.path.join(directory, filename)
                     image = self.shelf._imageFactory(
-                        imageid, hash, location, mtime, width, height)
+                        imageid, imghash, location, mtime, width, height)
                     images.append(image)
                     yield image
                 self.shelf._setOrphanImagesCache(images)

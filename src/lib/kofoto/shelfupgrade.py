@@ -19,11 +19,11 @@ def upgradeShelf(connection, codeset, fromVersion, toVersion):
             " )")
         cursor.execute(
             "select imageid, hash, location from image")
-        for imageid, hash, location in cursor:
+        for imageid, imghash, location in cursor:
             cursor2.execute(
                 "insert into tmp_image values (%s, %s, %s, %s)",
                 imageid,
-                hash,
+                imghash,
                 os.path.dirname(location),
                 os.path.basename(location))
         cursor.execute(
@@ -78,7 +78,7 @@ def upgradeShelf(connection, codeset, fromVersion, toVersion):
             " )")
         cursor.execute(
             "select imageid, hash, directory, filename from image")
-        for imageid, hash, directory, filename in cursor:
+        for imageid, imghash, directory, filename in cursor:
             cursor2.execute(
                 " select value"
                 " from   attribute"
@@ -99,7 +99,7 @@ def upgradeShelf(connection, codeset, fromVersion, toVersion):
             cursor2.execute(
                 "insert into tmp_image values (%s, %s, %s, %s, %s, %s, %s)",
                 imageid,
-                hash,
+                imghash,
                 directory,
                 filename,
                 mtime,

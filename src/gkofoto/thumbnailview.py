@@ -72,7 +72,7 @@ class ThumbnailView(ObjectCollectionView):
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
-    def _rowChanged(self, model, path, iter):
+    def _rowChanged(self, model, path, iterator):
         env.debug("ThumbnailView row changed.")
         self.__selectionLocked = True
         self._viewWidget.remove(path[0])
@@ -84,7 +84,7 @@ class ThumbnailView(ObjectCollectionView):
             self._viewWidget.select_icon(path[0])
         self.__selectionLocked = False
             
-    def _rowInserted(self, model, path, iter):
+    def _rowInserted(self, model, path, iterator):
         env.debug("ThumbnailView row inserted.")
         self.__loadRow(model[path])
 

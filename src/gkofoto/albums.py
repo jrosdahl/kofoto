@@ -54,11 +54,11 @@ class Albums:
     def _albumSelectionUpdated(self, selection=None):
         if not selection:
             selection = self.__albumView.get_selection()
-        albumModel, iter =  self.__albumView.get_selection().get_selected()
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
         destroyMenuItem = self.__menuGroup[self.__destroyAlbumLabel]
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
-        if iter:
-            albumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+        if iterator:
+            albumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
             self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
             destroyMenuItem.set_sensitive(True)
             editMenuItem.set_sensitive(True)            
@@ -74,11 +74,11 @@ class Albums:
         newAlbum = env.shelf.createAlbum(tag)
         if len(desc) > 0:
             newAlbum.setAttribute(u"title", desc)
-        albumModel, iter =  self.__albumView.get_selection().get_selected()
-        if iter is None:
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        if iterator is None:
             selectedAlbum = env.shelf.getRootAlbum()
         else:
-            selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+            selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
             selectedAlbum = env.shelf.getAlbum(selectedAlbumTag.decode("utf-8"))
         children = list(selectedAlbum.getChildren())
         children.append(newAlbum)
@@ -89,22 +89,22 @@ class Albums:
         
     def _destroyAlbum(self, *dummies):
         # TODO add confirmation dialog?
-        albumModel, iter =  self.__albumView.get_selection().get_selected()
-        selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
         env.shelf.deleteAlbum(selectedAlbumTag.decode("utf-8"))
         # TODO The whole tree should not be reloaded
         self.loadAlbumTree()
         # TODO update objectCollection?
 
     def _editAlbum(self, *dummies):
-        albumModel, iter =  self.__albumView.get_selection().get_selected()
-        selectedAlbumId = albumModel.get_value(iter, self.__COLUMN_ALBUM_ID)
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
         dialog = AlbumDialog("Edit album", selectedAlbumId)
         dialog.run(self._editAlbumHelper)
 
     def _editAlbumHelper(self, tag, desc):
-        albumModel, iter =  self.__albumView.get_selection().get_selected()
-        selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
         selectedAlbum = env.shelf.getAlbum(selectedAlbumTag)
         selectedAlbum.setTag(tag)
         if len(desc) > 0:
@@ -134,24 +134,24 @@ class Albums:
     def __loadAlbumTreeHelper(self, parentAlbum=None, album=None, visited=[]):
         if not album:
             album = env.shelf.getRootAlbum()
-        iter = self.__albumModel.append(parentAlbum)
+        iterator = self.__albumModel.append(parentAlbum)
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?        
-        self.__albumModel.set_value(iter, self.__COLUMN_ALBUM_ID, album.getId())
-        self.__albumModel.set_value(iter, self.__COLUMN_TYPE, album.getType())
-        self.__albumModel.set_value(iter, self.__COLUMN_TAG, album.getTag())
-        self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, True)
+        self.__albumModel.set_value(iterator, self.__COLUMN_ALBUM_ID, album.getId())
+        self.__albumModel.set_value(iterator, self.__COLUMN_TYPE, album.getType())
+        self.__albumModel.set_value(iterator, self.__COLUMN_TAG, album.getTag())
+        self.__albumModel.set_value(iterator, self.__COLUMN_SELECTABLE, True)
         albumTitle = album.getAttribute(u"title")
         if albumTitle == None or len(albumTitle) < 1:
-            self.__albumModel.set_value(iter, self.__COLUMN_TEXT, album.getTag())
+            self.__albumModel.set_value(iterator, self.__COLUMN_TEXT, album.getTag())
         else:
-            self.__albumModel.set_value(iter, self.__COLUMN_TEXT, albumTitle)
+            self.__albumModel.set_value(iterator, self.__COLUMN_TEXT, albumTitle)
         if album.getId() not in visited:
             for child in album.getAlbumChildren():
-                self.__loadAlbumTreeHelper(iter, child, visited + [album.getId()])
+                self.__loadAlbumTreeHelper(iterator, child, visited + [album.getId()])
         else:
-            iter = self.__albumModel.insert_before(iter, None)
-            self.__albumModel.set_value(iter, self.__COLUMN_TEXT, "[...]")
-            self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, False)
+            iterator = self.__albumModel.insert_before(iterator, None)
+            self.__albumModel.set_value(iterator, self.__COLUMN_TEXT, "[...]")
+            self.__albumModel.set_value(iterator, self.__COLUMN_SELECTABLE, False)
 
     def __createContextMenu(self):
         self.__menuGroup = MenuGroup()

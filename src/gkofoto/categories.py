@@ -116,7 +116,7 @@ class Categories:
         self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)        
         self.objectSelectionChanged()
         
-    def objectSelectionChanged(self, objectSelection=None):
+    def objectSelectionChanged(self):
         self.__updateToggleColumn()
         self.__updateContextMenu()        
         self.__expandAndCollapseRows(env.widgets["autoExpand"].get_active(),
@@ -142,7 +142,7 @@ class Categories:
         self.__selectedCategoriesIds  = {}
 
         for categoryRow in selectedCategoryRows:
-            id = categoryRow[self.__COLUMN_CATEGORY_ID]
+            cid = categoryRow[self.__COLUMN_CATEGORY_ID]
             # row.parent method gives assertion failed, dont know why. Using workaround instead.
             parentPath = categoryRow.path[:-1]
             if parentPath:
@@ -150,9 +150,9 @@ class Categories:
             else:
                 parentId = None
             try:
-                 self.__selectedCategoriesIds[id].append(parentId)
+                 self.__selectedCategoriesIds[cid].append(parentId)
             except KeyError:
-                 self.__selectedCategoriesIds[id] = [parentId]
+                 self.__selectedCategoriesIds[cid] = [parentId]
         self.__updateContextMenu()
         
     def _connectionToggled(self, renderer, path):
@@ -160,17 +160,17 @@ class Categories:
         category = env.shelf.getCategory(categoryRow[self.__COLUMN_CATEGORY_ID])
         if categoryRow[self.__COLUMN_INCONSISTENT] \
                or not categoryRow[self.__COLUMN_CONNECTED]:
-            for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
+            for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
                 try:
-                    object.addCategory(category)
+                    obj.addCategory(category)
                 except CategoryPresentError:
                     # The object was already connected to the category
                     pass
             categoryRow[self.__COLUMN_INCONSISTENT] = False
             categoryRow[self.__COLUMN_CONNECTED] = True
         else:
-            for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
-                object.removeCategory(category)
+            for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
+                obj.removeCategory(category)
             categoryRow[self.__COLUMN_CONNECTED] = False
             categoryRow[self.__COLUMN_INCONSISTENT] = False            
 
@@ -206,7 +206,7 @@ class Categories:
         
     def _pasteCategory(self, item, data):
         if not env.clipboard.hasCategories():
-            raise "No categories in clipboard" # TODO
+            raise Exception("No categories in clipboard") # TODO
         clipboardCategories = env.clipboard[0]
         env.clipboard.clear()
         try:
@@ -301,13 +301,13 @@ class Categories:
         
     def __loadCategorySubTree(self, parent, category):
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?
-        iter = self.__categoryModel.append(parent)
-        self.__categoryModel.set_value(iter, self.__COLUMN_CATEGORY_ID, category.getId())
-        self.__categoryModel.set_value(iter, self.__COLUMN_DESCRIPTION, category.getDescription())
-        self.__categoryModel.set_value(iter, self.__COLUMN_CONNECTED, False)
-        self.__categoryModel.set_value(iter, self.__COLUMN_INCONSISTENT, False)
+        iterator = self.__categoryModel.append(parent)
+        self.__categoryModel.set_value(iterator, self.__COLUMN_CATEGORY_ID, category.getId())
+        self.__categoryModel.set_value(iterator, self.__COLUMN_DESCRIPTION, category.getDescription())
+        self.__categoryModel.set_value(iterator, self.__COLUMN_CONNECTED, False)
+        self.__categoryModel.set_value(iterator, self.__COLUMN_INCONSISTENT, False)
         for child in self.__sortCategories(category.getChildren()):
-            self.__loadCategorySubTree(iter, child)
+            self.__loadCategorySubTree(iterator, child)
             
     def __buildQueryFromSelection(self):
         if env.widgets["categoriesOr"].get_active():
@@ -346,9 +346,9 @@ class Categories:
         # partitionally connected to selected objects
         nrSelectedObjectsInCategory = {}
         nrSelectedObjects = 0
-        for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
+        for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
             nrSelectedObjects += 1
-            for category in object.getCategories():
+            for category in obj.getCategories():
                 categoryId = category.getId()
                 try:
                     nrSelectedObjectsInCategory[categoryId] += 1
@@ -465,10 +465,10 @@ class Categories:
     def __disconnectChildHelper(self, wantedChildId, wantedParentId,
                                 parentId, categoryRows):
         for categoryRow in categoryRows:
-            id = categoryRow[self.__COLUMN_CATEGORY_ID]
-            if id == wantedChildId and parentId == wantedParentId:
+            cid = categoryRow[self.__COLUMN_CATEGORY_ID]
+            if cid == wantedChildId and parentId == wantedParentId:
                 self.__categoryModel.remove(categoryRow.iter)
-            self.__disconnectChildHelper(wantedChildId, wantedParentId, id, categoryRow.iterchildren())
+            self.__disconnectChildHelper(wantedChildId, wantedParentId, cid, categoryRow.iterchildren())
             
     def __updatePropertiesFromShelf(self, categoryRow, categoryId):
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryId:
