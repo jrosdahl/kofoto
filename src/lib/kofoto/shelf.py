@@ -747,7 +747,8 @@ class Shelf:
         import Image as PILImage
         try:
             pilimg = PILImage.open(path)
-        except IOError:
+#        except IOError:
+        except: # Work-around for buggy PIL.
             raise NotAnImageError, path
         width, height = pilimg.size
         location = unicode(os.path.realpath(path.encode(self.codeset)),
