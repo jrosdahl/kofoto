@@ -75,6 +75,7 @@ Design requirements and goals:
       - Meta information can be exported to a future-safe format.
       - Original image files can be renamed/moved without loss of meta
         information.
+      - Meta information is stored a database with ACID transactions.
 
     * It should be possible to uniquely identify images.
 
@@ -134,6 +135,31 @@ Magic albums that would be nice to have:
                       [A] Ryd
                           [I] Image2
 
+      Or, maybe better, define a DAG in configuration and only one
+      keyword in the attribute. E.g., store
+
+          locations = {
+              "Linköping": "Sweden",
+              "Lambohov": "Linköping",
+              "Ryd": "Linköping",
+          }
+
+      or maybe
+
+          locations = {
+              "Sweden": "Linköping",
+              "Linköping": ["Lambohov",  "Ryd"],
+          }
+
+      in ~/.kofoto/config and put "Lambohov" and "Ryd" in "location"
+      for Image1 and Image2.
+
+      This can also be used for searching, so that both Image1 and
+      Image2 can be found when searching for location "Linköping".
+
+      Or should attribute DAG functionality be provided by the
+      database?
+
     * Chronological with day granularity.
 
           [A] Chronological
@@ -143,6 +169,19 @@ Magic albums that would be nice to have:
                           [I] Image1
                       [A] 19 March 2003
                           [I] Image2
+
+Think more about:
+
+    * How should EXIF tags be imported to image attributes? (Should a
+      given subset be imported verbatim or with a special prefix or
+      mapped to non-EXIF names?)
+    * Which auxilliary attributes should be set on import? Specify
+      default attributes (like photographer) to add in configuration?
+      Ability to supply more/override attributes when importing?
+    * How to search?
+    * How to exclude objects from generation?
+    * Let instances cache image/album information so that getLocation
+      et al don't need to perform database access?
 
 ======================================================================
 
