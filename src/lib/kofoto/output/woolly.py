@@ -1,6 +1,5 @@
 import os
 from kofoto.outputengine import OutputEngine
-from kofoto.common import symlinkOrCopyFile
 
 css = '''
 body {
@@ -308,9 +307,9 @@ class OutputGenerator(OutputEngine):
 
 
     def generateIndex(self, root):
-        symlinkOrCopyFile(
+        self.symlinkFile(
             "%s.html" % root.getTag().encode(self.charEnc),
-            os.path.join(self.dest, "index.html"))
+            "index.html")
         self.writeFile("woolly.css", css)
         for data, filename in [
                 (transparent_1x1_png, "1x1.png"),
@@ -344,6 +343,7 @@ class OutputGenerator(OutputEngine):
             "%s-%s.html" % (album.getTag().encode(self.charEnc),
                             self.env.defaultsize),
             "%s.html" % album.getTag().encode(self.charEnc))
+        self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
 
         # ------------------------------------------------------------
         # Create album overview pages, one per size.
@@ -442,6 +442,7 @@ class OutputGenerator(OutputEngine):
                     "subalbumentries": subalbumtext,
                     "title": title,
                 })
+            self._maybeMakeUTF8Symlink("%s-%s.html" % (album.getTag(), size))
 
         # ------------------------------------------------------------
         # Create image thumbnails frame, one per size.
@@ -474,6 +475,8 @@ class OutputGenerator(OutputEngine):
                 thumbnails_frame_template % {
                     "charenc": self.charEnc,
                     "entries": thumbnailstext})
+            self._maybeMakeUTF8Symlink(
+                "%s-%s-thumbnails.html" % (album.getTag(), size))
 
 
     def generateImage(self, album, image, images, number, paths):
@@ -610,3 +613,9 @@ class OutputGenerator(OutputEngine):
                 return None
         else:
             return object
+
+
+    def _maybeMakeUTF8Symlink(self, filename):
+        if self.charEnc.lower() != "utf-8":
+            self.symlinkFile(filename.encode(self.charEnc),
+                             filename.encode("utf-8"))
