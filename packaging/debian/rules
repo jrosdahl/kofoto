@@ -35,6 +35,7 @@ binary-indep: build install
 	dh_testdir -i
 	dh_testroot -i
 
+	dh_python -i
 	dh_installman -i doc/gkofoto.1 doc/kofoto.1
 	dh_installdocs -i
 	dh_installchangelogs -i
@@ -51,6 +52,7 @@ binary-arch: build install
 #	dh_testdir -a
 #	dh_testroot -a
 #
+#	dh_python -a
 #	dh_installman -a
 #	dh_installdocs -a
 #	dh_installexamples -a
