@@ -1215,12 +1215,12 @@ class Shelf:
     def _deleteObjectFromParents(self, objid):
         cursor = self.connection.cursor()
         cursor.execute(
-            " select distinct albumid"
-            " from member"
-            " where objectid = %s",
+            " select distinct album.albumid, album.tag"
+            " from member, album"
+            " where member.objectid = %s and member.albumid = album.albumid",
             objid)
-        parents = [x[0] for x in cursor.fetchall()]
-        for parentid in parents:
+        parentinfolist = cursor.fetchall()
+        for parentid, parenttag in parentinfolist:
             cursor.execute(
                 " select   position"
                 " from     member"
@@ -1241,6 +1241,9 @@ class Shelf:
                     " where  albumid = %s and position > %s",
                     parentid,
                     position)
+            for x in parentid, parenttag:
+                if x in self.objectcache:
+                    del self.objectcache[x]
 
 
     def _setModified(self):
