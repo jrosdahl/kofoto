@@ -15,6 +15,29 @@ class HandleImagesDialog(gtk.FileSelection):
         self.ok_button.connect("clicked", self._ok)
 
     def _ok(self, widget):
+        widgets = gtk.glade.XML(env.gladeFile, "handleImagesProgressDialog")
+        handleImagesProgressDialog = widgets.get_widget(
+            "handleImagesProgressDialog")
+        knownUnchangedImagesCount = widgets.get_widget(
+            "knownUnchangedImagesCount")
+        knownMovedImagesCount = widgets.get_widget(
+            "knownMovedImagesCount")
+        unknownModifiedImagesCount = widgets.get_widget(
+            "unknownModifiedImagesCount")
+        unknownFilesCount = widgets.get_widget(
+            "unknownFilesCount")
+        investigatedFilesCount = widgets.get_widget(
+            "investigatedFilesCount")
+        okButton = widgets.get_widget("okButton")
+        okButton.set_sensitive(False)
+
+        handleImagesProgressDialog.show()
+
+        knownUnchangedImages = 0
+        knownMovedImages = 0
+        unknownModifiedImages = 0
+        unknownFiles = 0
+        investigatedFiles = 0
         modifiedImages = []
         movedImages = []
         for filepath in walk_files(self.get_selections()):
@@ -23,15 +46,22 @@ class HandleImagesDialog(gtk.FileSelection):
                 image = env.shelf.getImage(filepath)
                 if image.getLocation() == os.path.realpath(filepath):
                     # Registered.
-                    pass
+                    knownUnchangedImages += 1
+                    knownUnchangedImagesCount.set_text(
+                        str(knownUnchangedImages))
                 else:
                     # Moved.
+                    knownMovedImages += 1
+                    knownMovedImagesCount.set_text(str(knownMovedImages))
                     movedImages.append(filepath)
             except ImageDoesNotExistError:
                 try:
                     image = env.shelf.getImage(
                         filepath, identifyByLocation=True)
                     # Modified.
+                    unknownModifiedImages += 1
+                    unknownModifiedImagesCount.set_text(
+                        str(unknownModifiedImages))
                     modifiedImages.append(filepath)
                 except MultipleImagesAtOneLocationError:
                     # Multiple images at one location.
@@ -39,7 +69,16 @@ class HandleImagesDialog(gtk.FileSelection):
                     pass
                 except ImageDoesNotExistError:
                     # Unregistered.
-                    pass
+                    unknownFiles += 1
+                    unknownFilesCount.set_text(str(unknownFiles))
+            investigatedFiles += 1
+            investigatedFilesCount.set_text(str(investigatedFiles))
+            gtk.main_iteration()
+
+        okButton.set_sensitive(True)
+        handleImagesProgressDialog.run()
+        handleImagesProgressDialog.destroy()
+
         if modifiedImages or movedImages:
             if modifiedImages:
                 self._dialogHelper(
