@@ -21,6 +21,7 @@ class ImagePreloader(object):
             self._debugPrint = debugPrintFunction
         else:
             self._debugPrint = lambda x: None
+        self.__delayTimerTag = None
         self.__idleTimerTag = None
         # filename --> _PreloadState
         self.__preloadStates = {}
@@ -38,12 +39,14 @@ class ImagePreloader(object):
         scaledMaxWidth -- Wanted maximum width of the scaled image.
         scaledMaxHeight -- Wanted maximum height of the scaled image.
         """
+        if self.__delayTimerTag != None:
+            gobject.source_remove(self.__delayTimerTag)
         if self.__idleTimerTag != None:
             gobject.source_remove(self.__idleTimerTag)
 
         # Delay preloading somewhat to make display of the current
         # image faster. Not sure whether it helps, though...
-        gobject.timeout_add(
+        self.__delayTimerTag = gobject.timeout_add(
             500,
             self._beginPreloading,
             filenames,
