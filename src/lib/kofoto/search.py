@@ -31,6 +31,7 @@ __all__ = [
 
 import re
 from kofoto.common import KofotoError
+import kofoto.shelf
 
 class ScanError(KofotoError):
     pass
@@ -55,8 +56,11 @@ class SearchNodeFactory:
         assert operator in ["=", "!=", "<", ">", "<=", ">="]
         return AttributeCondition(name, operator, value)
 
-    def categoryNode(self, tag, recursive=False):
-        category = self._shelf.getCategory(tag)
+    def categoryNode(self, tag_or_category, recursive=False):
+        if isinstance(tag_or_category, kofoto.shelf.Category):
+            category = tag_or_category
+        else:
+            category = self._shelf.getCategory(tag_or_category)
         if recursive:
             catids = self._shelf.categorydag.get().getDescendants(
                 category.getId())

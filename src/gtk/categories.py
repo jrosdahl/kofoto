@@ -60,7 +60,7 @@ class Categories:
             category = categoryModel.get_value(iter, self._COLUMN_OBJECT)
             selectedImages = []
             snf = SearchNodeFactory(env.shelf)
-            for child in env.shelf.search(snf.categoryNode(category.getId())):
+            for child in env.shelf.search(snf.categoryNode(category)):
                 if not child.isAlbum():
                     selectedImages.append(child)
         env.shelf.rollback()
