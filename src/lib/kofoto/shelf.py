@@ -1223,7 +1223,7 @@ class Album(_Object):
         raise UnimplementedError
 
 
-    def setChildren(self):
+    def setChildren(self, children):
         raise UnimplementedError
 
 
@@ -1515,6 +1515,8 @@ class _UnicodeCursorDecorator:
     def __getattr__(self, attrname):
         if attrname in ["lastrowid", "rowcount"]:
             return getattr(self.cursor, attrname)
+        else:
+            raise AttributeError
 
     def __iter__(self):
         while True:
