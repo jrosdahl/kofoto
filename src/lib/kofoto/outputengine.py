@@ -96,7 +96,7 @@ class OutputEngine:
 
         # Design choice: This output engine sorts subalbums before
         # images.
-        children = album.getChildren()
+        children = list(album.getChildren())
         albumchildren = [x for x in children if x.isAlbum()]
         imagechildren = [x for x in children if not x.isAlbum()]
 

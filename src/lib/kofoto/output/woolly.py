@@ -561,8 +561,9 @@ class OutputGenerator(OutputEngine):
                 except ImageDoesNotExistError:
                     pass
             children = object.getChildren()
-            if children:
-                return self._getFrontImage(children[0], visited)
-            return None
+            try:
+                return self._getFrontImage(children.next(), visited)
+            except StopIteration:
+                return None
         else:
             return object
