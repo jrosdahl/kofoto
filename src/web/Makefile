@@ -1,13 +1,17 @@
 CLASSES = Page Root
 CLASSFILES = $(CLASSES:=.cpy)
 
-all: webkofoto.py
+all: kofotoweb/server.py
 
 run: all
-	python webkofoto.py
+	python webkofoto
 
-webkofoto.py: $(CLASSFILES)
-	cherrypy -O $@ $^
+kofotoweb:
+	mkdir -p $@
+	touch $@/__init__.py
+
+kofotoweb/server.py: kofotoweb $(CLASSFILES)
+	cherrypy -O $@ $(CLASSFILES)
 
 clean:
-	rm -f webkofoto.py *~
+	rm -rf *~ *.py[co] kofotoweb

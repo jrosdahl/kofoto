@@ -7,6 +7,7 @@ help:
 	@echo "install [PREFIX=prefix]"
 
 clean:
+	$(MAKE) -C src/web clean
 	rm -rf build
 	find . \( -name '*~' -o -name '*.pyc' \) -exec rm -f {} \;
 

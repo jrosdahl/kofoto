@@ -7,7 +7,7 @@ mask:
             "http://www.w3.org/TR/xhtml1/DTD/xhtml1-<py-eval="frameset and 'frameset' or 'strict'">.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml">
         <head>
-        <link rel="stylesheet" href="/static/kofoto.css" type="text/css" />
+        <link rel="stylesheet" href="/static/webkofoto.css" type="text/css" />
         </head>
         <py-if="not frameset"><body></py-if>
 

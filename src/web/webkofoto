@@ -1,0 +1,92 @@
+#! /usr/bin/env python
+
+import getopt
+import os
+import socket
+import sys
+import tempfile
+
+# Find libraries if installed in ../lib (like in the source tree).
+if os.path.islink(sys.argv[0]):
+    link = os.readlink(sys.argv[0])
+    absloc = os.path.normpath(
+        os.path.join(os.path.dirname(sys.argv[0]), link))
+    bindir = os.path.dirname(absloc)
+else:
+    bindir = os.path.dirname(sys.argv[0])
+sys.path.insert(0, os.path.join(bindir, "..", "lib"))
+datadir = os.path.join(bindir, "..", "share", "kofotoweb")
+if not os.path.exists(datadir):
+    datadir = bindir
+
+import kofoto.shelf
+import kofotoweb.server
+
+######################################################################
+
+defaultPort = 7448
+
+def displayHelp():
+    sys.stdout.write(
+        "Usage: webkofoto [flags]\n"
+        "\n"
+        "Flags:\n"
+        "\n"
+        "    -h, --help         Display this help.\n"
+        "    -p, --port PORT    Listen for connection on port PORT instead of the\n"
+        "                       default (%s).\n"
+        "    -v, --verbose      Print some diagnostics to standard output.\n"
+        "\n"
+        "A URL suitable for pasting into a web browser is printed to standard output.\n" %
+            defaultPort)
+
+port = defaultPort
+verbose = False
+if os.path.isdir("static"):
+    staticLocation = "static"
+else:
+    staticLocation = os.path.join(datadir, "static")
+
+try:
+    optlist, args = getopt.gnu_getopt(
+        sys.argv[1:],
+        "hp:v",
+        ["help", "port=", "verbose="])
+except getopt.GetoptError:
+    printErrorAndExit("Unknown flag. See \"webkofoto --help\" for help.\n")
+for opt, optarg in optlist:
+    if opt in ("-h", "--help"):
+        displayHelp()
+        sys.exit(0)
+    elif opt in ("-p", "--port"):
+        port = int(optarg)
+    elif opt in ("-v", "--verbose"):
+        verbose = True
+
+fd, configfilename = tempfile.mkstemp(".cfg", "webkofoto-")
+configfile = os.fdopen(fd, "w")
+configfile.write("""[server]
+socketPort = %d
+logToScreen = %d
+[staticContent]
+static = %s
+""" % (
+    port,
+    verbose,
+    staticLocation))
+configfile.close()
+
+try:
+    try:
+        print "http://%s:%d" % (socket.getfqdn(), port)
+        kofotoweb.server.run(["webkofoto", "-C", configfilename])
+    except socket.error :
+        sys.stderr.write(
+            "Could not bind to TCP port %d since it's already in use.\n" % port)
+        sys.exit(1)
+    except kofoto.shelf.ShelfLockedError:
+        sys.stderr.write(
+            "Could not open the shelf. Another process is locking it.\n")
+        sys.exit(1)
+finally:
+    os.unlink(configfilename)
