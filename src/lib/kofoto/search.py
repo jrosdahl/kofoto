@@ -13,13 +13,15 @@
 #            | <attribute> <attroper> <attrvalue>
 #            | "(" <expr> ")"
 #
-# <bareword> ::= [^ @] [^ ]+
+# <bareword> ::= \w [\w-]*
 #
-# <attribute> ::= "@" [^ ]+
+# <attribute> ::= "@" \w [\w-]*
 #
 # <attroper> ::= "=" | "!=" | "<" | ">" | "<=" | ">="
 #
 # <attrvalue> ::= <quoted string> | <bareword>
+#
+# where \w is characters (locale dependent), digits and underscore.
 
 __all__ = [
     "BadTokenError",
@@ -359,7 +361,7 @@ class Scanner:
         for (x, y) in [
             (r"\(", "lparen"),
             (r"\)", "rparen"),
-            (r"@\w+", "attribute"),
+            (r"@\w[\w-]*", "attribute"),
             (r'"([^\\]|\\(.|$))*?("|$)', "string"),
             (r"!=", "ne"),
             (r"=", "eq"),
@@ -371,7 +373,7 @@ class Scanner:
             (r"exactly\b", "exactly"),
             (r"or\b", "or"),
             (r"not\b", "not"),
-            (r"\S+", "bareword"),
+            (r"\w[\w-]*", "bareword"),
             (r"$", "eof"),
             ]]
 
