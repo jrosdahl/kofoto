@@ -20,7 +20,7 @@ class Categories:
     _ignoreSelectEvent = gtk.FALSE
     _selectedCategories = {}
     
-    def __init__(self, loadedImages, selectedImages):
+    def __init__(self, loadedImages, selectedImages, source):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                     gobject.TYPE_PYOBJECT, # TAG
                                     gobject.TYPE_STRING,   # DESCRIPTION
@@ -28,6 +28,7 @@ class Categories:
                                     gobject.TYPE_BOOLEAN)  # INCONSISTENT
         categoryView = env.widgets["categoryView"]
         categoryView.realize()
+        self._source = source
         self._loadedImages = loadedImages
         self._selectedImages = selectedImages
         categoryView.set_model(self._model)
@@ -128,13 +129,8 @@ class Categories:
         self._selectedCategories = {}
         query = self._buildQuery(self._model, None, selection, "")
         self.updateContextMenu()
-        images = []
         if query:
-            parser = Parser(env.shelf)
-            for child in env.shelf.search(parser.parse(query)):
-                if not child.isAlbum():
-                    images.append(child)
-        env.controller.loadImages(images, "query://" + query)
+            self._source.set("query://" + query)
 
     def _buildQuery(self, categoryList, parent, selection, query):
         for row in categoryList:

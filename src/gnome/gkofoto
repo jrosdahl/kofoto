@@ -20,7 +20,7 @@ from tableview import *
 from thumbnailview import *
 from singleimageview import *
 from categories import *
-
+from source import *
 
 ######################################################################
 ### Classes
@@ -38,12 +38,14 @@ class Controller:
         self._clipboard = None
         
     def start(self):
+        self._source = Source()
         self._selectedImages = ImageSelection(self._imageSelectionChanged)
         self._loadedImages = Images(self._selectedImages)
         self._imageContextMenu = ImageContextMenu(self._loadedImages, self._selectedImages)
-        self._albums = Albums()
+        self._albums = Albums(self._source)
         self._categories = Categories(self._loadedImages,
-                                      self._selectedImages)
+                                      self._selectedImages,
+                                      self._source)
         self._thumbnailView = ThumbnailView(self._loadedImages,
                                             self._selectedImages,
                                             self._imageContextMenu)
@@ -88,8 +90,7 @@ class Controller:
         print "commit"
         env.shelf.begin()
         
-    def loadImages(self, imageList, source):
-        env.widgets["sourceEntry"].set_text(source)
+    def loadImages(self, imageList):
         self._selectedImages.clear()
         self._currentView.freeze()
         self._loadedImages.loadImageList(imageList)

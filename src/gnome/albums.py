@@ -11,11 +11,12 @@ class Albums:
 
     _model = None
     
-    def __init__(self):
+    def __init__(self, source):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                     gobject.TYPE_STRING,   # TAG
                                     gobject.TYPE_STRING)   # TYPE
         albumView = env.widgets["albumView"]
+        self._source = source
         albumView.set_model(self._model)
         renderer = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Albums", renderer, text=self._COLUMN_TAG)
@@ -45,12 +46,5 @@ class Albums:
     def _albumSelectionHandler(self, selection):
         albumModel, iter = selection.get_selected()
         if iter:
-            albumId = albumModel.get_value(iter, self._COLUMN_ALBUM_ID)
-            albumTag =  albumModel.get_value(iter, self._COLUMN_TAG)
-            album = env.shelf.getAlbum(albumId)
-            imageList = []
-            for child in album.getChildren():
-                if not child.isAlbum():
-                    imageList.append(child)
-            env.controller.loadImages(imageList, "album://" + albumTag)
-            
+            albumTag = albumModel.get_value(iter, self._COLUMN_TAG)
+            self._source.set("album://" + albumTag)
