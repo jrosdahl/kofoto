@@ -68,3 +68,9 @@ Ha ett välspecat gränssnitt mellan fram- och bakända?
 Importera EXIF-informationen till databasen.  Läs alltså aldrig
 metainformation från originalbilden (förutom vid importering, Björn
 anm.).
+
+
+speciella attribut:
+
+tidsstämpel
+kortnamn
