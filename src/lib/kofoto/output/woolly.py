@@ -278,7 +278,7 @@ image_frame_template = '''<!DOCTYPE html
 <td class="footer">
 <p>&nbsp;</p>
 <hr>
-<small>%(blurb)s</small>
+<small>%(blurb)s Image ID: %(imgid)s.</small>
 </td>
 <td></td>
 </tr>
@@ -537,6 +537,7 @@ class OutputGenerator(OutputEngine):
                     "blurb": self.blurb,
                     "description": (image.getAttribute("description") or
                                     image.getAttribute("title")),
+                    "imgid": image.getId(),
                     "imgmaxwidth": size,
                     "imgref": self.getImageReference(image, size),
                     "larger": largertext,
