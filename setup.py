@@ -3,6 +3,8 @@
 from distutils.core import setup
 import os
 
+version = "0.1"
+
 package_dir = {
     "kofoto": "src/lib/kofoto",
     "gkofoto": "src/gkofoto",
@@ -33,7 +35,6 @@ if os.name == "posix":
         "src/cmdline/kofoto-upload",
         "src/gkofoto/gkofoto",
         ]
-    os.unlink("src/gkofoto/gkofoto")
     if os.system("cd src/web && make") != 0:
         import sys
         sys.exit(1)
@@ -48,13 +49,20 @@ else:
         "src/cmdline/kofoto",
         ]
 
+f = file("src/lib/kofoto/version.py", "w")
+f.write('version = "%s"' % version)
+f.close()
+
 setup(
     name="kofoto",
-    version="0.0.0",
+    version=version,
     package_dir=package_dir,
     packages=packages,
     scripts=scripts,
     data_files=data_files,
-    author="Kofoto developers",
-    author_email="10711@lyskom.lysator.liu.se",
+    author="Joel Rosdahl and Ulrik Svensson",
+    author_email="kofoto@rosdahl.net",
     url="http://svn.rosdahl.net/kofoto/kofoto/")
+
+os.unlink("src/lib/kofoto/version.py")
+os.unlink("src/gkofoto/gkofoto")
