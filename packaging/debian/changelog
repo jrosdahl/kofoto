@@ -1,3 +1,9 @@
+kofoto (0.2-1) unstable; urgency=low
+
+  * New version.
+
+ -- Joel Rosdahl <joel@debian.org>  Sun, 19 Sep 2004 18:38:33 +0200
+
 kofoto (0.1-1) unstable; urgency=low
 
   * First public version.
