@@ -5,7 +5,7 @@ from images import *
 from kofoto.sets import *
 
 class TableView:
-    
+
     def __init__(self, loadedImages, selectedImages, contextMenu):
         self._locked = gtk.FALSE
         self._tableView = env.widgets["tableView"]
@@ -16,7 +16,7 @@ class TableView:
         self._tableView.connect("button_press_event", self._button_pressed)
         selection.connect('changed', self._widgetSelectionUpdated)
         self.setModel(loadedImages)
-        
+
     def setModel(self, loadedImages):
         self._model = loadedImages.model
         self._tableView.set_model(self._model)
@@ -30,26 +30,58 @@ class TableView:
     def _createThumbnailColumn(self):
         renderer = gtk.CellRendererPixbuf()
         column = gtk.TreeViewColumn("Thumbnail", renderer, pixbuf=Images.COLUMN_THUMBNAIL)
+        column.set_reorderable(gtk.TRUE)
         self._tableView.append_column(column)
 
     def _createIdColumn(self):
         renderer = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("ImageId", renderer, text=Images.COLUMN_IMAGE_ID)
+        columnName = u"ImageId"
+        column = gtk.TreeViewColumn(columnName, renderer, text=Images.COLUMN_IMAGE_ID)
+        column.set_resizable(gtk.TRUE)
+        column.set_reorderable(gtk.TRUE)
+        self._contextMenu.addTableViewColumn(columnName, Images.COLUMN_IMAGE_ID, column)
         self._tableView.append_column(column)
 
     def _createLocationColumn(self):
         renderer = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Location", renderer, text=Images.COLUMN_LOCATION)
+        columnName = u"Location"
+        column = gtk.TreeViewColumn(columnName, renderer,
+                                    text=Images.COLUMN_LOCATION)
+        column.set_resizable(gtk.TRUE)
+        column.set_reorderable(gtk.TRUE)
+        self._contextMenu.addTableViewColumn(columnName, Images.COLUMN_LOCATION, column)
         self._tableView.append_column(column)        
 
     def _createAttributeColumns(self, attributeNamesMap):
-        for attributeName, value in attributeNamesMap.items():
+        allAttributeNames = attributeNamesMap.keys()
+        allAttributeNames.sort()
+        for attributeName in allAttributeNames:
+            columnNumber = attributeNamesMap[attributeName]
             renderer = gtk.CellRendererText()
             column = gtk.TreeViewColumn(attributeName,
                                         renderer,
-                                        text=attributeNamesMap[attributeName])
+                                        text=columnNumber,
+                                        editable=Images.COLUMN_ROW_EDITABLE)
+            column.set_resizable(gtk.TRUE)
+            column.set_reorderable(gtk.TRUE)
+            renderer.connect("edited", self._attribute_editing_done,
+                             columnNumber,
+                             attributeName)
+            self._contextMenu.addTableViewColumn(attributeName, columnNumber, column)
             self._tableView.append_column(column)
-        
+
+    def _attribute_editing_done(self, renderer, path, value, column, attributeName):
+        iter = self._model.get_iter(path)
+        oldValue = self._model.get_value(iter, column)
+        if not oldValue:
+            oldValue = u""
+        if oldValue != value:
+            # TODO Show dialog and ask for confirmation?
+            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+            image = env.shelf.getImage(imageId)
+            image.setAttribute(attributeName, unicode(value, env.codeset))
+            self._model.set_value(iter, column, value)
+            
     def freeze(self):
         pass
 
@@ -58,6 +90,7 @@ class TableView:
 
     def show(self):
         env.widgets["tableViewScroll"].show()
+        self._contextMenu.tableViewViewItem.show()
         self._tableView.grab_focus()
         for image in self._model:
             if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
@@ -66,6 +99,7 @@ class TableView:
 
     def hide(self):
         env.widgets["tableViewScroll"].hide()
+        self._contextMenu.tableViewViewItem.hide()
         
     def selectionUpdated(self):
         if not self._locked:

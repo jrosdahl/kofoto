@@ -23,32 +23,63 @@ class ImageContextMenu(gtk.Menu):
         self._rotateRightItem.show()
         self._rotateRightItem.connect("activate", images.rotate, 90)
         self.append(self._rotateRightItem)
+
+        self._tableViewGroup = None
+        self.tableViewSortItem = gtk.MenuItem("Sort by")
+        self._tableViewSortSubMenu = gtk.Menu()
+
+        sortAscendingItem = gtk.RadioMenuItem(None, "Ascending")
+        sortDescendingItem = gtk.RadioMenuItem(sortAscendingItem, "Descending")
+        sortAscendingItem.connect("activate", images.setSortOrder, gtk.SORT_ASCENDING)
+        sortDescendingItem.connect("activate", images.setSortOrder, gtk.SORT_DESCENDING)
+        sortAscendingItem.activate()
+        sortSeparator = gtk.SeparatorMenuItem()
+        sortAscendingItem.show()
+        sortDescendingItem.show()
+        sortSeparator.show()
+        self._tableViewSortSubMenu.append(sortAscendingItem)
+        self._tableViewSortSubMenu.append(sortDescendingItem)
+        self._tableViewSortSubMenu.append(sortSeparator)
+        self.tableViewSortItem.set_submenu(self._tableViewSortSubMenu)
+        self.tableViewSortItem.show()
+        self.append(self.tableViewSortItem)
+
         
-        self._sortItem = gtk.MenuItem("Sort by")
-        sortMenu = gtk.Menu()
-        self._sortItem.set_submenu(sortMenu)
-        self._addSortItems(sortMenu, images)
-        self._sortItem.show()
-        self.append(self._sortItem)
-        
+        self.tableViewViewItem = gtk.MenuItem("View")
+        self._tableViewViewSubMenu = gtk.Menu()
+        self.tableViewViewItem.set_submenu(self._tableViewViewSubMenu)
+        self.tableViewViewItem.show()
+        self.append(self.tableViewViewItem)
+
+        self._images = images
         self._selectedImages = selectedImages
         self.updateContextMenu()
 
-    def _addSortItems(self, parentMenu, images):
-        allAttributeNames = list(images.attributeNamesMap.keys())
-        allAttributeNames.sort()
-        group = None
-        for attributeName in allAttributeNames:
-            sortItem = gtk.RadioMenuItem(group, attributeName)
-            sortItem.connect("activate", images.sortByColumn, images.attributeNamesMap[attributeName])
-            if group == None:
-                group = sortItem
-            sortItem.show()
-            parentMenu.append(sortItem)
-            if attributeName == "captured": # TODO: Read from configuration file?
-                sortItem.activate()
         
-                              
+    def addTableViewColumn(self, name, modelColumn, widget):
+        # Populate the sort menu
+        sortItem = gtk.RadioMenuItem(self._tableViewGroup, name)
+        sortItem.connect("activate", self._images.sortByColumn, modelColumn)
+        if self._tableViewGroup == None:
+            self._tableViewGroup = sortItem
+        sortItem.show()
+        self._tableViewSortSubMenu.append(sortItem)
+        if name == env.defaultSortColumn:
+            sortItem.activate()
+        # Populate the view menu
+        viewItem = gtk.CheckMenuItem(name)
+        viewItem.connect("toggled", self._columnToggled, widget)
+        viewItem.show()
+        self._tableViewViewSubMenu.append(viewItem)
+        if name in env.defaultTableViewColumns:
+            viewItem.set_active(gtk.TRUE)
+        else:
+            viewItem.set_active(gtk.FALSE)
+        self._columnToggled(viewItem, widget)
+
+    def _columnToggled(self, checkMenuItem, widget):
+        widget.set_visible(checkMenuItem.get_active())
+        
     def updateContextMenu(self):
         if len(self._selectedImages) == 0:
             self._unregisterItem.set_sensitive(gtk.FALSE)

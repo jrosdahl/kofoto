@@ -18,7 +18,10 @@ from kofoto.shelf import *
 from kofoto.config import *
 
 class Environment:
-    pass
+     # TODO: read from configuration file?
+    defaultTableViewColumns = [u"title", u"description", u"captured"]
+    defaultThumbnailViewColumns = [u"captured"]
+    defaultSortColumn = u"captured"
 
 env = Environment()
 locale.setlocale(locale.LC_ALL, "")
