@@ -59,7 +59,7 @@ env.gladeFile = os.path.join(dataDir, "glade", "gkofoto.glade")
 env.albumIconFileName = os.path.join(env.iconDir, "album.png")
 env.albumIconPixbuf = gtk.gdk.pixbuf_new_from_file(env.albumIconFileName)
 env.loadingPixbuf = env.albumIconPixbuf # TODO create another icon with a hour-glass or something
-
+env.thumbnailErrorIconPixbuf = env.albumIconPixbuf # TODO create another icon
 from clipboard import Clipboard
 env.clipboard = Clipboard()
 
