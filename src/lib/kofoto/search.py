@@ -208,7 +208,7 @@ class And:
                 else:
                     andclauses.append("a0.objectid = a%d.objectid" % ix)
                 andclauses.append(
-                    "a%d.name = '%s' and a%d.value %s '%s'" % (
+                    "a%d.name = '%s' and a%d.lcvalue %s '%s'" % (
                         ix,
                         attrconds[ix].getAttributeName(),
                         ix,
@@ -239,8 +239,18 @@ class And:
 class AttributeCondition:
     def __init__(self, attrname, operator, value):
         self._name = attrname
-        self._operator = operator
-        self._value = value
+        if operator == "=":
+            self._operator = "glob"
+        elif operator == "!=":
+            self._operator = "not glob"
+        else:
+            self._operator = operator
+        self._value = value.lower()
+        if operator in ["=", "!="]:
+            # "?" won't match a non-ASCII character in UTF-8 encoding
+            # unless SQLite is compiled with UTF-8 support, and that's
+            # not the case in most builds.
+            self._value = self._value.replace("?", "*")
 
     def __repr__(self):
         return "AttributeCondition(%r, %r, %r)" % (
@@ -260,7 +270,7 @@ class AttributeCondition:
     def getQuery(self):
         return (" select objectid"
                 " from   attribute"
-                " where  name = '%s' and value %s '%s'" % (
+                " where  name = '%s' and lcvalue %s '%s'" % (
                     self._name,
                     self._operator,
                     self._value.replace("'", "''")))
@@ -315,7 +325,7 @@ class Or:
             orclauses = []
             for attrcond in attrconds:
                 orclauses.append(
-                    "name = '%s' and value %s '%s'" % (
+                    "name = '%s' and lcvalue %s '%s'" % (
                         attrcond.getAttributeName(),
                         attrcond.getOperator(),
                         attrcond.getAttributeValue().replace("'", "''")))

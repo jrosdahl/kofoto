@@ -162,6 +162,8 @@ schema = """
         name        TEXT NOT NULL,
         -- Value of the attribute.
         value       TEXT NOT NULL,
+        -- Lowercased value of the attribute.
+        lcvalue     TEXT NOT NULL,
 
         FOREIGN KEY (objectid) REFERENCES object,
         PRIMARY KEY (objectid, name)
@@ -632,19 +634,23 @@ class Shelf:
             width, height = pilimg.size
             cursor.execute(
                 " insert into attribute"
-                " values (%s, 'width', %s)",
+                " values (%s, 'width', %s, %s)",
                 imageid,
+                width,
                 width)
             cursor.execute(
                 " insert into attribute"
-                " values (%s, 'height', %s)",
+                " values (%s, 'height', %s, %s)",
                 imageid,
+                height,
                 height)
+            now = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
             cursor.execute(
                 " insert into attribute"
-                " values (%s, 'registered', %s)",
+                " values (%s, 'registered', %s, %s)",
                 imageid,
-                unicode(time.strftime("%Y-%m-%d %H:%M:%S")))
+                now,
+                now)
             image = self.getImage(imageid)
             image.importExifTags()
             return image
@@ -1136,18 +1142,20 @@ class _Object:
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " update attribute"
-            " set    value = %s"
+            " set    value = %s, lcvalue = %s"
             " where  objectid = %s and name = %s",
             value,
+            value.lower(),
             self.getId(),
             name)
         if cursor.rowcount == 0:
             cursor.execute(
                 " insert into attribute"
-                " values (%s, %s, %s)",
+                " values (%s, %s, %s, %s)",
                 self.getId(),
                 name,
-                value)
+                value,
+                value.lower())
         self.attributes[name] = value
 
 
@@ -1476,7 +1484,7 @@ class AllImagesAlbum(MagicAlbum):
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    name = 'captured'"
-            " order by value, location")
+            " order by lcvalue, location")
         for (imageid,) in cursor:
             yield self.shelf.getImage(imageid)
 
@@ -1508,7 +1516,7 @@ class OrphansAlbum(MagicAlbum):
             " on       imageid = objectid"
             " where    imageid not in (select objectid from member) and"
             "          name = 'captured'"
-            " order by value, location")
+            " order by lcvalue, location")
         for (imageid,) in cursor:
             self.shelf.getImage(imageid)
 
