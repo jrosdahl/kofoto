@@ -37,6 +37,7 @@ import gtk.gdk
 import gtk.glade
 from kofoto.imagecache import *
 from gkofoto.mainwindow import *
+from gkofoto.registerimagesdialog import RegisterImagesDialog
 from gkofoto.environment import env
 env.init(bindir)
 
@@ -93,6 +94,10 @@ class Controller:
         env.shelf.rollback()
         env.shelf.begin()
         self.__mainWindow.reload()
+
+    def registerImages(self, app):
+        dialog = RegisterImagesDialog()
+        dialog.run()
 
 ######################################################################
 ### Start

@@ -31,6 +31,7 @@ class MainWindow(gtk.Window):
         env.widgets["quit"].connect("activate", env.controller.quit)
         env.widgets["save"].set_sensitive(False)
         env.widgets["revert"].set_sensitive(False)
+        env.widgets["registerImages"].connect("activate", env.controller.registerImages)
         self.__sourceEntry.connect("activate", self._sourceEntryActivated)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)

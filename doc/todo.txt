@@ -135,8 +135,6 @@
   cache. Make it possible in gkofoto to choose an arbitrary thumbnail
   size not larger than the "large thumbnail" size.
 
-* Add image registration dialog to gkofoto.
-
 * Add HTML generation dialog to gkofoto.
 
 * Add "update locations" dialog to gkofoto.
