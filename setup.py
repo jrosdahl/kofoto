@@ -37,7 +37,6 @@ else:
     shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto")
     scripts = [
         "src/cmdline/kofoto",
-        "src/cmdline/kofoto-upload",
         "src/gkofoto/gkofoto",
         ]
 
