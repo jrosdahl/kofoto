@@ -264,8 +264,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 
 <table width="100%%">
 <tr>
-<td></td>
-<td align="left">
+<td align="left" colspan="3">
 <table>
 <tr>
 <td>%(previous)s</td>
@@ -276,12 +275,6 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 </table>
 </td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td><img src="%(iconsdir)s/1x1.png" height="1" width="%(imgmaxwidth)s" /></td>
-<td></td>
 </tr>
 <tr>
 <td width="50%%"></td>
@@ -290,15 +283,13 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 <tr><td></td><td class="info">%(info)s</td><td></td></tr>
 <tr>
-<td></td>
-<td class="footer">
+<td class="footer" colspan="3">
 <p>&nbsp;</p>
 %(cache_previous_image)s
 %(cache_next_image)s
 <hr>
 <small>%(blurb)s Image ID: %(imgid)s.</small>
 </td>
-<td></td>
 </tr>
 </table>
 
