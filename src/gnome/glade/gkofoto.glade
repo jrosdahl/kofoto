@@ -324,7 +324,7 @@
 	      <property name="column_spacing">0</property>
 
 	      <child>
-		<widget class="GtkLabel" id="label27">
+		<widget class="GtkLabel" id="titleLabel">
 		  <property name="visible">True</property>
 		  <property name="label" translatable="yes">Description:</property>
 		  <property name="use_underline">False</property>
