@@ -96,11 +96,11 @@ def displayHelp():
         "    delete-attribute NAME OBJ [OBJ ...]\n"
         "                                     Delete attribute NAME for the given\n"
         "                                     objects.\n"
+        "    destroy OBJ [OBJ ...]            Delete the given objects permanently. All\n"
+        "                                     metadata is also deleted.\n"
         "    get-attribute NAME OBJ           Get attribute NAME for object OBJ.\n"
         "    get-attributes OBJ               Get attributes for object OBJ.\n"
         "    get-categories OBJ               Get categories for object OBJ.\n"
-        "    obliterate OBJ [OBJ ...]         Delete the given objects permanently. All\n"
-        "                                     metadata is also deleted.\n"
         "    remove-category CAT OBJ [OBJ ...]\n"
         "                                     Remove category CAT from the given\n"
         "                                     objects.\n"
@@ -146,7 +146,7 @@ def displayHelp():
         "    disconnect-category PARENT CHILD Remove parent-child realationship bewteen\n"
         "                                     two categories.\n"
         "    create-category TAG DESC         Create category.\n"
-        "    obliterate-category TAG          Delete category permanently.\n"
+        "    destroy-category TAG             Delete category permanently.\n"
         "    print-categories                 Print category tree.\n"
         "    rename-category OLDTAG NEWTAG    Rename category tag.\n"
         "    set-category-description TAG DESC\n"
@@ -295,6 +295,19 @@ def cmdDeleteAttribute(env, args):
         env.shelf.getObject(arg).deleteAttribute(attr)
 
 
+def cmdDestroy(env, args):
+    if len(args) < 1:
+        raise ArgumentError
+    for obj in args:
+        env.shelf.deleteObject(obj)
+
+
+def cmdDestroyCategory(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    env.shelf.deleteCategory(args[0])
+
+
 def cmdDisconnectCategory(env, args):
     if len(args) != 2:
         raise ArgumentError
@@ -373,19 +386,6 @@ def cmdInspectLocations(env, args):
 #                except IOError:
                 except: # Work-around for buggy PIL.
                     env.out("[Non-image]    %s\n" % env.to_l(filepath))
-
-
-def cmdObliterate(env, args):
-    if len(args) < 1:
-        raise ArgumentError
-    for obj in args:
-        env.shelf.deleteObject(obj)
-
-
-def cmdObliterateCategory(env, args):
-    if len(args) != 1:
-        raise ArgumentError
-    env.shelf.deleteCategory(args[0])
 
 
 def cmdPrintAlbums(env, args):
@@ -659,14 +659,14 @@ commandTable = {
     "create-album": cmdCreateAlbum,
     "create-category": cmdCreateCategory,
     "delete-attribute": cmdDeleteAttribute,
+    "destroy": cmdDestroy,
+    "destroy-category": cmdDestroyCategory,
     "disconnect-category": cmdDisconnectCategory,
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
     "get-categories": cmdGetCategories,
     "inspect-locations": cmdInspectLocations,
-    "obliterate": cmdObliterate,
-    "obliterate-category": cmdObliterateCategory,
     "print-albums": cmdPrintAlbums,
     "print-categories": cmdPrintCategories,
     "register": cmdRegister,
