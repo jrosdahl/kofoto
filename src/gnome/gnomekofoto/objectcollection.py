@@ -41,7 +41,7 @@ class ObjectCollection(object):
                 pixbuf = env.albumIconPixbuf
             else:
                 try:
-                    thumbnailLocation = self.__imageCache.get(object, env.thumbnailSize)
+                    thumbnailLocation = self.__imageCache.get(object, env.thumbnailSize, env.thumbnailSize)
                     pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
                     # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
                 except IOError:

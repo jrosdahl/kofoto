@@ -124,6 +124,10 @@ larger_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x1
 
 nolarger_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x18\x08\x03\x00\x00\x00\xd7\xa9\xcd\xca\x00\x00\x00\xf3PLTE\xff\xff\xff\x7f\x7f\x7f\xaf\xaf\xaf\x97\x97\x97\xc7\xc7\xc7\xbb\xbb\xbb\xa4\xa4\xa4\xd3\xd3\xd3\x8b\x8b\x8b\x85\x85\x85\xb5\xb5\xb5\x9d\x9d\x9d\xcd\xcd\xcd\xc1\xc1\xc1\xd9\xd9\xd9\xac\xac\xac\x92\x92\x92\x82\x82\x82\xb3\xb3\xb3\x9a\x9a\x9a\xbe\xbe\xbe\xd6\xd6\xd6\x8e\x8e\x8e\x88\x88\x88\xb8\xb8\xb8\xa1\xa1\xa1\xd0\xd0\xd0\xc4\xc4\xc4\xdc\xdc\xdc\xca\xca\xca\xa7\xa7\xa7\x94\x94\x94\x81\x81\x81\xb1\xb1\xb1\x99\x99\x99\xc9\xc9\xc9\xbd\xbd\xbd\xa6\xa6\xa6\xd5\xd5\xd5\x8d\x8d\x8d\x87\x87\x87\x9f\x9f\x9f\xcf\xcf\xcf\xc3\xc3\xc3\xdb\xdb\xdb\xae\xae\xae\x84\x84\x84\x9c\x9c\x9c\xc0\xc0\xc0\xd8\xd8\xd8\x90\x90\x90\x8a\x8a\x8a\xba\xba\xba\xd2\xd2\xd2\xc6\xc6\xc6\xde\xde\xde\x80\x80\x80\x98\x98\x98\xc8\xc8\xc8\xbc\xbc\xbc\xd4\xd4\xd4\x8c\x8c\x8c\x9e\x9e\x9e\xce\xce\xce\xc2\xc2\xc2\xad\xad\xad\x93\x93\x93\x83\x83\x83\xb4\xb4\xb4\xbf\xbf\xbf\xd7\xd7\xd7\x8f\x8f\x8f\x89\x89\x89\xb9\xb9\xb9\xa2\xa2\xa2\xd1\xd1\xd1\xc5\xc5\xc5\xdd\xdd\xdd\xcb\xcb\xcb\xa8\xa8\xa8\x95\x95\x95\xec#\\\x17\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x01\x18IDATx\xda\x85\xd0\xedR\x82@\x18\x05`\xd6\xc9\xc2\xd2M*\xa0\xc0X\x1d\x88\x92\x8f\xca)\x08\x11\x83P\x10\x026\xee\xffj\xa2\xe4C*\xa7\xf3\xf3<\xef\xbb\xb3\xbb\x04\xf1O6\xb7K\x92$\x7f\xd5\x0cs3\x89/;W\x11\xdb\xee\xc9i\xec\xa5i\xea\x05\xebyo\xb7\x7f\x12\xbc\x03l\xd0\xb3\x903\xa5\xd7U\xd3G\'\xbc\xc8\xc1Q6\xd2 \xed\x06\xa8\x11\xb6k\x1bZ\x96\xe5y\xa6\x85\x8er\\\xc3\xdd\xa1\xe9\x16\xf3/_\x00\xe5\x04?P%\xf4\xd6\xa2\x0c\xb5\x06:\xe3\x12\xee\x1f\xfb4\xcc\xbf\x83\x90\xcc\xe1\x8b\nV\x03\xc5\t\xd1\xb6GG\xae\xb8\xb0J\xa0\xce\\C\x0e!DhF;\n6\xdfj\x98^\xbb\x89#\xd3\xc59\x86\x82mo\x0e\xaakQ\xb1\x88\x15.\xf1}\xa5\x8fmub\xd5\xef\x18\x0fy\xd3\xc6ED;\xf5$\x064O\xb7\xce\x83\x81\xca\xf3\xaa\xea\x05\xdd\x1c\xec~\x96\xc5\xe8\x0b\xa9\xc8\xf3\xe9\x12\x80\x96\x00\x0b}\xe8\xba\xe0\x17-\xf8I\xa0j\xa2\xa8-\xcd\xc8\xfbf\x9f\x08\xc3\xbd;\xec\xdf@\xecY\xd8\xe6\x13m\xda.x\xed\x89\x8d\x00\x00\x00\x00\x00IEND\xaeB`\x82'
 
+nextalbum_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x11\x08\x03\x00\x00\x00\xf0\xa6\x9c\x02\x00\x00\x01;PLTE\x00\x00\xd3\x00\x00\x00\x04\x00\x07\x10\x00\x1d\x17\x03&CCn\x1b\x134 \x0e-ov\xa6P_\x91\x16\x112\x06\x00\t\x1f\x0b*#\x10/#\x101$\x1107+J\x85\x8a\xba\x83\x92\xcaGZ\x8f\x13\x0f2uq\x9c\x88\x88\xb9\x89\x89\xba\x8b\x8b\xba\x8a\x8a\xbb\x8c\x8c\xbb\x8d\x8e\xc0\x97\x9d\xd4\x97\xa0\xd8~\x8e\xc9GY\x92\x16\x0f> \r.}}\xb2\x98\x9f\xd7\x98\xa1\xd7\x99\xa0\xd8\x96\x9f\xd7\x97\x9e\xd6\x92\x9d\xd5\x7f\x8e\xc8PY\x91\x17\x0e3\x1a\n+lp\xa9\x84\x90\xcf\x84\x92\xcf\x83\x93\xce\x85\x93\xd0\x84\x94\xcf\x86\x95\xcf\x86\x94\xcf\x87\x95\xd0n\x7f\xbf7I\x84\n\x04)\x11\x00)BM\x95Jd\xb1If\xb2Ic\xb0Jh\xb3Db\xaf1M\x96\x0e\x17O\x00\x00\r\r\x00%/>\x8a0J\x9f.H\x9f-H\x9e.K\x9f-J\x9c&?\x91\x12"c\x03\x00!\x0b\x00#,;\x87+B\x9a(B\x99)D\x9a+E\x9a*D\x99";\x8d\x10\x1ea\x08\x00\x1d!,n\x1d/|\x19+z\x1c.\x7f%=\x94\x00\x00\x03\x07\x00\x19\x04\x00\x1b\x08\x030\x1a/}!9\x8a\x04\x00\x19\x13"n\x0e\x1c_\x01\x00\x11\t\x10F\x03\x00\x1f\x00\x00\x01\x8b\x8fZv\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x01bKGD\x00\x88\x05\x1dH\x00\x00\x00\tpHYs\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd~\xfc\x00\x00\x00\x07tIME\x07\xd4\x01\x02\x1367\xfd\xd3<\xf1\x00\x00\x00\xf5IDATx\x9cc`@\x05\x8c\x0c8\x00\x133\x0e\t\x16V6\xec\x12\xec\x1c\x9c\\\x10\x167\x0f/\x08\xf0\xf1\x031\x1f?\xbf\x80\xa0\x90\xb0\x08X\x82GTL\\BL\\R\nLHI\xcb\xc8\xca\xc9+\x80$\x14\x95\x94UTTUTT\x94\xc1\x84\x9a\xba\xac\x86\xa6\x966PBGRE\xdf\xc0P\xdf\xc0\xc8\x18L\x98\x98\x9a\x9a\xea\x9b\x99[00\xf0K\xaa\x18\xd9\xd8\x82\x81\r\x10\xd8\x01\x81\x8d\xbd\x83\xa3\x13\x03\x9f\xa4\x8a\x81\x8d;\x18\xb8y@\x80\xa7\x97\xb7\x0f\x03\x03\xaf\xb8\x8a\xbe\x8d[\x00\x1c\x04\x06\x05\x87\x84\x02\xc5\x19x\xc5T\rm\xdd\x03"\xa1 *:\x00"\xce\xc0+\x014\xca- 2\x0e\x02\xe2\x13\x12!\xe20\xa3"\xe3 \xfeMJN\x81\x88\x03\x8dR\xd6\xb3v\xf5\x8f\x80J\xa4\xa6\xa5C\x03\x87GTI\xd7\xca\xc5/<\x16\xc2\xcdp\x82\x85\x1a7\x8f\xa2\x8e\xa5\xb3oX\x0cZ|\x00\x00\x1d\xb33\x1e\x92T\x9aL\x00\x00\x00\x00IEND\xaeB`\x82'
+
+previousalbum_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x11\x08\x03\x00\x00\x00\xf0\xa6\x9c\x02\x00\x00\x01;PLTE\x00\x00\xd3\x00\x00\x00\x04\x00\x07\x10\x00\x1d\x17\x03&CCn\x1b\x134 \x0e-ov\xa6P_\x91\x16\x112\x06\x00\t\x1f\x0b*#\x10/#\x101$\x1107+J\x85\x8a\xba\x83\x92\xcaGZ\x8f\x13\x0f2uq\x9c\x88\x88\xb9\x89\x89\xba\x8b\x8b\xba\x8a\x8a\xbb\x8c\x8c\xbb\x8d\x8e\xc0\x97\x9d\xd4\x97\xa0\xd8~\x8e\xc9GY\x92\x16\x0f> \r.}}\xb2\x98\x9f\xd7\x98\xa1\xd7\x99\xa0\xd8\x96\x9f\xd7\x97\x9e\xd6\x92\x9d\xd5\x7f\x8e\xc8PY\x91\x17\x0e3\x1a\n+lp\xa9\x84\x90\xcf\x84\x92\xcf\x83\x93\xce\x85\x93\xd0\x84\x94\xcf\x86\x95\xcf\x86\x94\xcf\x87\x95\xd0n\x7f\xbf7I\x84\n\x04)\x11\x00)BM\x95Jd\xb1If\xb2Ic\xb0Jh\xb3Db\xaf1M\x96\x0e\x17O\x00\x00\r\r\x00%/>\x8a0J\x9f.H\x9f-H\x9e.K\x9f-J\x9c&?\x91\x12"c\x03\x00!\x0b\x00#,;\x87+B\x9a(B\x99)D\x9a+E\x9a*D\x99";\x8d\x10\x1ea\x08\x00\x1d!,n\x1d/|\x19+z\x1c.\x7f%=\x94\x00\x00\x03\x07\x00\x19\x04\x00\x1b\x08\x030\x1a/}!9\x8a\x04\x00\x19\x13"n\x0e\x1c_\x01\x00\x11\t\x10F\x03\x00\x1f\x00\x00\x01\x8b\x8fZv\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x01bKGD\x00\x88\x05\x1dH\x00\x00\x00\tpHYs\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd~\xfc\x00\x00\x00\x07tIME\x07\xd4\x01\x02\x137\r"\xc4\xd4\x02\x00\x00\x00\xf4IDATx\x9cc`\x80\x02F\x06\xec\x80\x99\t\xbb8\x1b+\x0bVq.N\x0evl\xe2"\xc2B\x82\x02\xfc\xfc||\xbc\xbc\xfc@\x0c\x04<\xdc q\x05y9Y\x19i))Iq1\t0!.&\xca\x03\x14\xd7\xd6\xd2\xd4\x90UWSVQQQ\x05\x13**\xcaJ\x8a\x0c\x0c\x16\xe6f\xfa\xa6\xa6\xa6&\xc6F\x06\xfa\x86`\xc2@_ER\x87\xc1\xc9\xd1\xc1\xde\xc6\x0e\x08l\x80\xc0\x16\x0cl\x8cT$\xf9\x19\x18|\xbc\xbd<= \xc0\xcd\x1d\x0cl\x0cT$\xf9\x80v\xf8\x84\x86\x04\x07\x05\x06\xc0\x81\x9b\x8d\xbe\x8a8/\x03D& :*\x12\n\x02\xdcm\rU\xc5\xc0\x12@\x99\xc4\x84\xf88\x08\x88\x04\xea0P\x91\x80H0\xf8\xa4$\'AX`\t\x98Q@\x90\x9e\x96\n\x95\x88\xf0w\xb5\xd6S\x16\x83I08e@\xe8\xd8p?\x17+]%\xb0\xcfQ\xe2#&\xcc\xd7\xd9RG\x91\x87\x1b\x00\xe4\xb53\x1e\x96h\xda\xbf\x00\x00\x00\x00IEND\xaeB`\x82'
+
 album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -232,7 +236,7 @@ image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 %(uplink)s
 <title>%(albumtitle)s</title>
 </head>
-<frameset cols="100%%, %(thumbnailsframesize)s">
+<frameset cols="100%%, %(thumbnailsframewidth)s">
 <frame name="main" src="%(imageframeref)s" />
 <frame name="toc" src="%(thumbnailsframeref)s#%(imagenumber)s" marginheight="20" />
 <noframes>
@@ -351,6 +355,8 @@ class OutputGenerator(OutputEngine):
                 (nosmaller_png, "nosmaller.png"),
                 (larger_png, "larger.png"),
                 (nolarger_png, "nolarger.png"),
+                (nextalbum_png, "nextalbum.png"),
+                (previousalbum_png, "previousalbum.png"),
                 (frame_bottom_png, "frame-bottom.png"),
                 (frame_bottomleft_png, "frame-bottomleft.png"),
                 (frame_bottomright_png, "frame-bottomright.png"),
@@ -366,32 +372,19 @@ class OutputGenerator(OutputEngine):
 
     def generateAlbum(self, album, subalbums, images, paths):
         # ------------------------------------------------------------
-        # Create album overview pages, one per size.
+        # Create album overview pages, one per size limit.
         # ------------------------------------------------------------
 
         self.makeDirectory(str(album.getId()))
-        for size in self.env.imagesizes:
-            # Create path text, used in top of the album overview.
-            pathtextElements = []
-            for path in paths:
-                els = []
-                for node in path:
-                    title = node.getAttribute(u"title") or node.getTag()
-                    els.append('''<a href="%(htmlref)s">%(title)s</a>''' % {
-                        "htmlref": "%s-%s.html" % (
-                            node.getTag().encode(self.charEnc),
-                            size),
-                        "title": title.encode(self.charEnc),
-                        })
-                pathtextElements.append(
-                    u" \xbb ".encode(self.charEnc).join(els))
-            pathtext = "<br />\n".join(pathtextElements)
+        for wlim, hlim in self.env.imagesizelimits:
+            pathtext = self._generatePathText(wlim, hlim, paths, "")
 
             # Create uplink.
             if len(paths[0]) > 1:
-                uplink = '<link rel="up" href="%s-%s.html" />' % (
+                uplink = '<link rel="up" href="%s-%dx%d.html" />' % (
                     paths[0][-2].getTag().encode(self.charEnc),
-                    size)
+                    wlim,
+                    hlim)
             else:
                 uplink = ""
 
@@ -406,26 +399,27 @@ class OutputGenerator(OutputEngine):
                     frontimage = self._getFrontImage(subalbum)
                     if frontimage:
                         thumbimgref = self.getImageReference(
-                            frontimage, self.env.thumbnailsize)
-                        thumbwidth, thumbheight = self.getLimitedSize(
-                            frontimage, self.env.thumbnailsize)
+                            frontimage,
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1])
                     else:
                         thumbimgref = "%s/%s" % (self.iconsdir, "1x1.png")
-                        thumbwidth = self.env.thumbnailsize
-                        thumbheight = 3 * self.env.thumbnailsize / 4
 
+                    thumbwidth = self.env.thumbnailsizelimit[0]
+                    thumbheight = 3 * self.env.thumbnailsizelimit[0] // 4
                     title = (subalbum.getAttribute(u"title") or
                              subalbum.getTag())
                     subalbumtextElements.append(subalbum_entry_template % {
                         "iconsdir": self.iconsdir,
-                        "htmlref": "%s-%d.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             subalbum.getTag().encode(self.charEnc),
-                            size),
+                            wlim,
+                            hlim),
                         "thumbheight": thumbheight,
                         "thumbheight_minus_6": thumbheight - 6,
+                        "thumbimgref": thumbimgref,
                         "thumbwidth": thumbwidth,
                         "thumbwidth_minus_6": thumbwidth - 6,
-                        "thumbimgref": thumbimgref,
                         "title": title.encode(self.charEnc),
                         })
                     number += 1
@@ -442,12 +436,15 @@ class OutputGenerator(OutputEngine):
                     if number % 3 == 0:
                         imagetextElements.append("</tr>\n<tr>\n")
                     imagetextElements.append(image_entry_template % {
-                        "frameref": "%s/%s-%s-frame.html" % (album.getId(),
-                                                             number,
-                                                             size),
+                        "frameref": "%s/%s-%dx%d-frame.html" % (
+                            album.getId(),
+                            number,
+                            wlim,
+                            hlim),
                         "thumbimgref": self.getImageReference(
                             image,
-                            self.env.thumbnailsize),
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1]),
                         })
                     number += 1
                 imagetextElements.append("</tr>\n")
@@ -461,8 +458,11 @@ class OutputGenerator(OutputEngine):
             title = album.getAttribute(u"title") or album.getTag()
             title = title.encode(self.charEnc)
 
+            filename = "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
+                                          wlim,
+                                          hlim)
             self.writeFile(
-                "%s-%s.html" % (album.getTag().encode(self.charEnc), size),
+                filename,
                 album_template % {
                     "blurb": self.blurb,
                     "charenc": self.charEnc,
@@ -470,112 +470,112 @@ class OutputGenerator(OutputEngine):
                     "imageentries": imagetext,
                     "paths": pathtext,
                     "subalbumentries": subalbumtext,
+                    "thishref": filename,
                     "title": title,
                     "uplink": uplink,
                 })
-            self._maybeMakeUTF8Symlink("%s-%s.html" % (album.getTag(), size))
+            self._maybeMakeUTF8Symlink("%s-%dx%d.html" % (album.getTag(),
+                                                          wlim,
+                                                          hlim))
 
         # ------------------------------------------------------------
-        # Create image thumbnails frame, one per size.
+        # Create image thumbnails frame, one per size limit.
         # ------------------------------------------------------------
 
-        for size in self.env.imagesizes:
+        for wlim, hlim in self.env.imagesizelimits:
             # Create text for image thumbnails frame.
             thumbnailsframeElements = []
             number = 0
             for image in images:
                 thumbnailsframeElements.append(
                     thumbnails_frame_entry_template % {
-                        "htmlref": "%s-%s.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             number,
-                            size),
+                            wlim,
+                            hlim),
                         "number": number,
                         "thumbimgref": "../" + self.getImageReference(
                             image,
-                            self.env.thumbnailsize),
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1]),
                         })
                 number += 1
             thumbnailstext = "\n".join(thumbnailsframeElements)
 
             # Image thumbnails frame.
             self.writeFile(
-                os.path.join(str(album.getId()), "thumbnails-%s.html" % size),
+                os.path.join(str(album.getId()),
+                             "thumbnails-%dx%d.html" % (wlim, hlim)),
                 thumbnails_frame_template % {
                     "charenc": self.charEnc,
                     "entries": thumbnailstext})
             self._maybeMakeUTF8Symlink(
-                os.path.join(str(album.getId()), "thumbnails-%s.html" % size))
+                os.path.join(str(album.getId()),
+                             "thumbnails-%dx%d.html" % (wlim, hlim)))
 
         # ------------------------------------------------------------
-        # Create album symlink to default size.
+        # Create album symlink to default size limit.
         # ------------------------------------------------------------
 
         self.symlinkFile(
-            "%s-%s.html" % (album.getTag().encode(self.charEnc),
-                            self.env.defaultsize),
+            "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
+                               self.env.defaultsizelimit[0],
+                               self.env.defaultsizelimit[1]),
             "%s.html" % album.getTag().encode(self.charEnc))
         self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
 
 
     def generateImage(self, album, image, images, number, paths):
         # ------------------------------------------------------------
-        # Create image frameset and image fram, one per size.
+        # Create image frameset and image fram, one per size limit.
         # ------------------------------------------------------------
 
-        for sizenumber in range(len(self.env.imagesizes)):
-            size = self.env.imagesizes[sizenumber]
-
-            # Create path text, used in top of the image frame, and
-            # <link ...> text.
-            pathtextElements = []
-            for path in paths:
-                els = []
-                for node in path:
-                    title = node.getAttribute(u"title") or node.getTag()
-                    els.append('''<a href="../%(htmlref)s" target="_top">%(title)s</a>''' % {
-                        "htmlref": "%s-%s.html" % (
-                            node.getTag().encode(self.charEnc),
-                            size),
-                        "title": title.encode(self.charEnc),
-                        })
-                pathtextElements.append(
-                    u" \xbb ".encode(self.charEnc).join(els))
-            pathtext = "<br />\n".join(pathtextElements)
-            uplink = '<link rel="up" href="../%s-%s.html" target="_top" />' % (
+        for limnumber, (wlim, hlim) in enumerate(self.env.imagesizelimits):
+            pathtext = self._generatePathText(wlim, hlim, paths, "../")
+            uplink = '<link rel="up" href="../%s-%dx%d.html" target="_top" />' % (
                 paths[0][-1].getTag().encode(self.charEnc),
-                size)
+                wlim,
+                hlim)
 
             if number > 0:
-                previouslink = '<link rel="previous" href="%s-%s-frame.html" />' % (number - 1, size)
+                previouslink = '<link rel="previous" href="%s-%dx%d-frame.html" />' % (
+                    number - 1,
+                    wlim,
+                    hlim)
                 previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" /></a>' % (
-                    "%s-%s.html" % (number - 1, size),
+                    "%s-%dx%d.html" % (number - 1, wlim, hlim),
                     self.iconsdir)
             else:
                 previouslink = ""
                 previoustext = '<img class="icon" src="../%s/noprevious.png" />' % self.iconsdir
 
             if number < len(images) - 1:
-                nextlink = '<link rel="next" href="%s-%s-frame.html" />' % (number + 1, size)
+                nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
+                    number + 1, wlim, hlim)
                 nexttext = '<a href="%s"><img class="icon" src="../%s/next.png" /></a>' % (
-                    "%s-%s.html" % (number + 1, size),
+                    "%s-%dx%d.html" % (number + 1, wlim, hlim),
                     self.iconsdir)
             else:
                 nextlink = ""
                 nexttext = '<img class="icon" src="../%s/nonext.png" />' % self.iconsdir
 
-            if sizenumber > 0:
+            if limnumber > 0:
                 smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" /></a>' % (
-                    "%s-%s-frame.html" % (
-                        number, self.env.imagesizes[sizenumber - 1]),
+                    "%s-%dx%d-frame.html" % (
+                        number,
+                        self.env.imagesizelimits[limnumber - 1][0],
+                        self.env.imagesizelimits[limnumber - 1][1]),
                     self.iconsdir)
 
             else:
                 smallertext = '<img class="icon" src="../%s/nosmaller.png" />' % self.iconsdir
 
-            if sizenumber < len(self.env.imagesizes) - 1:
+            if limnumber < len(self.env.imagesizelimits) - 1:
                 largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" /></a>' % (
-                    "%s-%s-frame.html" % (
-                        number, self.env.imagesizes[sizenumber + 1]),
+                    "%s-%dx%d-frame.html" % (
+                        number,
+                        self.env.imagesizelimits[limnumber + 1][0],
+                        self.env.imagesizelimits[limnumber + 1][1]),
                     self.iconsdir)
             else:
                 largertext = '<img class="icon" src="../%s/nolarger.png" />' % self.iconsdir
@@ -633,31 +633,35 @@ class OutputGenerator(OutputEngine):
 
             self.writeFile(
                 os.path.join(str(album.getId()),
-                             "%s-%s-frame.html" % (number, size)),
+                             "%s-%dx%d-frame.html" % (number, wlim, hlim)),
                 image_frameset_template % {
                     "albumtitle": title,
                     "charenc": self.charEnc,
-                    "imageframeref": "%s-%s.html" % (
+                    "imageframeref": "%s-%dx%d.html" % (
                         number,
-                        size),
+                        wlim,
+                        hlim),
                     "imagenumber": number,
                     "nextlink": nextlink,
                     "previouslink": previouslink,
-                    "thumbnailsframeref": "thumbnails-%s.html" % size,
-                    "thumbnailsframesize": self.env.thumbnailsize + 70,
+                    "thumbnailsframeref": "thumbnails-%dx%d.html" % (
+                        wlim, hlim),
+                    "thumbnailsframewidth": \
+                        self.env.thumbnailsizelimit[0] + 70,
                     "uplink": uplink,
                     })
 
             self.writeFile(
                 os.path.join(str(album.getId()),
-                             "%s-%s.html" % (number, size)),
+                             "%s-%dx%d.html" % (number, wlim, hlim)),
                 image_frame_template % {
                     "blurb": self.blurb,
                     "charenc": self.charEnc,
                     "iconsdir": "../" + self.iconsdir,
                     "imgid": image.getId(),
-                    "imgmaxwidth": size,
-                    "imgref": "../" + self.getImageReference(image, size),
+                    "imgmaxwidth": wlim,
+                    "imgref": "../" + self.getImageReference(
+                                          image, wlim, hlim),
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
@@ -667,6 +671,74 @@ class OutputGenerator(OutputEngine):
                     "thumbnailsanchor": str(number),
                     "title": title,
                     })
+
+
+    def _generatePathText(self, wlim, hlim, paths, pathprefix):
+        # Create path text, used in top of the album overview.
+        pathtextElements = []
+        pathtextElements.append("<table width=\"100%\">\n")
+        for path in paths:
+            pathtextElements.append("<tr><td width=\"60%\">\n")
+            els = []
+            for node in path:
+                title = node.getAttribute(u"title") or node.getTag()
+                els.append('''<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>''' % {
+                    "htmlref": "%s-%dx%d.html" % (
+                        node.getTag().encode(self.charEnc),
+                        wlim,
+                        hlim),
+                    "pathprefix": pathprefix,
+                    "title": title.encode(self.charEnc),
+                    })
+            pathtextElements.append(
+                u" \xbb ".encode(self.charEnc).join(els))
+            pathtextElements.append("</td>\n")
+            pathtextElements.append("<td width=\"40%\" align=\"right\" style=\"text-align: right\">\n")
+            if len(path) == 1:
+                prevalbumtext = ""
+            else:
+                parent = path[-2]
+                this = path[-1]
+                children = list(parent.getChildren())
+                thispos = children.index(this)
+                if thispos == 0:
+                    # No previous sibling.
+                    prevalbumtext = ""
+                else:
+                    sibling = children[thispos - 1]
+                    title = (sibling.getAttribute(u"title") or
+                             sibling.getTag())
+                    prevalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/previousalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
+                        "htmlref": "%s-%dx%d.html" % (
+                            sibling.getTag().encode(self.charEnc),
+                            wlim,
+                            hlim),
+                        "iconsdir": self.iconsdir,
+                        "pathprefix": pathprefix,
+                        "title": title.replace(" ", "&nbsp;").encode(self.charEnc)
+                        }
+                if thispos == len(children) - 1:
+                    # No next sibling.
+                    nextalbumtext = ""
+                else:
+                    sibling = children[thispos + 1]
+                    title = (sibling.getAttribute(u"title") or
+                             sibling.getTag())
+                    nextalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/nextalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
+                        "htmlref": "%s-%dx%d.html" % (
+                            sibling.getTag().encode(self.charEnc),
+                            wlim,
+                            hlim),
+                        "iconsdir": self.iconsdir,
+                        "pathprefix": pathprefix,
+                        "title": title.replace(" ", "&nbsp;").encode(self.charEnc),
+                        }
+                pathtextElements.append(prevalbumtext)
+                pathtextElements.append("\n")
+                pathtextElements.append(nextalbumtext)
+            pathtextElements.append("</td></tr>\n")
+        pathtextElements.append("</table>\n")
+        return "".join(pathtextElements)
 
 
     def _getFrontImage(self, object, visited=None):

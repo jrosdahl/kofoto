@@ -40,6 +40,14 @@
 * Make it possible to generate an album with images symlinked to a
   local image store, not the system-wide cache.
 
+* Two different generation modes: "local" and "symlink"? Generated
+  HTML pages in the former mode would have absolute hrefs to the
+  images in the imagecache and would be suitable for viewing with
+  local web browser. Bonus: No need for symlinks, so it will work in
+  Windows too. The latter would work as now, with symlinks to the
+  imagecache (copies on Windows). A third mode that makes image copies
+  regardless of platform could also be useful.
+
 * Write a test suite.
 
 * When generating an album, store images in per-month directories
@@ -49,8 +57,72 @@
   registers images in given directories, generates an album and
   removes the shelf?
 
-Think more about:
+* More output modules?
 
-    * Which auxilliary attributes should be set on import? Specify
-      default attributes (like photographer) to add in configuration?
-      Ability to supply more/override attributes when importing?
+* Add possibility of giving an optional filter parameter when
+  generating albums. Add default filter parameter. Example: Supplying
+  the filter "not private" would exclude all images with the "private"
+  category.
+
+* Create some kind of graphic Windows client. A custom web server with
+  an ordinary web client would probably do well.
+
+* Parameterize output modules? It could be interesting to be able to
+  tweak things like thumbnail size, image sizes, CSS, shadows, detail
+  page generation, etc. on a per-generation basis.
+
+* New search operators for finding images contained in a given album
+  and albums that contain a given image.
+
+* Make sure the stored Unicode text strings are normalized in the
+  shelf.
+
+* Some kind of multiple image versions feature would be nice. An image
+  that, for example, have been cropped or have had some color
+  adjustments done probably should share most categories and
+  attributes with the original image. Should the categories/attributes
+  just be copied from the original image or should we store some kind
+  of association in the shelf? LysKOM texts: 10395020, 10411412.
+
+  Use case: I capture a picture, register it with Kofoto and add some
+  categories and a description attribute. Later, I fix red eyes in the
+  picture and want to register the edited picture too while keeping
+  the original. I then want the categories and the description
+  attribute to be inherited in some way.
+
+* Rewrite image cache interface. LysKOM texts: 10411506 with comments.
+  Executive summary: Store image location and timestamp (filesystem
+  mtime) in addition to the MD5 checksum in the database. Use location
+  and timestamp when looking up images in the cache instead of the
+  checksum. This makes it possible to cache unregistered images too.
+
+* Use ImageMagick/jpegtran if PIL isn't available?
+
+* Make mapping of EXIF attributes to Kofoto attributes configurable.
+  Add possiblity of reimporting EXIF attributes?
+
+* Read "directories to ignore" from configuration.
+
+* Add command for listing files in given directories that are known
+  (registered) or unknown to Kofoto.
+
+* Specify (in configuration) default attributes (like photographer) to
+  add when registering images? Ability to supply more/override
+  attributes when importing?
+
+* Add switch for specifying search result format (id, filename, ...).
+
+* Make gkofoto aware of the orientation attribute. Alternatively,
+  remove handling of orientation from Kofoto altogether. Or make it
+  configurable.
+
+* Fix inconsistencies in commandline client commands. LysKOM text:
+  10994865.
+
+* Define a transport format (XML-based?) for metadata. Add import and
+  export commands.
+
+* Create a home page for Kofoto. Maybe a Wiki?
+
+* Store a log of changes to the shelf and add possibility of backing
+  out changes.

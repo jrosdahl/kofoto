@@ -37,6 +37,7 @@ __all__ = [
 ######################################################################
 ### Libraries.
 
+import os
 import re
 import threading
 import time
@@ -119,15 +120,19 @@ schema = """
         -- identifies the image uniquely. Currently an MD5 checksum
         -- (in hex format) of all image data.
         hash        CHAR(32) NOT NULL,
-        -- Last known location (local pathname) of the image.
-        location    VARCHAR(256) NOT NULL,
+        -- Directory part of the last known location (local pathname)
+        -- of the image.
+        directory   VARCHAR(256) NOT NULL,
+        -- Filename part of the last known location (local pathname)
+        -- of the image.
+        filename    VARCHAR(256) NOT NULL,
 
         UNIQUE      (hash),
         FOREIGN KEY (imageid) REFERENCES object,
         PRIMARY KEY (imageid)
     );
 
-    CREATE INDEX image_location_index ON image (location);
+    CREATE INDEX image_location_index ON image (directory, filename);
 
     -- Members in an album.
     CREATE TABLE member (
@@ -206,6 +211,7 @@ schema = """
 
 _ROOT_ALBUM_ID = 0
 _ROOT_ALBUM_DEFAULT_TAG = u"root"
+_SHELF_FORMAT_VERSION = 1
 
 ######################################################################
 ### Exceptions.
@@ -412,9 +418,12 @@ class Shelf:
             cursor.execute(
                 " select version"
                 " from   dbinfo")
-            if cursor.fetchone()[0] != 0:
-                raise UnsupportedShelfError, location
+            version = cursor.fetchone()[0]
             self.connection.rollback()
+            if version > _SHELF_FORMAT_VERSION:
+                raise UnsupportedShelfError, location
+            if version < _SHELF_FORMAT_VERSION:
+                self._upgradeShelf(version)
             if create:
                 raise FailedWritingError, location
         except sql.OperationalError:
@@ -424,7 +433,8 @@ class Shelf:
                 cursor.execute(schema)
                 cursor.execute(
                     " insert into dbinfo (version)"
-                    " values (0)")
+                    " values (%s)",
+                    _SHELF_FORMAT_VERSION)
                 cursor.execute(
                     " insert into object (objectid)"
                     " values (%s)",
@@ -594,7 +604,7 @@ class Shelf:
     def getAllAlbums(self):
         """Get all albums in the shelf (unsorted).
 
-        Returns an iterator returning the albums."""
+        Returns an iterable returning the albums."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select albumid, tag, type"
@@ -606,12 +616,30 @@ class Shelf:
     def getAllImages(self):
         """Get all images in the shelf (unsorted).
 
-        Returns an iterator returning the images."""
+        Returns an iterable returning the images."""
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image")
-        for imageid, hash, location in cursor:
+        for imageid, hash, directory, filename in cursor:
+            location = os.path.join(directory, filename)
+            yield Image(self, imageid, hash, location)
+
+
+    def getImagesInDirectory(self, directory):
+        """Get all images that are expected to be in a given directory
+        (unsorted).
+
+        Returns an iterable returning the images."""
+        directory = os.path.realpath(directory)
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select imageid, hash, directory, filename"
+            " from   image"
+            " where  directory = %s",
+            directory)
+        for imageid, hash, directory, filename in cursor:
+            location = os.path.join(directory, filename)
             yield Image(self, imageid, hash, location)
 
 
@@ -672,8 +700,7 @@ class Shelf:
         except IOError:
             raise NotAnImageError, path
 
-        import os
-        location = unicode(os.path.abspath(path.encode(self.codeset)),
+        location = unicode(os.path.realpath(path.encode(self.codeset)),
                            self.codeset)
         hash = computeImageHash(location.encode(self.codeset))
         try:
@@ -683,11 +710,12 @@ class Shelf:
                 " values (null)")
             imageid = cursor.lastrowid
             cursor.execute(
-                " insert into image (imageid, hash, location)"
-                " values (%s, %s, %s)",
+                " insert into image (imageid, hash, directory, filename)"
+                " values (%s, %s, %s, %s)",
                 imageid,
                 hash,
-                location)
+                os.path.dirname(location),
+                os.path.basename(location))
             width, height = pilimg.size
             cursor.execute(
                 " insert into attribute (objectid, name, value, lcvalue)"
@@ -729,28 +757,28 @@ class Shelf:
             return self.objectcache[ref]
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image"
             " where  imageid = %s"
             " union"
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image"
             " where  hash = %s",
             ref,
             ref)
         row = cursor.fetchone()
         if not row:
-            import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
-                    " select imageid, hash, location"
+                    " select imageid, hash, directory, filename"
                     " from   image"
                     " where  hash = %s",
                     computeImageHash(ref.encode(self.codeset)))
                 row = cursor.fetchone()
             if not row:
                 raise ImageDoesNotExistError, ref
-        imageid, hash, location = row
+        imageid, hash, directory, filename = row
+        location = os.path.join(directory, filename)
         image = Image(self, imageid, hash, location)
         self.objectcache[imageid] = image
         self.objectcache[unicode(imageid)] = image
@@ -777,7 +805,6 @@ class Shelf:
         else:
             # No match. Check whether it's a path to a known file.
             imageid = None
-            import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
                     " select imageid, hash"
@@ -842,7 +869,7 @@ class Shelf:
     def getAllAttributeNames(self):
         """Get all used attribute names in the shelf (sorted).
 
-        Returns an iterator the attribute names."""
+        Returns an iterable the attribute names."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select distinct name"
@@ -943,7 +970,7 @@ class Shelf:
     def getRootCategories(self):
         """Get the categories that are roots, i.e. have no parents.
 
-        Returns an iterator returning Category instances."""
+        Returns an iterable returning Category instances."""
         for catid in self.categorydag.get().getRoots():
             yield self.getCategory(catid)
 
@@ -954,7 +981,7 @@ class Shelf:
         Use kofoto.search.Parser to construct a search node tree from
         a string.
 
-        Returns an iterator returning the objects."""
+        Returns an iterable returning the objects."""
         cursor = self.connection.cursor()
         cursor.execute(searchtree.getQuery())
         for (objid,) in cursor:
@@ -1033,6 +1060,67 @@ class Shelf:
             fn(False)
 
 
+    def _upgradeShelf(self, version):
+        if version < 1:
+            #
+            # Split image location field into directory and filename.
+            #
+            cursor = self.connection.cursor()
+            cursor2 = self.connection.cursor()
+            cursor.execute(
+                " create temporary table tmp_image ("
+                "     imageid   integer not null,"
+                "     hash      char(32) not null,"
+                "     directory varchar(256) not null,"
+                "     filename  varchar(256) not null"
+                " )")
+            cursor.execute(
+                "select imageid, hash, location from image")
+            for imageid, hash, location in cursor:
+                cursor2.execute(
+                    "insert into tmp_image values (%s, %s, %s, %s)",
+                    imageid,
+                    hash,
+                    os.path.dirname(location),
+                    os.path.basename(location))
+            cursor.execute(
+                "drop table image")
+            cursor.execute(
+                """
+    CREATE TABLE image (
+        -- Internal identifier of the image. Shared primary key with
+        -- object.
+        imageid     INTEGER NOT NULL,
+        -- Identifier string which is derived from the image data and
+        -- identifies the image uniquely. Currently an MD5 checksum
+        -- (in hex format) of all image data.
+        hash        CHAR(32) NOT NULL,
+        -- Directory part of the last known location (local pathname)
+        -- of the image.
+        directory   VARCHAR(256) NOT NULL,
+        -- Filename part of the last known location (local pathname)
+        -- of the image.
+        filename    VARCHAR(256) NOT NULL,
+
+        UNIQUE      (hash),
+        FOREIGN KEY (imageid) REFERENCES object,
+        PRIMARY KEY (imageid)
+    )""")
+            cursor.execute(
+                "CREATE INDEX image_location_index ON image (directory, filename)")
+            cursor.execute(
+                " insert into image (imageid, hash, directory, filename)"
+                " select imageid, hash, directory, filename from tmp_image")
+            cursor.execute("drop table tmp_image")
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " update dbinfo"
+            " set    version = %s",
+            _SHELF_FORMAT_VERSION)
+        self.connection.commit()
+
+
 class Category:
     """A Kofoto category."""
 
@@ -1085,7 +1173,7 @@ class Category:
         """Get child categories.
 
         If recursive is true, get all descendants. If recursive is
-        false, get only immediate children. Returns an iterator
+        false, get only immediate children. Returns an iterable
         returning of Category instances (unordered)."""
         catdag = self.shelf.categorydag.get()
         if recursive:
@@ -1100,7 +1188,7 @@ class Category:
         """Get parent categories.
 
         If recursive is true, get all ancestors. If recursive is
-        false, get only immediate parents. Returns an iterator
+        false, get only immediate parents. Returns an iterable
         returning of Category instances (unordered)."""
         catdag = self.shelf.categorydag.get()
         if recursive:
@@ -1255,7 +1343,7 @@ class _Object:
     def getAttributeNames(self):
         """Get all attribute names.
 
-        Returns an iterator returning the attributes."""
+        Returns an iterable returning the attributes."""
         if not self.allAttributesFetched:
             self.getAttributeMap()
         return self.attributes.iterkeys()
@@ -1329,7 +1417,7 @@ class _Object:
     def getCategories(self, recursive=False):
         """Get categories for this object.
 
-        Returns an iterator returning the categories."""
+        Returns an iterable returning the categories."""
         if not self.allCategoriesFetched:
             cursor = self.shelf.connection.cursor()
             cursor.execute(
@@ -1388,7 +1476,7 @@ class Album(_Object):
     def getAlbumParents(self):
         """Get the album's (album) parents.
 
-        Returns an iterator returning Album instances.
+        Returns an iterable returning Album instances.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1429,7 +1517,7 @@ class PlainAlbum(Album):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning Album/Images instances.
+        Returns an iterable returning Album/Images instances.
         """
         if self.children is not None:
             for child in self.children:
@@ -1452,7 +1540,7 @@ class PlainAlbum(Album):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning Album instances.
+        Returns an iterable returning Album instances.
         """
         if self.children is not None:
             for child in self.children:
@@ -1534,9 +1622,10 @@ class Image(_Object):
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " update image"
-            " set    location = %s"
+            " set    directory = %s, filename = %s"
             " where  imageid = %s",
-            location,
+            os.path.realpath(os.path.dirname(location)),
+            os.path.basename(location),
             self.getId())
         self.location = location
         self.shelf._setModified()
@@ -1557,6 +1646,13 @@ class Image(_Object):
             hash,
             self.getId())
         self.hash = hash
+        import Image as PILImage
+        try:
+            pilimg = PILImage.open(self.location)
+        except IOError:
+            raise NotAnImageError, self.location
+        self.setAttribute(u"width", unicode(pilimg.size[0]))
+        self.setAttribute(u"height", unicode(pilimg.size[1]))
         self.shelf._setModified()
 
 
@@ -1665,7 +1761,7 @@ class AllAlbumsAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the albums.
+        Returns an iterable returning the albums.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1679,7 +1775,7 @@ class AllAlbumsAlbum(MagicAlbum):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning the albums.
+        Returns an iterable returning the albums.
         """
         return self.getChildren()
 
@@ -1693,7 +1789,7 @@ class AllImagesAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the images.
+        Returns an iterable returning the images.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1701,7 +1797,7 @@ class AllImagesAlbum(MagicAlbum):
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    name = 'captured'"
-            " order by lcvalue, location")
+            " order by lcvalue, directory, filename")
         for (imageid,) in cursor:
             yield self.shelf.getImage(imageid)
 
@@ -1723,7 +1819,7 @@ class OrphansAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the orphans.
+        Returns an iterable returning the orphans.
         """
         return self._getChildren(True)
 
@@ -1731,7 +1827,7 @@ class OrphansAlbum(MagicAlbum):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning the orphans.
+        Returns an iterable returning the orphans.
         """
         return self._getChildren(False)
 
@@ -1757,7 +1853,7 @@ class OrphansAlbum(MagicAlbum):
                 " on       imageid = objectid"
                 " where    imageid not in (select objectid from member) and"
                 "          name = 'captured'"
-                " order by lcvalue, location")
+                " order by lcvalue, directory, filename")
             for (imageid,) in cursor:
                 yield self.shelf.getImage(imageid)
 
