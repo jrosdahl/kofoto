@@ -51,6 +51,8 @@ class Albums:
         self.__loadAlbumTreeHelper()
         env.widgets["albumView"].expand_row(0, False) # Expand root album
 
+    def unselect(self):
+        self.__albumView.get_selection().unselect_all()
 
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.

@@ -31,6 +31,7 @@ class ObjectCollectionFactory:
                 return self.__albumMembers
             else:
                 self.__searchResult.loadQuery(query)
+                env.mainwindow.unselectAlbumTree()
                 return self.__searchResult
         except AlbumDoesNotExistError, tag:
             errorText = "No such album tag: \"%s\"." % tag

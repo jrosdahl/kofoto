@@ -97,6 +97,9 @@ class MainWindow(gtk.Window):
     def reloadAlbumTree(self):
         self.__albums.loadAlbumTree()
 
+    def unselectAlbumTree(self):
+        self.__albums.unselect()
+
     def registerImages(self, widget, data):
         dialog = RegisterImagesDialog()
         if dialog.run() == gtk.RESPONSE_OK:
