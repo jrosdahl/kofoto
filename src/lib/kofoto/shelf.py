@@ -11,7 +11,14 @@ import threading
 import sqlite as sql
 from types import *
 from kofoto.common import KofotoError
-from kofoto.sqlset import SqlSetFactory
+from kofoto.dag import DAG, LoopError
+from kofoto.cachedobject import CachedObject
+
+# TODO: Remove when Python 2.3 or higher is required.
+try:
+    from sets import Set
+except ImportError:
+    from kofoto.sets import Set
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
@@ -382,6 +389,9 @@ class Shelf:
             else:
                 raise ShelfNotFoundError, location
         self.transactionLock = threading.Lock()
+        self.categorydag = CachedObject(self._createCategoryDAG)
+        self.objectcache = {}
+        self.categorycache = {}
 
 
     def begin(self):
@@ -391,7 +401,7 @@ class Shelf:
         # command is executed, so execute a dummy command here.
         cursor = self.connection.cursor()
         cursor.execute("select * from dbinfo")
-        self.sqlsetFactory = SqlSetFactory(self.connection)
+        self.categorydag.invalidate()
 
 
     def commit(self):
@@ -426,7 +436,9 @@ class Shelf:
 
 
     def createAlbum(self, tag, albumtype=u"plain"):
-        """Create an empty, orphaned album."""
+        """Create an empty, orphaned album.
+
+        Returns an Album instance."""
         verifyValidAlbumTag(tag)
         cursor = self.connection.cursor()
         try:
@@ -440,7 +452,7 @@ class Shelf:
                 lastrowid,
                 tag,
                 albumtype)
-            return self._albumFactory(lastrowid, albumtype)
+            return self.getAlbum(lastrowid)
         except sql.IntegrityError:
             cursor.execute(
                 " delete from object"
@@ -454,29 +466,23 @@ class Shelf:
 
         Returns an Album instance.
         """
+        if tag in self.objectcache:
+            return self.objectcache[tag]
         cursor = self.connection.cursor()
-        try:
-            albumid = int(tag)
-            cursor.execute(
-                " select type"
-                " from album"
-                " where albumid = %s",
-                albumid)
-            if cursor.rowcount > 0:
-                albumtype = cursor.fetchone()[0]
-            else:
-                raise AlbumDoesNotExistError, tag
-        except ValueError:
-            cursor.execute(
-                " select albumid, type"
-                " from album"
-                " where tag = %s",
-                tag)
-            if cursor.rowcount > 0:
-                albumid, albumtype = cursor.fetchone()
-            else:
-                raise AlbumDoesNotExistError, tag
-        return self._albumFactory(albumid, albumtype)
+        cursor.execute(
+            " select albumid, tag, type"
+            " from   album"
+            " where  albumid = %s or tag = %s",
+            tag,
+            tag)
+        row = cursor.fetchone()
+        if not row:
+            raise AlbumDoesNotExistError, tag
+        albumid, tag, albumtype = row
+        album = self._albumFactory(albumid, tag, albumtype)
+        self.objectcache[albumid] = album
+        self.objectcache[tag] = album
+        return album
 
 
     def getRootAlbum(self):
@@ -493,10 +499,10 @@ class Shelf:
         Returns an iterator returning the albums."""
         cursor = self.connection.cursor()
         cursor.execute(
-            " select albumid, type"
+            " select albumid, tag, type"
             " from   album")
-        for albumid, albumtype in cursor:
-            yield self._albumFactory(albumid, albumtype)
+        for albumid, tag, albumtype in cursor:
+            yield self._albumFactory(albumid, tag, albumtype)
 
 
     def getAllImages(self):
@@ -505,27 +511,25 @@ class Shelf:
         Returns an iterator returning the images."""
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid"
+            " select imageid, hash, location"
             " from   image")
-        for (imageid,) in cursor:
-            yield Image(self, imageid)
+        for imageid, hash, location in cursor:
+            yield Image(self, imageid, hash, location)
 
 
     def deleteAlbum(self, tag):
         """Delete the album for a given album tag/ID."""
         cursor = self.connection.cursor()
-        try:
-            albumid = int(tag)
-        except ValueError:
-            cursor.execute(
-                " select albumid, type"
-                " from album"
-                " where tag = %s",
-                tag)
-            row = cursor.fetchone()
-            if not row:
-                raise AlbumDoesNotExistError, tag
-            albumid, albumtype = row
+        cursor.execute(
+            " select albumid, tag"
+            " from   album"
+            " where  albumid = %s or tag = %s",
+            tag,
+            tag)
+        row = cursor.fetchone()
+        if not row:
+            raise AlbumDoesNotExistError, tag
+        albumid, tag = row
         if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
             raise UndeletableAlbumError, tag
@@ -533,8 +537,6 @@ class Shelf:
             " delete from album"
             " where  albumid = %s",
             albumid)
-        if cursor.rowcount == 0:
-            raise AlbumDoesNotExistError, tag
         self._deleteObjectFromParents(albumid)
         cursor.execute(
             " delete from object"
@@ -544,12 +546,15 @@ class Shelf:
             " delete from attribute"
             " where  objectid = %s",
             albumid)
+        for x in albumid, tag:
+            if x in self.objectcache:
+                del self.objectcache[x]
 
 
     def createImage(self, path):
         """Add a new, orphaned image to the shelf.
 
-        The ID of the image is returned."""
+        Returns an Image instance."""
         import Image as PILImage
         try:
             pilimg = PILImage.open(path)
@@ -582,7 +587,7 @@ class Shelf:
                 " values (%s, 'height', %s)",
                 imageid,
                 height)
-            image = Image(self, imageid)
+            image = self.getImage(imageid)
             image.importExifTags()
             return image
         except sql.IntegrityError:
@@ -598,12 +603,61 @@ class Shelf:
 
         Returns an Image object.
         """
-        return Image(self, self._interpretImageReference(ref))
+        if ref in self.objectcache:
+            return self.objectcache[ref]
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select imageid, hash, location"
+            " from   image"
+            " where  imageid = %s or hash = %s",
+            ref,
+            ref)
+        row = cursor.fetchone()
+        if not row:
+            import os
+            if os.path.isfile(ref.encode(self.codeset)):
+                cursor.execute(
+                    " select imageid, hash, location"
+                    " from   image"
+                    " where  hash = %s",
+                    computeImageHash(ref.encode(self.codeset)))
+                row = cursor.fetchone()
+            else:
+                raise ImageDoesNotExistError, ref
+        imageid, hash, location = row
+        image = Image(self, imageid, hash, location)
+        self.objectcache[imageid] = image
+        self.objectcache[hash] = image
+        return image
 
 
     def deleteImage(self, ref):
         """Delete the image for a given image hash/ID."""
-        imageid = self._interpretImageReference(ref)
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select imageid"
+            " from   image"
+            " where  imageid = %s or hash = %s",
+            ref,
+            ref)
+        if cursor.rowcount > 0:
+            imageid = cursor.fetchone()[0]
+        else:
+            # No match. Check whether it's a path to a known file.
+            imageid = None
+            import os
+            if os.path.isfile(ref.encode(self.codeset)):
+                cursor.execute(
+                    " select imageid"
+                    " from   image"
+                    " where  hash = %s",
+                    computeImageHash(ref.encode(self.codeset)))
+                if cursor.rowcount > 0:
+                    imageid = cursor.fetchone()[0]
+        if not imageid:
+            # Oh well.
+            raise ImageDoesNotExistError, ref
+
         cursor = self.connection.cursor()
         cursor.execute(
             " delete from image"
@@ -622,6 +676,8 @@ class Shelf:
 
     def getObject(self, objid):
         """Get the object for a given object tag/ID."""
+        if objid in self.objectcache:
+            return self.objectcache[objid]
         try:
             return self.getAlbum(objid)
         except AlbumDoesNotExistError:
@@ -667,7 +723,8 @@ class Shelf:
                 " values (null, %s, %s)",
                 tag,
                 desc)
-            return Category(self, cursor.lastrowid)
+            self.categorydag.get().add(cursor.lastrowid)
+            return self.getCategory(cursor.lastrowid)
         except sql.IntegrityError:
             raise CategoryExistsError, tag
 
@@ -675,18 +732,16 @@ class Shelf:
     def deleteCategory(self, tag):
         """Delete a category for a given category tag/ID."""
         cursor = self.connection.cursor()
-        try:
-            catid = int(tag)
-        except ValueError:
-            cursor.execute(
-                " select categoryid"
-                " from   category"
-                " where  tag = %s",
-                tag)
-            row = cursor.fetchone()
-            if not row:
-                raise CategoryDoesNotExistError, tag
-            catid = row[0]
+        cursor.execute(
+            " select categoryid, tag"
+            " from   category"
+            " where  categoryid = %s or tag = %s",
+            tag,
+            tag)
+        row = cursor.fetchone()
+        if not row:
+            raise CategoryDoesNotExistError, tag
+        catid, tag = row
         cursor.execute(
             " delete from category_child"
             " where  parent = %s or child = %s",
@@ -700,15 +755,23 @@ class Shelf:
             " delete from category"
             " where  categoryid = %s",
             catid)
+        catdag = self.categorydag.get()
+        if catid in catdag:
+            catdag.remove(catid)
+        for x in catid, tag:
+            if x in self.categorycache:
+                del self.categorycache[x]
 
 
     def getCategory(self, catid):
         """Get a category for a given category tag/ID.
 
         Returns a Category instance."""
+        if catid in self.categorycache:
+            return self.categorycache[catid]
         cursor = self.connection.cursor()
         cursor.execute(
-            " select categoryid"
+            " select categoryid, tag, description"
             " from   category"
             " where  categoryid = %s or tag = %s",
             catid,
@@ -716,21 +779,19 @@ class Shelf:
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError, catid
-        return Category(self, row[0])
+        catid, tag, desc = row
+        category = Category(self, catid, tag, desc)
+        self.categorycache[catid] = category
+        self.categorycache[tag] = category
+        return category
 
 
     def getRootCategories(self):
         """Get the categories that are roots, i.e. have no parents.
 
         Returns an iterator returning Category instances."""
-        cursor = self.connection.cursor()
-        cursor.execute(
-            " select categoryid"
-            " from   category"
-            " where  categoryid not in (select child from category_child)"
-            " order by description")
-        for (catid,) in cursor:
-            yield Category(self, catid)
+        for catid in self.categorydag.get().getRoots():
+            yield self.getCategory(catid)
 
 
     def getObjectsForCategory(self, category, recursive=False):
@@ -739,29 +800,18 @@ class Shelf:
         Returns an iterator returning Album/Image instances."""
         catid = category.getId()
         if recursive:
-            categoryset = self._recursiveComputeCategoryIds([catid],
-                                                            descendants=True)
+            categories = Set(self.categorydag.get().getDescendants(catid))
         else:
-            categoryset = self.sqlsetFactory.newSet()
-            categoryset.add(catid)
+            categories = [catid]
 
         cursor = self.connection.cursor()
         cursor.execute(
-            " select 'album', objectid, type"
-            " from   object_category, album"
-            " where  objectid = albumid and"
-            "        categoryid in (select * from %(categorysetTablename)s)"
-            " union"
-            " select 'image', objectid, NULL"
-            " from   object_category, image"
-            " where  objectid = imageid and"
-            "        categoryid in (select * from %(categorysetTablename)s)",
-            {"categorysetTablename": categoryset.getTablename()})
-        for objtype, objid, atype in cursor:
-            if objtype == "album":
-                yield self._albumFactory(objid, atype)
-            else:
-                yield Image(self, objid)
+            " select objectid"
+            " from   object_category"
+            " where  categoryid in (%s)" % (
+                ",".join([unicode(x) for x in categories])))
+        for (objid,) in cursor:
+            yield self.getObject(objid)
 
 
     def search(self, expr):
@@ -781,7 +831,7 @@ class Shelf:
     ##############################
     # Internal methods.
 
-    def _albumFactory(shelf, albumid, albumtype=u"plain"):
+    def _albumFactory(self, albumid, tag, albumtype):
         albumtypemap = {
             "allalbums": AllAlbumsAlbum,
             "allimages": AllImagesAlbum,
@@ -789,7 +839,7 @@ class Shelf:
             "plain": PlainAlbum,
         }
         try:
-            return albumtypemap[albumtype](shelf, albumid, albumtype)
+            return albumtypemap[albumtype](self, albumid, tag, albumtype)
         except KeyError:
             raise UnknownAlbumTypeError, albumtype
 
@@ -825,86 +875,18 @@ class Shelf:
                     position)
 
 
-    def _interpretImageReference(self, ref):
-        """Get the image ID for a given image hash/ID/path."""
-        # Check if it's an integer and if so whether it's a valid
-        # image ID.
+    def _createCategoryDAG(self):
         cursor = self.connection.cursor()
-        try:
-            imageid = int(ref)
-            cursor.execute(
-                " select imageid"
-                " from   image"
-                " where  imageid = %s",
-                imageid)
-            if cursor.rowcount > 0:
-                return imageid
-        except ValueError:
-            pass
-
-        # Next, check for a valid hash.
         cursor.execute(
-            " select imageid"
-            " from   image"
-            " where  hash = %s",
-            ref)
-        if cursor.rowcount > 0:
-            return int(cursor.fetchone()[0])
-
-        # Finally, check whether it's a path to a known file.
-        import os
-        if os.path.isfile(ref.encode(self.codeset)):
-            cursor.execute(
-                " select imageid"
-                " from   image"
-                " where  hash = %s",
-                computeImageHash(ref.encode(self.codeset)))
-            if cursor.rowcount > 0:
-                return int(cursor.fetchone()[0])
-
-        # Oh well.
-        raise ImageDoesNotExistError, ref
-
-
-    def _getAncestorCategoryIds(self, catid):
-        return self._recursiveComputeCategoryIds([catid], False)
-
-
-    def _getDescendantCategoryIds(self, catid):
-        return self._recursiveComputeCategoryIds([catid], True)
-
-
-    def _recursiveComputeCategoryIds(self, catids, descendants):
-        if descendants:
-            fromcolumn = "parent"
-            tocolumn = "child"
-        else:
-            fromcolumn = "child"
-            tocolumn = "parent"
-
-        startlevel = self.sqlsetFactory.newSet()
-        for catid in catids:
-            startlevel.add(catid)
-        levels = [startlevel]
-        while True:
-            newlevel = self.sqlsetFactory.newSet()
-            rows = newlevel.runQuery(
-                " insert"
-                " into   %%(tablename)s"
-                " select distinct %(tocolumn)s"
-                " from   category_child, %(prevleveltablename)s"
-                " where  %(fromcolumn)s = number" % {
-                    "fromcolumn": fromcolumn,
-                    "prevleveltablename": levels[-1].getTablename(),
-                    "tocolumn": tocolumn,
-                })
-            levels.append(newlevel)
-            if rows == 0:
-                break
-        result = levels.pop()
-        for level in levels:
-            result |= level
-        return result
+            " select categoryid"
+            " from   category")
+        dag = DAG([x[0] for x in cursor])
+        cursor.execute(
+            " select parent, child"
+            " from   category_child")
+        for parent, child in cursor:
+            dag.connect(parent, child)
+        return dag
 
 
 class Category:
@@ -920,13 +902,7 @@ class Category:
 
     def getTag(self):
         """Get category tag."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select tag"
-            " from   category"
-            " where  categoryid = %s",
-            self.getId())
-        return cursor.fetchone()[0]
+        return self.tag
 
 
     def setTag(self, newtag):
@@ -939,17 +915,12 @@ class Category:
             " where  categoryid = %s",
             newtag,
             self.getId())
+        self.tag = newtag
 
 
     def getDescription(self):
         """Get category description."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select description"
-            " from   category"
-            " where  categoryid = %s",
-            self.getId())
-        return cursor.fetchone()[0]
+        return self.description
 
 
     def setDescription(self, newdesc):
@@ -961,6 +932,7 @@ class Category:
             " where  categoryid = %s",
             newdesc,
             self.getId())
+        self.description = newdesc
 
 
     def getChildren(self, recursive=False):
@@ -969,22 +941,13 @@ class Category:
         If recursive is true, get all descendants. If recursive is
         false, get only immediate children. Returns an iterator
         returning of Category instances (unordered)."""
-        catid = self.getId()
+        catdag = self.shelf.categorydag.get()
         if recursive:
-            childids = self.shelf._getDescendantCategoryIds(catid)
+            catiter = catdag.getDescendants(self.getId())
         else:
-            def helper():
-                cursor = self.shelf.connection.cursor()
-                cursor.execute(
-                    " select child"
-                    " from   category_child"
-                    " where  parent = %s",
-                    catid)
-                for (childid,) in cursor:
-                    yield childid
-            childids = helper()
-        for childid in childids:
-            yield Category(self.shelf, childid)
+            catiter = catdag.getChildren(self.getId())
+        for catid in catiter:
+            yield self.shelf.getCategory(catid)
 
 
     def getParents(self, recursive=False):
@@ -993,22 +956,13 @@ class Category:
         If recursive is true, get all ancestors. If recursive is
         false, get only immediate parents. Returns an iterator
         returning of Category instances (unordered)."""
-        catid = self.getId()
+        catdag = self.shelf.categorydag.get()
         if recursive:
-            parentids = self.shelf._getAncestorCategoryIds(catid)
+            catiter = catdag.getAncestors(self.getId())
         else:
-            def helper():
-                cursor = self.shelf.connection.cursor()
-                cursor.execute(
-                    " select parent"
-                    " from   category_child"
-                    " where  child = %s",
-                    catid)
-                for (parentid,) in cursor:
-                    yield parentid
-            parentids = helper()
-        for parentid in parentids:
-            yield Category(self.shelf, parentid)
+            catiter = catdag.getParents(self.getId())
+        for catid in catiter:
+            yield self.shelf.getCategory(catid)
 
 
     def isChildOf(self, category, recursive=False):
@@ -1019,17 +973,11 @@ class Category:
         this category, otherwise just consider immediate children."""
         parentid = category.getId()
         childid = self.getId()
+        catdag = self.shelf.categorydag.get()
         if recursive:
-            return childid in self.shelf._getDescendantCategoryIds(parentid)
+            return catdag.reachable(parentid, childid)
         else:
-            cursor = self.shelf.connection.cursor()
-            cursor.execute(
-                " select child"
-                " from   category_child"
-                " where  parent = %s and child = %s",
-                parentid,
-                childid)
-            return cursor.rowcount > 0
+            return catdag.connected(parentid, childid)
 
 
     def isParentOf(self, category, recursive=False):
@@ -1045,44 +993,52 @@ class Category:
         """Make parent-child link between this category and a category."""
         parentid = self.getId()
         childid = category.getId()
-        childDescendants = self.shelf._recursiveComputeCategoryIds([childid],
-                                                                   True)
-        if parentid in childDescendants or parentid == childid:
-            raise CategoryLoopError, (self.getTag(), category.getTag())
-        try:
-            cursor = self.shelf.connection.cursor()
-            cursor.execute(
-                " insert into category_child"
-                " values (%s, %s)",
-                parentid,
-                childid)
-        except sql.IntegrityError:
+        if self.shelf.categorydag.get().connected(parentid, childid):
             raise CategoriesAlreadyConnectedError, (self.getTag(),
                                                     category.getTag())
+        try:
+            self.shelf.categorydag.get().connect(parentid, childid)
+        except LoopError:
+            raise CategoryLoopError, (self.getTag(), category.getTag())
+        cursor = self.shelf.connection.cursor()
+        cursor.execute(
+            " insert into category_child"
+            " values (%s, %s)",
+            parentid,
+            childid)
 
 
     def disconnectChild(self, category):
         """Remove a parent-child link between this category and a category."""
+        parentid = self.getId()
+        childid = category.getId()
+        self.shelf.categorydag.get().disconnect(parentid, childid)
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " delete from category_child"
             " where  parent = %s and child = %s",
-            self.getId(),
-            category.getId())
+            parentid,
+            childid)
 
 
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, catid):
+    def __init__(self, shelf, catid, tag, description):
         self.shelf = shelf
         self.catid = catid
+        self.tag = tag
+        self.description = description
 
 
 class _Object:
     def __init__(self, shelf, objid):
         self.shelf = shelf
         self.objid = objid
+        self.attributes = {}
+        self.allAttributesFetched = False
+        self.categories = Set()
+        self.allCategoriesFetched = False
 
 
     def getId(self):
@@ -1095,6 +1051,8 @@ class _Object:
         Returns the value as string, or None if there was no matching
         attribute.
         """
+        if name in self.attributes:
+            return self.attributes[name]
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " select value"
@@ -1103,13 +1061,17 @@ class _Object:
             self.getId(),
             name)
         if cursor.rowcount > 0:
-            return cursor.fetchone()[0]
+            value = cursor.fetchone()[0]
+            self.attributes[name] = value
+            return value
         else:
             return None
 
 
     def getAttributeMap(self):
         """Get a map of all attributes."""
+        if self.allAttributesFetched:
+            return self.attributes
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " select name, value"
@@ -1119,6 +1081,8 @@ class _Object:
         map = {}
         for key, value in cursor:
             map[key] = value
+        self.attributes = map
+        self.allAttributesFetched = True
         return map
 
 
@@ -1126,15 +1090,9 @@ class _Object:
         """Get all attribute names.
 
         Returns an iterator returning the attributes."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select name"
-            " from   attribute"
-            " where  objectid = %s"
-            " order by name",
-            self.getId())
-        for (name,) in cursor:
-            yield name
+        if not self.allAttributesFetched:
+            self.getAttributeMap()
+        return self.attributes.iterkeys()
 
 
     def setAttribute(self, name, value):
@@ -1154,6 +1112,7 @@ class _Object:
                 self.getId(),
                 name,
                 value)
+        self.attributes[name] = value
 
 
     def deleteAttribute(self, name):
@@ -1164,6 +1123,8 @@ class _Object:
             " where  objectid = %s and name = %s",
             self.getId(),
             name)
+        if name in self.attributes:
+            del self.attributes[name]
 
 
     def addCategory(self, category):
@@ -1177,38 +1138,44 @@ class _Object:
                 " values (%s, %s)",
                 objid,
                 catid)
+            self.categories.add(catid)
         except sql.IntegrityError:
-            raise CategoryPresentError, (objid, catid)
+            raise CategoryPresentError, (objid, category.getTag())
 
 
     def removeCategory(self, category):
         """Remove a category."""
         cursor = self.shelf.connection.cursor()
+        catid = category.getId()
         cursor.execute(
             " delete from object_category"
             " where objectid = %s and categoryid = %s",
             self.getId(),
-            category.getId())
+            catid)
+        self.categories.discard(catid)
 
 
     def getCategories(self, recursive=False):
         """Get categories for this object.
 
         Returns an iterator returning the categories."""
-        def helper():
+        if not self.allCategoriesFetched:
             cursor = self.shelf.connection.cursor()
             cursor.execute(
                 " select categoryid from object_category"
                 " where  objectid = %s",
                 self.getId())
-            for (catid,) in cursor:
-                yield catid
-        categoryids = helper()
+            self.categories = Set([x[0] for x in cursor])
+            self.allCategoriesFetched = True
         if recursive:
-            categoryids = self.shelf._recursiveComputeCategoryIds(categoryids,
-                                                                  True)
-        for catid in categoryids:
-            yield Category(self.shelf, catid)
+            allcategories = Set()
+            for catid in self.categories:
+                allcategories |= Set(
+                    self.shelf.categorydag.get().getAncestors(catid))
+        else:
+            allcategories = self.categories
+        for catid in allcategories:
+            yield self.shelf.getCategory(catid)
 
 
 class Album(_Object):
@@ -1223,13 +1190,7 @@ class Album(_Object):
 
     def getTag(self):
         """Get the tag of the album."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select tag"
-            " from   album"
-            " where  albumid = %s",
-            self.getId())
-        return cursor.fetchone()[0]
+        return self.tag
 
 
     def setTag(self, newtag):
@@ -1241,6 +1202,7 @@ class Album(_Object):
             " where  albumid = %s",
             newtag,
             self.getId())
+        self.tag = newtag
 
 
     def getChildren(self):
@@ -1258,10 +1220,11 @@ class Album(_Object):
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, albumid, albumtype):
+    def __init__(self, shelf, albumid, tag, albumtype):
         """Constructor of an Album."""
         _Object.__init__(self, shelf, albumid)
         self.shelf = shelf
+        self.tag = tag
         self.albumtype = albumtype
 
 
@@ -1278,22 +1241,13 @@ class PlainAlbum(Album):
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " select 'album', position, member.objectid, album.type"
-            " from   member, album"
-            " where  member.albumid = %(albumid)s and"
-            "        member.objectid = album.albumid"
-            " union"
-            " select 'image', position, member.objectid, NULL"
-            " from   member, image"
-            " where  member.albumid = %(albumid)s and"
-            "        member.objectid = image.imageid"
+            " select position, objectid"
+            " from   member"
+            " where  albumid = %s"
             " order by position",
-            {"albumid": self.getId()})
-        for objtype, position, objid, atype in cursor:
-            if objtype == "album":
-                yield self.shelf._albumFactory(objid, atype)
-            else:
-                yield Image(self.shelf, objid)
+            self.getId())
+        for position, objid in cursor:
+            yield self.shelf.getObject(objid)
 
 
     def setChildren(self, children):
@@ -1341,13 +1295,7 @@ class Image(_Object):
 
     def getLocation(self):
         """Get the last known location of the image."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select location"
-            " from   image"
-            " where  imageid = %s",
-            self.getId())
-        return cursor.fetchone()[0]
+        return self.location
 
 
     def setLocation(self, location):
@@ -1359,17 +1307,12 @@ class Image(_Object):
             " where  imageid = %s",
             location,
             self.getId())
+        self.location = location
 
 
     def getHash(self):
         """Get the hash of the image."""
-        cursor = self.shelf.connection.cursor()
-        cursor.execute(
-            " select hash"
-            " from   image"
-            " where  imageid = %s",
-            self.getId())
-        return cursor.fetchone()[0]
+        return self.hash
 
 
     def setHash(self, hash):
@@ -1381,6 +1324,7 @@ class Image(_Object):
             " where  imageid = %s",
             hash,
             self.getId())
+        self.hash = hash
 
 
     def isAlbum(self):
@@ -1441,13 +1385,12 @@ class Image(_Object):
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, imageid):
+    def __init__(self, shelf, imageid, hash, location):
         """Constructor of an Image."""
         _Object.__init__(self, shelf, imageid)
         self.shelf = shelf
-        self.imageid = imageid
-        self.attributeMap = {}
-        self.children = []
+        self.hash = hash
+        self.location = location
 
 
 class MagicAlbum(Album):
@@ -1473,11 +1416,11 @@ class AllAlbumsAlbum(MagicAlbum):
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " select   albumid, type"
+            " select   albumid"
             " from     album"
             " order by tag")
-        for (objid, albumtype) in cursor:
-            yield self.shelf._albumFactory(objid, albumtype)
+        for (albumid,) in cursor:
+            yield self.shelf.getAlbum(albumid)
 
 
 class AllImagesAlbum(MagicAlbum):
@@ -1498,8 +1441,8 @@ class AllImagesAlbum(MagicAlbum):
             " on       imageid = objectid"
             " where    name = 'timestamp'"
             " order by value, location")
-        for (objid,) in cursor:
-            yield Image(self.shelf, objid)
+        for (imageid,) in cursor:
+            yield self.shelf.getImage(imageid)
 
 
 class OrphansAlbum(MagicAlbum):
@@ -1515,14 +1458,14 @@ class OrphansAlbum(MagicAlbum):
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " select   albumid, type"
+            " select   albumid"
             " from     album"
             " where    albumid not in (select objectid from member) and"
             "          albumid != %s"
             " order by tag",
             _ROOT_ALBUM_ID)
-        for albumid, albumtype in cursor:
-            yield self.shelf._albumFactory(albumid, albumtype)
+        for (albumid,) in cursor:
+            yield self.shelf.getAlbum(albumid)
         cursor.execute(
             " select   imageid"
             " from     image left join attribute"
@@ -1531,7 +1474,7 @@ class OrphansAlbum(MagicAlbum):
             "          name = 'timestamp'"
             " order by value, location")
         for (imageid,) in cursor:
-            yield Image(self.shelf, imageid)
+            self.shelf.getImage(imageid)
 
 
 ######################################################################
