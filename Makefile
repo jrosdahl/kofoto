@@ -37,7 +37,7 @@ dist_binary_targz:
 	./setup.py bdist --formats=gztar
 
 dist_windows_installer:
-	./setup.py windows bdist_wininst --install-script gkofoto-windows-postinstall.py
+	./build-windows-installer.py
 
 dist_rpm:
 	./setup.py bdist --formats=rpm
