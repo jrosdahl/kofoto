@@ -433,6 +433,7 @@ class Shelf:
         self.categorydag = CachedObject(self._createCategoryDAG)
         self.objectcache = {}
         self.categorycache = {}
+        self.modified = False
 
 
     def begin(self):
@@ -452,6 +453,7 @@ class Shelf:
             self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
+            self.modified = False
 
 
     def rollback(self):
@@ -464,6 +466,12 @@ class Shelf:
             self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
+            self.modified = False
+
+
+    def isModified(self):
+        """Check whether the shelf has uncommited changes."""
+        return self.modified
 
 
     def flushCategoryCache(self):
@@ -507,6 +515,7 @@ class Shelf:
                 lastrowid,
                 tag,
                 albumtype)
+            self._setModified()
             return self.getAlbum(lastrowid)
         except sql.IntegrityError:
             cursor.execute(
@@ -608,6 +617,7 @@ class Shelf:
         for x in albumid, tag:
             if x in self.objectcache:
                 del self.objectcache[x]
+        self._setModified()
 
 
     def createImage(self, path):
@@ -658,6 +668,7 @@ class Shelf:
                 now)
             image = self.getImage(imageid)
             image.importExifTags()
+            self._setModified()
             return image
         except sql.IntegrityError:
             cursor.execute(
@@ -750,6 +761,7 @@ class Shelf:
         for x in imageid, hash:
             if x in self.objectcache:
                 del self.objectcache[x]
+        self._setModified()
 
 
     def getObject(self, objid):
@@ -802,6 +814,7 @@ class Shelf:
                 tag,
                 desc)
             self.categorydag.get().add(cursor.lastrowid)
+            self._setModified()
             return self.getCategory(cursor.lastrowid)
         except sql.IntegrityError:
             raise CategoryExistsError, tag
@@ -839,6 +852,7 @@ class Shelf:
         for x in catid, tag:
             if x in self.categorycache:
                 del self.categorycache[x]
+        self._setModified()
 
 
     def getCategory(self, catid):
@@ -945,6 +959,10 @@ class Shelf:
         return dag
 
 
+    def _setModified(self):
+        self.modified = True
+
+
 class Category:
     """A Kofoto category."""
 
@@ -972,6 +990,7 @@ class Category:
             newtag,
             self.getId())
         self.tag = newtag
+        self.shelf._setModified()
 
 
     def getDescription(self):
@@ -989,6 +1008,7 @@ class Category:
             newdesc,
             self.getId())
         self.description = newdesc
+        self.shelf._setModified()
 
 
     def getChildren(self, recursive=False):
@@ -1062,6 +1082,7 @@ class Category:
             " values (%s, %s)",
             parentid,
             childid)
+        self.shelf._setModified()
 
 
     def disconnectChild(self, category):
@@ -1075,6 +1096,7 @@ class Category:
             " where  parent = %s and child = %s",
             parentid,
             childid)
+        self.shelf._setModified()
 
 
     ##############################
@@ -1171,6 +1193,7 @@ class _Object:
                 value,
                 value.lower())
         self.attributes[name] = value
+        self.shelf._setModified()
 
 
     def deleteAttribute(self, name):
@@ -1183,6 +1206,7 @@ class _Object:
             name)
         if name in self.attributes:
             del self.attributes[name]
+        self.shelf._setModified()
 
 
     def addCategory(self, category):
@@ -1197,6 +1221,7 @@ class _Object:
                 objid,
                 catid)
             self.categories.add(catid)
+            self.shelf._setModified()
         except sql.IntegrityError:
             raise CategoryPresentError, (objid, category.getTag())
 
@@ -1211,6 +1236,7 @@ class _Object:
             self.getId(),
             catid)
         self.categories.discard(catid)
+        self.shelf._setModified()
 
 
     def getCategories(self, recursive=False):
@@ -1261,6 +1287,7 @@ class Album(_Object):
             newtag,
             self.getId())
         self.tag = newtag
+        self.shelf._setModified()
 
 
     def getChildren(self):
@@ -1343,6 +1370,7 @@ class PlainAlbum(Album):
             " where  albumid = %s and position >= %s",
             albumid,
             newchcnt)
+        self.shelf._setModified()
 
 
 class Image(_Object):
@@ -1366,6 +1394,7 @@ class Image(_Object):
             location,
             self.getId())
         self.location = location
+        self.shelf._setModified()
 
 
     def getHash(self):
@@ -1383,6 +1412,7 @@ class Image(_Object):
             hash,
             self.getId())
         self.hash = hash
+        self.shelf._setModified()
 
 
     def isAlbum(self):
