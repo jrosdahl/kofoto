@@ -1140,7 +1140,7 @@ class Shelf:
         if version < _SHELF_FORMAT_VERSION:
             import kofoto.shelfupgrade
             kofoto.shelfupgrade.upgradeShelf(
-                self.connection, version, _SHELF_FORMAT_VERSION)
+                self.connection, self.codeset, version, _SHELF_FORMAT_VERSION)
 
 
     def _albumFactory(self, albumid, tag, albumtype):

@@ -2,7 +2,7 @@ __all__ = ["upgradeShelf"]
 
 import os
 
-def upgradeShelf(connection, fromVersion, toVersion):
+def upgradeShelf(connection, codeset, fromVersion, toVersion):
     # ----------------------------------------------------------------
     if fromVersion < 1:
         #
@@ -92,7 +92,8 @@ def upgradeShelf(connection, fromVersion, toVersion):
                 imageid)
             height = cursor2.fetchone()[0]
             try:
-                mtime = os.path.getmtime(os.path.join(directory, filename))
+                mtime = os.path.getmtime(
+                    os.path.join(directory, filename).encode(codeset))
             except OSError:
                 mtime = 0
             cursor2.execute(
