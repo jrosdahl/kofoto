@@ -69,18 +69,15 @@ class Controller:
                 quitDialog.destroy()
                 return
         else:
-            print "rollback"
             env.shelf.rollback()
             gtk.main_quit()
 
     def save(self, app):
         env.shelf.commit()
-        print "commit"
         env.shelf.begin()
 
     def revert(self, app):
         env.shelf.rollback()
-        print "rollback"
         env.shelf.begin()
         self.__mainWindow.reload()
 
