@@ -1,27 +1,38 @@
-Attributes:
+1 Attributes
 
-    For both albums and images:
+    There are some attributes that are treated specially.
 
-    * description: Image/album text, 0 to many rows, not suitable for
-      link text.
-    * title: Short description, suitable for link text.
+1.1 Attributes for both images and albums
 
-    For images only:
+    The "title" attribute should be a short description of the image
+    or album, suitable for using as a title or link text.
 
-    * exposuretime: Exposure time (could be fetched from EXIF
-      attribute ExposureTime).
-    * flash: Whether flash was fired (could be fetched from EXIF
-      attribute Flash).
-    * fnumber: FNumber (could be fetched from EXIF attribute
-      FNumber).
-    * height: Image height (could be fetched from EXIF attribute
-      ExifImageHeight).
-    * make: Camera vendor (?) (ex: Canon).
-    * model: Camera model (ex: Canon DIGITAL IXUS).
-    * orientation: Image orientation in degrees (up, right, left, down).
-    * photographer: Photographer.
-    * width: Image width (could be fetched from EXIF attribute
-      ExifImageWidth).
+    The "description" attribute should be a freetext description of
+    the image or album. This text is usually shown below the image. If
+    not set, the "title" attribute is used instead.
+
+1.2 Album attributes
+
+    An album may have an image that represents it in some way. The
+    "frontimage" attribute specifies the image to use. If not set, the
+    first object in the album is used.
+
+1.3 Image attributes
+
+    These attributes are set (if available) when an image is
+    registered:
+
+        Name          From                     Description
+        -----------------------------------------------------------------------
+        cameramake    EXIF tag "Make"          Camera vendor
+        cameramodel   EXIF tag "Model"         Camera model
+        exposuretime  EXIF tag "ExposureTime"  Exposure time (fraction)
+        flash         EXIF tag "Flash"         Set to "Fired" if flash was used
+        fnumber       EXIF tag "FNumber"       FNumber (aperture) used
+        height        Image data               Image height
+        orientation   EXIF tag "Orientation"   Image orientation (up, right,
+                                               left or down); defaults to up
+        width         Image data               Image width
 
 Key features (why we can't use J. Random Photo Album software):
 
@@ -113,69 +124,3 @@ Design requirements, goals and solutions:
       generated images.
 
       - Stored as image attributes.
-
-Magic albums that would be nice to have:
-
-    * Hierarchy of locations.
-
-      Images can have the attribute "location" set to a list of
-      locations that represent increasingly specific physical places.
-      Example: Image1 with location set to "Sweden:Linköping:Lambohov"
-      and Image2 with location set to "Sweden:Linköping:Ryd" would
-      render an album graph like this:
-
-          [A] Locations
-              [A] Sweden
-                  [A] Linköping
-                      [A] Lambohov
-                          [I] Image1
-                      [A] Ryd
-                          [I] Image2
-
-      Or, maybe better, define a DAG in configuration and only one
-      keyword in the attribute. E.g., store
-
-          locations = {
-              "Linköping": "Sweden",
-              "Lambohov": "Linköping",
-              "Ryd": "Linköping",
-          }
-
-      or maybe
-
-          locations = {
-              "Sweden": "Linköping",
-              "Linköping": ["Lambohov",  "Ryd"],
-          }
-
-      in ~/.kofoto/config and put "Lambohov" and "Ryd" in "location"
-      for Image1 and Image2.
-
-      This can also be used for searching, so that both Image1 and
-      Image2 can be found when searching for location "Linköping".
-
-      Or should attribute DAG functionality be provided by the
-      database?
-
-    * Chronological with day granularity.
-
-          [A] Chronological
-              [A] 2003
-                  [A] March 2003
-                      [A] 17 March 2003
-                          [I] Image1
-                      [A] 19 March 2003
-                          [I] Image2
-
-Think more about:
-
-    * How should EXIF tags be imported to image attributes? (Should a
-      given subset be imported verbatim or with a special prefix or
-      mapped to non-EXIF names?)
-    * Which auxilliary attributes should be set on import? Specify
-      default attributes (like photographer) to add in configuration?
-      Ability to supply more/override attributes when importing?
-    * How to search?
-    * How to exclude objects from generation?
-    * Let instances cache image/album information so that getLocation
-      et al don't need to perform database access?
