@@ -11,12 +11,13 @@ class KofotoError(Exception):
 ### Functions.
 
 def symlinkOrCopyFile(source, destination):
+    import os
     try:
-        import os
-        os.symlink(source, destination)
+        os.unlink(destination)
     except OSError:
-        # Destination (probably) already exists.
         pass
+    try:
+        os.symlink(source, destination)
     except AttributeError:
         import shutil
         shutil.copy(source, destination)
