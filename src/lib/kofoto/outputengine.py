@@ -40,11 +40,11 @@ class OutputEngine:
         for child in children:
             if not child.isAlbum():
                 if self.env.verbose:
-                    self.env.out("Generating image %s sizes %s...\n" % (
-                        child.getId(),
-                        ", ".join([str(x) for x in self.env.imagesizes])))
+                    self.env.out("Generating image %s..." % (child.getId()))
                 hash = child.getHash()
                 for size in self.env.imagesizes:
+                    if self.env.verbose:
+                        self.env.out(" %s" % size)
                     key = (hash, size)
                     imgabsloc = self.env.imagecache.get(child, size)
                     child_ref_html[key] = "%s-%s-%s.html" % (
@@ -63,6 +63,8 @@ class OutputEngine:
                         os.path.basename(imgabsloc))
                     if not os.path.isfile(child_loc_img[key]):
                         symlinkOrCopyFile(imgabsloc, child_loc_img[key])
+                if self.env.verbose:
+                    self.env.out("\n")
 
         for ix in range(len(children)):
             child = children[ix]

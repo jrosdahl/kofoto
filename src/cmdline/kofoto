@@ -115,6 +115,7 @@ def displayHelp():
 
 def printOutput(infoString):
     sys.stdout.write(infoString)
+    sys.stdout.flush()
 
 def printError(errorString):
     sys.stderr.write("Error: " + errorString)
