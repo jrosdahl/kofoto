@@ -16,8 +16,8 @@ class OutputEngine:
     def getImageReference(self, image, widthlimit, heightlimit):
         def helper():
             # Given the image, this function computes and returns a
-            # suitable image name and a path to be appended to
-            # <self.dest>/@images.
+            # suitable image name and a reference be appended to
+            # "@images/".
             captured = image.getAttribute(u"captured")
             if captured:
                 m = re.match("^(\d+)-(\d+)", captured)
@@ -30,12 +30,12 @@ class OutputEngine:
                         timestr,
                         widthlimit,
                         heightlimit)
-                    return os.path.join(m.group(1), m.group(2), name)
+                    return "/".join([m.group(1), m.group(2), name])
             base, ext = os.path.splitext(os.path.basename(image.getLocation()))
-            return os.path.join(
+            return "/".join([
                 "undated",
                 "%s-%dx%d-%d%s" % (
-                    base, widthlimit, heightlimit, image.getId(), ext))
+                    base, widthlimit, heightlimit, image.getId(), ext)])
 
         key = (image.getHash(), widthlimit, heightlimit)
         if not self.imgref.has_key(key):
