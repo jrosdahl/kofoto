@@ -37,6 +37,11 @@ class AlbumMembers(ObjectCollection):
         self._freezeViews()
         locations = list(self.getObjectSelection())
         newObjects = list(env.clipboard)
+        albumCopied = False
+        for obj in newObjects:
+            if obj.isAlbum():
+                albumCopied = True
+                break
         currentChildren = list(self.__album.getChildren())
         if len(locations) > 0:
             locations.sort()
@@ -48,7 +53,9 @@ class AlbumMembers(ObjectCollection):
                                  newObjects +
                                  currentChildren[insertLocation:])
         self._insertObjectList(newObjects, insertLocation)
-        # TODO: If the added object is an album, update the album widget.
+        if albumCopied:
+            # TODO: Don't reload the whole tree.
+            env.mainwindow.reloadAlbumTree()
         self.getObjectSelection().unselectAll()
         self._thawViews()
 
@@ -61,12 +68,17 @@ class AlbumMembers(ObjectCollection):
         locations = list(self.getObjectSelection())
         locations.sort()
         locations.reverse()
+        albumDeleted = False
         for loc in locations:
+            if albumMembers[loc].isAlbum():
+                albumDeleted = True
             albumMembers.pop(loc)
             del model[loc]
         self.__album.setChildren(albumMembers)
         self.getObjectSelection().unselectAll()
-        # TODO: If the removed objects are albums, update the album widget.
+        if albumDeleted:
+            # TODO: Don't reload the whole tree.
+            env.mainwindow.reloadAlbumTree()
         self._thawViews()
 
 ######################################################################
