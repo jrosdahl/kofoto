@@ -83,6 +83,17 @@ schema = """
     --      | 1 +-------+    +-------+
     --      '---| album |    | image |
     --          +-------+    +-------+
+    --                        1 | | 1
+    --                       ,-'   '-.
+    --                     ,^.       ,^.
+    --                   ,'   '.   ,'   '.
+    --                  <  has  > <primary>
+    --                   '.   .'   '.   .'
+    --                     'v'       'v'
+    --                     N \       / 1
+    --                      +---------+
+    --                      | version |
+    --                      +---------+
     --
     --        |
     -- where \|/ is supposed to look like the subclass relation symbol.
@@ -123,6 +134,25 @@ schema = """
         -- object.
         id          INTEGER NOT NULL,
 
+        -- The primary version.
+        primary_version INTEGER NOT NULL,
+
+        FOREIGN KEY (id) REFERENCES object,
+        FOREIGN KEY (primary_version) REFERENCES image_version,
+        PRIMARY KEY (id)
+    );
+
+    -- Image versions.
+    CREATE TABLE image_version (
+        -- Identifier of the image version.
+        id          INTEGER NOT NULL,
+
+        -- Identifier of the image associated with this version.
+        image       INTEGER NOT NULL,
+
+        -- Type (original, important or other).
+        type        VARCHAR(20) NOT NULL,
+
         -- Identifier string which is derived from the image data and
         -- identifies the image uniquely. Currently an MD5 checksum
         -- (in hex format) of all image data.
@@ -139,13 +169,13 @@ schema = """
         width       INTEGER NOT NULL,
         -- Image height.
         height      INTEGER NOT NULL,
-
+        
+        FOREIGN KEY (image) REFERENCES image,
         UNIQUE      (hash),
-        FOREIGN KEY (id) REFERENCES object,
-        PRIMARY KEY (id)
+        PRIMARY KEY (id, version)
     );
 
-    CREATE INDEX image_location_index ON image (directory, filename);
+    CREATE INDEX image_version_location_index ON image_version (directory, filename);
 
     -- Members in an album.
     CREATE TABLE member (

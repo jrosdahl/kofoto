@@ -42,11 +42,22 @@ def tryUpgrade(location, toVersion):
         cursor = connection.cursor()
         cursor.execute(kofoto.shelf.schema)
         cursor.execute("attach '%s' as old" % (location,))
-        for tablename in ["dbinfo", "object", "album", "image", "member",
+        for tablename in ["dbinfo", "object", "album", "member",
                           "attribute", "category", "category_child",
                           "object_category"]:
             cursor.execute("insert into %s select * from old.%s" % (
                 tablename, tablename))
+        cursor.execute(
+            " insert into image (id, primary_version)"
+            " select id, id"
+            " from   old.image")
+        cursor.execute(
+            " insert into image_version"
+            "     (id, image, type, hash, directory, filename, mtime,"
+            "      width, height)"
+            " select id, id, 'original', hash, directory, filename, mtime,"
+            "        width, height"
+            " from   old.image")
         cursor.execute(
             " update dbinfo"
             " set    version = %s",
