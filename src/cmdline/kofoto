@@ -36,7 +36,7 @@ except AttributeError:
 ######################################################################
 ### Constants.
 
-PRINT_GRAPH_INDENT = 4
+PRINT_ALBUMS_INDENT = 4
 _DIRECTORIES_TO_IGNORE = [".svn", ".xvpics", ".jimageviewpics", ".thumbnails" ]
 
 ######################################################################
@@ -108,7 +108,7 @@ def displayHelp():
         "                                     with -t/--type, an album of type \"plain\"\n"
         "                                     will be created.\n"
         "    create-shelf                     Create an empty shelf.\n"
-        "    print-graph [ALBUM]              Print the album graph for ALBUM (default:\n"
+        "    print-albums [ALBUM]             Print the album graph for ALBUM (default:\n"
         "                                     root). If -v/--verbose is given, also print\n"
         "                                     images and attributes.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
@@ -363,39 +363,21 @@ def cmdObliterate(env, args):
         env.shelf.deleteObject(obj)
 
 
-def cmdPrintCategories(env, args):
-    if len(args) != 0:
-        raise ArgumentError
-    for category in env.shelf.getRootCategories():
-        printCategoriesHelper(env, category, 0)
-
-
-def printCategoriesHelper(env, category, level):
-    indentspaces = PRINT_GRAPH_INDENT * " "
-    env.out("%s%s (%s) <%s>\n" % (
-        level * indentspaces,
-        _from_uc(category.getDescription()),
-        _from_uc(category.getTag()),
-        category.getId()))
-    for child in category.getChildren():
-        printCategoriesHelper(env, child, level + 1)
-
-
-def cmdPrintGraph(env, args):
+def cmdPrintAlbums(env, args):
     if len(args) > 0:
         root = env.shelf.getAlbum(args[0])
     else:
         root = env.shelf.getRootAlbum()
-    printGraphHelper(env, root, 0, 0, [])
+    printAlbumsHelper(env, root, 0, 0, [])
 
 
-def printGraphHelper(env, object, position, level, visited):
+def printAlbumsHelper(env, object, position, level, visited):
     imgtmpl = "%(indent)s[I] %(name)s {%(position)s} <%(id)s>\n"
     if env.verbose:
         albtmpl = "%(indent)s[A] %(name)s {%(position)s} <%(id)s> (%(type)s)\n"
     else:
         albtmpl = "%(indent)s[A] %(name)s <%(id)s> (%(type)s)\n"
-    indentspaces = PRINT_GRAPH_INDENT * " "
+    indentspaces = PRINT_ALBUMS_INDENT * " "
     if object.isAlbum():
         tag = object.getTag()
         env.out(albtmpl % {"indent": level * indentspaces,
@@ -413,11 +395,12 @@ def printGraphHelper(env, object, position, level, visited):
             else:
                 children = object.getAlbumChildren()
             for child in children:
-                printGraphHelper(env,
-                                 child,
-                                 pos,
-                                 level + 1,
-                                 visited + [tag])
+                printAlbumsHelper(
+                    env,
+                    child,
+                    pos,
+                    level + 1,
+                    visited + [tag])
                 pos += 1
     else:
         env.out(imgtmpl % {"indent": level * indentspaces,
@@ -434,6 +417,24 @@ def printGraphHelper(env, object, position, level, visited):
                 "key": _from_uc(name),
                 "value": _from_uc(object.getAttribute(name)),
                 })
+
+
+def cmdPrintCategories(env, args):
+    if len(args) != 0:
+        raise ArgumentError
+    for category in env.shelf.getRootCategories():
+        printCategoriesHelper(env, category, 0)
+
+
+def printCategoriesHelper(env, category, level):
+    indentspaces = PRINT_ALBUMS_INDENT * " "
+    env.out("%s%s (%s) <%s>\n" % (
+        level * indentspaces,
+        _from_uc(category.getDescription()),
+        _from_uc(category.getTag()),
+        category.getId()))
+    for child in category.getChildren():
+        printCategoriesHelper(env, child, level + 1)
 
 
 def cmdRegister(env, args):
@@ -613,8 +614,8 @@ commandTable = {
     "get-attributes": cmdGetAttributes,
     "get-categories": cmdGetCategories,
     "obliterate": cmdObliterate,
+    "print-albums": cmdPrintAlbums,
     "print-categories": cmdPrintCategories,
-    "print-graph": cmdPrintGraph,
     "register": cmdRegister,
     "remove": cmdRemove,
     "remove-category": cmdRemoveCategory,
