@@ -14,9 +14,12 @@ packages = [
     ]
 data_files = [
     ("share/gkofoto/glade", ["src/gkofoto/glade/gkofoto.glade"]),
-    ("share/gkofoto/icons", ["src/gkofoto/icons/album.png",
+    ("share/gkofoto/icons", ["src/gkofoto/icons/about-icon.png",
+                             "src/gkofoto/icons/album.png",
                              "src/gkofoto/icons/fullscreen-24.png",
                              "src/gkofoto/icons/objectview.png",
+                             "src/gkofoto/icons/rotateleft.png",
+                             "src/gkofoto/icons/rotateright.png",
                              "src/gkofoto/icons/tableview.png",
                              "src/gkofoto/icons/thumbnailsview.png",
                              "src/gkofoto/icons/unknownimage.png"])
