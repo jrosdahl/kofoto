@@ -133,7 +133,7 @@ class Objects:
                         object.setHash(newHash)
                     else:
                         print "failed to execute:", command
-                    self._loadThumbnail(100, row.iter, reload=gtk.TRUE)
+                    self._loadThumbnail(row.iter, reload=gtk.TRUE)
 
     def setSortOrder(self, widget, order):
         self._sortOrder = order
