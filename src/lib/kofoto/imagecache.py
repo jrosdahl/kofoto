@@ -41,7 +41,10 @@ class ImageCache:
             pilimg = pilimg.rotate(180)
         elif orientation == "left":
             pilimg = pilimg.rotate(270)
-        pilimg.save(savepath)
+
+        if not pilimg.mode in ("L", "RGB", "CMYK"):
+            pilimg = pilimg.convert("RGB")
+        pilimg.save(savepath, "JPEG")
         return savepath
 
 
@@ -58,10 +61,8 @@ class ImageCache:
 
 
     def _getCacheImageName(self, image, limit):
-        extension = os.path.splitext(image.getLocation())[1]
         orientation = image.getAttribute("orientation")
         if orientation not in ("up", "down", "left", "right"):
             orientation = "up"
-        genname = "%s-%s-%s.%s" % (image.getHash(), limit,
-                                   orientation, extension)
+        genname = "%s-%s-%s.jpg" % (image.getHash(), limit, orientation)
         return genname
