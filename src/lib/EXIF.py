@@ -692,9 +692,9 @@ class EXIF_header:
         else:
             endian_sign = '>'
         if length == 2:
-            val=struct.unpack(endian_sign + 'h', slice)
+            val=struct.unpack(endian_sign + 'h', slice)[0]
         elif length == 4:
-            val=struct.unpack(endian_sign + 'i', slice)
+            val=struct.unpack(endian_sign + 'i', slice)[0]
         else:
             raise ValueError, 'bad slice length'
         return val
