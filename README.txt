@@ -134,6 +134,13 @@ B. Windows
 VERSION HISTORY
 ===============
 
+0.2.2 (2004-10-01)
+
+    Corrections:
+
+      * Fixed a bug that made the image preloader leak lots of memory
+        (ticket #68).
+
 0.2.1 (2004-09-19)
 
     Corrections:
