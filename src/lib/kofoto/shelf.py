@@ -780,13 +780,6 @@ class Shelf:
                 " where objectid = %s",
                 imageid)
             raise ImageExistsError, path
-        now = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
-        cursor.execute(
-            " insert into attribute (objectid, name, value, lcvalue)"
-            " values (%s, 'registered', %s, %s)",
-            imageid,
-            now,
-            now)
         image = self._imageFactory(
             imageid, imghash, location, mtime, width, height)
         image = self.getImage(imageid)

@@ -5,6 +5,7 @@ import locale
 import os
 from sets import Set
 import sys
+import time
 
 ######################################################################
 
@@ -464,10 +465,15 @@ def cmdRegister(env, args):
     if len(args) < 2:
         raise ArgumentError
     destalbum = env.shelf.getAlbum(args[0])
-    registerHelper(env, destalbum, [env.to_l(x) for x in args[1:]])
+    registrationTimeString = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
+    registerHelper(
+        env,
+        destalbum,
+        registrationTimeString,
+        [env.to_l(x) for x in args[1:]])
 
 
-def registerHelper(env, destalbum, paths):
+def registerHelper(env, destalbum, registrationTimeString, paths):
     paths.sort()
     newchildren = []
     for path in paths:
@@ -490,12 +496,15 @@ def registerHelper(env, destalbum, paths):
             env.out("Registered directory %s as an album with tag %s\n" % (
                 path,
                 tag))
-            registerHelper(env,
-                           album,
-                           [os.path.join(path, x) for x in os.listdir(path)])
+            registerHelper(
+                env,
+                album,
+                registrationTimeString,
+                [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
             try:
                 image = env.shelf.createImage(env.to_u(path))
+                image.setAttribute(u"registered", registrationTimeString)
                 newchildren.append(image)
                 if env.verbose:
                     env.out("Registered image: %s\n" % path)

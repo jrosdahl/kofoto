@@ -1,5 +1,6 @@
 import gtk
 import os
+import time
 from environment import env
 from kofoto.shelf import ImageExistsError, NotAnImageError, makeValidTag
 from kofoto.clientutils import walk_files
@@ -33,6 +34,7 @@ class RegisterImagesDialog(gtk.FileSelection):
         nonImages = 0
         filesInvestigated = 0
         images = []
+        registrationTimeString = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
         for filepath in walk_files(self.get_selections()):
             try:
                 try:
@@ -40,6 +42,7 @@ class RegisterImagesDialog(gtk.FileSelection):
                 except UnicodeDecodeError:
                     filepath = filepath.decode("latin1")
                 image = env.shelf.createImage(filepath)
+                image.setAttribute(u"registered", registrationTimeString)
                 images.append(image)
                 newImages += 1
                 newImagesCount.set_text(str(newImages))
