@@ -45,8 +45,8 @@ class ImageView(gtk.ScrolledWindow):
             self._newImageLoaded = True
             self.fitToWindow()
             self.__loadedFileName = fileName
-        except gobject.GError:
-            print "GError while loading ", filename
+        except gobject.GError, e:
+            print "Error while loading image:", e # TODO show error dialog box.
             self.__pixBuf = None
             self._image.hide()
 
