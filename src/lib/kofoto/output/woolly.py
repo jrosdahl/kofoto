@@ -714,8 +714,6 @@ class OutputGenerator(OutputEngine):
                 parent = path[-2]
                 this = path[-1]
                 children = list(parent.getAlbumChildren())
-                print "this:", this
-                print "children:", children
                 thispos = children.index(this)
                 if thispos == 0:
                     # No previous sibling.
