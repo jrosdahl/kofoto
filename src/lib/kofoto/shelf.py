@@ -586,7 +586,7 @@ class Shelf:
     def getRootAlbum(self):
         """Get the root album.
 
-        Returns an Album object.
+        Returns an Album instance.
         """
         assert self.inTransaction
         return self.getAlbum(_ROOT_ALBUM_ID)
@@ -747,7 +747,7 @@ class Shelf:
     def getImage(self, ref):
         """Get the image for a given image hash/ID/path.
 
-        Returns an Image object.
+        Returns an Image instance.
         """
         assert self.inTransaction
         if ref in self.objectcache:
@@ -869,7 +869,7 @@ class Shelf:
     def getAllAttributeNames(self):
         """Get all used attribute names in the shelf (sorted).
 
-        Returns an iterable the attribute names."""
+        Returns an iterable returning the attribute names."""
         assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
