@@ -65,8 +65,8 @@ class SearchNodeFactory:
         else:
             category = self._shelf.getCategory(tag_or_category)
         if recursive:
-            catids = self._shelf.categorydag.get().getDescendants(
-                category.getId())
+            catids = list(self._shelf.categorydag.get().getDescendants(
+                category.getId()))
         else:
             catids = [category.getId()]
         return Category(catids)
