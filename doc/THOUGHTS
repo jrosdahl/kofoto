@@ -2,24 +2,23 @@ Attributes:
 
     For both albums and images:
 
-    * keyword (multivalue): A keyword for the image/album.
     * longdesc: Image/album text, 0 to many rows, not suitable for
       link text.
     * shortdesc: Short description, suitable for link text.
 
     For images only:
 
-    * aperture: Aperture (could be fetched from EXIF attribute
-      FNumber).
-    * exposure-time: Exposure time (could be fetched from EXIF
+    * exposuretime: Exposure time (could be fetched from EXIF
       attribute ExposureTime).
     * flash: Whether flash was fired (could be fetched from EXIF
       attribute Flash).
+    * fnumber: FNumber (could be fetched from EXIF attribute
+      FNumber).
     * height: Image height (could be fetched from EXIF attribute
       ExifImageHeight).
     * make: Camera vendor (?) (ex: Canon).
     * model: Camera model (ex: Canon DIGITAL IXUS).
-    * orientation: Image orientation in degrees (0, 90, 180 or 270).
+    * orientation: Image orientation in degrees (up, right, left, down).
     * photographer: Photographer.
     * width: Image width (could be fetched from EXIF attribute
       ExifImageWidth).
@@ -43,10 +42,9 @@ Key features (why we can't use J. Random Photo Album software):
 
 Meta data:
 
-    Meta data is stored in a BerkeleyDB database environment, whose
-    default location is ~/.kofoto/shelf. The shelf records information
-    about registered images and albums. Information is e.g. attributes
-    (as listed above) and the image list for an album.
+    Meta data is stored in an SQLite database. The shelf records
+    information about registered images and albums. Information is
+    e.g. attributes (as listed above) and the image list for an album.
 
 Configuration:
 
@@ -55,16 +53,11 @@ Configuration:
 
 Database location:
 
-    The default database file is ~/.kofoto/shelf.db.
+    The default database file is ~/.kofoto/shelf.
 
 Database schema:
 
-    See shelf.py.
-
-Special albums:
-
-    root - The root album.
-    _allalbums - An album with all (normal) albums as children.
+    See src/lib/kofoto/shelf.py.
 
 Design requirements, goals and solutions:
 
@@ -186,86 +179,3 @@ Think more about:
     * How to exclude objects from generation?
     * Let instances cache image/album information so that getLocation
       et al don't need to perform database access?
-
-======================================================================
-
-originalbildfiler ändras aldrig
-
-albumtexter
-
-bildtexter
-
-exportera brännbara statiska album
-
-angivande av orientering
-
-översiktsvy med tumnaglar
-
-lätt att göra metadata beständigt
-
-unika IDn
-
-album som innehåller en ordnad sekvens av bilder
-
-nyckelordsmärkning
-
-sökning på nyckelord och annat
-
-viss dynamik när man tittar på webbsidor: lägga till kommentarer
-
-åtkomstkontroll
-
-album kan innehålla album och bilder
-
-en bild kan ingå i ett godtyckligt antal album
-
-ett album kan ingå i ett godtyckligt antal album
-
-hantera andra filtyper, t ex videosnuttar och ljud
-
-
-designbeslut:
-
-Bild-ID bestäms av originalbildens MD5-summa.
-
-Album-ID är en alfaumerisk sträng av godtycklig längd som inte får
-innehålla "/". Tills vidare används ett automatiskt löpnummer.
-
-En specificerad uppsättning bildattribut finns. Vissa av dessa kan
-hämtas ur bildens EXIF-information, och kofoto ska veta vilka taggar
-som ska lagras i vilka attribut.
-
-För import av "nya" EXIF-data ska EXIF-taggen specificeras så att
-kofoto-attribut inte av misstag skrivs över.
-
-Såväl bilder som bildreferenser kan ha attribut, och dessa kommer ur
-samma mängd.
-
-Då en bild (eller ett album) länkas till ett nytt ställe kan "länk-"
-eller "kortnamn" anges. Görs inte detta får länken inget namn, och
-källans "kortnamn" används vid visuell representation.
-
-Originalbilder kan (om)organiseras godtyckligt i filsystemet.
-
-Metainformation lagras i enn XML-fil, "databasen".
-
-Album genereras statiskt.
-
-Annoteringar och kommentarer via webbgränssnittet lagras i en speciell
-fil.  Denna information kan sammanfogas med databasen när så önskas.
-
-Ha ett välspecat gränssnitt mellan fram- och bakända?
-
-Importera EXIF-informationen till databasen.  Läs alltså aldrig
-metainformation från originalbilden (förutom vid importering, Björn
-anm.).
-
-
-Speciella attribut:
-
-Time stamp
-Short name
-
-Ospeciella attribut:
-
-Caption: Bildtext, 0 till många rader, olämplig som länktext.
