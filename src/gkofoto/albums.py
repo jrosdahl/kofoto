@@ -38,9 +38,10 @@ class Albums:
         albumSelection.connect("changed", self._albumSelectionUpdated)
         albumSelection.set_select_function(self._isSelectable, self.__albumModel)
         self.__contextMenu = self.__createContextMenu()
-        self._albumSelectionUpdated()
         self.__albumView.connect("button_press_event", self._button_pressed)
         self.loadAlbumTree()
+        iterator = self.__albumModel.get_iter_first()
+        albumSelection.select_iter(iterator)
         self._connectedOids = []
 
     def loadAlbumTree(self):

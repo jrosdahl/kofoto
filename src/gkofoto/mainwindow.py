@@ -67,13 +67,12 @@ class MainWindow(gtk.Window):
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
 
-        self.__albums = Albums(self)
+        self.__factory = ObjectCollectionFactory()
         self.__categories = Categories(self)
+        self.__albums = Albums(self)
         self.__thumbnailView = ThumbnailView()
         self.__tableView = TableView()
         self.__singleObjectView = SingleObjectView()
-        self.__factory = ObjectCollectionFactory()
-        self.loadQuery("/" + env.shelf.getRootAlbum().getTag())
         self.__showTableView()
 
     def _sourceEntryActivated(self, widget):
