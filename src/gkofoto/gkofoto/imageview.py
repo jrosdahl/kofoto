@@ -36,12 +36,12 @@ class ImageView(gtk.ScrolledWindow):
     def loadFile(self, fileName, reload=True):
         if (not reload) and self.__loadedFileName == fileName:
             return
-        try:
-            self.clear()
-            env.debug("ImageView is loading image from file: " + fileName)
-            self.__pixBuf = env.mainwindow.getImagePreloader().getPixbuf(fileName)
+        self.clear()
+        env.debug("ImageView is loading image from file: " + fileName)
+        self.__pixBuf = env.mainwindow.getImagePreloader().getPixbuf(fileName)
+        if self.__pixBuf:
             self.__loadedFileName = fileName
-        except gobject.GError, e:
+        else:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
                 buttons=gtk.BUTTONS_OK,
