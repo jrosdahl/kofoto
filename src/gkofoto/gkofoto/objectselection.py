@@ -72,7 +72,9 @@ class ObjectSelection:
         for x in [rowNr, rowNr + 1, rowNr - 1, rowNr + 2]: # TODO: Make configurable.
             if 0 <= x < len(model):
                 ux = oc.convertToUnsortedRowNr(x)
-                filenames.append(self.__getObject(ux).getLocation())
+                obj = self.__getObject(ux)
+                if not obj.isAlbum():
+                    filenames.append(obj.getLocation())
         env.debug("filenames to preload: %s" % str(filenames))
         return filenames
 
