@@ -41,16 +41,16 @@ class OutputEngine:
             imgabsloc = self.env.imagecache.get(image, widthlimit, heightlimit)
             htmlimgloc = os.path.join(
                 "@images", helper().encode(self.env.codeset))
-            imgloc = os.path.join(self.dest, htmlimgloc)
-            # Generate a unique imgloc.
+            # Generate a unique htmlimgloc/imgloc.
             i = 1
             while True:
-                if not imgloc in self.generatedFiles:
-                    self.generatedFiles.add(imgloc)
+                if not htmlimgloc in self.generatedFiles:
+                    self.generatedFiles.add(htmlimgloc)
                     break
-                base, ext = os.path.splitext(imgloc)
-                imgloc = re.sub(r"(-\d)?$", "-%d" % i, base) + ext
+                base, ext = os.path.splitext(htmlimgloc)
+                htmlimgloc = re.sub(r"(-\d)?$", "-%d" % i, base) + ext
                 i += 1
+            imgloc = os.path.join(self.dest, htmlimgloc)
             try:
                 os.makedirs(os.path.dirname(imgloc))
             except OSError:
