@@ -601,6 +601,10 @@ class Shelf:
             " delete from attribute"
             " where  objectid = %s",
             albumid)
+        cursor.execute(
+            " delete from object_category"
+            " where  objectid = %s",
+            imageid)
         for x in albumid, tag:
             if x in self.objectcache:
                 del self.objectcache[x]
@@ -700,25 +704,27 @@ class Shelf:
         """Delete the image for a given image hash/ID."""
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid"
+            " select imageid, hash"
             " from   image"
             " where  imageid = %s or hash = %s",
             ref,
             ref)
-        if cursor.rowcount > 0:
-            imageid = cursor.fetchone()[0]
+        row = cursor.fetchone()
+        if row:
+            imageid, hash = row
         else:
             # No match. Check whether it's a path to a known file.
             imageid = None
             import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
-                    " select imageid"
+                    " select imageid, hash"
                     " from   image"
                     " where  hash = %s",
                     computeImageHash(ref.encode(self.codeset)))
-                if cursor.rowcount > 0:
-                    imageid = cursor.fetchone()[0]
+                row = cursor.fetchone()
+                if row:
+                    imageid, hash = row
         if not imageid:
             # Oh well.
             raise ImageDoesNotExistError, ref
@@ -737,6 +743,13 @@ class Shelf:
             " delete from attribute"
             " where  objectid = %s",
             imageid)
+        cursor.execute(
+            " delete from object_category"
+            " where  objectid = %s",
+            imageid)
+        for x in imageid, hash:
+            if x in self.objectcache:
+                del self.objectcache[x]
 
 
     def getObject(self, objid):
