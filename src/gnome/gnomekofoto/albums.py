@@ -1,58 +1,71 @@
 import gtk
 import gobject
 import gtk
-
 from environment import env
 
 class Albums:
-    _COLUMN_ALBUM_ID   = 0
-    _COLUMN_TAG        = 1
-    _COLUMN_TYPE       = 2
-    _COLUMN_SELECTABLE = 3
 
-    _model = None
+###############################################################################            
+### Public
+
+    # TODO This class should probably be splited in a model and a view when/if
+    #      a multiple windows feature is introduced.
     
-    def __init__(self, source):
-        self._model = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
-                                    gobject.TYPE_STRING,   # TAG
-                                    gobject.TYPE_STRING,   # TYPE
-                                    gobject.TYPE_BOOLEAN)  # SELECTABLE
+    def __init__(self):
+        self.__albumModel = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
+                                          gobject.TYPE_STRING,   # TAG
+                                          gobject.TYPE_STRING,   # TYPE
+                                          gobject.TYPE_BOOLEAN)  # SELECTABLE
         albumView = env.widgets["albumView"]
-        self._source = source
-        albumView.set_model(self._model)
+        albumView.set_model(self.__albumModel)
         renderer = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Albums", renderer, text=self._COLUMN_TAG)
+        column = gtk.TreeViewColumn("Albums", renderer, text=self.__COLUMN_TAG)
         column.set_clickable(gtk.TRUE)
         albumView.append_column(column)
         albumSelection = albumView.get_selection()
         albumSelection.connect('changed', self._albumSelectionHandler)
-        albumSelection.set_select_function(self._isSelectable, self._model)
-        self.reload()
+        albumSelection.set_select_function(self._isSelectable, self.__albumModel)
+        self.loadAlbumTree()
 
-    def reload(self):
-        self._model.clear()
-        self._buildModel(None, env.shelf.getRootAlbum(), [])
-        env.widgets["albumView"].expand_row(0, gtk.FALSE)
+    def loadAlbumTree(self):
+        self.__albumModel.clear()
+        self.__loadAlbumTreeHelper()
+        env.widgets["albumView"].expand_row(0, gtk.FALSE) # Expand root album
+        
 
-    def _buildModel(self, parent, album, visited):
-        iter = self._model.insert_before(parent, None)
-        self._model.set_value(iter, self._COLUMN_ALBUM_ID, album.getId())
-        self._model.set_value(iter, self._COLUMN_TYPE, album.getType())
-        self._model.set_value(iter, self._COLUMN_TAG, album.getTag())
-        self._model.set_value(iter, self._COLUMN_SELECTABLE, gtk.TRUE)
-        if album.getId() not in visited:
-            for child in album.getAlbumChildren():
-                self._buildModel(iter, child, visited + [album.getId()])
-        else:
-            iter = self._model.insert_before(iter, None)
-            self._model.set_value(iter, self._COLUMN_TAG, "[...]")                        
-            self._model.set_value(iter, self._COLUMN_SELECTABLE, gtk.FALSE)        
+###############################################################################
+### Callback functions registered by this class but invoked from other classes.
 
     def _isSelectable(self, path, model):
-        return model[path][self._COLUMN_SELECTABLE]
+        return model[path][self.__COLUMN_SELECTABLE]
 
     def _albumSelectionHandler(self, selection):
         albumModel, iter = selection.get_selected()
         if iter:
-            albumTag = albumModel.get_value(iter, self._COLUMN_TAG)
-            self._source.set("album://" + albumTag)
+            albumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+            env.controller.loadUrl("album://" + albumTag)
+        
+###############################################################################        
+### Private
+
+    __COLUMN_ALBUM_ID   = 0
+    __COLUMN_TAG        = 1
+    __COLUMN_TYPE       = 2
+    __COLUMN_SELECTABLE = 3
+
+    __albumModel = None
+
+    def __loadAlbumTreeHelper(self, parentAlbum=None, album=env.shelf.getRootAlbum(), visited=[]):
+        iter = self.__albumModel.append(parentAlbum)
+        # TODO Do we have to use iterators here or can we use pygtks simplified syntax?        
+        self.__albumModel.set_value(iter, self.__COLUMN_ALBUM_ID, album.getId())
+        self.__albumModel.set_value(iter, self.__COLUMN_TYPE, album.getType())
+        self.__albumModel.set_value(iter, self.__COLUMN_TAG, album.getTag())
+        self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, gtk.TRUE)
+        if album.getId() not in visited:
+            for child in album.getAlbumChildren():
+                self.__loadAlbumTreeHelper(iter, child, visited + [album.getId()])
+        else:
+            iter = self.__albumModel.insert_before(iter, None)
+            self.__albumModel.set_value(iter, self.__COLUMN_TAG, "[...]")                        
+            self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, gtk.FALSE)

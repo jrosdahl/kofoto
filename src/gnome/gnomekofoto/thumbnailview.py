@@ -1,137 +1,98 @@
 import gtk
 import sys
 
+# from gnomekofoto.thumbnailcontextmenu import *
+from gnomekofoto.objectcollectionview import *
+from gnomekofoto.objectcollection import *
 from environment import env
-from objects import *
 
-class ThumbnailView:
-    _maxWidth = 0
-    _modelConnections = []
-    _blockedConnections = []
-    _freezed = gtk.FALSE
+class ThumbnailView(ObjectCollectionView):
+
+###############################################################################            
+### Public
     
-    def __init__(self, loadedObjects, selectedObjects, contextMenu):
-        self._locked = gtk.FALSE
-        self._contextMenu = contextMenu
-        self._selectedObjects = selectedObjects
-        widget = env.widgets["thumbnailList"]
-        self._thumbnailList = env.widgets["thumbnailList"]        
-        widget.connect("select_icon", self._widgetIconSelected)
-        widget.connect("unselect_icon", self._widgetIconUnselected)
-        widget.connect("button_press_event", self._button_pressed)
-        self.setModel(loadedObjects)
+    def __init__(self, objectCollection):
+        ObjectCollectionView.__init__(self,
+                                      objectCollection,
+                                      env.widgets["thumbnailList"],
+                                      None) # TODO pass context menu
+        self._viewWidget.connect("select_icon", self._widgetIconSelected)
+        self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
         
-    def setModel(self, loadedObjects):
-        for c in self._modelConnections:
-            self._model.disconnect(c)
-        del self._modelConnections[:]
-        del self._blockedConnections[:]
-        self._model = loadedObjects.model
-        self._initFromModel()
-        c = self._model.connect("row_inserted", self._initFromModel)
-        self._modelConnections.append(c)
-        c = self._model.connect("row_changed", self.on_row_changed)
-        self._modelConnections.append(c)
-        c = self._model.connect("row_deleted", self._initFromModel)
-        self._modelConnections.append(c)
-        c = self._model.connect("rows_reordered", self._initFromModel)
-        self._modelConnections.append(c)
-
-    def _initFromModel(self, *garbage):
-        self._thumbnailList.clear()
-        iter = self._model.get_iter_first()
-        for pos in range(self._model.iter_n_children(None)):
-            self._loadThumbnail(self._model, iter, pos)
-            iter = self._model.iter_next(iter)
-        self.selectionUpdated()
-        
-    def _blockModel(self):
-        for c in self._modelConnections:
-            self._model.handler_block(c)
-            self._blockedConnections.append(c)
-
-    def _unblockModel(self):
-        self._initFromModel()
-        for c in self._blockedConnections:
-            self._model.handler_unblock(c)
-        del self._blockedConnections[:]
-
-    def _loadThumbnail(self, model, iter, pos):
-        isAlbum = model.get_value(iter, Objects.COLUMN_IS_ALBUM)
-        if isAlbum:
-            text = model.get_value(iter, Objects.COLUMN_ALBUM_TAG)
-        else:
-            text = model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-        pixbuf = model.get_value(iter, Objects.COLUMN_THUMBNAIL)
-        self._thumbnailList.insert_pixbuf(pos, pixbuf, "", str(text))
-        self._maxWidth = max(self._maxWidth, pixbuf.get_width())
-        self._thumbnailList.set_icon_width(self._maxWidth)
-
-        
-
-    def freeze(self):
-        self._thumbnailList.freeze()
-        self._blockModel()
-
-    def thaw(self):
-        self._thumbnailList.thaw()
-        self._unblockModel()
+    def setObjectCollection(self, objectCollection):
+        self._clearAllConnections()
+        self._objectCollection = objectCollection
+        self._reloadAllFromModel()
+        # TODO Improve. Avoid reloading all when not necessery?
+        self._connect("row_inserted", self._reloadAllFromModel)
+        self._connect("row_changed", self._reloadRowFromModel)
+        self._connect("row_deleted", self._reloadAllFromModel)
+        self._connect("rows_reordered", self._reloadAllFromModel)
 
     def show(self):
-        self._locked = gtk.TRUE
-        self._thumbnailList.unselect_all()
-        self._locked = gtk.FALSE
         env.widgets["thumbnailView"].show()
-        env.widgets["thumbnailList"].grab_focus()
-        self._unblockModel()
-        for object in self._model:
-            if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
-                env.widgets["thumbnailList"].moveto(object.path[0], 0.0)
+        self._viewWidget.grab_focus()
+        self.setObjectCollection(self._objectCollection) # TODO Improve?
+        self.__importSelection()
+        self.__selectionLocked = gtk.FALSE
+        for row in self._objectCollection.getModel():
+            if row[ObjectCollection.COLUMN_OBJECT_ID] in self._objectCollection.getSelectedIds():
+                self._viewWidget.moveto(row.path[0], 0.0)
                 break
 
     def hide(self):
-        env.widgets["thumbnailView"].hide()
-        self._blockModel()
+        self._clearAllConnections() # TODO Improve?
+        self._viewWidget.clear()    # TODO Improve?
+        self.__selectionLocked = gtk.TRUE
+        env.widgets["thumbnailView"].hide()        
+
+
+###############################################################################
+### Callback functions registered by this class but invoked from other classes.
         
-    def on_row_changed(self, model, path, iter):
-        self._locked = gtk.TRUE
-        self._thumbnailList.remove(path[0])
-        self._loadThumbnail(model, iter, path[0])
-        self._locked = gtk.FALSE
-        self.selectionUpdated()
+    def _reloadRowFromModel(self, model, path, iter):
+        savedLockedState = self.__selectionLocked
+        self.__selectionLocked = gtk.TRUE
+        self._viewWidget.remove(path[0])
+        self._loadThumbnail(model[path[0]])
+        if path[0] in self._objectCollection.getSelectedIds():
+            self._viewWidget.select_icon(path[0])
+        self.__selectionLocked = savedLockedState
         
     def _widgetIconSelected(self, widget, index, event):
-        if not self._locked:
-            self._locked = gtk.TRUE
-            iter = self._model.get_iter(index)
-            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-            self._selectedObjects.add(objectId)
-            self._locked = gtk.FALSE
+        if not self.__selectionLocked:
+            row = self._objectCollection.getModel()[index]
+            self._objectCollection.selectRow(row, gtk.TRUE)
 
     def _widgetIconUnselected(self, widget, index, event):
-        if not self._locked:
-            self._locked = gtk.TRUE        
-            iter = self._model.get_iter(index)
-            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
-            try:
-                self._selectedObjects.remove(objectId)
-            except(KeyError):
-                pass
-            self._locked = gtk.FALSE
+        if not self.__selectionLocked:
+            row = self._objectCollection.getModel()[index]
+            self._objectCollection.unSelectRow(row, gtk.TRUE)
 
-    def selectionUpdated(self):
-        if not self._locked:
-            self._locked = gtk.TRUE        
-            self._thumbnailList.unselect_all()
-            if len(self._model) > 0:
-                indices = xrange(sys.maxint)                
-                for object, index in zip(self._model, indices):
-                    if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
-                        self._thumbnailList.select_icon(index)
-            self._locked = gtk.FALSE            
+    def _reloadAllFromModel(self, *garbage):
+        self._viewWidget.clear()
+        for row in self._objectCollection.getModel():
+            self.__loadRow(row)
+            
+###############################################################################        
+### Private
 
-    def _button_pressed(self, widget, event):
-        if event.button == 3:
-            if self._contextMenu:
-                self._contextMenu.popup(None,None,None,event.button,event.time)
-            return gtk.FALSE
+    __selectionLocked = gtk.FALSE
+    __maxWidth = env.thumbnailSize
+
+    def __importSelection(self):
+        self._viewWidget.unselect_all()        
+        for row in self._objectCollection.getSelectedRows():
+            self._viewWidget.select_icon(row.path[0])
+
+    def __loadRow(self, row):
+        if row[ObjectCollection.COLUMN_IS_ALBUM]:
+            text = row[ObjectCollection.COLUMN_ALBUM_TAG]
+        else:
+            # TODO Let configuration decide what to show...
+            text = row[ObjectCollection.COLUMN_OBJECT_ID]
+        pixbuf = row[ObjectCollection.COLUMN_THUMBNAIL]
+        self._viewWidget.insert_pixbuf(row.path[0], pixbuf, "", str(text))
+        self.__maxWidth = max(self.__maxWidth, pixbuf.get_width())
+        self._viewWidget.set_icon_width(self.__maxWidth)
+        
