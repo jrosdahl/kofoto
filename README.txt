@@ -59,7 +59,11 @@ A. Unix
 
            http://www.pygtk.org
 
-     * PyGTK for GTK+ 2.2. Found at:
+     * Glade 2.0. Found at:
+
+           http://glade.gnome.org
+
+     * PyGTK for GTK+ 2.2 (including Glade bindings). Found at:
 
            http://www.gtk.org
 
@@ -71,8 +75,9 @@ A. Unix
 
            http://pysqlite.sourceforge.net
 
-   On a Debian GNU/Linux machine, installing the packages python-gtk2,
-   python-imaging and python-sqlite should do.
+   On a Debian GNU/Linux machine, installing the packages
+   python-glade2, python-gtk2, python-imaging and python-sqlite should
+   do.
 
 
    Installing and running Kofoto
@@ -99,11 +104,11 @@ B. Windows
 
            http://www.python.org
 
-     * GTK+ 2.2 for Windows. Found at:
+     * GTK+ 2.2 (including Glade 2.0) for Windows. Found at:
 
             http://www.dropline.net/gtk/
 
-     * PyGTK for GTK+ 2.2 for Windows. Found at:
+     * PyGTK for GTK+ 2.2 (including Glade bindings) for Windows. Found at:
 
             http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
 

@@ -7,7 +7,7 @@ Standards-Version: 3.6.1
 
 Package: kofoto
 Architecture: all
-Depends: python (>= 2.3), python-gtk2 (>= 2.2.0), python-imaging, python-sqlite
+Depends: python (>= 2.3), python-glade2 (>= 2.2.0), python-gtk2 (>= 2.2.0), python-imaging, python-sqlite
 Conflicts:
 Description: digital image organizer and viewer
  Kofoto is a tool for organizing and viewing digital images, typically
