@@ -11,8 +11,8 @@ class CategoryDialog(TagAndDescriptionDialog):
             tagText = category.getTag()
             descText = category.getDescription()
         else:
-            tagText = ""
-            descText = ""
+            tagText = u""
+            descText = u""
         TagAndDescriptionDialog.__init__(self, title, tagText, descText)
             
     def _isTagValid(self, tagString):
