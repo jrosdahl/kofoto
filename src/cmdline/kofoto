@@ -806,6 +806,8 @@ def main(argv):
             _from_uc(x.args[0])))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
+    except IOError:
+        printError("I/O error (broken pipe?).\n")
     shelf.rollback()
     sys.exit(1)
 
