@@ -381,7 +381,8 @@ class OutputGenerator(OutputEngine):
                             size),
                         "title": title.encode(self.charEnc),
                         })
-                pathtextElements.append(" » ".join(els))
+                pathtextElements.append(
+                    u" \xbb ".encode(self.charEnc).join(els))
             pathtext = "<br />\n".join(pathtextElements)
 
             # Create text for subalbum entries.
@@ -543,7 +544,8 @@ class OutputGenerator(OutputEngine):
                             size),
                         "title": title.encode(self.charEnc),
                         })
-                pathtextElements.append(" » ".join(els))
+                pathtextElements.append(
+                    u" \xbb ".encode(self.charEnc).join(els))
             pathtext = "<br />\n".join(pathtextElements)
 
             if number > 0:
