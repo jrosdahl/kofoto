@@ -630,7 +630,7 @@ class Shelf:
 
         Returns an iterable returning the images."""
         assert self.inTransaction
-        directory = os.path.realpath(directory)
+        directory = unicode(os.path.realpath(directory))
         cursor = self.connection.cursor()
         cursor.execute(
             " select imageid, hash, directory, filename"
@@ -1620,11 +1620,12 @@ class Image(_Object):
     def setLocation(self, location):
         """Set the last known location of the image."""
         cursor = self.shelf._getConnection().cursor()
+        location = unicode(os.path.realpath(location))
         cursor.execute(
             " update image"
             " set    directory = %s, filename = %s"
             " where  imageid = %s",
-            os.path.realpath(os.path.dirname(location)),
+            os.path.dirname(location),
             os.path.basename(location),
             self.getId())
         self.location = location
