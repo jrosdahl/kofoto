@@ -220,6 +220,7 @@ def cmdGenerate(env, args):
                 break
             hash, junk = imagemap.popitem()
             og.generateImage(env.shelf.getImage(hash))
+        og.generateIndex()
     except ImportError:
         env.errexit("No such output module: %s\n" % otype)
 

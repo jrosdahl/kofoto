@@ -1,5 +1,6 @@
 import os
 import Image as PILImage
+from kofoto.common import symlinkOrCopyFile
 
 class ImageCache:
     def __init__(self, cachelocation):
@@ -10,7 +11,9 @@ class ImageCache:
 
     def get(self, image, limit, regenerate=0):
         origpath = image.getLocation()
-        genname = self._getCacheImageName(origpath, image.getHash(), limit)
+        orientation = image.getAttribute("orientation")
+        genname = self._getCacheImageName(
+            origpath, image.getHash(), orientation, limit)
         genpath = os.path.join(self.cachelocation, genname)
         if not os.path.exists(genpath) or regenerate:
             pilimg = PILImage.open(origpath)
@@ -27,14 +30,14 @@ class ImageCache:
             elif limit > largest:
                 largestpath = os.path.join(
                     self.cachelocation,
-                    self._getCacheImageName(origpath, image.getHash(), largest))
+                    self._getCacheImageName(
+                        origpath, image.getHash(), orientation, largest))
                 if os.path.isfile(largestpath):
-                    self._symlinkOrCopyFile(largestpath, genpath)
+                    symlinkOrCopyFile(largestpath, genpath)
                     return genpath
                 else:
                     savepath = largestpath
 
-            orientation = image.getAttribute("orientation")
             if orientation:
                 if orientation == "right":
                     pilimg = pilimg.rotate(90)
@@ -44,7 +47,7 @@ class ImageCache:
                     pilimg = pilimg.rotate(270)
             pilimg.save(savepath)
             if limit > largest:
-                self._symlinkOrCopyFile(savepath, genpath)
+                symlinkOrCopyFile(savepath, genpath)
         return genpath
 
 
@@ -54,21 +57,16 @@ class ImageCache:
             for size in sizes:
                 keep[self._getCacheImageName(image.getLocation(),
                                              image.getHash(),
+                                             image.getAttribute("orientation"),
                                              size)] = 1
         for file in os.listdir(self.cachelocation):
             if not keep.has_key(file):
                 os.unlink(os.path.join(self.cachelocation, file))
 
 
-    def _getCacheImageName(self, origpath, hash, limit):
+    def _getCacheImageName(self, origpath, hash, orientation, limit):
         extension = origpath.split(".")[-1]
-        genname = "%s-%s.%s" % (hash, limit, extension)
+        if orientation not in ("up", "down", "left", "right"):
+            orientation = "up"
+        genname = "%s-%s-%s.%s" % (hash, limit, orientation, extension)
         return genname
-
-
-    def _symlinkOrCopyFile(source, destination):
-        try:
-            os.symlink(source, destination)
-        except AttributeError:
-            import shutil
-            shutil.copy(source, destination)
