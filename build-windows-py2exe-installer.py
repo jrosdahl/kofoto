@@ -30,15 +30,14 @@ os.remove(glob.glob("dist/tk*.dll")[0])
 
 k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
 gtkdir = _winreg.QueryValueEx(k, "Path")[0]
-for dir in ["etc", "lib", "share"]:
-    destdir = join("dist", dir)
-    if not isdir(destdir):
-        os.mkdir(destdir)
-    for subdir in glob.glob(join(gtkdir, dir, "*")):
-        subdestdir = join(destdir, basename(subdir))
-        print "copying %s --> %s" % (subdir, subdestdir)
-        if not isdir(subdestdir):
-            shutil.copytree(subdir, subdestdir)
+for dir in ["bin", "etc", "lib", "share"]:
+    for dirpath, dirnames, filenames in os.walk(join(gtkdir, dir)):
+        destdir = join("dist", dirpath[len(gtkdir) + 1:])
+        if not isdir(destdir):
+            os.makedirs(destdir)
+        for filename in filenames:
+            print "copying %s --> %s" % (join(dirpath, filename), destdir)
+            shutil.copy(join(dirpath, filename), destdir)
 
 shutil.copy("COPYING.txt", "dist/license.txt")
 license_file = open("dist/license.txt", "a")
