@@ -252,7 +252,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <link href="../woolly.css" type="text/css" rel="stylesheet" />
 <title>%(title)s</title>
 </head>
-<body>
+<body onLoad="parent.toc.location.hash='%(thumbnailsanchor)s';">
 <table cellpadding="3" width="85%%" align="center" cellspacing="0">
 <tr><td class="header">%(paths)s</td></tr>
 <tr>
@@ -666,6 +666,7 @@ class OutputGenerator(OutputEngine):
                     "paths": pathtext,
                     "previous": previoustext,
                     "smaller": smallertext,
+                    "thumbnailsanchor": str(number),
                     "title": title,
                     })
 
