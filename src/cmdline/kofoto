@@ -534,6 +534,8 @@ def cmdSetCategoryDescription(env, args):
 
 
 def cmdUpdateChecksums(env, args):
+    if len(args) != 0:
+        raise ArgumentError
     for image in env.shelf.getAllImages():
         location = _from_uc(image.getLocation())
         if os.path.isfile(location):
