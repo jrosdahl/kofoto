@@ -82,6 +82,8 @@ td.info {
 }
 '''
 
+png1x1 = "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\xdac````\x00\x00\x00\x05\x00\x01z\xa8WP\x00\x00\x00\x00IEND\xaeB`\x82"
+
 album_template = '''<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -177,21 +179,22 @@ image_frame_template = '''<!DOCTYPE html
 <body>
 <table cellpadding="3" width="85%%" align="center" cellspacing="0">
 <tr><td class="header">%(paths)s</td></tr>
+<tr>
 <td>
+
 <table width="100%%">
-<tr><td colspan="3">%(previous)s %(next)s %(smaller)s %(larger)s</td>
-<tr>
-<td width="50%%"></td>
-<td align="center">
-<img src="%(imgref)s" align="center" />
-</td>
-<td width="50%%"></td>
-</tr>
+<tr><td colspan="3">%(previous)s %(next)s %(smaller)s %(larger)s</td></tr>
 <tr>
 <td></td>
-<td class="info">%(description)s</td>
+<td><img class="noborder" src="images/1x1.png" height="1" width="%(imgmaxwidth)s" /></td>
 <td></td>
 </tr>
+<tr>
+<td width="50%%"></td>
+<td align="center"><img src="%(imgref)s" align="center" /></td>
+<td width="50%%"></td>
+</tr>
+<tr><td></td><td class="info">%(description)s</td><td></td></tr>
 <tr>
 <td></td>
 <td class="footer">
@@ -202,7 +205,9 @@ image_frame_template = '''<!DOCTYPE html
 <td></td>
 </tr>
 </table>
+
 </td>
+</tr>
 </table>
 </body>
 </html>
@@ -222,6 +227,10 @@ class OutputGenerator(OutputEngine):
         cssfile = open(os.path.join(self.dest, "woolly.css"), "w")
         cssfile.write(css)
         cssfile.close()
+        unitfile = open(
+            os.path.join(self.dest, self.imagesdest, "1x1.png"), "w")
+        unitfile.write(png1x1)
+        unitfile.close()
 
 
     def generateAlbum(self, album, subalbums, images, paths):
@@ -410,6 +419,7 @@ class OutputGenerator(OutputEngine):
                     "blurb": self.blurb,
                     "description": (image.getAttribute("description") or
                                     image.getAttribute("title")),
+                    "imgmaxwidth": size,
                     "imgref": self.getImageReference(image, size),
                     "larger": largertext,
                     "next": nexttext,
