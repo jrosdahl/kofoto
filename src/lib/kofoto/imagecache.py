@@ -30,6 +30,8 @@ class ImageCache:
 
         pilimg = PILImage.open(origpath)
         savepath = genpath
+        if not pilimg.mode in ("L", "RGB", "CMYK"):
+            pilimg = pilimg.convert("RGB")
         if limit < largest:
             pilimg.thumbnail((limit, limit), PILImage.ANTIALIAS)
         elif limit > largest:
