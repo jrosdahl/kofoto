@@ -306,24 +306,21 @@ class ObjectCollection(object):
 
     def _albumTagEdited(self, renderer, path, value, column, columnNumber):
         model = self.getModel()
+        assert model.get_value(iterator, self.COLUMN_IS_ALBUM)
         iterator = model.get_iter(path)
-        if model.get_value(iterator, self.COLUMN_IS_ALBUM):
-            oldValue = model.get_value(iterator, columnNumber)
-            if not oldValue:
-                oldValue = u""
-            value = unicode(value, "utf-8")
-            if oldValue != value:
-                # TODO Show dialog and ask for confirmation?
-                objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
-                obj = env.shelf.getAlbum(objectId)
-                obj.setTag(value)
-                # TODO Handle invalid album tag?
-                model.set_value(iterator, columnNumber, value)
-                # TODO Update the album tree widget.
-                env.debug("Album tag edited")
-        else:
-            # TODO Show dialog error box?
-            print "Not allowed to set album tag on image"
+        oldValue = model.get_value(iterator, columnNumber)
+        if not oldValue:
+            oldValue = u""
+        value = unicode(value, "utf-8")
+        if oldValue != value:
+            # TODO Show dialog and ask for confirmation?
+            objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
+            obj = env.shelf.getAlbum(objectId)
+            obj.setTag(value)
+            # TODO Handle invalid album tag?
+            model.set_value(iterator, columnNumber, value)
+            # TODO Update the album tree widget.
+            env.debug("Album tag edited")
 
     def createAlbumChild(self, *unused):
         dialog = AlbumDialog("Create album")
@@ -388,7 +385,12 @@ class ObjectCollection(object):
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
                 else:
-                    print "failed to execute:", command
+                    dialog = gtk.MessageDialog(
+                        type=gtk.MESSAGE_ERROR,
+                        buttons=gtk.BUTTONS_OK,
+                        message_format="Failed to execute command: \"%s\"" % command)
+                    dialog.run()
+                    dialog.destroy()
 
     def openImage(self, widget, data):
         locations = ""
@@ -402,7 +404,12 @@ class ObjectCollection(object):
             # characters. I tried latin-1 and utf-8 without success.
             result = os.system(command + " &")
             if result != 0:
-                print "failed to execute:", command
+                dialog = gtk.MessageDialog(
+                    type=gtk.MESSAGE_ERROR,
+                    buttons=gtk.BUTTONS_OK,
+                    message_format="Failed to execute command: \"%s\"" % command)
+                dialog.run()
+                dialog.destroy()
 
 ######################################################################
 ### Private

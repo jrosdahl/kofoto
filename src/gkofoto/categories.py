@@ -235,8 +235,7 @@ class Categories:
         env.clipboard.setCategories(cc)
 
     def _pasteCategory(self, item, data):
-        if not env.clipboard.hasCategories():
-            raise Exception("No categories in clipboard") # TODO
+        assert env.clipboard.hasCategories()
         clipboardCategories = env.clipboard[0]
         env.clipboard.clear()
         try:
@@ -260,8 +259,12 @@ class Categories:
                             else:
                                 self.__disconnectChild(categoryId, parentId)
         except CategoryLoopError:
-            print "Error: Category loop detected"
-            # TODO: Show dialog box with error message
+            dialog = gtk.MessageDialog(
+                type=gtk.MESSAGE_ERROR,
+                buttons=gtk.BUTTONS_OK,
+                message_format="Category loop detected.")
+            dialog.run()
+            dialog.destroy()
         self.__expandAndCollapseRows(False, False)
 
     def _createRootCategory(self, item, data):
@@ -486,8 +489,8 @@ class Categories:
                                                 childCategory,
                                                 self.__categoryModel)
         except CategoriesAlreadyConnectedError:
-            print "Error: Categories already connected"
-            # TODO: Show dialog box with error message
+            # This is okay.
+            pass
 
     def __connectChildToCategoryHelper(self, parentId, childCategory, categoryRows):
         for categoryRow in categoryRows:

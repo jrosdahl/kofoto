@@ -43,7 +43,12 @@ class ImageView(gtk.ScrolledWindow):
             self.__pixBuf = gtk.gdk.pixbuf_new_from_file(fileName)
             self.__loadedFileName = fileName
         except gobject.GError, e:
-            print "Error while loading image:", e # TODO show error dialog box.
+            dialog = gtk.MessageDialog(
+                type=gtk.MESSAGE_ERROR,
+                buttons=gtk.BUTTONS_OK,
+                message_format="Could not load image: %s" % fileName)
+            dialog.run()
+            dialog.destroy()
             self.__pixBuf = env.unknownImageIconPixbuf
             self.__loadedFileName = None
         self._newImageLoaded = True
