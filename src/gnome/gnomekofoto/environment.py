@@ -67,7 +67,6 @@ from clipboard import Clipboard
 env.clipboard = Clipboard()
 
 env.shelf = Shelf(genconf["shelf_location"], env.codeset)
-env.shelf.begin()
 
 env.isDebug=False # TODO get as a command line parameter
 

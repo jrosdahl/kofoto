@@ -55,7 +55,9 @@ class Albums:
     __COLUMN_TYPE       = 2
     __COLUMN_SELECTABLE = 3
 
-    def __loadAlbumTreeHelper(self, parentAlbum=None, album=env.shelf.getRootAlbum(), visited=[]):
+    def __loadAlbumTreeHelper(self, parentAlbum=None, album=None, visited=[]):
+        if not album:
+            album = env.shelf.getRootAlbum()
         iter = self.__albumModel.append(parentAlbum)
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?        
         self.__albumModel.set_value(iter, self.__COLUMN_ALBUM_ID, album.getId())
