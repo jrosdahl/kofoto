@@ -728,7 +728,7 @@ def main(argv):
     if not commandTable.has_key(args[0]):
         printErrorAndExit(
             "Unknown command \"%s\". See \"kofoto --help\" for help.\n" %
-            args[0])
+            _from_uc(args[0]))
 
     try:
         shelf = Shelf(shelfLocation, CODESET)
