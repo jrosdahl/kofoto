@@ -241,8 +241,9 @@ class ObjectCollection(object):
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             for attribute, value in obj.getAttributeMap().items():
-                column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
-                self.__treeModel.set_value(iterator, column, value)
+                if "@" + attribute in self.__objectMetadataMap:
+                    column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
+                    self.__treeModel.set_value(iterator, column, value)
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
