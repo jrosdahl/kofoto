@@ -2,6 +2,7 @@ __all__ = ["OutputEngine"]
 
 import os
 import time
+from sets import Set
 from kofoto.cachedir import CacheDir
 from kofoto.common import symlinkOrCopyFile
 
@@ -12,7 +13,19 @@ class OutputEngine:
 
 
     def getImageReference(self, image, size):
-        return self.imgref[(image.getHash(), size)]
+        key = (image.getHash(), size)
+        if not self.imgref.has_key(key):
+            if self.env.verbose:
+                self.env.out("Generating image %d, size %d..." % (
+                    image.getId(), size))
+            imgabsloc = self.env.imagecache.get(image, size)
+            imgloc = self.imagesdest.getFilepath(os.path.basename(imgabsloc))
+            if not os.path.isfile(imgloc):
+                symlinkOrCopyFile(imgabsloc, imgloc)
+            self.imgref[key] = "/".join(imgloc.split(os.sep)[-4:])
+            if self.env.verbose:
+                self.env.out("\n")
+        return self.imgref[key]
 
 
     def writeFile(self, filename, text, binary=False):
@@ -33,7 +46,7 @@ class OutputEngine:
             os.mkdir(absdir)
 
 
-    def generate(self, root, dest):
+    def generate(self, root, subalbums, dest):
         self.dest = dest.encode(self.env.codeset)
         try:
             os.mkdir(self.dest)
@@ -44,11 +57,19 @@ class OutputEngine:
 
         albummap = {}
         _findAlbumPaths(root, [], albummap)
+
+        albumsToGenerate = Set()
+        if subalbums:
+            albumsToGenerate |= Set(subalbums)
+            for subalbum in subalbums:
+                albumsToGenerate |= Set(subalbum.getAlbumParents())
+        else:
+            albumsToGenerate |= Set(albummap.keys())
+
         self.preGeneration(root)
-        for tag, paths in albummap.items():
-            self._calculateImageReferences(self.env.shelf.getAlbum(tag))
-        for tag, paths in albummap.items():
-            self._generateAlbumHelper(self.env.shelf.getAlbum(tag), paths)
+        for album, paths in albummap.items():
+            if album in albumsToGenerate:
+                self._generateAlbumHelper(album, paths)
         self.postGeneration(root)
 
 
@@ -116,14 +137,13 @@ class OutputEngine:
 ######################################################################
 
 def _findAlbumPaths(album, path, albummap):
-    if album.getTag() in [x.getTag() for x in path]:
+    if album in path:
         # Already visited album, so break recursion here.
         return
     path = path[:] + [album]
-    tag = album.getTag()
-    if not albummap.has_key(tag):
-        albummap[tag] = []
-    albummap[tag].append(path)
+    if not albummap.has_key(album):
+        albummap[album] = []
+    albummap[album].append(path)
     for child in album.getChildren():
         if child.isAlbum():
             _findAlbumPaths(child, path, albummap)

@@ -20,6 +20,6 @@ class Generator:
         self.ogclass = outputmodule.OutputGenerator
 
 
-    def generate(self, root, dest, character_encoding):
+    def generate(self, root, subalbums, dest, character_encoding):
         og = self.ogclass(self.env, character_encoding)
-        og.generate(root, dest)
+        og.generate(root, subalbums, dest)

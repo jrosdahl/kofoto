@@ -1327,6 +1327,22 @@ class Album(_Object):
         raise UnimplementedError
 
 
+    def getAlbumParents(self):
+        """Get the album's (album) parents.
+
+        Returns an iterator returning Album instances.
+        """
+        cursor = self.shelf.connection.cursor()
+        cursor.execute(
+            " select distinct member.albumid"
+            " from   member, album"
+            " where  member.objectid = %s and"
+            "        member.albumid = album.albumid",
+            self.getId())
+        for (objid,) in cursor:
+            yield self.shelf.getAlbum(objid)
+
+
     def setChildren(self, children):
         raise UnimplementedError
 

@@ -78,7 +78,7 @@ def displayHelp():
         "                                     (specified in the configuration file).\n"
         "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
         "                                     or output type TYPE when generating output.\n"
-        "    -v, --verbose                    Be verbose.\n"
+        "    -v, --verbose                    Be verbose (and slower).\n"
         "    -V, --version                    Print version to standard output.\n"
         "\n"
         "Commands:\n"
@@ -129,9 +129,12 @@ def displayHelp():
         "                                     to the album DEST. (The objects are placed\n"
         "                                     last if a location is not specified with\n"
         "                                     -l/--location.)\n"
-        "    generate ALBUM DEST              Generate output for ALBUM in DESTINATION.\n"
-        "                                     Use -t/--type to use another output type\n"
-        "                                     than the default.\n"
+        "    generate ROOTALBUM DEST [SUBALBUM ...]\n"
+        "                                     Generate output for ROOTALBUM in\n"
+        "                                     the directory DEST. If subalbums are\n"
+        "                                     given, only generate those albums and\n"
+        "                                     their immediate parents. Use -t/--type to\n"
+        "                                     use another output type than the default.\n"
         "    register DEST PATH [PATH ...]    Register objects (i.e. directories and\n"
         "                                     images) and add them to the album DEST.\n"
         "                                     (The objects are placed last.)\n"
@@ -293,10 +296,11 @@ def cmdDisconnectCategory(env, args):
 
 
 def cmdGenerate(env, args):
-    if len(args) != 2:
+    if len(args) < 2:
         raise ArgumentError
     root = env.shelf.getAlbum(args[0])
     dest = args[1]
+    subalbums = [env.shelf.getAlbum(x) for x in args[2:]]
     if env.type:
         otype = env.type
     else:
@@ -304,7 +308,7 @@ def cmdGenerate(env, args):
     import kofoto.generate
     try:
         generator = kofoto.generate.Generator(otype, env)
-        generator.generate(root, dest, env.gencharenc)
+        generator.generate(root, subalbums, dest, env.gencharenc)
     except kofoto.generate.OutputTypeError, x:
         env.errexit("No such output module: %s\n" % _from_uc(x))
 
