@@ -21,8 +21,12 @@ class OutputEngine:
             if captured:
                 m = re.match("^(\d+)-(\d+)", captured)
                 if m:
+                    timestr = captured \
+                              .replace(" ", "_") \
+                              .replace(":", "") \
+                              .replace("-", "")
                     name = "%s-%sx%s.jpg" % (
-                        captured.replace(" ", "_"),
+                        timestr,
                         widthlimit,
                         heightlimit)
                     return os.path.join(m.group(1), m.group(2), name)
