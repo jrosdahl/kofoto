@@ -26,6 +26,7 @@ from kofoto.shelf import *
 ######################################################################
 ### Locale.
 
+locale.setlocale(locale.LC_ALL, "")
 CODESET = locale.getpreferredencoding()
 
 ######################################################################
