@@ -7,7 +7,14 @@ import getopt
 ######################################################################
 
 # Find libraries if installed in ../lib (like in the source tree).
-sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "..", "lib"))
+if os.path.islink(sys.argv[0]):
+    link = os.readlink(sys.argv[0])
+    absloc = os.path.normpath(
+        os.path.join(os.path.dirname(sys.argv[0]), link))
+    bindir = os.path.dirname(absloc)
+else:
+    bindir = os.path.dirname(sys.argv[0])
+sys.path.insert(0, os.path.join(bindir, "..", "lib"))
 
 try:
     from kofoto.common import *

@@ -1,4 +1,11 @@
 #! /bin/sh
 
-cmddir=$(dirname $0)
-$cmddir/../cmdline/kofoto --configfile=$cmddir/test.conf --shelf=$cmddir/test.shelf "$@"
+if [ -L "$0" ]; then
+    testdir=$(dirname $(readlink -f "$0"))
+else
+    testdir=$(dirname $0)
+fi
+$testdir/../cmdline/kofoto \
+    --configfile=$testdir/test.conf \
+    --shelf=$testdir/test.shelf \
+    "$@"
