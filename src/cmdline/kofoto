@@ -884,8 +884,12 @@ def main(argv):
             _from_uc(x.args[0])))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
-    except IOError:
-        printError("I/O error (broken pipe?).\n")
+    except IOError, e:
+        if e.filename:
+            errstr = "%s: \"%s\"" % (e.strerror, e.filename)
+        else:
+            errstr = e.strerror
+        printError("%s.\n" % errstr)
     shelf.rollback()
     sys.exit(1)
 
