@@ -390,6 +390,12 @@ class Shelf:
         how data is stored in the database.)"""
         self.location = location
         self.codeset = codeset
+        self.transactionLock = threading.Lock()
+        self.categorydag = CachedObject(self._createCategoryDAG)
+        self.objectcache = {}
+        self.categorycache = {}
+        self.modified = False
+
         if _DEBUG:
             logfile = file("sql.log", "a")
         else:
@@ -426,27 +432,19 @@ class Shelf:
                     " values (%s, %s, 0, 'plain')",
                     _ROOT_ALBUM_ID,
                     _ROOT_ALBUM_DEFAULT_TAG)
-                cursor.execute(
-                    " insert into object (objectid)"
-                    " values (null)")
-                orphansid = cursor.lastrowid
-                cursor.execute(
-                    " insert into album (albumid, tag, deletable, type)"
-                    " values (%s, 'orphans', 1, 'orphans')",
-                    orphansid)
-                cursor.execute(
-                    " insert into member (albumid, position, objectid)"
-                    " values (%s, 0, %s)",
-                    _ROOT_ALBUM_ID,
-                    orphansid)
                 self.connection.commit()
+
+                self.begin()
+                orphansalbum = self.createAlbum(u"orphans", u"orphans")
+                orphansalbum.setAttribute(u"title", u"Orphans")
+                orphansalbum.setAttribute(
+                    u"description",
+                    u"This album contains albums and images that are not" +
+                    u" linked from any album.")
+                self.getRootAlbum().setChildren([orphansalbum])
+                self.commit()
             else:
                 raise ShelfNotFoundError, location
-        self.transactionLock = threading.Lock()
-        self.categorydag = CachedObject(self._createCategoryDAG)
-        self.objectcache = {}
-        self.categorycache = {}
-        self.modified = False
 
 
     def begin(self):
