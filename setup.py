@@ -8,7 +8,7 @@ setup(
         "": "src/lib",
         "kofoto": "src/lib/kofoto",
         "gnomekofoto": "src/gnome/gnomekofoto"},
-    packages=["kofoto", "gnomekofoto"],
+    packages=["kofoto", "kofoto.output", "gnomekofoto"],
     py_modules=["EXIF"],
     scripts=["src/cmdline/kofoto", "src/gnome/gkofoto"],
     data_files=[
