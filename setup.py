@@ -13,6 +13,7 @@ setup(
     scripts=[
         "src/cmdline/renameimage",
         "src/cmdline/kofoto",
+        "src/cmdline/kofoto-upload",
         "src/gnome/gkofoto"],
     data_files=[
         ("share/gnomekofoto/glade", ["src/gnome/glade/gkofoto.glade"]),
