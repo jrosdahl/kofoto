@@ -714,7 +714,7 @@ class Shelf:
                     " where  hash = %s",
                     computeImageHash(ref.encode(self.codeset)))
                 row = cursor.fetchone()
-            else:
+            if not row:
                 raise ImageDoesNotExistError, ref
         imageid, hash, location = row
         image = Image(self, imageid, hash, location)
