@@ -83,7 +83,7 @@ class Parser:
         self._snfactory = SearchNodeFactory(shelf)
 
     def parse(self, string):
-        assert type(string) == type(u""), "non-Unicode search string"
+        assert isinstance(string, unicode), "non-Unicode search string"
         self._scanner = Scanner(string)
         return self.searchexpr()
 
