@@ -584,7 +584,7 @@ def cmdUpdateLocations(env, args):
                 image.locationChanged(filepath)
                 env.out("New location: %s --> %s\n" % (
                     _from_uc(oldlocation),
-                    _from_uc(filepath)))
+                    _from_uc(image.getLocation())))
             else:
                 if env.verbose:
                     env.out("Same location as before: %s\n" %
