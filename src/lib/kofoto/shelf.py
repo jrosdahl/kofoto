@@ -61,6 +61,7 @@ schema = """
         location    VARCHAR(256) NOT NULL,
 
         UNIQUE      (hash),
+        UNIQUE      (location),
         FOREIGN KEY (imageid) REFERENCES object,
         PRIMARY KEY (imageid)
     );
@@ -618,6 +619,16 @@ class Image(_Object):
             " where  imageid = %(imageid)s",
             locals())
         return self.shelf.cursor.fetchone()[0]
+
+
+    def setHash(self, hash):
+        """Set the hash of the image."""
+        imageid = self.getId()
+        self.shelf.cursor.execute(
+            " update image"
+            " set    hash = %(hash)s"
+            " where  imageid = %(imageid)s",
+            locals())
 
 
     ##############################

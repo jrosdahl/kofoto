@@ -73,7 +73,6 @@ def displayHelp():
         "\n"
         "    For shelfs\n"
         "    ==========\n"
-        "\n"
         "    check                            Find missing images and print some\n"
         "                                     statistics.\n"
         "    create-shelf                     Create an empty shelf.\n"
@@ -81,6 +80,8 @@ def displayHelp():
         "                                     TAG.\n"
         "    print-graph                      Print the album graph.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album ID.\n"
+        "    update-checksums                 Traverse all images in the shelf and\n"
+        "                                     remember their new checksums.\n"
         "    update-locations DIR1 [DIR2 ...] Traverse the given directories\n"
         "                                     recursively and remember the new\n"
         "                                     locations of images.\n"
@@ -88,7 +89,6 @@ def displayHelp():
        "\n"
         "    For albums\n"
         "    ==========\n"
-        "\n"
         "    add DEST OBJ1 [OBJ2 ...]         Add objects (i.e. directories and images)\n"
         "                                     to the album DEST. (The objects are placed\n"
         "                                     last.) Directories are recursively scanned\n"
@@ -262,6 +262,25 @@ def cmdRenameTag(env, args):
     env.shelf.getAlbum(args[0]).setTag(args[1])
 
 
+def cmdUpdateChecksums(env, args):
+    for image in env.shelf.getAllImagesAlbum().getChildren():
+        location = image.getLocation()
+        if os.path.isfile(location):
+            try:
+                hash = computeImageHash(location)
+                oldhash = image.getHash()
+                if oldhash != hash:
+                    image.setHash(hash)
+                    env.out("New checksum for %s\n" % location)
+                else:
+                    if env.verbose:
+                        env.out("Same checksum as before for %s\n" % location)
+            except IOError, x:
+                env.err("Failed to read: %s\n" % location)
+        else:
+            env.err("Image does not exist: %s\n" % location)
+
+
 def cmdUpdateLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
@@ -272,7 +291,6 @@ def cmdUpdateLocations(env, args):
 
 
 def updateLocationsHelper(env, dir, files):
-    output = sys.stdout
     for x in _directories_to_ignore:
         files.remove(x)
     for file in files:
@@ -303,6 +321,7 @@ commandTable = {
     "create-album": cmdCreateAlbum,
     "print-graph": cmdPrintGraph,
     "rename-tag": cmdRenameTag,
+    "update-checksums": cmdUpdateChecksums,
     "update-locations": cmdUpdateLocations,
 }
 
