@@ -366,7 +366,7 @@ class ObjectCollection(object):
         selectedAlbum = selectedObjects[0]
         env.mainwindow.generateHtml(selectedAlbum)
 
-    def albumProperties(self, widget, data):
+    def albumProperties(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1 and selectedObjects[0].isAlbum()
         selectedAlbumId = selectedObjects[0].getId()
