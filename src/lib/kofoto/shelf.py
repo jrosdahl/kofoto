@@ -1593,7 +1593,7 @@ class OrphansAlbum(MagicAlbum):
             "          name = 'captured'"
             " order by lcvalue, location")
         for (imageid,) in cursor:
-            self.shelf.getImage(imageid)
+            yield self.shelf.getImage(imageid)
 
 
 ######################################################################
