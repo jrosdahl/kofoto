@@ -21,6 +21,7 @@ class ObjectCollection(object):
         self.__insertionWorkerTag = None
         self.__registeredViews = []
         self.__disabledFields = Set()
+        self.__rowInsertedCallbacks = []
         self.__columnsType = [ gobject.TYPE_BOOLEAN,  # COLUMN_VALID_LOCATION
                                gobject.TYPE_BOOLEAN,  # COLUMN_VALID_CHECKSUM
                                gobject.TYPE_BOOLEAN,  # COLUMN_ROW_EDITABLE
@@ -100,6 +101,16 @@ class ObjectCollection(object):
 
     def getUnsortedModel(self):
         return self.__treeModel
+
+    def addInsertedRowCallback(self, callback, data=None):
+        self.__rowInsertedCallbacks.append((callback, data))
+
+    def removeInsertedRowCallback(self, callback, data=None):
+        self.__rowInsertedCallbacks.remove((callback, data))
+
+    def signalRowInserted(self):
+        for callback, data in self.__rowInsertedCallbacks:
+            callback(data)
 
     def convertToUnsortedRowNr(self, rowNr):
         return rowNr
@@ -259,6 +270,7 @@ class ObjectCollection(object):
                     column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
                     self.__treeModel.set_value(iterator, column, value)
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
+            self.signalRowInserted()
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
             yield True

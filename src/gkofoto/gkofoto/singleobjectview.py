@@ -43,14 +43,13 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 if len(objectSelection) == 0:
                     # No objects is selected -> select first object
                     self.__selectedRowNr = 0
-                    objectSelection.setSelection([self.__selectedRowNr])
                 elif len(objectSelection) > 1:
                     # More than one object selected -> select first object
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
-                    objectSelection.setSelection([self.__selectedRowNr])
                 else:
                     # Exactly one object selected
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
+                objectSelection.setSelection([self.__selectedRowNr])
                 selectedObject = objectSelection[self.__selectedRowNr]
                 if selectedObject.isAlbum():
                     self.loadFile(env.albumIconFileName, False)
@@ -122,31 +121,23 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         env.enter("SingleObjectView.freezeHelper()")
         self._clearAllConnections()
         self.clear()
+        self._objectCollection.removeInsertedRowCallback(self._modelUpdated)
         env.exit("SingleObjectView.freezeHelper()")
 
     def _thawHelper(self):
         env.enter("SingleObjectView.thawHelper()")
         model = self._objectCollection.getModel()
-        # The row_changed event is needed when the location attribute of the image object is changed.
-        self._connect(model, "row_changed", self._rowChanged)
-        # The following events are needed to update the previous and next navigation buttons.
+        # The following events are needed to update the previous and
+        # next navigation buttons.
         self._connect(model, "rows_reordered", self._modelUpdated)
-        self._connect(model, "row_inserted", self._modelUpdated)
         self._connect(model, "row_deleted", self._modelUpdated)
+        self._objectCollection.addInsertedRowCallback(self._modelUpdated)
         self.importSelection(self._objectCollection.getObjectSelection())
         env.exit("SingleObjectView.thawHelper()")
 
     def _modelUpdated(self, *foo):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())
-
-    def _rowChanged(self, model, path, iter, arg, *unused):
-        if path[0] == self.__selectedRowNr:
-            env.debug("selected object in SingleObjectView changed")
-            objectSelection = self._objectCollection.getObjectSelection()
-            obj = objectSelection[path[0]]
-            if not obj.isAlbum():
-                self.loadFile(obj.getLocation(), True)
 
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()

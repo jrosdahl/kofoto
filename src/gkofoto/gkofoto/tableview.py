@@ -251,6 +251,7 @@ class TableView(ObjectCollectionView):
                                                               sourceRowNumber,
                                                               targetPath[0]))
                     model.insert_before(sibling=targetIter, row=sourceRow)
+                    self._objectCollection.signalRowInserted()
                     model.remove(sourceRow.iter)
                     # TODO update the album tree widget?
                 elif (dropPosition == gtk.TREE_VIEW_DROP_INTO_OR_AFTER
