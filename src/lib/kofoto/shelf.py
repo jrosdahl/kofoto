@@ -1429,7 +1429,7 @@ class Image(_Object):
                     "EXIF DateTimeOriginal",
                     "EXIF DateTimeDigitized"]:
             value = tags.get(tag)
-            if value and value.printable != "0000:00:00 00:00:00":
+            if value and str(value) != "0000:00:00 00:00:00":
                 a = str(value).split(":")
                 if len(a) == 5:
                     value = u"-".join(a[0:2] + [":".join(a[2:5])])
