@@ -13,7 +13,7 @@
 #            | <attribute> <attroper> <attrvalue>
 #            | "(" <expr> ")"
 #
-# <bareword> ::= [^ @]+
+# <bareword> ::= [^ @] [^ ]+
 #
 # <attribute> ::= "@" [^ ]+
 #
@@ -371,7 +371,7 @@ class Scanner:
             (r"exactly\b", "exactly"),
             (r"or\b", "or"),
             (r"not\b", "not"),
-            (r"\w+", "bareword"),
+            (r"\S+", "bareword"),
             (r"$", "eof"),
             ]]
 
