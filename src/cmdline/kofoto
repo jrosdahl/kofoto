@@ -246,7 +246,9 @@ def cmdCleanCache(env, args):
         raise ArgumentError
     if len(args) != 0:
         raise ArgumentError
-    env.imagecache.cleanup(env.shelf.getAllImages(), env.imagesizes)
+    env.imagecache.cleanup(
+        env.shelf.getAllImages(),
+        env.imagesizelimits + [env.thumbnailsizelimit])
 
 
 def cmdConnectCategory(env, args):
@@ -762,10 +764,11 @@ def main(argv):
         env.err = printError
         env.errexit = printErrorAndExit
         env.shelf = shelf
-        env.imagecache = ImageCache(genconf["imagecache_location"])
-        env.thumbnailsize = genconf["thumbnail_size"]
-        env.defaultsize = genconf["default_image_size"]
-        env.imagesizes = genconf["image_sizes"]
+        env.imagecache = ImageCache(genconf["imagecache_location"],
+                                    genconf["use_orientation_attribute"])
+        env.thumbnailsizelimit = genconf["thumbnail_size_limit"]
+        env.defaultsizelimit = genconf["default_image_size_limit"]
+        env.imagesizelimits = genconf["image_size_limits"]
         env.config = conf
 
         commandTable[args[0]](env, args[1:])

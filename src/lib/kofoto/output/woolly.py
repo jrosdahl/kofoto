@@ -236,7 +236,7 @@ image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 %(uplink)s
 <title>%(albumtitle)s</title>
 </head>
-<frameset cols="100%%, %(thumbnailsframesize)s">
+<frameset cols="100%%, %(thumbnailsframewidth)s">
 <frame name="main" src="%(imageframeref)s" />
 <frame name="toc" src="%(thumbnailsframeref)s#%(imagenumber)s" marginheight="20" />
 <noframes>
@@ -372,18 +372,19 @@ class OutputGenerator(OutputEngine):
 
     def generateAlbum(self, album, subalbums, images, paths):
         # ------------------------------------------------------------
-        # Create album overview pages, one per size.
+        # Create album overview pages, one per size limit.
         # ------------------------------------------------------------
 
         self.makeDirectory(str(album.getId()))
-        for size in self.env.imagesizes:
-            pathtext = self._generatePathText(size, paths, "")
+        for wlim, hlim in self.env.imagesizelimits:
+            pathtext = self._generatePathText(wlim, hlim, paths, "")
 
             # Create uplink.
             if len(paths[0]) > 1:
-                uplink = '<link rel="up" href="%s-%s.html" />' % (
+                uplink = '<link rel="up" href="%s-%dx%d.html" />' % (
                     paths[0][-2].getTag().encode(self.charEnc),
-                    size)
+                    wlim,
+                    hlim)
             else:
                 uplink = ""
 
@@ -398,26 +399,27 @@ class OutputGenerator(OutputEngine):
                     frontimage = self._getFrontImage(subalbum)
                     if frontimage:
                         thumbimgref = self.getImageReference(
-                            frontimage, self.env.thumbnailsize)
-                        thumbwidth, thumbheight = self.getLimitedSize(
-                            frontimage, self.env.thumbnailsize)
+                            frontimage,
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1])
                     else:
                         thumbimgref = "%s/%s" % (self.iconsdir, "1x1.png")
-                        thumbwidth = self.env.thumbnailsize
-                        thumbheight = 3 * self.env.thumbnailsize / 4
 
+                    thumbwidth = self.env.thumbnailsizelimit[0]
+                    thumbheight = 3 * self.env.thumbnailsizelimit[0] // 4
                     title = (subalbum.getAttribute(u"title") or
                              subalbum.getTag())
                     subalbumtextElements.append(subalbum_entry_template % {
                         "iconsdir": self.iconsdir,
-                        "htmlref": "%s-%d.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             subalbum.getTag().encode(self.charEnc),
-                            size),
+                            wlim,
+                            hlim),
                         "thumbheight": thumbheight,
                         "thumbheight_minus_6": thumbheight - 6,
+                        "thumbimgref": thumbimgref,
                         "thumbwidth": thumbwidth,
                         "thumbwidth_minus_6": thumbwidth - 6,
-                        "thumbimgref": thumbimgref,
                         "title": title.encode(self.charEnc),
                         })
                     number += 1
@@ -434,12 +436,15 @@ class OutputGenerator(OutputEngine):
                     if number % 3 == 0:
                         imagetextElements.append("</tr>\n<tr>\n")
                     imagetextElements.append(image_entry_template % {
-                        "frameref": "%s/%s-%s-frame.html" % (album.getId(),
-                                                             number,
-                                                             size),
+                        "frameref": "%s/%s-%dx%d-frame.html" % (
+                            album.getId(),
+                            number,
+                            wlim,
+                            hlim),
                         "thumbimgref": self.getImageReference(
                             image,
-                            self.env.thumbnailsize),
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1]),
                         })
                     number += 1
                 imagetextElements.append("</tr>\n")
@@ -453,7 +458,9 @@ class OutputGenerator(OutputEngine):
             title = album.getAttribute(u"title") or album.getTag()
             title = title.encode(self.charEnc)
 
-            filename = "%s-%s.html" % (album.getTag().encode(self.charEnc), size)
+            filename = "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
+                                          wlim,
+                                          hlim)
             self.writeFile(
                 filename,
                 album_template % {
@@ -467,93 +474,108 @@ class OutputGenerator(OutputEngine):
                     "title": title,
                     "uplink": uplink,
                 })
-            self._maybeMakeUTF8Symlink("%s-%s.html" % (album.getTag(), size))
+            self._maybeMakeUTF8Symlink("%s-%dx%d.html" % (album.getTag(),
+                                                          wlim,
+                                                          hlim))
 
         # ------------------------------------------------------------
-        # Create image thumbnails frame, one per size.
+        # Create image thumbnails frame, one per size limit.
         # ------------------------------------------------------------
 
-        for size in self.env.imagesizes:
+        for wlim, hlim in self.env.imagesizelimits:
             # Create text for image thumbnails frame.
             thumbnailsframeElements = []
             number = 0
             for image in images:
                 thumbnailsframeElements.append(
                     thumbnails_frame_entry_template % {
-                        "htmlref": "%s-%s.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             number,
-                            size),
+                            wlim,
+                            hlim),
                         "number": number,
                         "thumbimgref": "../" + self.getImageReference(
                             image,
-                            self.env.thumbnailsize),
+                            self.env.thumbnailsizelimit[0],
+                            self.env.thumbnailsizelimit[1]),
                         })
                 number += 1
             thumbnailstext = "\n".join(thumbnailsframeElements)
 
             # Image thumbnails frame.
             self.writeFile(
-                os.path.join(str(album.getId()), "thumbnails-%s.html" % size),
+                os.path.join(str(album.getId()),
+                             "thumbnails-%dx%d.html" % (wlim, hlim)),
                 thumbnails_frame_template % {
                     "charenc": self.charEnc,
                     "entries": thumbnailstext})
             self._maybeMakeUTF8Symlink(
-                os.path.join(str(album.getId()), "thumbnails-%s.html" % size))
+                os.path.join(str(album.getId()),
+                             "thumbnails-%dx%d.html" % (wlim, hlim)))
 
         # ------------------------------------------------------------
-        # Create album symlink to default size.
+        # Create album symlink to default size limit.
         # ------------------------------------------------------------
 
         self.symlinkFile(
-            "%s-%s.html" % (album.getTag().encode(self.charEnc),
-                            self.env.defaultsize),
+            "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
+                               self.env.defaultsizelimit[0],
+                               self.env.defaultsizelimit[1]),
             "%s.html" % album.getTag().encode(self.charEnc))
         self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
 
 
     def generateImage(self, album, image, images, number, paths):
         # ------------------------------------------------------------
-        # Create image frameset and image fram, one per size.
+        # Create image frameset and image fram, one per size limit.
         # ------------------------------------------------------------
 
-        for sizenumber in range(len(self.env.imagesizes)):
-            size = self.env.imagesizes[sizenumber]
-            pathtext = self._generatePathText(size, paths, "../")
-            uplink = '<link rel="up" href="../%s-%s.html" target="_top" />' % (
+        for limnumber, (wlim, hlim) in enumerate(self.env.imagesizelimits):
+            pathtext = self._generatePathText(wlim, hlim, paths, "../")
+            uplink = '<link rel="up" href="../%s-%dx%d.html" target="_top" />' % (
                 paths[0][-1].getTag().encode(self.charEnc),
-                size)
+                wlim,
+                hlim)
 
             if number > 0:
-                previouslink = '<link rel="previous" href="%s-%s-frame.html" />' % (number - 1, size)
+                previouslink = '<link rel="previous" href="%s-%dx%d-frame.html" />' % (
+                    number - 1,
+                    wlim,
+                    hlim)
                 previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" /></a>' % (
-                    "%s-%s.html" % (number - 1, size),
+                    "%s-%dx%d.html" % (number - 1, wlim, hlim),
                     self.iconsdir)
             else:
                 previouslink = ""
                 previoustext = '<img class="icon" src="../%s/noprevious.png" />' % self.iconsdir
 
             if number < len(images) - 1:
-                nextlink = '<link rel="next" href="%s-%s-frame.html" />' % (number + 1, size)
+                nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
+                    number + 1, wlim, hlim)
                 nexttext = '<a href="%s"><img class="icon" src="../%s/next.png" /></a>' % (
-                    "%s-%s.html" % (number + 1, size),
+                    "%s-%dx%d.html" % (number + 1, wlim, hlim),
                     self.iconsdir)
             else:
                 nextlink = ""
                 nexttext = '<img class="icon" src="../%s/nonext.png" />' % self.iconsdir
 
-            if sizenumber > 0:
+            if limnumber > 0:
                 smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" /></a>' % (
-                    "%s-%s-frame.html" % (
-                        number, self.env.imagesizes[sizenumber - 1]),
+                    "%s-%dx%d-frame.html" % (
+                        number,
+                        self.env.imagesizelimits[limnumber - 1][0],
+                        self.env.imagesizelimits[limnumber - 1][1]),
                     self.iconsdir)
 
             else:
                 smallertext = '<img class="icon" src="../%s/nosmaller.png" />' % self.iconsdir
 
-            if sizenumber < len(self.env.imagesizes) - 1:
+            if limnumber < len(self.env.imagesizelimits) - 1:
                 largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" /></a>' % (
-                    "%s-%s-frame.html" % (
-                        number, self.env.imagesizes[sizenumber + 1]),
+                    "%s-%dx%d-frame.html" % (
+                        number,
+                        self.env.imagesizelimits[limnumber + 1][0],
+                        self.env.imagesizelimits[limnumber + 1][1]),
                     self.iconsdir)
             else:
                 largertext = '<img class="icon" src="../%s/nolarger.png" />' % self.iconsdir
@@ -611,31 +633,35 @@ class OutputGenerator(OutputEngine):
 
             self.writeFile(
                 os.path.join(str(album.getId()),
-                             "%s-%s-frame.html" % (number, size)),
+                             "%s-%dx%d-frame.html" % (number, wlim, hlim)),
                 image_frameset_template % {
                     "albumtitle": title,
                     "charenc": self.charEnc,
-                    "imageframeref": "%s-%s.html" % (
+                    "imageframeref": "%s-%dx%d.html" % (
                         number,
-                        size),
+                        wlim,
+                        hlim),
                     "imagenumber": number,
                     "nextlink": nextlink,
                     "previouslink": previouslink,
-                    "thumbnailsframeref": "thumbnails-%s.html" % size,
-                    "thumbnailsframesize": self.env.thumbnailsize + 70,
+                    "thumbnailsframeref": "thumbnails-%dx%d.html" % (
+                        wlim, hlim),
+                    "thumbnailsframewidth": \
+                        self.env.thumbnailsizelimit[0] + 70,
                     "uplink": uplink,
                     })
 
             self.writeFile(
                 os.path.join(str(album.getId()),
-                             "%s-%s.html" % (number, size)),
+                             "%s-%dx%d.html" % (number, wlim, hlim)),
                 image_frame_template % {
                     "blurb": self.blurb,
                     "charenc": self.charEnc,
                     "iconsdir": "../" + self.iconsdir,
                     "imgid": image.getId(),
-                    "imgmaxwidth": size,
-                    "imgref": "../" + self.getImageReference(image, size),
+                    "imgmaxwidth": wlim,
+                    "imgref": "../" + self.getImageReference(
+                                          image, wlim, hlim),
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
@@ -647,7 +673,7 @@ class OutputGenerator(OutputEngine):
                     })
 
 
-    def _generatePathText(self, size, paths, pathprefix):
+    def _generatePathText(self, wlim, hlim, paths, pathprefix):
         # Create path text, used in top of the album overview.
         pathtextElements = []
         pathtextElements.append("<table width=\"100%\">\n")
@@ -657,9 +683,10 @@ class OutputGenerator(OutputEngine):
             for node in path:
                 title = node.getAttribute(u"title") or node.getTag()
                 els.append('''<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>''' % {
-                    "htmlref": "%s-%s.html" % (
+                    "htmlref": "%s-%dx%d.html" % (
                         node.getTag().encode(self.charEnc),
-                        size),
+                        wlim,
+                        hlim),
                     "pathprefix": pathprefix,
                     "title": title.encode(self.charEnc),
                     })
@@ -682,9 +709,10 @@ class OutputGenerator(OutputEngine):
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
                     prevalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/previousalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
-                        "htmlref": "%s-%s.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             sibling.getTag().encode(self.charEnc),
-                            size),
+                            wlim,
+                            hlim),
                         "iconsdir": self.iconsdir,
                         "pathprefix": pathprefix,
                         "title": title.replace(" ", "&nbsp;").encode(self.charEnc)
@@ -697,9 +725,10 @@ class OutputGenerator(OutputEngine):
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
                     nextalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/nextalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
-                        "htmlref": "%s-%s.html" % (
+                        "htmlref": "%s-%dx%d.html" % (
                             sibling.getTag().encode(self.charEnc),
-                            size),
+                            wlim,
+                            hlim),
                         "iconsdir": self.iconsdir,
                         "pathprefix": pathprefix,
                         "title": title.replace(" ", "&nbsp;").encode(self.charEnc),

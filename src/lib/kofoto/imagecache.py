@@ -2,72 +2,105 @@ __all__ = ["ImageCache"]
 
 import os
 import Image as PILImage
+import sets
 from kofoto.cachedir import CacheDir
 from kofoto.common import symlinkOrCopyFile
 
 class ImageCache:
-    def __init__(self, cachelocation):
+    def __init__(self, cachelocation, useOrientation=False):
+        """Constructor.
+
+        cachelocation specifies the image cache directory. If
+        useOrientation is true, the image will be rotated according to
+        the orientation attribute.
+        """
         self.cachedir = CacheDir(cachelocation)
+        self.useOrientation = useOrientation
 
 
-    def get(self, image, limit):
-        origpath = image.getLocation()
-        orientation = image.getAttribute(u"orientation")
-        genname = self._getCacheImageName(image, limit)
-        genpath = self.cachedir.getFilepath(genname)
+    def get(self, image, widthlimit, heightlimit):
+        """Get a file path to a cached image.
 
-        if os.path.exists(genpath):
-            return genpath
+        If the original image doesn't fit within the limits, a smaller
+        version of the image will be created and its path returned. If
+        the original image fits within the limits, a path to a copy of
+        the original image will be returned.
+        """
+        # Scale image to fit within limits.
+        imgwidth, imgheight, w, h, orientation = self._calcImageSize(
+            image, widthlimit, heightlimit)
 
-        height = int(image.getAttribute(u"height"))
-        width = int(image.getAttribute(u"width"))
-        largest = max(height, width)
-        if limit > largest:
-            largestpath = self.cachedir.getFilepath(
-                self._getCacheImageName(image, largest))
-            if os.path.isfile(largestpath):
-                return largestpath
+        # Check whether a cached version already exists.
+        path = self.cachedir.getFilepath(
+            self._getCacheImageName(image, w, h))
+        if os.path.exists(path):
+            return path
 
-        pilimg = PILImage.open(origpath)
-        savepath = genpath
+        # No version of the wanted size existed in the cache. Create
+        # one.
+        pilimg = PILImage.open(image.getLocation())
         if not pilimg.mode in ("L", "RGB", "CMYK"):
             pilimg = pilimg.convert("RGB")
-        if limit < largest:
-            pilimg.thumbnail((limit, limit), PILImage.ANTIALIAS)
-        elif limit > largest:
-            savepath = largestpath
+        if imgwidth > widthlimit or imgheight > heightlimit:
+            if self.useOrientation and orientation in ("left", "right"):
+                coord = h, w
+            else:
+                coord = w, h
+            pilimg.thumbnail(coord, PILImage.ANTIALIAS)
+        if self.useOrientation:
+            if orientation == "right":
+                pilimg = pilimg.rotate(90)
+            elif orientation == "down":
+                pilimg = pilimg.rotate(180)
+            elif orientation == "left":
+                pilimg = pilimg.rotate(270)
+        pilimg.save(path, "JPEG")
+        return path
 
-        if orientation == "right":
-            pilimg = pilimg.rotate(90)
-        elif orientation == "down":
-            pilimg = pilimg.rotate(180)
-        elif orientation == "left":
-            pilimg = pilimg.rotate(270)
 
-        if not pilimg.mode in ("L", "RGB", "CMYK"):
-            pilimg = pilimg.convert("RGB")
-        pilimg.save(savepath, "JPEG")
-        return savepath
-
-
-    def cleanup(self, imagesToKeep, sizes):
-        keep = {}
+    def cleanup(self, imagesToKeep, sizelimits):
+        keep = sets.Set()
         for image in imagesToKeep:
-            maxsize = max(int(image.getAttribute(u"height")),
-                          int(image.getAttribute(u"width")))
-            for size in sizes + [maxsize]:
-                keep[self._getCacheImageName(image, size)] = True
+            for heightlimit, widthlimit in sizelimits:
+                junk1, junk2, w, h, junk3 = self._calcImageSize(
+                    image, heightlimit, widthlimit)
+                keep.add(self._getCacheImageName(image, w, h))
         for filename in self.cachedir.getAllFilenames():
-            if not keep.has_key(os.path.basename(filename)):
+            if not os.path.basename(filename) in keep:
                 os.unlink(filename)
         self.cachedir.cleanup()
 
 
-    def _getCacheImageName(self, image, limit):
-        orientation = image.getAttribute(u"orientation")
-        if orientation not in ("up", "down", "left", "right"):
+    def _calcImageSize(self, image, widthlimit, heightlimit):
+        imgwidth = int(image.getAttribute(u"width"))
+        imgheight = int(image.getAttribute(u"height"))
+        if self.useOrientation:
+            orientation = image.getAttribute(u"orientation")
+            if orientation in ("left", "right"):
+                imgwidth, imgheight = imgheight, imgwidth
+        else:
             orientation = "up"
-        genname = "%s-%s-%s.jpg" % (str(image.getHash()),
-                                    limit,
-                                    str(orientation))
+        w = imgwidth
+        h = imgheight
+        if w > widthlimit:
+            h = widthlimit * h // w
+            w = widthlimit
+        if h > heightlimit:
+            w = heightlimit * w // h
+            h = heightlimit
+        return imgwidth, imgheight, w, h, orientation
+
+
+    def _getCacheImageName(self, image, width, height):
+        if self.useOrientation:
+            orientation = str(image.getAttribute(u"orientation"))
+            if orientation not in ("up", "down", "left", "right"):
+                orientation = "up"
+        else:
+            orientation = "up"
+        genname = "%s-%dx%d-%s.jpg" % (
+            str(image.getHash()),
+            width,
+            height,
+            orientation)
         return genname

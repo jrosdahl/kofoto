@@ -116,11 +116,6 @@
   remove handling of orientation from Kofoto altogether. Or make it
   configurable.
 
-* Add possibility of supplying pairs of sizes (AxB) in the size
-  options in ~/.kofoto/config. A pair specifies the rectangle that the
-  image must fit in. A single size specifies the side of a square, as
-  before.
-
 * Fix inconsistencies in commandline client commands. LysKOM text:
   10994865.
 
