@@ -1924,10 +1924,13 @@ class Image(_Object):
                     "EXIF DateTimeDigitized"]:
             value = tags.get(tag)
             if value and str(value) != "0000:00:00 00:00:00":
-                a = str(value).split(":")
-                if len(a) == 5:
-                    value = u"-".join(a[0:2] + [":".join(a[2:5])])
-                    self.setAttribute(u"captured", value)
+                m = re.match(
+                    r"(\d{4})[:/-](\d{2})[:/-](\d{2}) (\d{2}):(\d{2}):(\d{2})",
+                    str(value))
+                if m:
+                    self.setAttribute(
+                        u"captured",
+                        u"%s-%s-%s %s:%s:%s" % m.groups())
 
         value = tags.get("EXIF ExposureTime")
         if value:
