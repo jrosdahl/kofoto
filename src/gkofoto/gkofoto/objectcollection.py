@@ -397,6 +397,7 @@ class ObjectCollection(object):
         # TODO: Update objectCollection.
 
     def rotateImage(self, widget, angle):
+        env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
                 location = obj.getLocation().encode(env.codeset)

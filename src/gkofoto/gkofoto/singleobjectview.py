@@ -131,6 +131,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         model = self._objectCollection.getModel()
         # The following events are needed to update the previous and
         # next navigation buttons.
+        self._connect(model, "row_changed", self._rowChanged)
         self._connect(model, "rows_reordered", self._modelUpdated)
         self._connect(model, "row_deleted", self._modelUpdated)
         self._objectCollection.addInsertedRowCallback(self._modelUpdated)
@@ -141,6 +142,14 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())
 
+    def _rowChanged(self, model, path, iter, arg, *unused):
+        if path[0] == self.__selectedRowNr:
+            env.debug("selected object in SingleObjectView changed")
+            objectSelection = self._objectCollection.getObjectSelection()
+            obj = objectSelection[path[0]]
+            if not obj.isAlbum():
+                self.loadFile(obj.getLocation(), True)
+        
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])

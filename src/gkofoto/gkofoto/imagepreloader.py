@@ -53,6 +53,12 @@ class ImagePreloader(object):
             scaledMaxWidth,
             scaledMaxHeight)
 
+    def clearCache(self):
+        for ps in self.__preloadStates.values():
+            if ps.pixbufLoader:
+                ps.pixbufLoader.close()
+        self.__preloadStates = {}
+
     def getPixbuf(self, filename, maxWidth=None, maxHeight=None):
         """Get a pixbuf.
 
