@@ -375,7 +375,10 @@ def cmdPrintGraph(env, args):
 
 def printGraphHelper(env, object, position, level, visited):
     imgtmpl = "%(indent)s[I] %(name)s {%(position)s} <%(id)s>\n"
-    albtmpl = "%(indent)s[A] %(name)s {%(position)s} <%(id)s> (%(type)s)\n"
+    if env.verbose:
+        albtmpl = "%(indent)s[A] %(name)s {%(position)s} <%(id)s> (%(type)s)\n"
+    else:
+        albtmpl = "%(indent)s[A] %(name)s <%(id)s> (%(type)s)\n"
     indentspaces = PRINT_GRAPH_INDENT * " "
     if object.isAlbum():
         tag = object.getTag()
