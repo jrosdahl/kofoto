@@ -66,7 +66,7 @@ Special albums:
     root - The root album.
     _allalbums - An album with all (normal) albums as children.
 
-Design requirements and goals:
+Design requirements, goals and solutions:
 
     * It should be very hard to lose any information.
 
@@ -76,6 +76,10 @@ Design requirements and goals:
       - Original image files can be renamed/moved without loss of meta
         information.
       - Meta information is stored a database with ACID transactions.
+
+    * It should be easy to install and to get going.
+
+      - Requires no configuration of a database manager.
 
     * It should be possible to uniquely identify images.
 
