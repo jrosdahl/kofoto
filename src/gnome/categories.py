@@ -96,6 +96,7 @@ class Categories:
         categorySelection = categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
+        categorySelection.connect("changed", self.updateContextMenu)
 
         # Connect events
         categoryView.connect("button_press_event", self._button_pressed)
@@ -128,7 +129,6 @@ class Categories:
         selection = env.widgets["categoryView"].get_selection()
         self._selectedCategories = {}
         query = self._buildQuery(self._model, None, selection, "")
-        self.updateContextMenu()
         if query:
             self._source.set("query://" + query)
 
@@ -156,9 +156,14 @@ class Categories:
             else:
                 operator = "and"
             return query + " " + operator + " " + addition
-    
-    def updateContextMenu(self):
-        if len(self._selectedCategories) == 0:
+
+    def updateContextMenu(self, *foo):
+        categorySelection = env.widgets["categoryView"].get_selection()
+        self._nrOfSelectedCategories = 0
+        def inc(*garbage):
+            self._nrOfSelectedCategories += 1
+        categorySelection.selected_foreach(inc, None)
+        if self._nrOfSelectedCategories == 0:
             self._deleteItem.set_sensitive(gtk.FALSE)
             self._createChildItem.set_sensitive(gtk.FALSE)
             self._copyItem.set_sensitive(gtk.FALSE)
@@ -175,7 +180,7 @@ class Categories:
             else:
                 self._pasteItem.set_sensitive(gtk.FALSE)
             self._disconnectItem.set_sensitive(gtk.TRUE)
-        if len(self._selectedCategories) == 1:
+        if self._nrOfSelectedCategories == 1:
             self._propertiesItem.set_sensitive(gtk.TRUE)
         else:
             self._propertiesItem.set_sensitive(gtk.FALSE)
