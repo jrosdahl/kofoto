@@ -1144,6 +1144,8 @@ class Category:
             " where  categoryid = %s",
             newtag,
             self.getId())
+        del self.shelf.categorycache[self.tag]
+        self.shelf.categorycache[newtag] = self
         self.tag = newtag
         self.shelf._setModified()
 
