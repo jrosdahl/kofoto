@@ -312,7 +312,7 @@ class ObjectCollection(object):
             # TODO Show dialog error box?
             print "Not allowed to set album tag on image"
 
-    def createAlbumChild(self, widget, data):
+    def createAlbumChild(self, *unused):
         dialog = AlbumDialog("Create album")
         dialog.run(self._createAlbumChildHelper)
 

@@ -4,6 +4,7 @@ import string
 
 from environment import env
 from categorydialog import CategoryDialog
+from menuhandler import *
 from kofoto.search import *
 from kofoto.shelf import *
 
@@ -24,6 +25,8 @@ class Categories:
         self.__categoryView = env.widgets["categoryView"]
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
+        self.__categoryView.connect("focus-in-event", self._categoryViewFocusInEvent)
+        self.__categoryView.connect("focus-out-event", self._categoryViewFocusOutEvent)
         self.__mainWindow = mainWindow
 
         # Create toggle column
@@ -46,45 +49,47 @@ class Categories:
         #      If not, create some helper functions to construct the menu...
         self._contextMenu = gtk.Menu()
 
-        self._cutItem = gtk.MenuItem("Cut")
-        self._cutItem.show()
-        self._cutItem.connect("activate", self._cutCategory, None)
-        self._contextMenu.append(self._cutItem)
+        self._contextMenuGroup = MenuGroup()
+        self._contextMenuGroup.addStockImageMenuItem(
+            self.__cutCategoryLabel,
+            gtk.STOCK_CUT,
+            self._cutCategory)
+        self._contextMenuGroup.addStockImageMenuItem(
+            self.__copyCategoryLabel,
+            gtk.STOCK_COPY,
+            self._copyCategory)
+        self._contextMenuGroup.addStockImageMenuItem(
+            self.__pasteCategoryLabel,
+            gtk.STOCK_PASTE,
+            self._pasteCategory)
+        self._contextMenuGroup.addStockImageMenuItem(
+            self.__destroyCategoryLabel,
+            gtk.STOCK_DELETE,
+            self._deleteCategories)
+        self._contextMenuGroup.addMenuItem(
+            self.__disconnectCategoryLabel,
+            self._disconnectCategory)
+        self._contextMenuGroup.addMenuItem(
+            self.__createChildCategoryLabel,
+            self._createChildCategory)
+        self._contextMenuGroup.addMenuItem(
+            self.__createRootCategoryLabel,
+            self._createRootCategory)
+        self._contextMenuGroup.addStockImageMenuItem(
+            self.__propertiesLabel,
+            gtk.STOCK_PROPERTIES,
+            self._editProperties)
 
-        self._copyItem = gtk.MenuItem("Copy")
-        self._copyItem.show()
-        self._copyItem.connect("activate", self._copyCategory, None)
-        self._contextMenu.append(self._copyItem)
+        for item in self._contextMenuGroup:
+            self._contextMenu.append(item)
 
-        self._pasteItem = gtk.MenuItem("Paste as child(ren)")
-        self._pasteItem.show()
-        self._pasteItem.connect("activate", self._pasteCategory, None)
-        self._contextMenu.append(self._pasteItem)
-
-        self._deleteItem = gtk.MenuItem("Destroy...")
-        self._deleteItem.show()
-        self._deleteItem.connect("activate", self._deleteCategories, None)
-        self._contextMenu.append(self._deleteItem)
-
-        self._disconnectItem = gtk.MenuItem("Disconnect from parent")
-        self._disconnectItem.show()
-        self._disconnectItem.connect("activate", self._disconnectCategory, None)
-        self._contextMenu.append(self._disconnectItem)
-
-        self._createChildItem = gtk.MenuItem("Create child")
-        self._createChildItem.show()
-        self._createChildItem.connect("activate", self._createChildCategory, None)
-        self._contextMenu.append(self._createChildItem)
-
-        self._createRootItem = gtk.MenuItem("Create root")
-        self._createRootItem.show()
-        self._createRootItem.connect("activate", self._createRootCategory, None)
-        self._contextMenu.append(self._createRootItem)
-
-        self._propertiesItem = gtk.MenuItem("Properties")
-        self._propertiesItem.show()
-        self._propertiesItem.connect("activate", self._editProperties, None)
-        self._contextMenu.append(self._propertiesItem)
+        # Init menubar items.
+        env.widgets["menubarDisconnectFromParent"].connect(
+            "activate", self._disconnectCategory, None)
+        env.widgets["menubarCreateChild"].connect(
+            "activate", self._createChildCategory, None)
+        env.widgets["menubarCreateRoot"].connect(
+            "activate", self._createRootCategory, None)
 
         # Init selection functions
         categorySelection = self.__categoryView.get_selection()
@@ -130,6 +135,26 @@ class Categories:
         query = self.__buildQueryFromSelection()
         if query:
             self.__mainWindow.loadQuery(query)
+
+    def _categoryViewFocusInEvent(self, widget, event):
+        self._menubarOids = []
+        for widgetName, function in [
+                ("menubarCut", lambda *x: self._cutCategory(None, None)),
+                ("menubarCopy", lambda *x: self._copyCategory(None, None)),
+                ("menubarPaste", lambda *x: self._pasteCategory(None, None)),
+                ("menubarDestroy", lambda *x: self._deleteCategories(None, None)),
+                ("menubarClear", lambda *x: widget.get_selection().unselect_all()),
+                ("menubarSelectAll", lambda *x: widget.get_selection().select_all()),
+                ("menubarProperties", lambda *x: self._editProperties(None, None)),
+                ]:
+            w = env.widgets[widgetName]
+            oid = w.connect("activate", function)
+            self._menubarOids.append((w, oid))
+        self.__updateContextMenu()
+
+    def _categoryViewFocusOutEvent(self, widget, event):
+        for (widget, oid) in self._menubarOids:
+            widget.disconnect(oid)
 
     def _categorySelectionChanged(self, selection):
         selectedCategoryRows = []
@@ -301,6 +326,15 @@ class Categories:
 ######################################################################
 ### Private
 
+    __cutCategoryLabel = "Cut"
+    __copyCategoryLabel = "Copy"
+    __pasteCategoryLabel = "Paste as child(ren)"
+    __destroyCategoryLabel = "Destroy..."
+    __disconnectCategoryLabel = "Disconnect from parent"
+    __createChildCategoryLabel = "Create child"
+    __createRootCategoryLabel = "Create root"
+    __propertiesLabel = "Properties"
+
     __COLUMN_CATEGORY_ID  = 0
     __COLUMN_DESCRIPTION  = 1
     __COLUMN_CONNECTED    = 2
@@ -326,27 +360,35 @@ class Categories:
 
     def __updateContextMenu(self):
         # TODO Create helper functions to use from this method
+        menubarWidgetNames = [
+                "menubarCut",
+                "menubarCopy",
+                "menubarPaste",
+                "menubarDestroy",
+                "menubarProperties",
+                "menubarDisconnectFromParent",
+                "menubarCreateChild",
+                "menubarCreateRoot",
+                ]
         if len(self.__selectedCategoriesIds) == 0:
-            self._deleteItem.set_sensitive(False)
-            self._createChildItem.set_sensitive(False)
-            self._copyItem.set_sensitive(False)
-            self._cutItem.set_sensitive(False)
-            self._pasteItem.set_sensitive(False)
-            self._disconnectItem.set_sensitive(False)
+            self._contextMenuGroup.disable()
+            for widgetName in menubarWidgetNames:
+                env.widgets[widgetName].set_sensitive(False)
+            self._contextMenuGroup[
+                self.__createRootCategoryLabel].set_sensitive(True)
+            env.widgets["menubarCreateRoot"].set_sensitive(True)
         else:
-            self._deleteItem.set_sensitive(True)
-            self._createChildItem.set_sensitive(True)
-            self._copyItem.set_sensitive(True)
-            self._cutItem.set_sensitive(True)
-            if env.clipboard.hasCategories():
-                self._pasteItem.set_sensitive(True)
-            else:
-                self._pasteItem.set_sensitive(False)
-            self._disconnectItem.set_sensitive(True)
-        if len(self.__selectedCategoriesIds) == 1:
-            self._propertiesItem.set_sensitive(True)
-        else:
-            self._propertiesItem.set_sensitive(False)
+            self._contextMenuGroup.enable()
+            for widgetName in menubarWidgetNames:
+                env.widgets[widgetName].set_sensitive(True)
+            if not env.clipboard.hasCategories():
+                self._contextMenuGroup[
+                    self.__pasteCategoryLabel].set_sensitive(False)
+                env.widgets["menubarPaste"].set_sensitive(False)
+        propertiesItem = self._contextMenuGroup[self.__propertiesLabel]
+        propertiesItemSensitive = len(self.__selectedCategoriesIds) == 1
+        propertiesItem.set_sensitive(propertiesItemSensitive)
+        env.widgets["menubarProperties"].set_sensitive(propertiesItemSensitive)
 
     def __updateToggleColumn(self):
         # find out which categories are connected, not connected or

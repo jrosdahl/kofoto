@@ -461,7 +461,7 @@
 		<widget class="GtkMenu" id="file1_menu">
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="save">
+		    <widget class="GtkImageMenuItem" id="menubarSave">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Save</property>
 		      <property name="use_underline">True</property>
@@ -469,7 +469,7 @@
 		      <accelerator key="s" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image14">
+			<widget class="GtkImage" id="image204">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-save</property>
 			  <property name="icon_size">1</property>
@@ -483,14 +483,14 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="revert">
+		    <widget class="GtkImageMenuItem" id="menubarRevert">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Revert</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_revert_activate" last_modification_time="Sat, 17 May 2003 15:02:14 GMT"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image15">
+			<widget class="GtkImage" id="image205">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-revert-to-saved</property>
 			  <property name="icon_size">1</property>
@@ -510,7 +510,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="quit">
+		    <widget class="GtkImageMenuItem" id="menubarQuit">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Quit</property>
 		      <property name="use_underline">True</property>
@@ -518,9 +518,523 @@
 		      <accelerator key="q" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 
 		      <child internal-child="image">
-			<widget class="GtkImage" id="image17">
+			<widget class="GtkImage" id="image206">
 			  <property name="visible">True</property>
 			  <property name="stock">gtk-quit</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="edit">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Edit</property>
+	      <property name="use_underline">True</property>
+	      <signal name="activate" handler="on_edit_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+
+	      <child>
+		<widget class="GtkMenu" id="edit_menu">
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarCut">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Cu_t</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarCut_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+		      <accelerator key="x" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image207">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-cut</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarCopy">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Copy</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarCopy_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+		      <accelerator key="c" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image208">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-copy</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarPaste">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Paste</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarPaste_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+		      <accelerator key="v" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image209">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-paste</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarDelete">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-delete</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_delete_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarDestroy">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Destroy...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_destroy_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image210">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-delete</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator1">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarClear">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">C_lear</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_clear_activate" last_modification_time="Sun, 11 Jul 2004 20:06:16 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image211">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-clear</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarSelectAll">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Select _all</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_select_all_activate" last_modification_time="Sun, 11 Jul 2004 19:26:27 GMT"/>
+		      <accelerator key="a" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator3">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarProperties">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-properties</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_menubarProperties_activate" last_modification_time="Wed, 14 Jul 2004 10:12:21 GMT"/>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menubarView">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_View</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="menubarView_menu">
+
+		  <child>
+		    <widget class="GtkRadioMenuItem" id="menubarThumbnailsView">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">I_cons</property>
+		      <property name="use_underline">True</property>
+		      <property name="active">False</property>
+		      <signal name="activate" handler="on_icons_view_activate" last_modification_time="Sun, 11 Jul 2004 19:28:48 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkRadioMenuItem" id="menubarObjectView">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Image</property>
+		      <property name="use_underline">True</property>
+		      <property name="active">False</property>
+		      <property name="group">menubarThumbnailsView</property>
+		      <signal name="activate" handler="on_image_view_activate" last_modification_time="Sun, 11 Jul 2004 19:28:48 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkRadioMenuItem" id="menubarTableView">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Table</property>
+		      <property name="use_underline">True</property>
+		      <property name="active">True</property>
+		      <property name="group">menubarThumbnailsView</property>
+		      <signal name="activate" handler="on_table_view_activate" last_modification_time="Sun, 11 Jul 2004 19:28:48 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator2">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarSortBy">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Sort by</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_sort_by_activate" last_modification_time="Sun, 11 Jul 2004 19:58:39 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator6">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarNextImage">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Next image</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarNextImage_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image212">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-go-forward</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarPreviousImage">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Previous image</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarPreviousImage_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image213">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-go-back</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarZoom">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Zoom</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarZoom_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+
+		      <child>
+			<widget class="GtkMenu" id="menubarZoom_menu">
+
+			  <child>
+			    <widget class="GtkMenuItem" id="menubarActualSize">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">_Actual size</property>
+			      <property name="use_underline">True</property>
+			      <signal name="activate" handler="on_menubarActualSize_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkMenuItem" id="menubarZoomToFit">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Zoom to _fit</property>
+			      <property name="use_underline">True</property>
+			      <signal name="activate" handler="on_menubarZoomToFit_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkMenuItem" id="menubarZoomIn">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Zoom _in</property>
+			      <property name="use_underline">True</property>
+			      <signal name="activate" handler="on_menubarZoomIn_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkMenuItem" id="menubarZoomOut">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Zoom _out</property>
+			      <property name="use_underline">True</property>
+			      <signal name="activate" handler="on_menubarZoomOut_activate" last_modification_time="Wed, 21 Jul 2004 14:33:49 GMT"/>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menubarAlbum">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Album</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="menubarAlbum_menu">
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarCreateAlbumChild">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Create album child...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_create_album_child_activate" last_modification_time="Sun, 11 Jul 2004 19:57:53 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarRegisterAndAddImages">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Register and add images...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_register_and_add_images1_activate" last_modification_time="Sun, 11 Jul 2004 19:57:53 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarRegisterImages">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Register images...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_register_images1_activate" last_modification_time="Sun, 11 Jul 2004 19:57:53 GMT"/>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menubarImage">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Image</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="menubarImage_menu">
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarOpenImage">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Open in external program...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_open_image_activate" last_modification_time="Sun, 11 Jul 2004 19:52:02 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image214">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-open</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarRotateLeft">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Rotate _left</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_rotate_left_activate" last_modification_time="Sun, 11 Jul 2004 19:52:02 GMT"/>
+		      <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image215">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-add</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarRotateRight">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Rotate _right</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_rotate_right_activate" last_modification_time="Sun, 11 Jul 2004 19:52:02 GMT"/>
+		      <accelerator key="R" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image216">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-add</property>
+			  <property name="icon_size">1</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menubarCategory">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Category</property>
+	      <property name="use_underline">True</property>
+	      <signal name="activate" handler="on_menubarCategory_activate" last_modification_time="Wed, 14 Jul 2004 10:12:21 GMT"/>
+
+	      <child>
+		<widget class="GtkMenu" id="menubarCategory_menu">
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarDisconnectFromParent">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Disconnect from parent</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarDisconnectFromParent_activate" last_modification_time="Wed, 14 Jul 2004 10:12:21 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarCreateChild">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Create child...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarCreateChild_activate" last_modification_time="Wed, 14 Jul 2004 10:12:21 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarCreateRoot">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Create root...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarCreateRoot_activate" last_modification_time="Wed, 14 Jul 2004 10:12:21 GMT"/>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menubarHelp">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Help</property>
+	      <property name="use_underline">True</property>
+	      <signal name="activate" handler="on_help_activate" last_modification_time="Sun, 11 Jul 2004 20:05:01 GMT"/>
+
+	      <child>
+		<widget class="GtkMenu" id="menubarHelp_menu">
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="menubarAbout">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_About Kofoto...</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_about_activate" last_modification_time="Sun, 11 Jul 2004 20:05:01 GMT"/>
+
+		      <child internal-child="image">
+			<widget class="GtkImage" id="image217">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-add</property>
 			  <property name="icon_size">1</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>

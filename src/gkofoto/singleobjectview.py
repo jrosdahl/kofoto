@@ -16,11 +16,17 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self._viewWidget.add(self)
         self.show_all()
         env.widgets["nextButton"].connect("clicked", self._goto, 1)
+        env.widgets["menubarNextImage"].connect("activate", self._goto, 1)
         env.widgets["previousButton"].connect("clicked", self._goto, -1)
+        env.widgets["menubarPreviousImage"].connect("activate", self._goto, -1)
         env.widgets["zoomToFit"].connect("clicked", self.fitToWindow)
+        env.widgets["menubarZoomToFit"].connect("activate", self.fitToWindow)
         env.widgets["zoom100"].connect("clicked", self.zoom100)
+        env.widgets["menubarActualSize"].connect("activate", self.zoom100)
         env.widgets["zoomIn"].connect("clicked", self.zoomIn)
+        env.widgets["menubarZoomIn"].connect("activate", self.zoomIn)
         env.widgets["zoomOut"].connect("clicked", self.zoomOut)
+        env.widgets["menubarZoomOut"].connect("activate", self.zoomOut)
         self.connect("button_press_event", self._mouse_button_pressed)
         self.__selectionLocked = False
 
@@ -50,36 +56,57 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                     self.loadFile(env.albumIconFileName, False)
                 else:
                     self.loadFile(selectedObject.getLocation(), False)
-            if self.__selectedRowNr <= 0:
-                env.widgets["previousButton"].set_sensitive(False)
-            else:
-                env.widgets["previousButton"].set_sensitive(True)
-            if (self.__selectedRowNr == -1 or self.__selectedRowNr >= len(model) - 1):
-                env.widgets["nextButton"].set_sensitive(False)
-            else:
-                env.widgets["nextButton"].set_sensitive(True)
+            enablePreviousButton = (self.__selectedRowNr > 0)
+            env.widgets["previousButton"].set_sensitive(enablePreviousButton)
+            env.widgets["menubarPreviousImage"].set_sensitive(enablePreviousButton)
+            enableNextButton = (self.__selectedRowNr != -1 and
+                                self.__selectedRowNr < len(model) - 1)
+            env.widgets["nextButton"].set_sensitive(enableNextButton)
+            env.widgets["menubarNextImage"].set_sensitive(enableNextButton)
             self.__selectionLocked = False
         self._updateContextMenu()
+
+        # Override sensitiveness set in _updateContextMenu.
+        for widgetName in [
+                "menubarCut",
+                "menubarCopy",
+                "menubarDelete",
+                "menubarDestroy",
+                "menubarProperties",
+                "menubarCreateAlbumChild",
+                "menubarRegisterAndAddImages",
+                ]:
+            env.widgets[widgetName].set_sensitive(False)
 
     def _showHelper(self):
         env.enter("SingleObjectView.showHelper()")
         env.widgets["objectView"].show()
         env.widgets["objectView"].grab_focus()
-        env.widgets["zoom100"].set_sensitive(True)
-        env.widgets["zoomToFit"].set_sensitive(True)
-        env.widgets["zoomIn"].set_sensitive(True)
-        env.widgets["zoomOut"].set_sensitive(True)
+        for widgetName in [
+                "zoom100",
+                "zoomToFit",
+                "zoomIn",
+                "zoomOut",
+                "menubarZoom",
+                ]:
+            env.widgets[widgetName].set_sensitive(True)
         env.exit("SingleObjectView.showHelper()")
 
     def _hideHelper(self):
         env.enter("SingleObjectView.hideHelper()")
         env.widgets["objectView"].hide()
-        env.widgets["previousButton"].set_sensitive(False)
-        env.widgets["nextButton"].set_sensitive(False)
-        env.widgets["zoom100"].set_sensitive(False)
-        env.widgets["zoomToFit"].set_sensitive(False)
-        env.widgets["zoomIn"].set_sensitive(False)
-        env.widgets["zoomOut"].set_sensitive(False)
+        for widgetName in [
+                "previousButton",
+                "nextButton",
+                "menubarPreviousImage",
+                "menubarNextImage",
+                "zoom100",
+                "zoomToFit",
+                "zoomIn",
+                "zoomOut",
+                "menubarZoom",
+                ]:
+            env.widgets[widgetName].set_sensitive(False)
         env.exit("SingleObjectView.hideHelper()")
 
     def _connectObjectCollectionHelper(self):
@@ -123,3 +150,11 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])
+
+    def _viewWidgetFocusInEvent(self, widget, event):
+        ObjectCollectionView._viewWidgetFocusInEvent(self, widget, event)
+        for widgetName in [
+                "menubarClear",
+                "menubarSelectAll",
+                ]:
+            env.widgets[widgetName].set_sensitive(False)

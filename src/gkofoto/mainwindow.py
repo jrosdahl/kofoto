@@ -10,6 +10,7 @@ from gkofoto.thumbnailview import *
 from gkofoto.singleobjectview import *
 from gkofoto.objectcollectionfactory import *
 from gkofoto.objectcollection import *
+from gkofoto.registerimagesdialog import RegisterImagesDialog
 
 class MainWindow(gtk.Window):
     def __init__(self):
@@ -25,19 +26,38 @@ class MainWindow(gtk.Window):
         env.widgets["thumbnailsViewToggleButton"].get_child().add(self.getIconImage("thumbnailsview.png"))
         env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
         env.widgets["objectViewToggleButton"].get_child().add(self.getIconImage("objectview.png"))
+        env.widgets["menubarObjectView"].connect("activate", self._toggleObjectView)
         env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
         env.widgets["tableViewToggleButton"].get_child().add(self.getIconImage("tableview.png"))
-        env.widgets["save"].connect("activate", env.controller.save)
-        env.widgets["revert"].connect("activate", env.controller.revert)
-        env.widgets["quit"].connect("activate", env.controller.quit)
-        env.widgets["save"].set_sensitive(False)
-        env.widgets["revert"].set_sensitive(False)
+        env.widgets["menubarTableView"].connect("activate", self._toggleTableView)
         env.widgets["previousButton"].set_sensitive(False)
         env.widgets["nextButton"].set_sensitive(False)
         env.widgets["zoom100"].set_sensitive(False)
         env.widgets["zoomToFit"].set_sensitive(False)
         env.widgets["zoomIn"].set_sensitive(False)
         env.widgets["zoomOut"].set_sensitive(False)
+
+        env.widgets["menubarSave"].connect("activate", env.controller.save)
+        env.widgets["menubarSave"].set_sensitive(False)
+        env.widgets["menubarRevert"].connect("activate", env.controller.revert)
+        env.widgets["menubarRevert"].set_sensitive(False)
+        env.widgets["menubarQuit"].connect("activate", env.controller.quit)
+
+        env.widgets["menubarThumbnailsView"].set_sensitive(False)
+
+        env.widgets["menubarNextImage"].set_sensitive(False)
+        env.widgets["menubarPreviousImage"].set_sensitive(False)
+        env.widgets["menubarZoom"].set_sensitive(False)
+
+        env.widgets["menubarRegisterImages"].connect("activate", self.registerImages, None)
+
+        env.widgets["menubarRotateLeft"].get_children()[1].set_from_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+        env.widgets["menubarRotateRight"].get_children()[1].set_from_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+        env.widgets["menubarAbout"].get_children()[1].set_from_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
+
         self.__sourceEntry.connect("activate", self._sourceEntryActivated)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
@@ -71,6 +91,10 @@ class MainWindow(gtk.Window):
 
     def reloadAlbumTree(self):
         self.__albums.loadAlbumTree()
+
+    def registerImages(self, widget, data):
+        dialog = RegisterImagesDialog()
+        dialog.run()
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
@@ -109,8 +133,12 @@ class MainWindow(gtk.Window):
         if not self._toggleLock:
             self._toggleLock = True
             button.set_active(True)
+            env.widgets["thumbnailsViewToggleButton"].set_active(True)
             env.widgets["objectViewToggleButton"].set_active(False)
             env.widgets["tableViewToggleButton"].set_active(False)
+            env.widgets["menubarThumbnailsView"].set_active(True)
+            env.widgets["menubarObjectView"].set_active(False)
+            env.widgets["menubarTableView"].set_active(False)
             self.__showThumbnailView()
             self._toggleLock = False
 
@@ -118,8 +146,12 @@ class MainWindow(gtk.Window):
         if not self._toggleLock:
             self._toggleLock = True
             button.set_active(True)
-            env.widgets["tableViewToggleButton"].set_active(False)
             env.widgets["thumbnailsViewToggleButton"].set_active(False)
+            env.widgets["objectViewToggleButton"].set_active(True)
+            env.widgets["tableViewToggleButton"].set_active(False)
+            env.widgets["menubarThumbnailsView"].set_active(False)
+            env.widgets["menubarObjectView"].set_active(True)
+            env.widgets["menubarTableView"].set_active(False)
             self.__showSingleObjectView()
             self._toggleLock = False
 
@@ -129,12 +161,16 @@ class MainWindow(gtk.Window):
             button.set_active(True)
             env.widgets["thumbnailsViewToggleButton"].set_active(False)
             env.widgets["objectViewToggleButton"].set_active(False)
+            env.widgets["tableViewToggleButton"].set_active(True)
+            env.widgets["menubarThumbnailsView"].set_active(False)
+            env.widgets["menubarObjectView"].set_active(False)
+            env.widgets["menubarTableView"].set_active(True)
             self.__showTableView()
             self._toggleLock = False
 
     def _shelfModificationChangedCallback(self, modified):
-        env.widgets["revert"].set_sensitive(modified)
-        env.widgets["save"].set_sensitive(modified)
+        env.widgets["menubarRevert"].set_sensitive(modified)
+        env.widgets["menubarSave"].set_sensitive(modified)
 
     def __setObjectCollection(self, objectCollection):
         if self.__currentObjectCollection != objectCollection:

@@ -5,6 +5,7 @@ from gkofoto.objectcollectionview import *
 from sets import Set
 from objectcollection import *
 from menuhandler import *
+
 class TableView(ObjectCollectionView):
 
 ###############################################################################
@@ -21,6 +22,7 @@ class TableView(ObjectCollectionView):
         self.__userChoosenColumns = {}
         self.__createdColumns = {}
         self.__editedCallbacks = {}
+        self._connectedOids = []
         # Import the users setting in the configuration file for
         # which columns that shall be shown.
         columnLocation = 0
@@ -46,6 +48,7 @@ class TableView(ObjectCollectionView):
                 self._viewWidget.scroll_to_cell(rowNr, None, False, 0, 0)
             self.__selectionLocked = False
         self._updateContextMenu()
+        self._updateMenubarSortMenu()
 
     def fieldsDisabled(self, fields):
         env.debug("Table view disable fields: " + str(fields))
@@ -117,19 +120,26 @@ class TableView(ObjectCollectionView):
     def _thawHelper(self):
         env.enter("TableView.thawHelper()")
         self._initDragAndDrop()
-        self._connect(self._viewWidget.get_selection(), 'changed', self._widgetSelectionChanged)
+        self._connect(self._viewWidget, "focus-in-event", self._treeViewFocusInEvent)
+        self._connect(self._viewWidget, "focus-out-event", self._treeViewFocusOutEvent)
+        self._connect(self._viewWidget.get_selection(), "changed", self._widgetSelectionChanged)
         env.exit("TableView.thawHelper()")
 
     def _createContextMenu(self, objectCollection):
         ObjectCollectionView._createContextMenu(self, objectCollection)
-        columnNames = list(objectCollection.getObjectMetadataMap().keys())
-        columnNames.sort()
-        self.__viewGroup = MenuGroup("View columns")
-        for columnName in columnNames:
-            self.__viewGroup.addCheckedMenuItem(columnName,
-                                                self._viewColumnToggled,
-                                                columnName)
+        self.__viewGroup = self.__createTableColumnsMenuGroup(objectCollection)
         self._contextMenu.add(self.__viewGroup.createGroupMenuItem())
+
+    def __createTableColumnsMenuGroup(self, objectCollection):
+        menuGroup = MenuGroup("View columns")
+        columnNames = objectCollection.getObjectMetadataMap().keys()
+        columnNames.sort()
+        for columnName in columnNames:
+            menuGroup.addCheckedMenuItem(
+                columnName,
+                self._viewColumnToggled,
+                columnName)
+        return menuGroup
 
     def _clearContextMenu(self):
         ObjectCollectionView._clearContextMenu(self)
@@ -138,7 +148,49 @@ class TableView(ObjectCollectionView):
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
-    def _widgetSelectionChanged(self, selection):
+    def _treeViewFocusInEvent(self, widget, event, data):
+        oc = self._objectCollection
+        for widgetName, function in [
+                ("menubarCut", self._objectCollection.cut),
+                ("menubarCopy", self._objectCollection.copy),
+                ("menubarPaste", self._objectCollection.paste),
+                ("menubarDestroy", oc.destroy),
+                ("menubarClear", lambda x: widget.get_selection().unselect_all()),
+                ("menubarSelectAll", lambda x: widget.get_selection().select_all()),
+                ("menubarCreateAlbumChild", oc.createAlbumChild),
+                ("menubarRegisterAndAddImages", oc.registerAndAddImages),
+                ("menubarProperties", oc.albumProperties),
+                ]:
+            w = env.widgets[widgetName]
+            oid = w.connect("activate", function)
+            self._connectedOids.append((w, oid))
+
+        self._updateContextMenu()
+
+        for widgetName in [
+                "menubarClear",
+                "menubarSelectAll"
+                ]:
+            env.widgets[widgetName].set_sensitive(True)
+
+    def _treeViewFocusOutEvent(self, widget, event, data):
+        for (widget, oid) in self._connectedOids:
+            widget.disconnect(oid)
+        self._connectedOids = []
+        for widgetName in [
+                "menubarCut",
+                "menubarCopy",
+                "menubarPaste",
+                "menubarDestroy",
+                "menubarClear",
+                "menubarSelectAll",
+                "menubarCreateAlbumChild",
+                "menubarRegisterAndAddImages",
+                "menubarProperties",
+                ]:
+            env.widgets[widgetName].set_sensitive(False)
+
+    def _widgetSelectionChanged(self, selection, data):
         if not self.__selectionLocked:
             env.enter("TableView selection changed")
             self.__selectionLocked = True

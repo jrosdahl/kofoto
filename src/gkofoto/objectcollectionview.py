@@ -22,8 +22,36 @@ class ObjectCollectionView:
             self.__hidden = False
             self.__connectObjectCollection(objectCollection)
             self._showHelper()
+            self._connectMenubarImageItems()
+            self._updateMenubarSortMenu()
         else:
             self.setObjectCollection(objectCollection)
+
+    def _connectMenubarImageItems(self):
+        self._connect(
+            env.widgets["menubarOpenImage"],
+            "activate",
+            self._objectCollection.openImage)
+        self._connect(
+            env.widgets["menubarRotateLeft"],
+            "activate",
+            self._objectCollection.rotateImage,
+            270)
+        self._connect(
+            env.widgets["menubarRotateRight"],
+            "activate",
+            self._objectCollection.rotateImage,
+            90)
+
+    def _updateMenubarSortMenu(self):
+        sortMenuGroup = self.__createSortMenuGroup(self._objectCollection)
+        sortByItem = env.widgets["menubarSortBy"]
+        if self._objectCollection.isSortable():
+            sortByItem.set_sensitive(True)
+            sortByItem.set_submenu(sortMenuGroup.createGroupMenu())
+        else:
+            sortByItem.remove_submenu()
+            sortByItem.set_sensitive(False)
 
     def hide(self):
         if not self.__hidden:
@@ -72,9 +100,13 @@ class ObjectCollectionView:
 ##############################################################################
 ### Methods used by and overloaded by subbclasses
 
-    def _connect(self, obj, signal, function):
-        oid = obj.connect(signal, function)
+    def _connect(self, obj, signal, function, data=None):
+        oid = obj.connect(signal, function, data)
         self.__connections.append((obj, oid))
+
+    def _disconnect(self, obj, oid):
+        obj.disconnect(oid)
+        self.__connections.remove((obj, oid))
 
     def _clearAllConnections(self):
         for (obj, oid) in self.__connections:
@@ -102,17 +134,23 @@ class ObjectCollectionView:
     def _clearContextMenu(self):
         env.debug("Clearing view context menu")
         self._contextMenu = None
-        self.__sortMenuGroup = None
         self.__clipboardMenuGroup = None
+        self.__objectMenuGroup = None
+        self.__albumMenuGroup = None
+        self.__imageMenuGroup = None
+        self.__sortMenuGroup = None
 
     def _updateContextMenu(self, *foo):
         env.debug("Updating context menu")
         self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
+        env.widgets["menubarDestroy"].set_sensitive(False)
         mutable = self._objectCollection.isMutable()
         if env.clipboard.hasObjects():
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
+            env.widgets["menubarPaste"].set_sensitive(mutable)
         else:
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(False)
+            env.widgets["menubarPaste"].set_sensitive(False)
         objectSelection = self._objectCollection.getObjectSelection()
         if objectSelection:
             model = self._objectCollection.getModel()
@@ -134,30 +172,63 @@ class ObjectCollectionView:
                     imagesSelected += 1
 
             self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable)
+            env.widgets["menubarCut"].set_sensitive(mutable)
             self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(True)
+            env.widgets["menubarCopy"].set_sensitive(True)
             self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable)
-            self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(
-                (imagesSelected == 0) ^ (albumsSelected == 0) and not rootAlbumSelected)
+            env.widgets["menubarDelete"].set_sensitive(mutable)
+            destroyActive = (imagesSelected == 0) ^ (albumsSelected == 0) and not rootAlbumSelected
+            self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(destroyActive)
+            env.widgets["menubarDestroy"].set_sensitive(destroyActive)
             if albumsSelected == 1 and imagesSelected == 0:
                 selectedAlbumId = model.get_value(
                     iterator, self._objectCollection.COLUMN_OBJECT_ID)
                 selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
                 if selectedAlbum.isMutable():
                     self.__albumMenuGroup.enable()
+                    env.widgets["menubarCreateAlbumChild"].set_sensitive(True)
+                    env.widgets["menubarRegisterAndAddImages"].set_sensitive(True)
+                    env.widgets["menubarProperties"].set_sensitive(True)
                 else:
                     self.__albumMenuGroup.disable()
                     self.__albumMenuGroup[self._objectCollection.getAlbumPropertiesLabel()].set_sensitive(True)
+                    env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
+                    env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+                    env.widgets["menubarProperties"].set_sensitive(True)
             else:
                 self.__albumMenuGroup.disable()
+                env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
+                env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+                env.widgets["menubarProperties"].set_sensitive(False)
             if albumsSelected == 0 and imagesSelected > 0:
                 self.__imageMenuGroup.enable()
+                env.widgets["menubarOpenImage"].set_sensitive(True)
+                env.widgets["menubarRotateLeft"].set_sensitive(True)
+                env.widgets["menubarRotateRight"].set_sensitive(True)
             else:
                 self.__imageMenuGroup.disable()
+                env.widgets["menubarOpenImage"].set_sensitive(False)
+                env.widgets["menubarRotateLeft"].set_sensitive(False)
+                env.widgets["menubarRotateRight"].set_sensitive(False)
         else:
             self.__clipboardMenuGroup.disable()
+            env.widgets["menubarCut"].set_sensitive(False)
+            env.widgets["menubarCopy"].set_sensitive(False)
+            env.widgets["menubarPaste"].set_sensitive(False)
+            env.widgets["menubarDelete"].set_sensitive(False)
+
             self.__objectMenuGroup.disable()
+            env.widgets["menubarDestroy"].set_sensitive(False)
+
             self.__albumMenuGroup.disable()
+            env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
+            env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+            env.widgets["menubarProperties"].set_sensitive(False)
+
             self.__imageMenuGroup.disable()
+            env.widgets["menubarOpenImage"].set_sensitive(False)
+            env.widgets["menubarRotateLeft"].set_sensitive(False)
+            env.widgets["menubarRotateRight"].set_sensitive(False)
 
 ###############################################################################
 ### Private
@@ -203,16 +274,21 @@ class ObjectCollectionView:
     def __createClipboardMenuGroup(self, oc):
         menuGroup = MenuGroup()
         env.debug("Creating clipboard menu")
-        menuGroup.addMenuItem(oc.getCutLabel(), oc.cut)
-        menuGroup.addMenuItem(oc.getCopyLabel(), oc.copy)
-        menuGroup.addMenuItem(oc.getPasteLabel(), oc.paste)
-        menuGroup.addMenuItem(oc.getDeleteLabel(), oc.delete)
+        menuGroup.addStockImageMenuItem(
+            oc.getCutLabel(), gtk.STOCK_CUT, oc.cut)
+        menuGroup.addStockImageMenuItem(
+            oc.getCopyLabel(), gtk.STOCK_COPY, oc.copy)
+        menuGroup.addStockImageMenuItem(
+            oc.getPasteLabel(), gtk.STOCK_PASTE, oc.paste)
+        menuGroup.addStockImageMenuItem(
+            oc.getDeleteLabel(), gtk.STOCK_DELETE, oc.delete)
         menuGroup.addSeparator()
         return menuGroup
 
     def __createObjectMenuGroup(self, oc):
         menuGroup = MenuGroup()
-        menuGroup.addMenuItem(oc.getDestroyLabel(), oc.destroy)
+        menuGroup.addStockImageMenuItem(
+            oc.getDestroyLabel(), gtk.STOCK_DELETE, oc.destroy)
         menuGroup.addSeparator()
         return menuGroup
 
@@ -222,17 +298,23 @@ class ObjectCollectionView:
             oc.getCreateAlbumChildLabel(), oc.createAlbumChild)
         menuGroup.addMenuItem(
             oc.getRegisterImagesLabel(), oc.registerAndAddImages)
-        menuGroup.addMenuItem(
-            oc.getAlbumPropertiesLabel(), oc.albumProperties)
+        menuGroup.addStockImageMenuItem(
+            oc.getAlbumPropertiesLabel(),
+            gtk.STOCK_PROPERTIES,
+            oc.albumProperties)
         menuGroup.addSeparator()
         return menuGroup
 
     def __createImageMenuGroup(self, oc):
         menuGroup = MenuGroup()
         menuGroup.addMenuItem(oc.getOpenImageLabel(), oc.openImage)
-        menuGroup.addMenuItem(
-            oc.getRotateImageLeftLabel(), oc.rotateImage, 270)
-        menuGroup.addMenuItem(
-            oc.getRotateImageRightLabel(), oc.rotateImage, 90)
+        menuGroup.addImageMenuItem(
+            oc.getRotateImageLeftLabel(),
+            os.path.join(env.iconDir, "rotateleft.png"),
+            oc.rotateImage, 270)
+        menuGroup.addImageMenuItem(
+            oc.getRotateImageRightLabel(),
+            os.path.join(env.iconDir, "rotateright.png"),
+            oc.rotateImage, 90)
         menuGroup.addSeparator()
         return menuGroup

@@ -28,17 +28,20 @@ class Albums:
         self.__mainWindow = mainWindow
         self.__albumView = env.widgets["albumView"]
         self.__albumView.set_model(self.__albumModel)
+        self.__albumView.connect("focus-in-event", self._treeViewFocusInEvent)
+        self.__albumView.connect("focus-out-event", self._treeViewFocusOutEvent)
         renderer = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Albums", renderer, text=self.__COLUMN_TEXT)
         column.set_clickable(True)
         self.__albumView.append_column(column)
         albumSelection = self.__albumView.get_selection()
-        albumSelection.connect('changed', self._albumSelectionUpdated)
+        albumSelection.connect("changed", self._albumSelectionUpdated)
         albumSelection.set_select_function(self._isSelectable, self.__albumModel)
         self.__contextMenu = self.__createContextMenu()
         self._albumSelectionUpdated()
         self.__albumView.connect("button_press_event", self._button_pressed)
         self.loadAlbumTree()
+        self._connectedOids = []
 
     def loadAlbumTree(self):
         env.shelf.flushObjectCache()
@@ -53,7 +56,7 @@ class Albums:
     def _isSelectable(self, path, model):
         return model[path][self.__COLUMN_SELECTABLE]
 
-    def _albumSelectionUpdated(self, selection=None):
+    def _albumSelectionUpdated(self, selection=None, load=True):
         if not selection:
             selection = self.__albumView.get_selection()
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
@@ -63,13 +66,18 @@ class Albums:
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iterator:
             albumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
-            self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
+            if load:
+                self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
             album = env.shelf.getAlbum(
                 albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID))
             createMenuItem.set_sensitive(album.isMutable())
+            env.widgets["menubarCreateAlbumChild"].set_sensitive(album.isMutable())
             registerMenuItem.set_sensitive(album.isMutable())
+            env.widgets["menubarRegisterAndAddImages"].set_sensitive(album.isMutable())
             destroyMenuItem.set_sensitive(album != env.shelf.getRootAlbum())
+            env.widgets["menubarDestroy"].set_sensitive(album != env.shelf.getRootAlbum())
             editMenuItem.set_sensitive(True)
+            env.widgets["menubarProperties"].set_sensitive(True)
         else:
             createMenuItem.set_sensitive(False)
             registerMenuItem.set_sensitive(False)
@@ -145,6 +153,36 @@ class Albums:
         else:
             return False
 
+    def _treeViewFocusInEvent(self, widget, event):
+        self._albumSelectionUpdated(None, load=False)
+        for widgetName, function in [
+                ("menubarCreateAlbumChild", self._createChildAlbum),
+                ("menubarRegisterAndAddImages", self._registerImages),
+                ("menubarProperties", self._editAlbum),
+                ]:
+            oid = env.widgets[widgetName].connect("activate", function, None)
+            self._connectedOids.append((env.widgets[widgetName], oid))
+        for widgetName, function in [
+                ("menubarCreateAlbumChild", self._createChildAlbum),
+                ("menubarRegisterAndAddImages", self._registerImages),
+                ("menubarProperties", self._editAlbum),
+                ("menubarDestroy", self._destroyAlbum),
+                ]:
+            w = env.widgets[widgetName]
+            oid = w.connect("activate", function, None)
+            self._connectedOids.append((w, oid))
+
+    def _treeViewFocusOutEvent(self, widget, event):
+        for (widget, oid) in self._connectedOids:
+            widget.disconnect(oid)
+        self._connectedOids = []
+        for widgetName in [
+                "menubarCreateAlbumChild",
+                "menubarRegisterAndAddImages",
+                "menubarProperties",
+                ]:
+            env.widgets[widgetName].set_sensitive(False)
+
 ###############################################################################
 ### Private
 
@@ -178,12 +216,14 @@ class Albums:
 
     def __createContextMenu(self):
         self.__menuGroup = MenuGroup()
-        self.__menuGroup.addMenuItem(self.__createAlbumLabel,
-                                     self._createChildAlbum)
-        self.__menuGroup.addMenuItem(self.__registerImagesLabel,
-                                     self._registerImages)
-        self.__menuGroup.addMenuItem(self.__destroyAlbumLabel,
-                                     self._destroyAlbum)
-        self.__menuGroup.addMenuItem(self.__editAlbumLabel,
-                                     self._editAlbum)
+        self.__menuGroup.addMenuItem(
+            self.__createAlbumLabel, self._createChildAlbum)
+        self.__menuGroup.addMenuItem(
+            self.__registerImagesLabel, self._registerImages)
+        self.__menuGroup.addMenuItem(
+            self.__destroyAlbumLabel, self._destroyAlbum)
+        self.__menuGroup.addStockImageMenuItem(
+            self.__editAlbumLabel,
+            gtk.STOCK_PROPERTIES,
+            self._editAlbum)
         return self.__menuGroup.createGroupMenu()

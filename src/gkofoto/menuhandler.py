@@ -11,6 +11,22 @@ class MenuGroup:
         item = gtk.MenuItem(label)
         self.__addItem(item, label, callback, callbackData)
 
+    def addStockImageMenuItem(self, label, stockId, callback,
+                              callbackData=None):
+        item = gtk.ImageMenuItem(label)
+        image = gtk.Image()
+        image.set_from_stock(stockId, gtk.ICON_SIZE_MENU)
+        item.set_image(image)
+        self.__addItem(item, label, callback, callbackData)
+
+    def addImageMenuItem(self, label, imageFilename, callback,
+                         callbackData=None):
+        item = gtk.ImageMenuItem(label)
+        image = gtk.Image()
+        image.set_from_file(imageFilename)
+        item.set_image(image)
+        self.__addItem(item, label, callback, callbackData)
+
     def addCheckedMenuItem(self, label, callback, callbackData=None):
         item = gtk.CheckMenuItem(label)
         self.__addItem(item, label, callback, callbackData)
