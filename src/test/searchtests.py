@@ -69,8 +69,6 @@ class TestSearch(TestShelfFixture):
             (u"a or b or c or d", [self.images[0], self.images[1]]),
             (ur' ((a and not b) or @gazonk != "hej \"ju\"") and c ', [self.images[1]]),
             (u"/alpha and a", [self.images[0], self.images[1]]),
-            (u"/gamma", []),
-            (u"/delta", self.images),
             (u"/epsilon", []),
             (u"/zeta", [self.images[0], self.images[1]]),
             ]

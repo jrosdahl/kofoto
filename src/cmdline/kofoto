@@ -161,8 +161,6 @@ def displayHelp():
         "\n"
         "    Type         Description\n"
         "    ------------------------\n"
-        "    allalbums    All albums, sorted by tag.\n"
-        "    allimages    All images, sorted by capture timestamp.\n"
         "    orphans      All albums and images that don't exist in any plain album.\n"
         "    plain        An ordinary container that holds albums and images.\n"
         "    search       An album containing the albums and images that match a search\n"

@@ -266,13 +266,9 @@ class TestShelfFixture(unittest.TestCase):
         del children[-1] # The last image becomes orphaned.
         alpha.setChildren(children)
         beta.setChildren(list(beta.getChildren()) + [children[-1]])
-        root.setChildren(list(root.getChildren()) + [
-            alpha,
-            beta,
-            self.shelf.createAlbum(u"gamma", AlbumType.AllAlbums),
-            self.shelf.createAlbum(u"delta", AlbumType.AllImages)])
-        self.shelf.createAlbum(u"epsilon", AlbumType.Plain) # Orphaned album.
-        zeta = self.shelf.createAlbum(u"zeta", AlbumType.Search)
+        root.setChildren(list(root.getChildren()) + [alpha, beta])
+        self.shelf.createAlbum(u"epsilon", u"plain") # Orphaned album.
+        zeta = self.shelf.createAlbum(u"zeta", u"search")
         zeta.setAttribute(u"query", u"a")
         root.setChildren(list(root.getChildren()) + [zeta])
 
@@ -299,20 +295,18 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getStatistics(self):
         s = self.shelf.getStatistics()
-        assert s["nalbums"] == 8
+        assert s["nalbums"] == 6
         assert s["nimages"] == 11
 
     def test_createdObjects(self):
         root = self.shelf.getRootAlbum()
         children = list(root.getChildren())
-        assert len(children) == 6
-        orphans, alpha, beta, gamma, delta, zeta = children
+        assert len(children) == 4
+        orphans, alpha, beta, zeta = children
         assert self.shelf.getAlbum(alpha.getId()) == alpha
         assert self.shelf.getAlbumByTag(u"beta") == beta
         assert len(list(alpha.getChildren())) == 11
         assert len(list(beta.getChildren())) == 1
-        assert len(list(gamma.getChildren())) == 8
-        assert len(list(delta.getChildren())) == 11
 
     def test_createdAttributes(self):
         imageversion = self.shelf.getImageVersionByLocation(
@@ -361,7 +355,7 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getAllAlbums(self):
         albums = list(self.shelf.getAllAlbums())
-        assert len(albums) == 8
+        assert len(albums) == 6
 
     def test_getAllImageVersions(self):
         imageversions = list(self.shelf.getAllImageVersions())
@@ -887,64 +881,6 @@ class TestImageVersion(TestShelfFixture):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
         imageversion.importExifTags() # TODO: Test more.
-
-class TestAllAlbumsAlbum(TestShelfFixture):
-    def test_getType(self):
-        alpha = self.shelf.getAlbumByTag(u"gamma")
-        assert alpha.getType() == "allalbums"
-
-    def test_isMutable(self):
-        alpha = self.shelf.getAlbumByTag(u"gamma")
-        assert not alpha.isMutable()
-
-    def test_getChildren(self):
-        gamma = self.shelf.getAlbumByTag(u"gamma")
-        assert len(list(gamma.getChildren())) == 8
-
-    def test_getAlbumChildren(self):
-        gamma = self.shelf.getAlbumByTag(u"gamma")
-        assert list(gamma.getAlbumChildren()) == list(gamma.getChildren())
-
-    def test_setChildren(self):
-        gamma = self.shelf.getAlbumByTag(u"gamma")
-        try:
-            gamma.setChildren([])
-        except UnsettableChildrenError:
-            pass
-        else:
-            assert False
-
-    def test_isAlbum(self):
-        assert self.shelf.getAlbumByTag(u"gamma").isAlbum()
-
-class TestAllImagesAlbum(TestShelfFixture):
-    def test_getType(self):
-        alpha = self.shelf.getAlbumByTag(u"delta")
-        assert alpha.getType() == "allimages"
-
-    def test_isMutable(self):
-        alpha = self.shelf.getAlbumByTag(u"delta")
-        assert not alpha.isMutable()
-
-    def test_getChildren(self):
-        delta = self.shelf.getAlbumByTag(u"delta")
-        assert len(list(delta.getChildren())) == 11
-
-    def test_getAlbumChildren(self):
-        delta = self.shelf.getAlbumByTag(u"delta")
-        assert list(delta.getAlbumChildren()) == []
-
-    def test_setChildren(self):
-        delta = self.shelf.getAlbumByTag(u"delta")
-        try:
-            delta.setChildren([])
-        except UnsettableChildrenError:
-            pass
-        else:
-            assert False
-
-    def test_isAlbum(self):
-        assert self.shelf.getAlbumByTag(u"delta").isAlbum()
 
 class TestOrphansAlbum(TestShelfFixture):
     def test_getType(self):

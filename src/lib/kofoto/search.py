@@ -187,14 +187,7 @@ class AlbumSearchNode:
 
     def getQuery(self):
         t = self._album.getType()
-        if t == "allalbums":
-            return "select 1 where null" # Return empty result set.
-        elif t == "allimages":
-            return (" select i.id"
-                    " from   image as i left join attribute as a"
-                    "            on i.id = a.object and a.name = 'captured'"
-                    " order by a.lcvalue, i.directory, i.filename")
-        elif t == "orphans":
+        if t == "orphans":
             return (" select i.id"
                     " from   image as i left join attribute as a"
                     " on     i.id = a.object and a.name = 'captured'"

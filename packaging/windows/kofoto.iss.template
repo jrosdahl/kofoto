@@ -1,6 +1,7 @@
 [Setup]
 AppName=Kofoto
 AppVerName=Kofoto %version%
+VersionInfoVersion=%version%
 AppPublisher=Joel Rosdahl & Ulrik Svensson
 AppPublisherURL=http://kofoto.rosdahl.net
 AppSupportURL=http://kofoto.rosdahl.net

@@ -120,7 +120,7 @@ schema = """
         tag         VARCHAR(256) NOT NULL,
         -- Whether it is possible to delete the album.
         deletable   INTEGER NOT NULL,
-        -- Album type (plain, orphans, allalbums, ...).
+        -- Album type (plain, orphans or search).
         type        VARCHAR(256) NOT NULL,
 
         UNIQUE      (tag),
@@ -456,8 +456,6 @@ class Shelf:
         self.categorycache = {}
         self.orphanAlbumsCache = None
         self.orphanImagesCache = None
-        self.allAlbumsCache = None
-        self.allImagesCache = None
         self.modified = False
         self.modificationCallbacks = []
         if _DEBUG:
@@ -592,8 +590,6 @@ class Shelf:
         self.objectcache = {}
         self.orphanAlbumsCache = None
         self.orphanImagesCache = None
-        self.allAlbumsCache = None
-        self.allImagesCache = None
 
 
     def getStatistics(self):
@@ -629,7 +625,6 @@ class Shelf:
                 tag,
                 albumtype)
             self._setModified()
-            self.allAlbumsCache = None
             self.orphanAlbumsCache = None
             return self.getAlbum(lastrowid)
         except sql.IntegrityError:
@@ -799,7 +794,6 @@ class Shelf:
             if x in self.objectcache:
                 del self.objectcache[x]
         self._setModified()
-        self.allAlbumsCache = None
         self.orphanAlbumsCache = None
 
 
@@ -849,7 +843,6 @@ class Shelf:
         image = self.getImage(imageid)
         image.importExifTags()
         self._setModified()
-        self.allImagesCache = None
         self.orphanImagesCache = None
         return image
 
@@ -1016,7 +1009,6 @@ class Shelf:
             if x in self.objectcache:
                 del self.objectcache[x]
         self._setModified()
-        self.allImagesCache = None
         self.orphanImagesCache = None
 
 
@@ -1263,8 +1255,6 @@ class Shelf:
 
     def _albumFactory(self, albumid, tag, albumtype):
         albumtypemap = {
-            "allalbums": AllAlbumsAlbum,
-            "allimages": AllImagesAlbum,
             "orphans": OrphansAlbum,
             "plain": PlainAlbum,
             "search": SearchAlbum,
@@ -1355,26 +1345,6 @@ class Shelf:
     def _setOrphanImagesCache(self, images):
         assert self.inTransaction
         self.orphanImagesCache = images
-
-
-    def _getAllAlbumsCache(self):
-        assert self.inTransaction
-        return self.allAlbumsCache
-
-
-    def _setAllAlbumsCache(self, albums):
-        assert self.inTransaction
-        self.allAlbumsCache = albums
-
-
-    def _getAllImagesCache(self):
-        assert self.inTransaction
-        return self.allImagesCache
-
-
-    def _setAllImagesCache(self, images):
-        assert self.inTransaction
-        self.allImagesCache = images
 
 
 class Category:
@@ -2087,85 +2057,6 @@ class MagicAlbum(Album):
 
     def setChildren(self, children):
         raise UnsettableChildrenError, self.getTag()
-
-
-class AllAlbumsAlbum(MagicAlbum):
-    """An album with all albums, sorted by tag."""
-
-    ##############################
-    # Public methods.
-
-    def getChildren(self):
-        """Get the album's children.
-
-        Returns an iterable returning the albums.
-        """
-        albums = self.shelf._getAllAlbumsCache()
-        if albums != None:
-            for album in albums:
-                yield album
-        else:
-            cursor = self.shelf._getConnection().cursor()
-            cursor.execute(
-                " select   id"
-                " from     album"
-                " order by tag")
-            albums = []
-            for (albumid,) in cursor:
-                album = self.shelf.getAlbum(albumid)
-                albums.append(album)
-                yield album
-            self.shelf._setAllAlbumsCache(albums)
-
-
-    def getAlbumChildren(self):
-        """Get the album's album children.
-
-        Returns an iterable returning the albums.
-        """
-        return self.getChildren()
-
-
-class AllImagesAlbum(MagicAlbum):
-    """An album with all images, sorted by capture timestamp."""
-
-    ##############################
-    # Public methods.
-
-    def getChildren(self):
-        """Get the album's children.
-
-        Returns an iterable returning the images.
-        """
-        images = self.shelf._getAllImagesCache()
-        if images != None:
-            for image in images:
-                yield image
-        else:
-            cursor = self.shelf._getConnection().cursor()
-            cursor.execute(
-                " select   i.id, i.hash, i.directory, i.filename, i.mtime,"
-                "          i.width, i.height"
-                " from     image as i left join attribute as a"
-                " on       i.id = a.object and a.name = 'captured'"
-                " order by a.lcvalue, i.directory, i.filename")
-            images = []
-            for (imageid, imghash, directory, filename, mtime, width,
-                 height) in cursor:
-                location = os.path.join(directory, filename)
-                image = self.shelf._imageFactory(
-                    imageid, imghash, location, mtime, width, height)
-                images.append(image)
-                yield image
-            self.shelf._setAllImagesCache(images)
-
-
-    def getAlbumChildren(self):
-        """Get the album's album children.
-
-        Returns an iterable returning the images.
-        """
-        return []
 
 
 class OrphansAlbum(MagicAlbum):
