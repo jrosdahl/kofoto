@@ -123,8 +123,8 @@ Magic albums that would be nice to have:
       Images can have the attribute "location" set to a list of
       locations that represent increasingly specific physical places.
       Example: Image1 with location set to "Sweden:Linköping:Lambohov"
-      and Image2 set to with location set to "Sweden:Linköping:Ryd"
-      would render an album graph like this:
+      and Image2 with location set to "Sweden:Linköping:Ryd" would
+      render an album graph like this:
 
           [A] Locations
               [A] Sweden
@@ -132,6 +132,16 @@ Magic albums that would be nice to have:
                       [A] Lambohov
                           [I] Image1
                       [A] Ryd
+                          [I] Image2
+
+    * Chronological with day granularity.
+
+          [A] Chronological
+              [A] 2003
+                  [A] March 2003
+                      [A] 17 March 2003
+                          [I] Image1
+                      [A] 19 March 2003
                           [I] Image2
 
 ======================================================================
