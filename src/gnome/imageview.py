@@ -64,8 +64,8 @@ class ImageView(gtk.ScrolledWindow):
             pixBufResized = self._pixBuf
         else:
             zoomMultiplicator = pow(self._ZOOMFACTOR, self._wantedZoom)
-            wantedWidth = self._pixBuf.get_width() * zoomMultiplicator 
-            wantedHeight = self._pixBuf.get_height() * zoomMultiplicator 
+            wantedWidth = int(self._pixBuf.get_width() * zoomMultiplicator)
+            wantedHeight = int(self._pixBuf.get_height() * zoomMultiplicator)
             if min(wantedWidth, wantedHeight) < self._MIN_IMAGE_SIZE:
                 # Too small image size
                 return

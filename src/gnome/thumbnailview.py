@@ -19,7 +19,6 @@ class ThumbnailView:
         widget.connect("select_icon", self._widgetIconSelected)
         widget.connect("unselect_icon", self._widgetIconUnselected)
         widget.connect("button_press_event", self._button_pressed)
-        self._emptyPixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, gtk.FALSE, 8, 10, 10)
         self.setModel(loadedImages)
         
     def setModel(self, loadedImages):
@@ -29,19 +28,23 @@ class ThumbnailView:
         del self._blockedConnections[:]
         self._model = loadedImages.model
         self._initFromModel()
-        c = self._model.connect("row_inserted", self.on_row_inserted)
+        c = self._model.connect("row_inserted", self._initFromModel)
         self._modelConnections.append(c)
         c = self._model.connect("row_changed", self.on_row_changed)
         self._modelConnections.append(c)
-        c = self._model.connect("row_deleted", self.on_row_deleted)
+        c = self._model.connect("row_deleted", self._initFromModel)
+        self._modelConnections.append(c)
+        c = self._model.connect("rows_reordered", self._initFromModel)
         self._modelConnections.append(c)
 
-    def _initFromModel(self):
+    def _initFromModel(self, *garbage):
+        print "init from Model"
         self._thumbnailList.clear()
         iter = self._model.get_iter_first()
         for pos in range(self._model.iter_n_children(None)):
             self._loadThumbnail(self._model, iter, pos)
             iter = self._model.iter_next(iter)
+        self.selectionUpdated()
         
     def _blockModel(self):
         for c in self._modelConnections:
@@ -56,8 +59,6 @@ class ThumbnailView:
 
     def _loadThumbnail(self, model, iter, pos):
         pixbuf = model.get_value(iter, Images.COLUMN_THUMBNAIL)
-        if not pixbuf:
-            pixbuf = self._emptyPixbuf
         imageId = model.get_value(iter, Images.COLUMN_IMAGE_ID)
         self._maxWidth = max(self._maxWidth, pixbuf.get_width())
         self._thumbnailList.set_icon_width(self._maxWidth)
@@ -65,9 +66,11 @@ class ThumbnailView:
 
     def freeze(self):
         self._thumbnailList.freeze()
+        self._blockModel()
 
     def thaw(self):
         self._thumbnailList.thaw()
+        self._unblockModel()
 
     def show(self):
         self._locked = gtk.TRUE
@@ -91,17 +94,7 @@ class ThumbnailView:
         self._loadThumbnail(model, iter, path[0])
         self._locked = gtk.FALSE
         self.selectionUpdated()
-
-    def on_row_inserted(self, model, path, iter):
-        self._loadThumbnail(model, iter, path[0])
-
-    def on_row_deleted(self, model, path):
-        self._thumbnailList.remove(path[0])
         
-    def on_rows_reordered(self, path, iter, new_order):
-        # TODO: Implement when sorting is introduced
-        print "on_rows_reordered not yet implemented"
-
     def _widgetIconSelected(self, widget, index, event):
         if not self._locked:
             self._locked = gtk.TRUE

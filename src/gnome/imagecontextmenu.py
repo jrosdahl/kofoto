@@ -23,10 +23,32 @@ class ImageContextMenu(gtk.Menu):
         self._rotateRightItem.show()
         self._rotateRightItem.connect("activate", images.rotate, 90)
         self.append(self._rotateRightItem)
-
+        
+        self._sortItem = gtk.MenuItem("Sort by")
+        sortMenu = gtk.Menu()
+        self._sortItem.set_submenu(sortMenu)
+        self._addSortItems(sortMenu, images)
+        self._sortItem.show()
+        self.append(self._sortItem)
+        
         self._selectedImages = selectedImages
         self.updateContextMenu()
 
+    def _addSortItems(self, parentMenu, images):
+        allAttributeNames = list(images.attributeNamesMap.keys())
+        allAttributeNames.sort()
+        group = None
+        for attributeName in allAttributeNames:
+            sortItem = gtk.RadioMenuItem(group, attributeName)
+            sortItem.connect("activate", images.sortByColumn, images.attributeNamesMap[attributeName])
+            if group == None:
+                group = sortItem
+            sortItem.show()
+            parentMenu.append(sortItem)
+            if attributeName == "captured": # TODO: Read from configuration file?
+                sortItem.activate()
+        
+                              
     def updateContextMenu(self):
         if len(self._selectedImages) == 0:
             self._unregisterItem.set_sensitive(gtk.FALSE)

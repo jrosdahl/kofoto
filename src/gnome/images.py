@@ -6,10 +6,11 @@ from kofoto.imagecache import *
 from kofoto.shelf import *
 
 from environment import env
+from mysortedmodel import *
 
 class Images:
+    _unsortedModel = None
     model = None
-    sortedModel = None
     _title = ""
     _imageCache = None
     
@@ -41,54 +42,43 @@ class Images:
         for attributeName in env.shelf.getAllAttributeNames():
             self.attributeNamesMap[attributeName] = len(columnsType)
             columnsType.append(gobject.TYPE_STRING)
-        self.model = gtk.ListStore(*columnsType)
-        # self.sortedModel = gtk.TreeModelSort(self.model)
-        # Sorting disabled...
-        self.sortedModel = self.model
-        
+        self._unsortedModel = gtk.ListStore(*columnsType)
+        self.model = MySortedModel(self._unsortedModel)
+
     def loadImageList(self, imageList):
-        self.model.clear()
+        self._unsortedModel.clear()
         gc.collect()
         self._thumbnailSize = 0
         for image in imageList:
-            iter = self.model.append()
-            self.model.set_value(iter, self.COLUMN_IMAGE_ID, image.getId()) 
-            self.model.set_value(iter, self.COLUMN_LOCATION, image.getLocation())
+            iter = self._unsortedModel.append()
+            self._unsortedModel.set_value(iter, self.COLUMN_IMAGE_ID, image.getId()) 
+            self._unsortedModel.set_value(iter, self.COLUMN_LOCATION, image.getLocation())
             for attribute, value in image.getAttributeMap().items():
-                self.model.set_value(iter, self.attributeNamesMap[attribute], value)
+                self._unsortedModel.set_value(iter, self.attributeNamesMap[attribute], value)
                 # TODO: update COLUMN_VALID_LOCATION
 
     def loadThumbnails(self, wantedThumbnailSize):
-        iter = self.model.get_iter_first()
+        iter = self._unsortedModel.get_iter_first()
         while iter:
             self._loadThumbnail(wantedThumbnailSize, iter)
-            iter = self.model.iter_next(iter)
+            iter = self._unsortedModel.iter_next(iter)
         self._thumbnailSize = wantedThumbnailSize
 
     def _loadThumbnail(self, wantedThumbnailSize, iter, reload=gtk.FALSE):
+        # Reload was used when thumbnail has been invalid and can not be reused.
+        # It is probably better to remove the "reload" parameter and instead
+        # remove thumbnails from the not-yet-existing-cache when needed.
         try:
-            imageId = self.model.get_value(iter, self.COLUMN_IMAGE_ID)
+            imageId = self._unsortedModel.get_value(iter, self.COLUMN_IMAGE_ID)
             image = env.shelf.getImage(imageId)
-            if wantedThumbnailSize > self._thumbnailSize or reload:
-                # Load a new thumbnail from image cache.
-                largeEnoughSizes = [x for x in env.imageSizes
-                                    if x >= wantedThumbnailSize]
-                if largeEnoughSizes:
-                    sizeToUse = largeEnoughSizes[0]
-                else:
-                    sizeToUse = wantedThumbnailSize
-                thumbnailLocation = self._imageCache.get(image, sizeToUse)
-                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
-            else:
-                # Reuse current thumbnail
-                pixbuf = self.model.get_value(iter, self.COLUMN_THUMBNAIL)
-            pixbuf = self.scalePixBuf(pixbuf, wantedThumbnailSize, wantedThumbnailSize)
-            self.model.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
+            thumbnailLocation = self._imageCache.get(image, wantedThumbnailSize)
+            pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
+            self._unsortedModel.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
         except IOError:
             # TODO: Show some kind of error icon?
             print "IOError"
-        
-        
+
+
     def scalePixBuf(self, pixbuf, maxWidth, maxHeight):
         scale = min(float(maxWidth) / pixbuf.get_width(), float(maxHeight) / pixbuf.get_height())
         scale = min(1, scale)
@@ -103,18 +93,18 @@ class Images:
     def unregisterImages(self, *foo):
         imageIdList = list(self._selectedImages)
         self._selectedImages.clear()
-        for row in self.model:
+        for row in self._unsortedModel:
             if row[self.COLUMN_IMAGE_ID] in imageIdList:
                 env.shelf.deleteImage(row[self.COLUMN_IMAGE_ID])
-                self.model.remove(row.iter)
+                self._unsortedModel.remove(row.iter)
 
     def rotate(self, button, angle):
         # TODO: Make it possible for the user to configure if a rotation
         # shall rotate the image or only update the orientation attribute?
-        for row in self.model:
+        for row in self._unsortedModel:
             if row[self.COLUMN_IMAGE_ID] in self._selectedImages:
                 image = env.shelf.getImage(row[self.COLUMN_IMAGE_ID])
-                location = image.getLocation()
+                location = image.getLocation().encode(env.codeset)
                 # TODO: Read command from configuration file?
                 command = "jpegtran -rotate %s -perfect -copy all -outfile %s %s" % (angle, location, location)
                 result = os.system(command)
@@ -125,3 +115,6 @@ class Images:
                     print "failed to execute:", command
                 self._loadThumbnail(100, row.iter, reload=gtk.TRUE)
                 
+    def sortByColumn(self, menuItem, column):
+        self.model.set_sort_column_id(column, gtk.SORT_DESCENDING)
+        

@@ -18,8 +18,8 @@ class TableView:
         self.setModel(loadedImages)
         
     def setModel(self, loadedImages):
-        self._tableView.set_model(loadedImages.model)
         self._model = loadedImages.model
+        self._tableView.set_model(self._model)
         for column in self._tableView.get_columns():
             self._tableView.remove_column(column)
         self._createThumbnailColumn()
@@ -98,4 +98,4 @@ class TableView:
     def _button_pressed(self, widget, event):
         if event.button == 3:
             self._contextMenu.popup(None,None,None,event.button,event.time)
-            return gtk.FALSE
+            return gtk.TRUE
