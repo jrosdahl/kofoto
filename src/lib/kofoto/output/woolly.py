@@ -770,7 +770,7 @@ class OutputGenerator(OutputEngine):
                     return self.env.shelf.getImage(thumbid)
                 except ImageDoesNotExistError:
                     pass
-            children = object.getChildren()
+            children = iter(object.getChildren())
             try:
                 return self._getFrontImage(children.next(), visited)
             except StopIteration:
