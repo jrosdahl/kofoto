@@ -146,8 +146,5 @@
 
 * Slideshow functionality in gkofoto.
 
-* Add keyboard shortcuts for the forward/backward buttons in gkofoto.
-  (forward=space? backward=b?)
-
 * Add possibility to edit attributes for multiple objects at once, in
   gkofoto.

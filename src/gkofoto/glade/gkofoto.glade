@@ -942,6 +942,7 @@
 		      <property name="label">gtk-go-back</property>
 		      <property name="use_stock">True</property>
 		      <property name="new_group">True</property>
+		      <accelerator key="b" modifiers="0" signal="clicked"/>		      
 		    </widget>
 		    <packing>
 		      <property name="new_group">True</property>
@@ -953,6 +954,7 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-go-forward</property>
 		      <property name="use_stock">True</property>
+		      <accelerator key="space" modifiers="0" signal="clicked"/>
 		    </widget>
 		  </child>
 		</widget>
