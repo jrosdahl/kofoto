@@ -20,7 +20,7 @@ class Albums:
         albumView.set_model(self.__albumModel)
         renderer = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Albums", renderer, text=self.__COLUMN_TAG)
-        column.set_clickable(gtk.TRUE)
+        column.set_clickable(True)
         albumView.append_column(column)
         albumSelection = albumView.get_selection()
         albumSelection.connect('changed', self._albumSelectionHandler)
@@ -30,7 +30,7 @@ class Albums:
     def loadAlbumTree(self):
         self.__albumModel.clear()
         self.__loadAlbumTreeHelper()
-        env.widgets["albumView"].expand_row(0, gtk.FALSE) # Expand root album
+        env.widgets["albumView"].expand_row(0, False) # Expand root album
         
 
 ###############################################################################
@@ -53,19 +53,17 @@ class Albums:
     __COLUMN_TYPE       = 2
     __COLUMN_SELECTABLE = 3
 
-    __albumModel = None
-
     def __loadAlbumTreeHelper(self, parentAlbum=None, album=env.shelf.getRootAlbum(), visited=[]):
         iter = self.__albumModel.append(parentAlbum)
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?        
         self.__albumModel.set_value(iter, self.__COLUMN_ALBUM_ID, album.getId())
         self.__albumModel.set_value(iter, self.__COLUMN_TYPE, album.getType())
         self.__albumModel.set_value(iter, self.__COLUMN_TAG, album.getTag())
-        self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, gtk.TRUE)
+        self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, True)
         if album.getId() not in visited:
             for child in album.getAlbumChildren():
                 self.__loadAlbumTreeHelper(iter, child, visited + [album.getId()])
         else:
             iter = self.__albumModel.insert_before(iter, None)
             self.__albumModel.set_value(iter, self.__COLUMN_TAG, "[...]")                        
-            self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, gtk.FALSE)
+            self.__albumModel.set_value(iter, self.__COLUMN_SELECTABLE, False)

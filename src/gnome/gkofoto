@@ -29,17 +29,17 @@ class Controller:
         self.__factory = ObjectCollectionFactory()
         currentObjects = self.__factory.getDefaultObjectCollection()
         self.__mainWindow = MainWindow(currentObjects)
-        env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
+        env.widgets["mainWindow"].connect('destroy', self.quit, False)
         env.widgets["mainWindow"].show()
-        env.shelf.begin()
+        currentObjects = None
         gtk.main()
 
-    def quit(self, gnomeApp, cancelButton=gtk.TRUE):
+    def quit(self, gnomeApp, cancelButton=True):
         if env.shelf.isModified():
             widgets = gtk.glade.XML(env.gladeFile, "quitDialog")
             quitDialog = widgets.get_widget("quitDialog")
             if not cancelButton:
-                widgets.get_widget("cancel").set_sensitive(gtk.FALSE)
+                widgets.get_widget("cancel").set_sensitive(False)
             result = quitDialog.run()
             if result == 0:
                 print "commit"
@@ -95,9 +95,9 @@ class Controller:
     def clipboardHasCategory(self):
         # TODO        
         if isinstance(self._clipboard, ClipboardCategories):
-            return gtk.TRUE
+            return True
         else:
-            return gtk.FALSE
+            return False
 
 ######################################################################
 ### Start

@@ -1,8 +1,5 @@
 import gtk
-import gobject
-import gtk
 import string
-
 from environment import env
 from kofoto.shelf import *
 
@@ -54,11 +51,11 @@ class CategoryDialog:
            # Check that the tag name is valid
            verifyValidCategoryTag(tagString)
         except(BadCategoryTagError):
-            button.set_sensitive(gtk.FALSE)
+            button.set_sensitive(False)
             return
         try:
             # Make sure that the tag name is not already taken
             env.shelf.getCategory(tagString)
-            button.set_sensitive(gtk.FALSE)
+            button.set_sensitive(False)
         except(CategoryDoesNotExistError):
-            button.set_sensitive(gtk.TRUE)
+            button.set_sensitive(True)

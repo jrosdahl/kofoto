@@ -1,7 +1,4 @@
 import string
-import gtk
-import gtk.gdk
-
 from searchresult import *
 from albummembers import *
 from environment import env
@@ -9,17 +6,36 @@ from kofoto.search import *
 from kofoto.shelf import *
 
 class ObjectCollectionFactory:
+
+######################################################################
+### Public functions and constants
+    
     def __init__(self):
-        pass
+        env.debug("Init ObjectCollectionFactory")
+        self.__searchResult = SearchResult()
+        self.__albumMembers = AlbumMembers()
 
     def getObjectCollection(self, url):
+        env.debug("Object collection factory loading URL: " + url);
+        self.__clear()
         l = string.split(url, u"://", 1)
         if l[0] == u"query":
-            return SearchResult(l[1])
+            self.__searchResult.loadQuery(l[1])
+            return self.__searchResult
         elif l[0] == u"album":
-            return AlbumMembers(env.shelf.getAlbum(l[1]))
+            self.__albumMembers.loadAlbum(env.shelf.getAlbum(l[1]))
+            return self.__albumMembers
         else:
             raise "Unkown protocol" # TODO
 
     def getDefaultObjectCollection(self):
-        return AlbumMembers()
+        self.__clear()
+        self.__albumMembers.loadAlbum(env.shelf.getRootAlbum())
+        return self.__albumMembers
+
+######################################################################
+### Private functions
+    
+    def __clear(self):
+        self.__searchResult.clear()
+        self.__albumMembers.clear()

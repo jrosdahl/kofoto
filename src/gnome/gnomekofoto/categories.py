@@ -1,4 +1,3 @@
-import gtk
 import gobject
 import gtk
 import string
@@ -14,6 +13,9 @@ class Categories:
 ### Public
     
     def __init__(self, objectCollection):
+        self.__toggleColumn = None
+        self.__ignoreSelectEvent = False
+        self.__selectedCategoryRows = {}
         self.__categoryModel = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                              gobject.TYPE_STRING,   # DESCRIPTION
                                              gobject.TYPE_BOOLEAN,  # CONNECTED
@@ -22,7 +24,7 @@ class Categories:
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
         self.__objectCollection = objectCollection
-        self.__objectCollection.registerSelectionChangedCallback(self)
+        self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)
         
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
@@ -107,13 +109,12 @@ class Categories:
         self.objectSelectionChanged()
 
     def setCollection(self, objectCollection):
-        # TODO
-        #self.__objectCollection.unRegisterSelectionChangedCallback(self)
+        self.__objectCollection.getObjectSelection().removeChangedCallback(self.objectSelectionChanged)
         self.__objectCollection = objectCollection
-        #self.__objectCollection.registerSelectionChangedCallback(self)
+        self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)        
         self.objectSelectionChanged()
         
-    def objectSelectionChanged(self):
+    def objectSelectionChanged(self, objectSelection=None):
         self.__updateToggleColumn()
         self.__updateContextMenu()        
         self.__expandAndCollapseRows(env.widgets["autoExpand"].get_active(),
@@ -124,7 +125,6 @@ class Categories:
 ### Callback functions registered by this class but invoked from other classes.
 
     def _executeQuery(self, *foo):
-        # TODO is there any better python syntax to specify parameters we don't care about than *foo?
         query = self.__buildQueryFromSelection()
         if query:
             env.controller.loadUrl("query://" + query)
@@ -158,33 +158,33 @@ class Categories:
         category = env.shelf.getCategory(categoryRow[self.__COLUMN_CATEGORY_ID])
         if categoryRow[self.__COLUMN_INCONSISTENT] \
                or not categoryRow[self.__COLUMN_CONNECTED]:
-            for object in self.__objectCollection.getSelectedObjects():
+            for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
                 try:
                     object.addCategory(category)
                 except CategoryPresentError:
                     # The object was already connected to the category
                     pass
-            categoryRow[self.__COLUMN_INCONSISTENT] = gtk.FALSE
-            categoryRow[self.__COLUMN_CONNECTED] = gtk.TRUE
+            categoryRow[self.__COLUMN_INCONSISTENT] = False
+            categoryRow[self.__COLUMN_CONNECTED] = True
         else:
-            for object in self.__objectCollection.getSelectedObjects():
+            for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
                 object.removeCategory(category)
-            categoryRow[self.__COLUMN_CONNECTED] = gtk.FALSE
-            categoryRow[self.__COLUMN_INCONSISTENT] = gtk.FALSE            
+            categoryRow[self.__COLUMN_CONNECTED] = False
+            categoryRow[self.__COLUMN_INCONSISTENT] = False            
 
     def _button_pressed(self, treeView, event):
         if event.button == 3:
             self._contextMenu.popup(None,None,None,event.button,event.time)
-            return gtk.TRUE
+            return True
         rec = self.__categoryView.get_cell_area(0, self.__toggleColumn)
         if event.x <= (rec.x + rec.width):
             # Ignore selection event since the user clicked on the toggleColumn.
-            self.__ignoreSelectEvent = gtk.TRUE
-        return gtk.FALSE
+            self.__ignoreSelectEvent = True
+        return False
 
     def _button_released(self, treeView, event):
-        self.__ignoreSelectEvent = gtk.FALSE
-        return gtk.FALSE
+        self.__ignoreSelectEvent = False
+        return False
         
     def _rowActivated(self, a, b, c):
         # TODO What should happen if the user dubble-click on a category?
@@ -288,17 +288,14 @@ class Categories:
     __COLUMN_DESCRIPTION  = 1
     __COLUMN_CONNECTED    = 2
     __COLUMN_INCONSISTENT = 3
-    __toggleColumn = None
-    __ignoreSelectEvent = gtk.FALSE
-    __selectedCategoryRows = {}
         
     def __loadCategorySubTree(self, parent, category):
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?
         iter = self.__categoryModel.append(parent)
         self.__categoryModel.set_value(iter, self.__COLUMN_CATEGORY_ID, category.getId())
         self.__categoryModel.set_value(iter, self.__COLUMN_DESCRIPTION, category.getDescription())
-        self.__categoryModel.set_value(iter, self.__COLUMN_CONNECTED, gtk.FALSE)
-        self.__categoryModel.set_value(iter, self.__COLUMN_INCONSISTENT, gtk.FALSE)
+        self.__categoryModel.set_value(iter, self.__COLUMN_CONNECTED, False)
+        self.__categoryModel.set_value(iter, self.__COLUMN_INCONSISTENT, False)
         for child in category.getChildren():
             self.__loadCategorySubTree(iter, child)
             
@@ -318,33 +315,33 @@ class Categories:
     def __updateContextMenu(self):
         # TODO Create helper functions to use from this method
         if len(self.__selectedCategoryRows) == 0:
-            self._deleteItem.set_sensitive(gtk.FALSE)
-            self._createChildItem.set_sensitive(gtk.FALSE)
-            self._copyItem.set_sensitive(gtk.FALSE)
-            self._cutItem.set_sensitive(gtk.FALSE)
-            self._pasteItem.set_sensitive(gtk.FALSE)
-            self._disconnectItem.set_sensitive(gtk.FALSE)
+            self._deleteItem.set_sensitive(False)
+            self._createChildItem.set_sensitive(False)
+            self._copyItem.set_sensitive(False)
+            self._cutItem.set_sensitive(False)
+            self._pasteItem.set_sensitive(False)
+            self._disconnectItem.set_sensitive(False)
         else:
-            self._deleteItem.set_sensitive(gtk.TRUE)
-            self._createChildItem.set_sensitive(gtk.TRUE)
-            self._copyItem.set_sensitive(gtk.TRUE)
-            self._cutItem.set_sensitive(gtk.TRUE)
+            self._deleteItem.set_sensitive(True)
+            self._createChildItem.set_sensitive(True)
+            self._copyItem.set_sensitive(True)
+            self._cutItem.set_sensitive(True)
             if env.controller.clipboardHasCategory():
-                self._pasteItem.set_sensitive(gtk.TRUE)
+                self._pasteItem.set_sensitive(True)
             else:
-                self._pasteItem.set_sensitive(gtk.FALSE)
-            self._disconnectItem.set_sensitive(gtk.TRUE)
+                self._pasteItem.set_sensitive(False)
+            self._disconnectItem.set_sensitive(True)
         if len(self.__selectedCategoryRows) == 1:
-            self._propertiesItem.set_sensitive(gtk.TRUE)
+            self._propertiesItem.set_sensitive(True)
         else:
-            self._propertiesItem.set_sensitive(gtk.FALSE)
+            self._propertiesItem.set_sensitive(False)
         
     def __updateToggleColumn(self):        
         # find out which categories are connected, not connected or
         # partitionally connected to selected objects
         nrSelectedObjectsInCategory = {}
         nrSelectedObjects = 0
-        for object in self.__objectCollection.getSelectedObjects():
+        for object in self.__objectCollection.getObjectSelection().getSelectedObjects():
             nrSelectedObjects += 1
             for category in object.getCategories():
                 categoryId = category.getId()
@@ -362,16 +359,16 @@ class Categories:
         if categoryId in nrSelectedObjectsInCategory:
             if nrSelectedObjectsInCategory[categoryId] < nrSelectedObjects:
                 # Some of the selected objects are connected to the category
-                categoryRow[self.__COLUMN_CONNECTED] = gtk.FALSE
-                categoryRow[self.__COLUMN_INCONSISTENT] = gtk.TRUE
+                categoryRow[self.__COLUMN_CONNECTED] = False
+                categoryRow[self.__COLUMN_INCONSISTENT] = True
             else:
                 # All of the selected objects are connected to the category
-                categoryRow[self.__COLUMN_CONNECTED] = gtk.TRUE
-                categoryRow[self.__COLUMN_INCONSISTENT] = gtk.FALSE
+                categoryRow[self.__COLUMN_CONNECTED] = True
+                categoryRow[self.__COLUMN_INCONSISTENT] = False
         else:
             # None of the selected objects are connected to the category
-            categoryRow[self.__COLUMN_CONNECTED] = gtk.FALSE
-            categoryRow[self.__COLUMN_INCONSISTENT] = gtk.FALSE
+            categoryRow[self.__COLUMN_CONNECTED] = False
+            categoryRow[self.__COLUMN_INCONSISTENT] = False
 
     def __forEachCategoryRow(self, function, data=None, categoryRows=None):
         # We can't use gtk.TreeModel.foreach() since it does not pass a row
@@ -386,23 +383,23 @@ class Categories:
         if not categoryRows:
             categoryRows=self.__categoryModel
         for categoryRow in categoryRows:
-            expandThisRow = gtk.FALSE
+            expandThisRow = False
             # Expand all rows that are selected or has expanded childs
             if self.__expandAndCollapseRows(autoExpand, autoCollapse, categoryRow.iterchildren()) \
                    or self.__categoryView.get_selection().path_is_selected(categoryRow.path):
-                expandThisRow = gtk.TRUE
+                expandThisRow = True
             # Auto expand all rows that has a checked toggle
             if autoExpand:
                 if categoryRow[self.__COLUMN_CONNECTED] \
                        or categoryRow[self.__COLUMN_INCONSISTENT]:
-                    expandThisRow = gtk.TRUE
+                    expandThisRow = True
             if expandThisRow:
-                self.__categoryView.expand_row(categoryRow.path, gtk.FALSE)
-                return gtk.TRUE
+                self.__categoryView.expand_row(categoryRow.path, False)
+                return True
             # Auto collapse?
             elif autoCollapse:
                 self.__categoryView.collapse_row(categoryRow.path)
-            return gtk.FALSE
+            return False
                 
     def __connectChildToCategory(self, childId, parentId):
         # Update shelf
