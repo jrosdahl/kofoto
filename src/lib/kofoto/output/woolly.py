@@ -249,11 +249,14 @@ image_frame_template = '''<!DOCTYPE html
 <table width="100%%">
 <tr>
 <td></td>
-<td>
-<table width="100%%">
+<td align="left">
+<table>
 <tr>
-<td align="left">%(previous)s %(next)s</td>
-<td align="right">%(smaller)s %(larger)s</td>
+<td>%(previous)s</td>
+<td>%(next)s</td>
+<td><img src="images/1x1.png" height="1" width="20"></td>
+<td>%(smaller)s</td>
+<td>%(larger)s</td>
 </tr>
 </table>
 </td>
