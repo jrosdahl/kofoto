@@ -349,8 +349,8 @@ class ObjectCollection(object):
 
     def _albumTagEdited(self, renderer, path, value, column, columnNumber):
         model = self.getModel()
-        assert model.get_value(iterator, self.COLUMN_IS_ALBUM)
         iterator = model.get_iter(path)
+        assert model.get_value(iterator, self.COLUMN_IS_ALBUM)
         oldValue = model.get_value(iterator, columnNumber)
         if not oldValue:
             oldValue = u""
