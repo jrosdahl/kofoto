@@ -1524,7 +1524,7 @@ class _UnicodeCursorDecorator:
 
     def fetchone(self):
         try:
-            return self._unicodifyRow(self.cursor.next())
+            return self._unicodifyRow(self.cursor.fetchone())
         except StopIteration:
             return None
 
