@@ -355,12 +355,12 @@ class OutputGenerator(OutputEngine):
             for path in paths:
                 els = []
                 for node in path:
+                    title = node.getAttribute(u"title") or u""
                     els.append('''<a href="%(htmlref)s">%(title)s</a>''' % {
                         "htmlref": "%s-%s.html" % (
                             node.getTag().encode(self.charEnc),
                             size),
-                        "title": node.getAttribute(u"title").encode(
-                            self.charEnc),
+                        "title": title.encode(self.charEnc),
                         })
                 pathtextElements.append(" » ".join(els))
             pathtext = "<br />\n".join(pathtextElements)
@@ -384,7 +384,7 @@ class OutputGenerator(OutputEngine):
                         thumbwidth = self.env.thumbnailsize
                         thumbheight = 3 * self.env.thumbnailsize / 4
 
-                    title = subalbum.getAttribute(u"title")
+                    title = subalbum.getAttribute(u"title") or u""
                     subalbumtextElements.append(subalbum_entry_template % {
                         "htmlref": "%s-%d.html" % (
                             subalbum.getTag().encode(self.charEnc),
@@ -394,8 +394,7 @@ class OutputGenerator(OutputEngine):
                         "thumbwidth": thumbwidth,
                         "thumbwidth_minus_6": thumbwidth - 6,
                         "thumbimgref": thumbimgref,
-                        "title": subalbum.getAttribute(u"title").encode(
-                            self.charEnc),
+                        "title": title.encode(self.charEnc),
                         })
                     number += 1
                 subalbumtextElements.append("</tr>\n")
@@ -483,14 +482,14 @@ class OutputGenerator(OutputEngine):
         # ------------------------------------------------------------
 
         for size in self.env.imagesizes:
+            title = album.getAttribute(u"title") or u""
             self.writeFile(
                 "%s-%s-%s-frame.html" % (
                     album.getId(),
                     number,
                     size),
                 image_frameset_template % {
-                    "albumtitle": album.getAttribute(u"title").encode(
-                        self.charEnc),
+                    "albumtitle": title.encode(self.charEnc),
                     "charenc": self.charEnc,
                     "imageframeref": "%s-%s-%s.html" % (
                         album.getId(),
@@ -515,12 +514,12 @@ class OutputGenerator(OutputEngine):
             for path in paths:
                 els = []
                 for node in path:
+                    title = node.getAttribute(u"title") or u""
                     els.append('''<a href="%(htmlref)s" target="_top">%(title)s</a>''' % {
                         "htmlref": "%s-%s.html" % (
                             node.getTag().encode(self.charEnc),
                             size),
-                        "title": node.getAttribute(u"title").encode(
-                            self.charEnc),
+                        "title": title.encode(self.charEnc),
                         })
                 pathtextElements.append(" » ".join(els))
             pathtext = "<br />\n".join(pathtextElements)
