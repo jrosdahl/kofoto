@@ -19,7 +19,7 @@ import os
 DIRECTORIES_TO_IGNORE = [
     ".jimageviewpics",
     ".svn",
-    ".thumbnails"
+    ".thumbnails",
     ".xvpics",
     "CVS",
     "MT",
