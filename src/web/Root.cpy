@@ -69,7 +69,7 @@ mask:
           <img src="/image?imageid=<py-eval="image.getId()">&amp;widthlimit=128&amp;heightlimit=128" />
         </td>
         <td>
-        <textarea cols="40" rows="3" name="description-<py-eval="image.getId()">"><py-eval="description.encode('utf8')"></textarea>
+        <textarea cols="40" rows="3" name="description-<py-eval="image.getId()">"><py-eval="description.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').encode('utf8')"></textarea>
         </td>
         </tr>
         </py-for>
