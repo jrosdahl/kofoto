@@ -202,6 +202,7 @@ class Categories:
                 obj.removeCategory(category)
             categoryRow[self.__COLUMN_CONNECTED] = False
             categoryRow[self.__COLUMN_INCONSISTENT] = False
+        self.__updateToggleColumn()
 
     def _button_pressed(self, treeView, event):
         if event.button == 3:
