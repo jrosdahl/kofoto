@@ -7,18 +7,6 @@ import setup
 import shutil
 import sys
 
-def nuke(elements):
-    for element in elements:
-        for dirpath, dirnames, filenames in os.walk(element, topdown=False):
-            for filename in filenames:
-                os.remove(os.path.join(dirpath, filename))
-            for dirname in dirnames:
-                os.rmdir(os.path.join(dirpath, dirname))
-        if os.path.isdir(element):
-            os.rmdir(element)
-        else:
-            os.remove(element)
-
 options = {
     "py2exe": {
         "includes": "pango,atk,gobject",
