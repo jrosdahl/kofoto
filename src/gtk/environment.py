@@ -20,7 +20,7 @@ from kofoto.config import *
 locale.setlocale(locale.LC_ALL, "")
 CODESET = locale.nl_langinfo(locale.CODESET)
 
-conf = Config(DEFAULT_CONFIGFILE)
+conf = Config(DEFAULT_CONFIGFILE, CODESET)
 conf.read()
 genconf = conf.getGeneralConfig()
 

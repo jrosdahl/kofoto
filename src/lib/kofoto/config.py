@@ -17,12 +17,16 @@ class BadConfigurationValueError(KofotoError):
     pass
 
 class Config(ConfigParser):
-    def __init__(self, filename):
+    def __init__(self, filename, encoding):
         ConfigParser.__init__(self)
         self.filename = filename
+        self.encoding = encoding
 
     def read(self):
         ConfigParser.read(self, self.filename)
+
+    def get(self, *args, **kwargs):
+        return unicode(ConfigParser.get(self, *args, **kwargs), self.encoding)
 
     def getGeneralConfig(self):
         """Get configuration from the general section as a
@@ -30,8 +34,10 @@ class Config(ConfigParser):
 
         Contents:
 
-            * shelf_location: Location of the shelf.
-            * imagecache_location: Location of the image cache.
+            * shelf_location: Location of the shelf (encoded in the
+              local character encoding).
+            * imagecache_location: Location of the image cache
+              (encoded in the local character encoding).
             * thumbnail_image_size: Thumbnail size.
             * default_image_size: Default image size.
             * image_sizes: Image sizes as a sorted list of unique
@@ -56,7 +62,8 @@ class Config(ConfigParser):
         checkConfigurationItem("other_image_sizes", None)
         result = {}
         for key in ["shelf_location", "imagecache_location"]:
-            result[key] = os.path.expanduser(self.get("general", key))
+            result[key] = os.path.expanduser(
+                self.get("general", key).encode(self.encoding))
         for key in ["thumbnail_image_size", "default_image_size"]:
             result[key] = self.getint("general", key)
 

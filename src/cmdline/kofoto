@@ -666,7 +666,7 @@ def main(argv):
         sys.stdout.write("Created configuration file \"%s\".\n" %
                          configFilename)
     try:
-        conf = Config(configFilename)
+        conf = Config(configFilename, CODESET)
         conf.read()
         genconf = conf.getGeneralConfig()
     except MissingSectionHeaderError, x:
