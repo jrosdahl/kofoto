@@ -54,8 +54,8 @@ class SqlSet:
         cursor.execute("select * from %s" % self.tablename)
         while True:
             rows = cursor.fetchmany(10)
-            if len(rows) == 0:
-                raise StopIteration
+            if not rows:
+                break
             for row in rows:
                 yield row[0]
 
