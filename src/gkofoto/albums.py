@@ -79,7 +79,7 @@ class Albums:
             selectedAlbum = env.shelf.getRootAlbum()
         else:
             selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
-            selectedAlbum = env.shelf.getAlbum(selectedAlbumTag)
+            selectedAlbum = env.shelf.getAlbum(selectedAlbumTag.decode("utf-8"))
         children = list(selectedAlbum.getChildren())
         children.append(newAlbum)
         selectedAlbum.setChildren(children)
