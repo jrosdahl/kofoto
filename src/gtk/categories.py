@@ -180,7 +180,7 @@ class Categories:
             if env.widgets["autoExpand"].get_active():
                 env.widgets["categoryView"].expand_row(categoryRow.path, gtk.FALSE)
         elif collapse:
-            if env.widgets["autoCollapse"].get_active() and nrSelectedImages > 0:
+            if env.widgets["autoCollapse"].get_active() and nrSelectedImages > 0 and categoryRow[self._COLUMN_CATEGORY_ID] not in nrSelectedImagesInCategory:
                 env.widgets["categoryView"].collapse_row(categoryRow.path)
         # Update the checkbox indicating if the selected images are connected
         # to the category or not. 
