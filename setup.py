@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 
-if sys.argv[1] == "windows":
+if len(sys.argv) > 0 and sys.argv[1] == "windows":
     windows_mode = True
     del sys.argv[1]
 else:
