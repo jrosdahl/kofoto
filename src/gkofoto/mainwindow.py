@@ -32,6 +32,12 @@ class MainWindow(gtk.Window):
         env.widgets["save"].set_sensitive(False)
         env.widgets["revert"].set_sensitive(False)
         env.widgets["registerImages"].connect("activate", env.controller.registerImages)
+        env.widgets["previousButton"].set_sensitive(False)
+        env.widgets["nextButton"].set_sensitive(False)
+        env.widgets["zoom100"].set_sensitive(False)
+        env.widgets["zoomToFit"].set_sensitive(False)
+        env.widgets["zoomIn"].set_sensitive(False)
+        env.widgets["zoomOut"].set_sensitive(False)
         self.__sourceEntry.connect("activate", self._sourceEntryActivated)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
