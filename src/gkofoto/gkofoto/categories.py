@@ -265,6 +265,7 @@ class Categories:
                 message_format="Category loop detected.")
             dialog.run()
             dialog.destroy()
+        self.__updateToggleColumn()
         self.__expandAndCollapseRows(False, False)
 
     def _createRootCategory(self, item, data):
