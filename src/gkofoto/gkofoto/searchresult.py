@@ -11,6 +11,9 @@ class SearchResult(SortableObjectCollection):
     def __init__(self):
         SortableObjectCollection.__init__(self)
 
+    def isMutable(self):
+        return False
+
     def loadQuery(self, query):
         parser = Parser(env.shelf)
         self._loadObjectList(env.shelf.search(parser.parse(query)))

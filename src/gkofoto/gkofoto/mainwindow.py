@@ -21,6 +21,8 @@ class MainWindow(gtk.Window):
         self.__currentObjectCollection = None
         self._currentView = None
         self.__sourceEntry = env.widgets["sourceEntry"]
+        self.__filterEntry = env.widgets["filterEntry"]
+        self.__isFilterEnabledCheckbox = env.widgets["isFilterEnabledCheckbox"]
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
 #        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
@@ -65,7 +67,9 @@ class MainWindow(gtk.Window):
 
         env.widgets["menubarAbout"].connect("activate", self.showAboutBox)
 
-        self.__sourceEntry.connect("activate", self._sourceEntryActivated)
+        self.__sourceEntry.connect("activate", self._queryChanged)
+        self.__filterEntry.connect("activate", self._queryChanged)
+        self.__isFilterEnabledCheckbox.connect("toggled", self._queryChanged)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
 
@@ -77,18 +81,25 @@ class MainWindow(gtk.Window):
         self.__singleObjectView = SingleObjectView()
         self.__showTableView()
 
-    def _sourceEntryActivated(self, widget):
-        self.__setObjectCollection(self.__factory.getObjectCollection(
-            widget.get_text().decode("utf-8")))
+    def _queryChanged(self, *foo):
+        query = self.__sourceEntry.get_text().decode("utf-8")
+        self.loadQuery(query)
         self.__sourceEntry.grab_remove()
 
-    def setQuery(self, query):
+    def loadQuery(self, query):
         self.__query = query
         self.__sourceEntry.set_text(query)
-
-    def loadQuery(self, query):
-        self.setQuery(query)
-        self.__setObjectCollection(self.__factory.getObjectCollection(query))
+        useFilter = self.__isFilterEnabledCheckbox.get_active()
+        filter = self.__filterEntry.get_text().decode("utf-8")
+        self.__filterEntry.set_sensitive(useFilter)
+        if useFilter and len(filter) > 0:
+            self.__setObjectCollection(
+                self.__factory.getObjectCollection("(" + query +
+                                                   u") and (" +
+                                                   filter + ")"))
+        else:
+            self.__setObjectCollection(
+                self.__factory.getObjectCollection(query))
 
     def reload(self):
         self.__albums.loadAlbumTree()
