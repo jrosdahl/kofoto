@@ -1,28 +1,48 @@
 import gtk
+import gobject
 
 class ImageListModel(gtk.ListStore):
     _shelf = None
-    _imageListColumns = None
-    
-    def __init__(self, shelf, imageListColumns):
-        gtk.ListStore.__init__(self, *imageListColumns.types)
-        self._shelf = shelf
-        self._imageListColumns = imageListColumns
 
-    def load(self, source, imageList):
+    attributeNamesMap = {}
+
+    COLUMN_IMAGE_ID = 0
+    COLUMN_LOCATION = 1
+    COLUMN_THUMBNAIL = 2
+
+    _MANDATORY_COLUMNS_TYPE = [gobject.TYPE_INT, gobject.TYPE_STRING, gtk.gdk.Pixbuf]
+
+    imageList = None
+    source = None
+    
+    def __init__(self, shelf):
+        shelf.begin()
+        self._shelf = shelf
+        gtk.ListStore.__init__(self, *self._loadColumns())
+        shelf.rollback()
+
+    def _loadColumns(self):
+        columnsType = self._MANDATORY_COLUMNS_TYPE
+        for attributeName in self._shelf.getAllAttributeNames():
+            self.attributeNamesMap[attributeName] = len(columnsType)
+            columnsType.append(gobject.TYPE_STRING)
+        return columnsType
+
+    def loadImageList(self, source, imageList):
+        self.imageList = imageList
+        self.source = source
+        self.reloadImageData()
+
+    def reloadImageData(self):
         self._shelf.begin()
         self.clear()
-        for image in imageList:
+        for image in self.imageList:
             iter = self.append()
-            # To be refactored...
-            self._setColumnValue(iter,"ImageId", image.getId()) 
-            self._setColumnValue(iter,"Location", image.getLocation())
-            attributeMap = image.getAttributeMap()
-            for attribute in attributeMap:
-                self._setColumnValue(iter,attribute, attributeMap[attribute])
+            self.set_value(iter, self.COLUMN_IMAGE_ID, image.getId()) 
+            self.set_value(iter, self.COLUMN_LOCATION, image.getLocation())
+            # TODO: self.set_value(iter, COLUMN_THUMBNAIL, ....)
+            for attribute, value in image.getAttributeMap().items():
+                self.set_value(iter, self.attributeNamesMap[attribute], value)
         self._shelf.rollback()
-
-    def _setColumnValue(self, iter, name, value):
-        if  name in self._imageListColumns.map:
-            columnNumber, visible = self._imageListColumns.map[name]
-            self.set_value(iter, columnNumber, value)
+ 
+ 

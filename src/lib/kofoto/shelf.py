@@ -482,6 +482,18 @@ class Shelf:
             except AlbumDoesNotExistError:
                 raise ObjectDoesNotExistError, objid
 
+            
+    def getAllAttributeNames(self):
+        """Returns a sorted list of all existing attribute names."""
+        self.cursor.execute(
+            " select distinct name"
+            " from   attribute"
+            " order by name")
+        attributes = []
+        for name in self.cursor.fetchall():
+            attributes.append(name[0])
+        return attributes
+            
 
     ##############################
     # Internal methods.

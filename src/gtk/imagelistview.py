@@ -3,17 +3,32 @@ import gtk.gdk
 from imagelistmodel import *
 
 class ImageListView(gtk.TreeView):
-    def __init__(self, imageListModel, imageListColumns):
+    def __init__(self, imageListModel):
         gtk.TreeView.__init__(self, imageListModel)
-        self.createColumns(imageListColumns)
-
-    def createColumns(self, imageListColumns):
-        for name in imageListColumns.map:
-            columnNumber, visible = imageListColumns.map[name]
-            if visible == gtk.TRUE:
-                self.createTextColumn(name, columnNumber)
-
-    def createTextColumn(self, heading, columnNumber):
-        renderer = gtk.CellRendererText()
-        column = gtk.TreeViewColumn(heading, renderer, text=columnNumber)
+        # self.createThumbnailColumn()
+        self.createIdColumn()
+        self.createLocationColumn()
+        self.createAttributeColumns(imageListModel)
+        
+    def createThumbnailColumn(self):
+        renderer = gtk.CellRenderePixbuf()
+        column = gtk.TreeViewColumn("Thumbnail", renderer, pixbuf=ImageListModel.COLUMN_THUMBNAIL)
         self.append_column(column)
+
+    def createIdColumn(self):
+        renderer = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("imageId", renderer, text=ImageListModel.COLUMN_IMAGE_ID)
+        self.append_column(column)
+
+    def createLocationColumn(self):
+        renderer = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Location", renderer, text=ImageListModel.COLUMN_LOCATION)
+        self.append_column(column)        
+
+    def createAttributeColumns(self, imageListModel):
+        for attributeName, value in imageListModel.attributeNamesMap.items():
+            renderer = gtk.CellRendererText()
+            column = gtk.TreeViewColumn(attributeName,
+                                        renderer,
+                                        text=imageListModel.attributeNamesMap[attributeName])
+            self.append_column(column)

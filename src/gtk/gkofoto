@@ -29,7 +29,6 @@ from mainwindow import *
 from albummodel import *
 from albumview import *
 from imagelistmodel import *
-from imagelistcolumns import *
 from imagelistview import *
 from imageview import *
 
@@ -54,9 +53,8 @@ class Controller:
         albumSelection.connect('changed', self.albumSelectionHandler)
 
         # Image list
-        self._imageListColumns = ImageListColumns()
-        self._imageListModel = ImageListModel(self._shelf, self._imageListColumns)
-        self._imageListView = ImageListView(self._imageListModel, self._imageListColumns)
+        self._imageListModel = ImageListModel(self._shelf)
+        self._imageListView = ImageListView(self._imageListModel)
         imageSelection = self._imageListView.get_selection()
         imageSelection.connect('changed', self.imageSelectionHandler)
 
@@ -81,13 +79,12 @@ class Controller:
             if not child.isAlbum():
                 selectedImages.append(child)
         self._shelf.rollback()
-        self._imageListModel.load("Album", selectedImages)
+        self._imageListModel.loadImageList("Album", selectedImages)
 
     def imageSelectionHandler(self, selection):
         imageListModel, iter = selection.get_selected()
         if iter != None:
-            imageLocation = imageListModel.get_value(iter,
-                                                     self._imageListColumns.getColNumber("Location"))
+            imageLocation = imageListModel.get_value(iter, self._imageListModel. COLUMN_LOCATION)
             self._imageView.loadFile(imageLocation)
         
         
