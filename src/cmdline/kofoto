@@ -72,6 +72,8 @@ def displayHelp():
         "                                     (taken from locale settings).\n"
         "    -l, --location LOCATION          Add/register to location LOCATION.\n"
         "                                     Default: last.\n"
+        "        --no-act                     Do everything which is supposed to be done,\n"
+        "                                     but don't commit any changes to the shelf.\n"
         "        --shelf SHELF                Use the shelf SHELF instead of the default\n"
         "                                     (specified in the configuration file).\n"
         "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
@@ -237,6 +239,8 @@ def cmdCheck(env, args):
 
 
 def cmdCleanCache(env, args):
+    if env.noAct:
+        raise ArgumentError
     if len(args) != 0:
         raise ArgumentError
     env.imagecache.cleanup(env.shelf.getAllImages(), env.imagesizes)
@@ -622,6 +626,7 @@ def main(argv):
              "gencharenc=",
              "help",
              "location=",
+             "no-act",
              "shelf=",
              "type=",
              "verbose",
@@ -633,6 +638,7 @@ def main(argv):
         pass
     env = CommandEnvironment()
     env.location = -1
+    env.noAct = False  
     env.verbose = False
     env.type = None
 
@@ -665,6 +671,9 @@ def main(argv):
         elif opt in ("-V", "--version"):
             sys.stdout.write("crowbar\n")
             sys.exit(0)
+        elif opt == "--no-act":
+            sys.stdout.write("no-act: No changes will be commited to the shelf!\n")
+            env.noAct = True
 
     if len(args) == 0:
         printErrorAndExit(
@@ -747,7 +756,11 @@ def main(argv):
         env.config = conf
 
         commandTable[args[0]](env, args[1:])
-        shelf.commit()
+        if env.noAct:
+            shelf.rollback()
+            sys.stdout.write("no-act: All changes to the shelf has been revoked!\n")            
+        else:
+            shelf.commit()
         sys.exit(0)
     except ArgumentError:
         printErrorAndExit(
