@@ -83,6 +83,10 @@ class Albums:
             registerMenuItem.set_sensitive(False)
             destroyMenuItem.set_sensitive(False)
             editMenuItem.set_sensitive(False)
+            env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
+            env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+            env.widgets["menubarDestroy"].set_sensitive(False)
+            env.widgets["menubarProperties"].set_sensitive(False)
 
     def _createChildAlbum(self, *dummies):
         dialog = AlbumDialog("Create album")
