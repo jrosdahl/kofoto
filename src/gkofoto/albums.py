@@ -20,6 +20,7 @@ class Albums:
     #      a multiple windows feature is introduced.
 
     def __init__(self, mainWindow):
+        self._connectedOids = []
         self.__albumModel = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                           gobject.TYPE_STRING,   # TAG
                                           gobject.TYPE_STRING,   # TEXT
@@ -42,7 +43,6 @@ class Albums:
         self.loadAlbumTree()
         iterator = self.__albumModel.get_iter_first()
         albumSelection.select_iter(iterator)
-        self._connectedOids = []
 
     def loadAlbumTree(self):
         env.shelf.flushObjectCache()
@@ -58,6 +58,12 @@ class Albums:
         return model[path][self.__COLUMN_SELECTABLE]
 
     def _albumSelectionUpdated(self, selection=None, load=True):
+        # The focus grab below is made to compensate for what could be
+        # some GTK bug. Without the call, the focus-out-event signal
+        # sometimes isn't emitted for the view widget in the table
+        # view, which messes up the menubar callback registrations.
+        self.__albumView.grab_focus()
+
         if not selection:
             selection = self.__albumView.get_selection()
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
