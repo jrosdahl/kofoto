@@ -61,7 +61,7 @@ class Categories:
         self._pasteItem.connect("activate", self._pasteCategory, None)
         self._contextMenu.append(self._pasteItem)
 
-        self._deleteItem = gtk.MenuItem("Destroy")
+        self._deleteItem = gtk.MenuItem("Destroy...")
         self._deleteItem.show()
         self._deleteItem.connect("activate", self._deleteCategories, None)
         self._contextMenu.append(self._deleteItem)
@@ -253,17 +253,24 @@ class Categories:
         self.__expandAndCollapseRows(False, False)
 
     def _deleteCategories(self, item, data):
-        # TODO: Add confirmation dialog box
-        for categoryId in self.__selectedCategoriesIds:
-            category = env.shelf.getCategory(categoryId)
-            for child in list(category.getChildren()):
-                # The backend automatically disconnects childs when a category
-                # is deleted, but we do it ourself to make sure that the
-                # treeview widget is updated
-                self.__disconnectChild(child.getId(), categoryId)
-            env.shelf.deleteCategory(categoryId)
-            env.shelf.flushCategoryCache()
-            self.__forEachCategoryRow(self.__deleteCategoriesHelper, categoryId)
+        dialogId = "destroyCategoriesDialog"
+        widgets = gtk.glade.XML(env.gladeFile, dialogId)
+        dialog = widgets.get_widget(dialogId)
+        result = dialog.run()
+        if result == gtk.RESPONSE_OK:
+            for categoryId in self.__selectedCategoriesIds:
+                category = env.shelf.getCategory(categoryId)
+                for child in category.getChildren():
+                    # The backend automatically disconnects childs
+                    # when a category is deleted, but we do it ourself
+                    # to make sure that the treeview widget is
+                    # updated.
+                    self.__disconnectChild(child.getId(), categoryId)
+                env.shelf.deleteCategory(categoryId)
+                env.shelf.flushCategoryCache()
+                self.__forEachCategoryRow(
+                    self.__deleteCategoriesHelper, categoryId)
+        dialog.destroy()
 
     def __deleteCategoriesHelper(self, categoryRow, categoryIdToDelete):
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryIdToDelete:
