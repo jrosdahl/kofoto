@@ -17,19 +17,18 @@ from kofoto.common import *
 from kofoto.shelf import *
 from kofoto.config import *
 
-locale.setlocale(locale.LC_ALL, "")
-CODESET = locale.nl_langinfo(locale.CODESET)
-
-conf = Config(DEFAULT_CONFIGFILE, CODESET)
-conf.read()
-genconf = conf.getGeneralConfig()
-
 class Environment:
     pass
+
 env = Environment()
+locale.setlocale(locale.LC_ALL, "")
+env.codeset = locale.nl_langinfo(locale.CODESET)
+conf = Config(DEFAULT_CONFIGFILE, env.codeset)
+conf.read()
+genconf = conf.getGeneralConfig()
 env.imageCacheLocation = genconf["imagecache_location"]
 env.imageSizes = genconf["image_sizes"]
 env.baseDir = bindir
 env.iconDir = bindir + "/icons/"
 env.gladeFile = env.baseDir + "/glade/gkofoto.glade"
-env.shelf = Shelf(genconf["shelf_location"], CODESET)
+env.shelf = Shelf(genconf["shelf_location"], env.codeset)
