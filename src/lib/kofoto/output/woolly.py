@@ -616,6 +616,11 @@ class OutputGenerator(OutputEngine):
 
 
     def _maybeMakeUTF8Symlink(self, filename):
-        if self.charEnc.lower() != "utf-8":
-            self.symlinkFile(filename.encode(self.charEnc),
-                             filename.encode("utf-8"))
+        try:
+            # Check whether the filename contains ASCII characters
+            # only. If so, do nothing.
+            filename.encode("ascii")
+        except UnicodeError:
+            if filename.encode(self.charEnc) != filename.encode("utf-8"):
+                self.symlinkFile(filename.encode(self.charEnc),
+                                 filename.encode("utf-8"))
