@@ -12,13 +12,46 @@ class RegisterImagesDialog(gtk.FileSelection):
         self.ok_button.connect("clicked", self._ok)
 
     def _ok(self, widget):
+        widgets = gtk.glade.XML(env.gladeFile, "registrationProgressDialog")
+        registrationProgressDialog = widgets.get_widget(
+            "registrationProgressDialog")
+        newImagesCount = widgets.get_widget(
+            "newImagesCount")
+        alreadyRegisteredImagesCount = widgets.get_widget(
+            "alreadyRegisteredImagesCount")
+        nonImagesCount = widgets.get_widget(
+            "nonImagesCount")
+        filesInvestigatedCount = widgets.get_widget(
+            "filesInvestigatedCount")
+        okButton = widgets.get_widget("okButton")
+        okButton.set_sensitive(False)
+
+        registrationProgressDialog.show()
+
+        newImages = 0
+        alreadyRegisteredImages = 0
+        nonImages = 0
+        filesInvestigated = 0
         images = []
         for filepath in walk_files(self.get_selections()):
             try:
                 image = env.shelf.createImage(filepath.decode("utf-8"))
                 images.append(image)
-            except (NotAnImageError, ImageExistsError):
-                pass
+                newImages += 1
+                newImagesCount.set_text(str(newImages))
+            except ImageExistsError:
+                alreadyRegisteredImages += 1
+                alreadyRegisteredImagesCount.set_text(str(alreadyRegisteredImages))
+            except NotAnImageError:
+                nonImages += 1
+                nonImagesCount.set_text(str(nonImages))
+            filesInvestigated += 1
+            filesInvestigatedCount.set_text(str(filesInvestigated))
+            gtk.main_iteration()
         if self.__albumToAddTo:
             children = list(self.__albumToAddTo.getChildren())
             self.__albumToAddTo.setChildren(children + images)
+
+        okButton.set_sensitive(True)
+        registrationProgressDialog.run()
+        registrationProgressDialog.destroy()
