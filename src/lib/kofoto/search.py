@@ -189,9 +189,6 @@ class AlbumSearchNode:
                 " from   member"
                 " where  albumid = %s" % self._id)
 
-    def getIds(self):
-        return self._ids
-
 class AndSearchNode:
     def __init__(self, subnodes):
         self._subnodes = subnodes
