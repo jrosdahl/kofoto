@@ -91,7 +91,7 @@ class Objects:
                 pixbuf = env.albumIconPixbuf
             else:
                 thumbnailLocation = self._imageCache.get(object, env.thumbnailSize[0], env.thumbnailSize[1])
-                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
+                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
             self._unsortedModel.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
         except IOError:
             # TODO: Show some kind of error icon?
