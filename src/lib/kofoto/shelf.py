@@ -719,6 +719,7 @@ class Shelf:
         imageid, hash, location = row
         image = Image(self, imageid, hash, location)
         self.objectcache[imageid] = image
+        self.objectcache[unicode(imageid)] = image
         self.objectcache[hash] = image
         return image
 
@@ -1169,10 +1170,10 @@ class _Object:
             name)
         if cursor.rowcount > 0:
             value = cursor.fetchone()[0]
-            self.attributes[name] = value
-            return value
         else:
-            return None
+            value = None
+        self.attributes[name] = value
+        return value
 
 
     def getAttributeMap(self):
@@ -1233,8 +1234,7 @@ class _Object:
             " where  objectid = %s and name = %s",
             self.getId(),
             name)
-        if name in self.attributes:
-            del self.attributes[name]
+        self.attributes[name] = None
         self.shelf._setModified()
 
 
@@ -1373,6 +1373,10 @@ class PlainAlbum(Album):
 
         Returns an iterator returning Album/Images instances.
         """
+        if self.children is not None:
+            for child in self.children:
+                yield child
+            return
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " select objectid"
@@ -1380,8 +1384,11 @@ class PlainAlbum(Album):
             " where  albumid = %s"
             " order by position",
             self.getId())
+        self.children = []
         for (objid,) in cursor:
-            yield self.shelf.getObject(objid)
+            child = self.shelf.getObject(objid)
+            self.children.append(child)
+            yield child
 
 
     def getAlbumChildren(self):
@@ -1389,6 +1396,11 @@ class PlainAlbum(Album):
 
         Returns an iterator returning Album instances.
         """
+        if self.children is not None:
+            for child in self.children:
+                if child.isAlbum():
+                    yield child
+            return
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " select member.objectid"
@@ -1437,6 +1449,15 @@ class PlainAlbum(Album):
             albumid,
             newchcnt)
         self.shelf._setModified()
+        self.children = children[:]
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, *args):
+        """Constructor of an Album."""
+        Album.__init__(self, *args)
+        self.children = None
 
 
 class Image(_Object):
