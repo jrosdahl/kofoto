@@ -37,7 +37,7 @@ except AttributeError:
 ### Constants.
 
 PRINT_GRAPH_INDENT = 4
-_DIRECTORIES_TO_IGNORE = [".svn"]
+_DIRECTORIES_TO_IGNORE = [".svn", ".xvpics", ".jimageviewpics", ".thumbnails" ]
 
 ######################################################################
 ### Exceptions.
