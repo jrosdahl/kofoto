@@ -5,6 +5,7 @@
 
 import sqlite as sql
 from kofoto.common import KofotoError
+from kofoto.sqlset import SqlSetFactory
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
@@ -14,10 +15,18 @@ warnings.filterwarnings("ignore", "DB-API extension")
 
 schema = """
     -- EER diagram without attributes:
-    -- 
-    --                                ,^.
-    --              N +--------+ 1  ,'   '.  N +-----------+
-    --      +---------| object |---<  has  >===| attribute |
+    --
+    --                                          .----.
+    --                                        ,'      |
+    --                   ,^.                ,' N    ,^.
+    --                 ,'   '.  N +----------+    ,'   '.
+    --                <  has  >===| category |---< child >
+    --                 '.   .'    +----------+ 0  '.   .'
+    --                   'v'                        'v'
+    --                    | 0
+    --                    |           ,^.
+    --              N +--------+ 0  ,'   '.  N +-----------+
+    --      .---------| object |---<  has  >===| attribute |
     --      |         +--------+    '.   ,'    +-----------+
     --    ,/\.          |    |        'v'
     --  ,'    '.     __/      \__
@@ -25,9 +34,9 @@ schema = """
     --  '.    ,'   \|/          \|/
     --    '\/'      |            |
     --      | 1 +-------+    +-------+
-    --      +---| album |    | image |
+    --      '---| album |    | image |
     --          +-------+    +-------+
-    -- 
+    --
     --        |
     -- where \|/ is supposed to look like the subclass relation symbol.
     --        |
@@ -40,6 +49,7 @@ schema = """
         PRIMARY KEY (objectid)
     );
 
+    -- Albums in the shelf. Subclass of object.
     CREATE TABLE album (
         -- Identifier of the album. Shared primary key with object.
         albumid     INTEGER NOT NULL,
@@ -55,6 +65,7 @@ schema = """
         PRIMARY KEY (albumid)
     );
 
+    -- Images in the shelf. Subclass of object.
     CREATE TABLE image (
         -- Internal identifier of the image. Shared primary key with
         -- object.
@@ -72,6 +83,7 @@ schema = """
         PRIMARY KEY (imageid)
     );
 
+    -- Members in an album.
     CREATE TABLE member (
         -- Identifier of the album.
         albumid     INTEGER NOT NULL,
@@ -87,6 +99,7 @@ schema = """
 
     CREATE INDEX member_objectid_index ON member (objectid);
 
+    -- Attributes for objects.
     CREATE TABLE attribute (
         -- Key of the object.
         objectid    INTEGER NOT NULL,
@@ -98,6 +111,49 @@ schema = """
         FOREIGN KEY (objectid) REFERENCES object,
         PRIMARY KEY (objectid, name)
     );
+
+    -- Categories in the shelf.
+    CREATE TABLE category (
+        -- Key of the category.
+        categoryid  INTEGER NOT NULL,
+        -- Human-memorizable tag.
+        tag         TEXT NOT NULL,
+        -- Short description of the category.
+        description TEXT NOT NULL,
+
+        UNIQUE      (tag),
+        PRIMARY KEY (categoryid)
+    );
+
+    -- Parent-child relations between categories.
+    CREATE TABLE category_child (
+        -- Parent category.
+        parent      INTEGER NOT NULL,
+
+        -- Child category.
+        child       INTEGER NOT NULL,
+
+        FOREIGN KEY (parent) REFERENCES category,
+        FOREIGN KEY (child) REFERENCES category,
+        PRIMARY KEY (parent, child)
+    );
+
+    CREATE INDEX category_child_child ON category_child (child);
+
+    -- Category-object mapping.
+    CREATE TABLE object_category (
+        -- Object.
+        objectid    INTEGER NOT NULL,
+
+        -- Category.
+        categoryid  INTEGER NOT NULL,
+
+        FOREIGN KEY (objectid) REFERENCES object,
+        FOREIGN KEY (categoryid) REFERENCES category,
+        PRIMARY KEY (objectid, categoryid)
+    );
+
+    CREATE INDEX object_category_categoryid ON object_category (categoryid);
 """
 
 _ROOT_ALBUM_ID = 0
@@ -176,6 +232,41 @@ class UnsettableChildrenError(KofotoError):
     pass
 
 
+class CategoryExistsError(KofotoError):
+    """Category already exists."""
+    pass
+
+
+class CategoryDoesNotExistError(KofotoError):
+    """Category does not exist."""
+    pass
+
+
+class ReservedCategoryTagError(KofotoError):
+    """The category tag is reserved for internal purposes."""
+    pass
+
+
+class CategoryPresentError(KofotoError):
+    """The object is already associated with this category."""
+    pass
+
+
+class CategoriesAlreadyConnectedError(KofotoError):
+    """The categories are already connected."""
+    pass
+
+
+class CategoryLoopError(KofotoError):
+    """Connecting the categories would create a loop in the category DAG."""
+    pass
+
+
+class SearchExpressionParseError(KofotoError):
+    """Could not parse search expression."""
+    pass
+
+
 class UnimplementedError(KofotoError):
     """Unimplemented action."""
     pass
@@ -204,6 +295,16 @@ def verifyValidAlbumTag(tag):
         pass
     else:
         raise ReservedAlbumTagError, tag
+
+
+def verifyValidCategoryTag(tag):
+    try:
+        int(tag)
+    except ValueError:
+        pass
+    else:
+        raise ReservedCategoryTagError, tag
+
 
 ######################################################################
 ### Public classes.
@@ -251,6 +352,7 @@ class Shelf:
         # Instantiation of the first cursor starts the transaction in
         # PySQLite, so create one here.
         self.cursor = self.connection.cursor()
+        self.sqlsetFactory = SqlSetFactory(self.connection)
 
 
     def commit(self):
@@ -482,7 +584,7 @@ class Shelf:
             except AlbumDoesNotExistError:
                 raise ObjectDoesNotExistError, objid
 
-            
+
     def getAllAttributeNames(self):
         """Returns a sorted list of all existing attribute names."""
         self.cursor.execute(
@@ -493,7 +595,127 @@ class Shelf:
         for name in self.cursor.fetchall():
             attributes.append(name[0])
         return attributes
-            
+
+
+    def createCategory(self, tag, desc):
+        """Create a category.
+
+        Returns a Category instance."""
+        verifyValidCategoryTag(tag)
+        try:
+            self.cursor.execute(
+                " insert into category"
+                " values (null, %(tag)s, %(desc)s)",
+                locals())
+            return Category(self, self.cursor.lastrowid)
+        except sql.IntegrityError:
+            raise CategoryExistsError, tag
+
+
+    def deleteCategory(self, tag):
+        """Delete a category for a given category tag/ID."""
+        try:
+            catid = int(tag)
+        except ValueError:
+            self.cursor.execute(
+                " select categoryid"
+                " from   category"
+                " where  tag = %(tag)s",
+                locals())
+            row = self.cursor.fetchone()
+            if not row:
+                raise CategoryDoesNotExistError, tag
+            catid = row[0]
+        self.cursor.execute(
+            " delete from category_child"
+            " where  parent = %(catid)s or child = %(catid)s",
+            locals())
+        self.cursor.execute(
+            " delete from object_category"
+            " where  categoryid = %(catid)s",
+            locals())
+        self.cursor.execute(
+            " delete from category"
+            " where  categoryid = %(catid)s",
+            locals())
+
+
+    def getCategory(self, catid):
+        """Get a category for a given category tag/ID.
+
+        Returns a Category instance."""
+        self.cursor.execute(
+            " select categoryid"
+            " from   category"
+            " where  categoryid = %(catid)s or tag = %(catid)s",
+            locals())
+        row = self.cursor.fetchone()
+        if not row:
+            raise CategoryDoesNotExistError, catid
+        return Category(self, row[0])
+
+
+    def getRootCategories(self):
+        """Get the categories that are roots, i.e. have no parents.
+
+        Returns a list of Category instances."""
+        self.cursor.execute(
+            " select categoryid"
+            " from   category"
+            " where  categoryid not in (select child from category_child)"
+            " order by description",
+            locals())
+        categories = []
+        for (catid,) in self.cursor.fetchall():
+            categories.append(Category(self, catid))
+        return categories
+
+
+    def getObjectsForCategory(self, category, recursive=False):
+        """Get all objects for a category.
+
+        Returns a list of Album/Image instances."""
+        catid = category.getId()
+        if recursive:
+            categoryset = self._recursiveComputeCategoryIds([catid],
+                                                            descendants=True)
+        else:
+            categoryset = self.sqlsetFactory.newSet()
+            categoryset.add(catid)
+
+        categorysetTablename = categoryset.getTablename()
+        self.cursor.execute(
+            " select 'album', objectid, type"
+            " from   object_category, album"
+            " where  objectid = albumid and"
+            "        categoryid in (select * from %(categorysetTablename)s)"
+            " union"
+            " select 'image', objectid, NULL"
+            " from   object_category, image"
+            " where  objectid = imageid and"
+            "        categoryid in (select * from %(categorysetTablename)s)",
+            locals())
+        objects = []
+        for objtype, objid, atype in self.cursor.fetchall():
+            if objtype == "album":
+                child = self._albumFactory(objid, atype)
+            else:
+                child = Image(self, objid)
+            objects.append(child)
+        return objects
+
+
+    def search(self, expr):
+        """Search for objects matching an expression.
+
+        Currently, you can only search for objects matching a single
+        category tag."""
+        try:
+            category = self.getCategory(expr)
+            return self.getObjectsForCategory(category, True)
+        except CategoryDoesNotExistError:
+            raise SearchExpressionParseError, "unknown category: %s" % expr
+
 
     ##############################
     # Internal methods.
@@ -582,6 +804,200 @@ class Shelf:
         raise ImageDoesNotExistError, ref
 
 
+    def _getAncestorCategoryIds(self, catid):
+        return self._recursiveComputeCategoryIds([catid], False)
+
+
+    def _getDescendantCategoryIds(self, catid):
+        return self._recursiveComputeCategoryIds([catid], True)
+
+
+    def _recursiveComputeCategoryIds(self, catids, descendants):
+        if descendants:
+            fromcolumn = "parent"
+            tocolumn = "child"
+        else:
+            fromcolumn = "child"
+            tocolumn = "parent"
+
+        startlevel = self.sqlsetFactory.newSet()
+        for catid in catids:
+            startlevel.add(catid)
+        levels = [startlevel]
+        while True:
+            newlevel = self.sqlsetFactory.newSet()
+            prevleveltablename = levels[-1].getTablename()
+            rows = newlevel.runQuery(
+                " insert"
+                " into   %%(tablename)s"
+                " select distinct %(tocolumn)s"
+                " from   category_child, %(prevleveltablename)s"
+                " where  %(fromcolumn)s = number" % locals())
+            levels.append(newlevel)
+            if rows == 0:
+                break
+        result = levels.pop()
+        for level in levels:
+            result |= level
+        return result
+
+
+class Category:
+    """A Kofoto category."""
+
+    ##############################
+    # Public methods.
+
+    def getId(self):
+        """Get category ID."""
+        return self.catid
+
+
+    def getTag(self):
+        """Get category tag."""
+        catid = self.getId()
+        self.shelf.cursor.execute(
+            " select tag"
+            " from   category"
+            " where  categoryid = %(catid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
+
+
+    def setTag(self, newtag):
+        """Set category tag."""
+        verifyValidCategoryTag(newtag)
+        catid = self.getId()
+        self.shelf.cursor.execute(
+            " update category"
+            " set    tag = %(newtag)s"
+            " where  categoryid = %(catid)s",
+            locals())
+
+
+    def getDescription(self):
+        """Get category description."""
+        catid = self.getId()
+        self.shelf.cursor.execute(
+            " select description"
+            " from   category"
+            " where  categoryid = %(catid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
+
+
+    def setDescription(self, newdesc):
+        """Set category description."""
+        catid = self.getId()
+        self.shelf.cursor.execute(
+            " update category"
+            " set    description = %(newdesc)s"
+            " where  categoryid = %(catid)s",
+            locals())
+
+
+    def getChildren(self, recursive=False):
+        """Get child categories.
+
+        If recursive is true, get all descendants. If recursive is
+        false, get only immediate children. Returns an unordered list
+        of Category instances."""
+        catid = self.getId()
+        if recursive:
+            catidlist = self.shelf._getDescendantCategoryIds(catid)
+        else:
+            self.shelf.cursor.execute(
+                " select child"
+                " from   category_child"
+                " where  parent = %(catid)s",
+                locals())
+            catidlist = [x[0] for x in self.shelf.cursor.fetchall()]
+        return [Category(self.shelf, x) for x in catidlist]
+
+
+    def getParents(self, recursive=False):
+        """Get parent categories.
+
+        If recursive is true, get all ancestors. If recursive is
+        false, get only immediate parents. Returns an unordered list
+        of Category instances."""
+        catid = self.getId()
+        if recursive:
+            catidlist = self.shelf._getAncestorCategoryIds(catid)
+        else:
+            self.shelf.cursor.execute(
+                " select parent"
+                " from   category_child"
+                " where  child = %(catid)s",
+                locals())
+            catidlist = [x[0] for x in self.shelf.cursor.fetchall()]
+        return [Category(self.shelf, x) for x in catidlist]
+
+
+    def isChildOf(self, category, recursive=False):
+        """Check whether this category is a child or descendant of a
+        category.
+
+        If recursive is true, check if the category is a descendant of
+        this category, otherwise just consider immediate children."""
+        parentid = category.getId()
+        childid = self.getId()
+        if recursive:
+            return childid in self.shelf._getDescendantCategoryIds(parentid)
+        else:
+            self.shelf.cursor.execute(
+                " select child"
+                " from   category_child"
+                " where  parent = %(parentid)s and child = %(childid)s",
+                locals())
+            return self.shelf.cursor.rowcount > 0
+
+
+    def isParentOf(self, category, recursive=False):
+        """Check whether this category is a parent or ancestor of a
+        category.
+
+        If recursive is true, check if the category is an ancestor of
+        this category, otherwise just consider immediate parents."""
+        return category.isChildOf(self, recursive)
+
+
+    def connectChild(self, category):
+        """Make parent-child link between this category and a category."""
+        parentid = self.getId()
+        childid = category.getId()
+        childDescendants = self.shelf._recursiveComputeCategoryIds([childid],
+                                                                   True)
+        if parentid in childDescendants or parentid == childid:
+            raise CategoryLoopError, (self.getTag(), category.getTag())
+        try:
+            self.shelf.cursor.execute(
+                " insert into category_child"
+                " values (%(parentid)s, %(childid)s)",
+                locals())
+        except sql.IntegrityError:
+            raise CategoriesAlreadyConnectedError, (self.getTag(),
+                                                    category.getTag())
+
+
+    def disconnectChild(self, category):
+        """Remove a parent-child link between this category and a category."""
+        parentid = self.getId()
+        childid = category.getId()
+        self.shelf.cursor.execute(
+            " delete from category_child"
+            " where  parent = %(parentid)s and child = %(childid)s",
+            locals())
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, catid):
+        self.shelf = shelf
+        self.catid = catid
+
+
 class _Object:
     def __init__(self, shelf, objid):
         self.shelf = shelf
@@ -661,6 +1077,45 @@ class _Object:
             " where  objectid = %(objid)s and"
             "        name = %(name)s",
             locals())
+
+
+    def addCategory(self, category):
+        """Add a category."""
+        objid = self.getId()
+        catid = category.getId()
+        try:
+            self.shelf.cursor.execute(
+                " insert into object_category"
+                " values (%(objid)s, %(catid)s)",
+                locals())
+        except sql.IntegrityError:
+            raise CategoryPresentError, (objid, catid)
+
+
+    def removeCategory(self, category):
+        """Remove a category."""
+        objid = self.getId()
+        catid = category.getId()
+        self.shelf.cursor.execute(
+            " delete from object_category"
+            " where objectid = %(objid)s and categoryid = %(catid)s",
+            locals())
+
+
+    def getCategories(self, recursive=False):
+        """Get categories for this object.
+
+        Returns a list of categories."""
+        objid = self.getId()
+        self.shelf.cursor.execute(
+            " select categoryid from object_category"
+            " where  objectid = %(objid)s",
+            locals())
+        categoryids = [x[0] for x in self.shelf.cursor.fetchall()]
+        if recursive:
+            categoryids = self.shelf._recursiveComputeCategoryIds(categoryids,
+                                                                  True)
+        return [Category(self.shelf, x) for x in categoryids]
 
 
 class Album(_Object):

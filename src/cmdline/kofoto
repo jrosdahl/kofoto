@@ -78,14 +78,22 @@ def displayHelp():
         "    For albums and images\n"
         "    =====================\n"
         "\n"
+        "    add-category CAT OBJ [OBJ ...]   Add category CAT (tag or ID) to the given\n"
+        "                                     objects.\n"
         "    delete-attribute NAME OBJ [OBJ ...]\n"
         "                                     Delete attribute NAME for the given\n"
         "                                     objects.\n"
         "    get-attribute NAME OBJ           Get attribute NAME for object OBJ.\n"
         "    get-attributes OBJ               Get attributes for object OBJ.\n"
+        "    get-categories OBJ               Get categories for object OBJ.\n"
         "    obliterate OBJ [OBJ ...]         Delete the given objects permanently. All\n"
         "                                     metadata is also deleted.\n"
         "    remove ALBUM POS [POS ...]       Remove the given objects from ALBUM.\n"
+        "    remove-category CAT OBJ [OBJ ...]\n"
+        "                                     Remove category CAT from the given\n"
+        "                                     objects.\n"
+        "    search EXPR                      Search for albums and images matching a\n"
+        "                                     expression.\n"
         "    set-attribute NAME VALUE OBJ [OBJ ...]\n"
         "                                     Set attribute NAME to VALUE for the given\n"
         "                                     objects.\n"
@@ -105,6 +113,20 @@ def displayHelp():
         "                                     Directories are recursively scanned for\n"
         "                                     other directories and images, which also\n"
         "                                     will be registered.\n"
+        "\n"
+        "    For categories\n"
+        "    ==============\n"
+        "    connect-category PARENT CHILD    Make a category a child of another\n"
+        "                                     category.\n"
+        "    disconnect-category PARENT CHILD Remove parent-child realationship bewteen\n"
+        "                                     two categories.\n"
+        "    create-category TAG DESC         Create category.\n"
+        "    delete-category TAG              Delete category.\n"
+        "    print-categories                 Print category tree.\n"
+        "    rename-category OLDTAG NEWTAG    Rename category tag.\n"
+        "    set-category-description TAG DESC\n"
+        "                                     Set category description.\n"
+        "\n"
         "\n"
         "    Miscellaneous\n"
         "    =============\n"
@@ -154,6 +176,14 @@ def addHelper(env, destalbum, objects):
     destalbum.setChildren(oldchildren[:loc] + objects + oldchildren[loc:])
 
 
+def cmdAddCategory(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    category = env.shelf.getCategory(args[0])
+    for arg in args[1:]:
+        env.shelf.getObject(arg).addCategory(category)
+
+
 def cmdCheck(env, args):
     stats = env.shelf.getStatistics()
     env.out("Number of albums: %d\n" % stats["nalbums"])
@@ -189,6 +219,14 @@ def cmdCleanCache(env, args):
     env.imagecache.cleanup(env.shelf.getAllImages(), env.imagesizes)
 
 
+def cmdConnectCategory(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    parent = env.shelf.getCategory(args[0])
+    child = env.shelf.getCategory(args[1])
+    parent.connectChild(child)
+
+
 def cmdCreateAlbum(env, args):
     if len(args) != 1:
         raise ArgumentError
@@ -199,12 +237,32 @@ def cmdCreateAlbum(env, args):
     env.shelf.createAlbum(args[0], atype)
 
 
+def cmdCreateCategory(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    env.shelf.createCategory(args[0], args[1])
+
+
 def cmdDeleteAttribute(env, args):
     if len(args) < 2:
         raise ArgumentError
     attr = args[0]
     for arg in args[1:]:
         env.shelf.getObject(arg).deleteAttribute(attr)
+
+
+def cmdDeleteCategory(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    env.shelf.deleteCategory(args[0])
+
+
+def cmdDisconnectCategory(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    parent = env.shelf.getCategory(args[0])
+    child = env.shelf.getCategory(args[1])
+    parent.disconnectChild(child)
 
 
 def cmdGenerate(env, args):
@@ -241,11 +299,38 @@ def cmdGetAttributes(env, args):
         env.out("%s: %s\n" % (name, object.getAttribute(name)))
 
 
+def cmdGetCategories(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    object = env.shelf.getObject(args[0])
+    for category in object.getCategories():
+        env.out("%s (%s) <%s>\n" % (category.getDescription(),
+                                    category.getTag(),
+                                    category.getId()))
+
 def cmdObliterate(env, args):
     if len(args) < 1:
         raise ArgumentError
     for obj in args:
         env.shelf.deleteObject(obj)
+
+
+def cmdPrintCategories(env, args):
+    if len(args) != 0:
+        raise ArgumentError
+    for category in env.shelf.getRootCategories():
+        printCategoriesHelper(env, category, 0)
+
+
+def printCategoriesHelper(env, category, level):
+    indentspaces = PRINT_GRAPH_INDENT * " "
+    env.out("%s%s (%s) <%s>\n" % (
+        level * indentspaces,
+        category.getDescription(),
+        category.getTag(),
+        category.getId()))
+    for child in category.getChildren():
+        printCategoriesHelper(env, child, level + 1)
 
 
 def cmdPrintGraph(env, args):
@@ -356,10 +441,32 @@ def cmdRemove(env, args):
     album.setChildren(children)
 
 
-def cmdRenameTag(env, args):
+def cmdRemoveCategory(env, args):
     if len(args) < 2:
         raise ArgumentError
+    category = env.shelf.getCategory(args[0])
+    for arg in args[1:]:
+        env.shelf.getObject(arg).removeCategory(category)
+
+
+def cmdRenameCategory(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    env.shelf.getCategory(args[0]).setTag(args[1])
+
+
+def cmdRenameTag(env, args):
+    if len(args) != 2:
+        raise ArgumentError
     env.shelf.getAlbum(args[0]).setTag(args[1])
+
+
+def cmdSearch(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    objects = env.shelf.search(args[0])
+    if objects:
+        env.out(" ".join([str(x.getId()) for x in objects]) + "\n")
 
 
 def cmdSetAttribute(env, args):
@@ -369,6 +476,12 @@ def cmdSetAttribute(env, args):
     value = args[1]
     for arg in args[2:]:
         env.shelf.getObject(arg).setAttribute(attr, value)
+
+
+def cmdSetCategoryDescription(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    env.shelf.getCategory(args[0]).setDescription(args[1])
 
 
 def cmdUpdateChecksums(env, args):
@@ -430,19 +543,30 @@ def updateLocationsHelper(env, dir, files):
 
 commandTable = {
     "add": cmdAdd,
+    "add-category": cmdAddCategory,
     "check": cmdCheck,
     "clean-cache": cmdCleanCache,
+    "connect-category": cmdConnectCategory,
     "create-album": cmdCreateAlbum,
+    "create-category": cmdCreateCategory,
     "delete-attribute": cmdDeleteAttribute,
+    "delete-category": cmdDeleteCategory,
+    "disconnect-category": cmdDisconnectCategory,
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
+    "get-categories": cmdGetCategories,
     "obliterate": cmdObliterate,
+    "print-categories": cmdPrintCategories,
     "print-graph": cmdPrintGraph,
     "register": cmdRegister,
     "remove": cmdRemove,
+    "remove-category": cmdRemoveCategory,
+    "rename-category": cmdRenameCategory,
     "rename-tag": cmdRenameTag,
+    "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
+    "set-category-description": cmdSetCategoryDescription,
     "update-checksums": cmdUpdateChecksums,
     "update-locations": cmdUpdateLocations,
 }
@@ -643,6 +767,20 @@ def main(argv):
         printError("Unknown album type: \"%s\".\n" % x)
     except UnsettableChildrenError, x:
         printError("Cannot add children to \"%s\" (children are created virtually).\n" % x)
+    except CategoryExistsError, x:
+        printError("Category already exists: \"%s\".\n" % x)
+    except CategoryDoesNotExistError, x:
+        printError("Category does not exist: \"%s\".\n" % x)
+    except ReservedCategoryTagError, x:
+        printError("Reserved category tag: %s.\n" % x)
+    except CategoryPresentError, x:
+        printError("Object %s is already associated with category %s.\n" % (x[0], x[1]))
+    except CategoriesAlreadyConnectedError, x:
+        printError("Categories %s and %s are already connected.\n" % (x[0], x[1]))
+    except CategoryLoopError, x:
+        printError("Connecting %s to %s would make a loop in the categories.\n" % (x[0], x[1]))
+    except SearchExpressionParseError, x:
+        printError("Error while parsing search expression: %s.\n" % x)
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     shelf.rollback()
