@@ -117,6 +117,8 @@
       http://liw.iki.fi/linw/lodju/
       http://imgseek.sourceforge.net/
       http://gthumb.sourceforge.net/
+      http://ktown.kde.org/kimdaba/
+      http://www.photools.com/
 
 * Write documentation.
 
