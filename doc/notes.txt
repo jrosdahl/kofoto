@@ -129,3 +129,10 @@ Design requirements, goals and solutions:
       generated images.
 
       - Stored as image attributes.
+
+Interesting links/projects/products:
+
+    * http://imgseek.sourceforge.net
+    * http://www.gnu.org/software/gift/
+    * http://curator.sourceforge.net/
+    * http://www.adobe.com/products/photoshopalbum/
