@@ -1,28 +1,3 @@
-* Implement categories functionality.
-
-    - Every image (and maybe also album) is associated with zero, one
-      or several categories.
-    - A category has a unique ID and a description.
-    - Categories have "multiple inheritance". (A category has zero,
-      one or several subcategories. The categories form a number of
-      directed, acylic graphs.)
-
-    Example:
-
-                   Places                       Persons
-                      |                        /       \
-                ,- Sweden --.              Epact     Friends
-               /      |      \               |   ___/    \
-       Linköping  Ulricehamn  Örebro         |  /       Björn
-        /     \                            Ulrik
-    Lambohov  Ryd
-
-    
-    An image depicting Ulrik should be associated with the category
-    "Ulrik" and may be found by searching for "Ulrik", "Epact",
-    "Friends" or "Persons". If you search for "Linköping" you find
-    images associated with "Linköping", "Lambohov" and "Ryd".
-
 * Implement searching.
 
     Possibly via a search string in boolean algebra style? Example:
