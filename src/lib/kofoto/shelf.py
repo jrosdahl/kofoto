@@ -1451,6 +1451,14 @@ class Category:
         self.description = description
 
 
+    def __eq__(self, obj):
+        return isinstance(obj, Category) and obj.getId() == self.getId()
+
+
+    def __ne__(self, obj):
+        return not obj == self
+
+
 class _Object:
     ##############################
     # Public methods.
@@ -1628,6 +1636,14 @@ class _Object:
 
     def _categoriesDirty(self):
         self.allCategoriesFetched = False
+
+
+    def __eq__(self, obj):
+        return isinstance(obj, _Object) and obj.getId() == self.getId()
+
+
+    def __ne__(self, obj):
+        return not obj == self
 
 
 class Album(_Object):
