@@ -8,9 +8,9 @@
 OVERVIEW
 ========
 
-Kofoto is a tool for viewing and organizing images.
+Kofoto is a tool for organizing and viewing digital images.
 
-With kofoto, you can:
+With Kofoto, you can:
 
   * A graphical GTK+-based client (gkofoto).
   * A command-line utility (kofoto).
@@ -21,6 +21,7 @@ With kofoto, you can:
   * View images.
   * Rotate images.
   * Generate HTML pages of an album subtree.
+
 
 LICENSE
 =======
