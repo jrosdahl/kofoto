@@ -26,7 +26,7 @@ class CategoryDialog:
         self._descWidget.connect("changed", self._descriptionChanged, self._tagWidget)
         self._tagWidget.connect("changed", self._tagChanged, widgets.get_widget("okbutton"))
 
-    def run(self, ok=None, cancel=None):
+    def run(self, ok=None, data=None):
         result = self._dialog.run()
         tag = self._tagWidget.get_text().decode("utf-8")
         desc = self._descWidget.get_text().decode("utf-8")            
@@ -35,12 +35,12 @@ class CategoryDialog:
             if ok == None:
                 return None
             else:
-                return ok(tag, desc)
+                if data:
+                    return ok(tag, desc, data)
+                else:
+                    return ok(tag, desc)
         else:
-            if cancel == None:
-                return None
-            else:
-                return cancel(tag, desc)
+            return None
     
     def _descriptionChanged(self, description, tag):
         # Remove all whitespaces in description and then use it as tag

@@ -33,23 +33,24 @@ class WidgetsWrapper:
         self.widgets.signal_autoconnect(dic)
 
 class Controller:
-    _loadedImages = None
+    loadedImages = None
     _loadedImagesTitel = ""
     _wantedThumbnailSize = None
     tableView = None
     thumbnailView = None
     _categories = None
     selection = Set()
+    _clipboard = None
 
     def __init__(self):
         self._wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
+        
+    def start(self):
         albums = Albums()
         self._categories = Categories()
         self.tableView = TableView()
         self.thumbnailView = ThumbnailView()
         self.newDataModel()
-        
-    def start(self):
         MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
         env.widgets["mainWindow"].show()
@@ -85,10 +86,10 @@ class Controller:
         env.shelf.begin()
         
     def newDataModel(self):
-        self._loadedImages = Images()
-        self.tableView.setModel(self._loadedImages.sortedModel)
-        self.tableView.setAttributes(self._loadedImages.attributeNamesMap)
-        self.thumbnailView.setModel(self._loadedImages.sortedModel)
+        self.loadedImages = Images()
+        self.tableView.setModel(self.loadedImages.sortedModel)
+        self.tableView.setAttributes(self.loadedImages.attributeNamesMap)
+        self.thumbnailView.setModel(self.loadedImages.sortedModel)
         
     def loadImages(self, imageList, source):
         env.widgets["sourceEntry"].set_text(source)
@@ -96,15 +97,34 @@ class Controller:
         self.tableView.loadNewSelection()
         self.thumbnailView.loadNewSelection()
         self.thumbnailView.freeze()
-        self._loadedImages.loadImageList(imageList)
-        self._loadedImages.loadThumbnails(self._wantedThumbnailSize)
+        self.loadedImages.loadImageList(imageList)
+        self.loadedImages.loadThumbnails(self._wantedThumbnailSize)
         self.thumbnailView.thaw()
 
     def selectionUpdated(self):
         self.thumbnailView.loadNewSelection()
         self.tableView.loadNewSelection()
-        self._categories.imagesSelected(self._loadedImages.model)
+        self._categories.update()
 
+    def clipboardSet(self, object):
+        self._clipboard = object
+        self._categories.updateContextMenu()
+
+    def clipboardClear(self):
+        self._clipboard = None
+        self._categories.updateContextMenu()
+
+    def clipboardPop(self):
+        popedItem = self._clipboard
+        self._clipboard = None
+        self._categories.updateContextMenu()
+        return popedItem
+        
+    def clipboardHasCategory(self):
+        if isinstance(self._clipboard, ClipboardCategories):
+            return gtk.TRUE
+        else:
+            return gtk.FALSE
         
 ######################################################################
 ### Start

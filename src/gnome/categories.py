@@ -9,7 +9,6 @@ from categorydialog import CategoryDialog
 from kofoto.search import *
 from kofoto.shelf import *
 
-
 class Categories:
     _COLUMN_CATEGORY_ID  = 0
     _COLUMN_TAG          = 1
@@ -19,9 +18,7 @@ class Categories:
     _model = None
     _toggleColumn = None
     _ignoreSelectEvent = gtk.FALSE
-    _selectedCategories = []
-    _selectedCategoryPaths = []
-    _selectionHandler = None
+    _selectedCategories = {}
     
     def __init__(self):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
@@ -52,13 +49,18 @@ class Categories:
 
         self._copyItem = gtk.MenuItem("Copy")
         self._copyItem.show()
-        self._copyItem.set_sensitive(gtk.FALSE)
+        self._copyItem.connect("activate", self._copyCategory, None)
         self._contextMenu.append(self._copyItem)
+
+        self._cutItem = gtk.MenuItem("Cut")
+        self._cutItem.show()
+        self._cutItem.connect("activate", self._cutCategory, None)
+        self._contextMenu.append(self._cutItem)
         
-        self._pastItem = gtk.MenuItem("Paste")
-        self._pastItem.show()
-        self._pastItem.set_sensitive(gtk.FALSE)
-        self._contextMenu.append(self._pastItem)
+        self._pasteItem = gtk.MenuItem("Paste")
+        self._pasteItem.show()
+        self._pasteItem.connect("activate", self._pasteCategory, None)
+        self._contextMenu.append(self._pasteItem)
 
         self._createChildItem = gtk.MenuItem("Create child category")
         self._createChildItem.show()
@@ -70,10 +72,10 @@ class Categories:
         self._createRootItem.connect("activate", self._createRootCategory, None)
         self._contextMenu.append(self._createRootItem)
         
-        self._removeItem = gtk.MenuItem("Remove selected categories")
-        self._removeItem.show()
-        self._removeItem.connect("activate", self._removeCategory, None)
-        self._contextMenu.append(self._removeItem)
+        self._deleteItem = gtk.MenuItem("Delete selected categories")
+        self._deleteItem.show()
+        self._deleteItem.connect("activate", self._deleteCategory, None)
+        self._contextMenu.append(self._deleteItem)
 
         self._disconnectItem = gtk.MenuItem("Disconnect selected categories")
         self._disconnectItem.show()
@@ -85,13 +87,13 @@ class Categories:
         self._propertiesItem.connect("activate", self._editProperties, None)
         self._contextMenu.append(self._propertiesItem)
 
-        self._updateContextMenu()
+        self.updateContextMenu()
 
         # Init selection functions
         categorySelection = categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
-        self._selectionHandler = categorySelection.connect('changed', self._queryUpdated)
+        categorySelection.connect('changed', self._queryUpdated)
 
         # Connect events
         categoryView.connect("button_press_event", self._button_pressed)
@@ -105,23 +107,24 @@ class Categories:
     def reload(self):
         self._model.clear()
         env.shelf.flushCategoryCache()
-        self._populateModel(None, env.shelf.getRootCategories())
+        for category in env.shelf.getRootCategories():
+            self._populateModel(None, category)
 
-    def _populateModel(self, parent, categories):
-        for c in categories:
-            iter = self._model.insert_before(parent, None)
-            self._model.set_value(iter, self._COLUMN_CATEGORY_ID, c.getId())
-            self._model.set_value(iter, self._COLUMN_TAG, c.getTag())
-            self._model.set_value(iter, self._COLUMN_DESCRIPTION, c.getDescription())
-            self._model.set_value(iter, self._COLUMN_CONNECTED, gtk.FALSE)
-            self._model.set_value(iter, self._COLUMN_INCONSISTENT, gtk.FALSE)
-            self._populateModel(iter, c.getChildren())
+    def _populateModel(self, parent, category):
+        iter = self._model.append(parent)
+        self._model.set_value(iter, self._COLUMN_CATEGORY_ID, category.getId())
+        self._model.set_value(iter, self._COLUMN_TAG, category.getTag())
+        self._model.set_value(iter, self._COLUMN_DESCRIPTION, category.getDescription())
+        self._model.set_value(iter, self._COLUMN_CONNECTED, gtk.FALSE)
+        self._model.set_value(iter, self._COLUMN_INCONSISTENT, gtk.FALSE)
+        for child in category.getChildren():
+            self._populateModel(iter, child)
 
     def _queryUpdated(self, garbage):
         selection = env.widgets["categoryView"].get_selection()
-        self._selectedCategories = []
-        query = self._buildQuery(self._model, selection, "")
-        self._updateContextMenu()
+        self._selectedCategories = {}
+        query = self._buildQuery(self._model, None, selection, "")
+        self.updateContextMenu()
         images = []
         if query:
             parser = Parser(env.shelf)
@@ -130,13 +133,16 @@ class Categories:
                     images.append(child)
         env.controller.loadImages(images, "query://" + query)
 
-    def _buildQuery(self, categoryList, selection, query):
+    def _buildQuery(self, categoryList, parent, selection, query):
         for row in categoryList:
+            categoryId = row[self._COLUMN_CATEGORY_ID]
             if selection.iter_is_selected(row.iter):
-                if not row[self._COLUMN_CATEGORY_ID] in self._selectedCategories:
-                    self._selectedCategories.append(row[self._COLUMN_CATEGORY_ID])
+                if categoryId in self._selectedCategories:
+                    self._selectedCategories[categoryId].append(parent)
+                else:
+                    self._selectedCategories[categoryId] = [parent]
                     query = self._addToQuery(query, row[self._COLUMN_TAG])
-            childQuery = self._buildQuery(row.iterchildren(), selection, "")
+            childQuery = self._buildQuery(row.iterchildren(), categoryId, selection, "")
             query = self._addToQuery(query, childQuery)
         return query
 
@@ -152,24 +158,35 @@ class Categories:
                 operator = "and"
             return query + " " + operator + " " + addition
     
-    def _updateContextMenu(self):
+    def updateContextMenu(self):
         if len(self._selectedCategories) == 0:
-            self._removeItem.set_sensitive(gtk.FALSE)
+            self._deleteItem.set_sensitive(gtk.FALSE)
             self._createChildItem.set_sensitive(gtk.FALSE)
+            self._copyItem.set_sensitive(gtk.FALSE)
+            self._cutItem.set_sensitive(gtk.FALSE)
+            self._pasteItem.set_sensitive(gtk.FALSE)
+            self._disconnectItem.set_sensitive(gtk.FALSE)
         else:
-            self._removeItem.set_sensitive(gtk.TRUE)
+            self._deleteItem.set_sensitive(gtk.TRUE)
             self._createChildItem.set_sensitive(gtk.TRUE)
+            self._copyItem.set_sensitive(gtk.TRUE)
+            self._cutItem.set_sensitive(gtk.TRUE)
+            if env.controller.clipboardHasCategory():
+                self._pasteItem.set_sensitive(gtk.TRUE)
+            else:
+                self._pasteItem.set_sensitive(gtk.FALSE)
+            self._disconnectItem.set_sensitive(gtk.TRUE)
         if len(self._selectedCategories) == 1:
             self._propertiesItem.set_sensitive(gtk.TRUE)
         else:
             self._propertiesItem.set_sensitive(gtk.FALSE)
             
-    def imagesSelected(self, imageModel):
+    def updateView(self, doNotAutoCollapse=gtk.FALSE):
         nrSelectedImagesInCategory = {}
         nrSelectedImages = 0
         # find out which categories are connected, not connected or
         # partitionally connected to selected images
-        for image in imageModel:
+        for image in env.controller.loadedImages.model:
             imageId = image[Images.COLUMN_IMAGE_ID]
             if imageId in env.controller.selection:
                 nrSelectedImages += 1
@@ -180,21 +197,23 @@ class Categories:
                         nrSelectedImagesInCategory[categoryId] += 1
                     except(KeyError):
                         nrSelectedImagesInCategory[categoryId] = 1
-        pathsToExpand = self._updateCategoryModel(self._model,
-                                                  nrSelectedImagesInCategory,
-                                                  nrSelectedImages)[0]
+        pathsToExpand = self._updateViewHelper(self._model,
+                                           nrSelectedImagesInCategory,
+                                           nrSelectedImages,
+                                           doNotAutoCollapse)[0]
         if env.widgets["autoExpand"].get_active():
             pathsToExpand.reverse()
             for path in pathsToExpand:
                 env.widgets["categoryView"].expand_row(path, gtk.FALSE)  
             
-    def _updateCategoryModel(self, categories, nrSelectedImagesInCategory, nrSelectedImages):
+    def _updateViewHelper(self, categories, nrSelectedImagesInCategory, nrSelectedImages, doNotAutoCollapse):
         pathsToExpand = []
         expandParent = gtk.FALSE
         for categoryRow in categories:
-            childPathsToExpand, expandThis = self._updateCategoryModel(categoryRow.iterchildren(),
-                                                                       nrSelectedImagesInCategory,
-                                                                       nrSelectedImages)
+            childPathsToExpand, expandThis = self._updateViewHelper(categoryRow.iterchildren(),
+                                                                nrSelectedImagesInCategory,
+                                                                nrSelectedImages,
+                                                                doNotAutoCollapse)
             pathsToExpand.extend(childPathsToExpand)
             if expandThis:
                 pathsToExpand.append(categoryRow.path)
@@ -217,7 +236,7 @@ class Categories:
                 # None of the selected images are connected to the category
                 categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
                 categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
-            if (not expandThis) and env.widgets["autoCollapse"].get_active():
+            if (not expandThis) and not doNotAutoCollapse and env.widgets["autoCollapse"].get_active():
                 env.widgets["categoryView"].collapse_row(categoryRow.path)
         return pathsToExpand, expandParent
                 
@@ -256,14 +275,49 @@ class Categories:
         
     def _rowActivated(self, a, b, c):
         print "not yet implemented!"
-            
+
+    def _copyCategory(self, item, data):
+        cc = ClipboardCategories()
+        cc.type = cc.COPY
+        cc.categories = self._selectedCategories
+        env.controller.clipboardSet(cc)
+
+    def _cutCategory(self, item, data):
+        cc = ClipboardCategories()
+        cc.type = cc.CUT
+        cc.categories = self._selectedCategories
+        env.controller.clipboardSet(cc)
+
+    def _pasteCategory(self, item, data):
+        clipboardCategories = env.controller.clipboardPop()
+        try:
+            for (categoryId, parentIds) in clipboardCategories.categories.items():
+                for selectedCategoryId in self._selectedCategories:
+                    self._connectChild(selectedCategoryId, categoryId)
+                    self._expandCategory(selectedCategoryId, self._model)
+                if clipboardCategories.type == ClipboardCategories.CUT:
+                    for parentId in parentIds:
+                        if parentId != None:
+                            self._disconnectChild(parentId, categoryId)
+        except(CategoryLoopError):
+            print "Error: Category loop detected"
+            # TODO: Show dialog box with error message
+        self.updateView(doNotAutoCollapse = gtk.TRUE)
+
+    def _expandCategory(self, categoryId, categories):
+        for c in categories:
+            if c[self._COLUMN_CATEGORY_ID] == categoryId:
+                env.widgets["categoryView"].expand_row(c.path, gtk.FALSE)
+            self._expandCategory(categoryId, c.iterchildren())
+        
     def _createRootCategory(self, item, data):
         dialog = CategoryDialog("Create root category")
         dialog.run(self._createRootCategoryHelper)
        
     def _createRootCategoryHelper(self, tag, desc):
-        env.shelf.createCategory(tag, desc)
-        self.reload()
+        category = env.shelf.createCategory(tag, desc)
+        self._populateModel(None, category)
+        self.updateView(doNotAutoCollapse = gtk.TRUE)
 
     def _createChildCategory(self, item, data):
         dialog = CategoryDialog("Create child category")
@@ -271,42 +325,55 @@ class Categories:
 
     def _createChildCategoryHelper(self, tag, desc):
         newCategory = env.shelf.createCategory(tag, desc)
-        for categoryId in self._selectedCategories:
-            env.shelf.getCategory(categoryId).connectChild(newCategory)
-        self.reload()
+        for selectedCategoryId in self._selectedCategories:
+            self._connectChild(selectedCategoryId, newCategory.getId())
+        self.updateView(doNotAutoCollapse = gtk.TRUE)
         
-    def _removeCategory(self, item, data):
-        selection = env.widgets["categoryView"].get_selection()
-        selection.handler_block(self._selectionHandler)
+    def _deleteCategory(self, item, data):
+        # TODO: Add confirmation dialog box
         for categoryId in self._selectedCategories:
+            category = env.shelf.getCategory(categoryId)
+            for child in list(category.getChildren()):
+                # The backend automatically disconnects childs when a category
+                # is deleted, but we do it outself to make sure that the
+                # treeview widget is updated
+                self._disconnectChild(categoryId, child.getId())
             env.shelf.deleteCategory(categoryId)
-        self.reload()
-        selection.handler_unblock(self._selectionHandler)
+            env.shelf.flushCategoryCache()
+            self._deleteCategoryHelper(self._model, categoryId)
+        self.updateView(doNotAutoCollapse = gtk.TRUE)
+
+    def _deleteCategoryHelper(self, categories, categoryId):
+         for c in categories:
+            if c[self._COLUMN_CATEGORY_ID] == categoryId:
+                self._model.remove(c.iter)
+            self._deleteCategoryHelper(c.iterchildren(), categoryId)
 
     def _disconnectCategory(self, item, data):
-        selection = env.widgets["categoryView"].get_selection()
-        selection.handler_block(self._selectionHandler)
-        selection.selected_foreach(self._disconnectFromParent, None)
-        self.reload()
-        selection.handler_unblock(self._selectionHandler)
-
-    def _disconnectFromParent(self, model, path, iter, data):
-        if len(path) > 1:
-            parentCategoryId = model[path[:-1]][self._COLUMN_CATEGORY_ID]
-            parentCategory = env.shelf.getCategory(parentCategoryId)
-            categoryId = model[path][self._COLUMN_CATEGORY_ID]
-            category = env.shelf.getCategory(categoryId)
-            parentCategory.disconnectChild(category)
+        for (categoryId, parentIds) in self._selectedCategories.items():
+            for parentId in parentIds:
+                if not parentId == None:
+                    self._disconnectChild(parentId, categoryId)
+        self.updateView(doNotAutoCollapse = gtk.TRUE)
 
     def _editProperties(self, item, data):
-        dialog = CategoryDialog("Change properties", self._selectedCategories[0])
-        dialog.run(self._editPropertiesHelper)
+        for category in self._selectedCategories:
+            dialog = CategoryDialog("Change properties", category)
+            dialog.run(self._editPropertiesHelper, data=category)
 
-    def _editPropertiesHelper(self, tag, desc):
-         category = env.shelf.getCategory(self._selectedCategories[0])
+    def _editPropertiesHelper(self, tag, desc, categoryId):
+         category = env.shelf.getCategory(categoryId)
          category.setTag(tag)
          category.setDescription(desc)
-         self.reload()
+         self._updateProperties(categoryId, self._model)
+
+    def _updateProperties(self, categoryId, categories):
+        for row in categories:
+            if row[self._COLUMN_CATEGORY_ID] == categoryId:
+                c = env.shelf.getCategory(categoryId)
+                row[self._COLUMN_TAG] = c.getTag()
+                row[self._COLUMN_DESCRIPTION] = c.getDescription()
+            self._updateProperties(categoryId, row.iterchildren())
         
     def _selectionFunction(self, path, b):
         if self._ignoreSelectEvent:
@@ -314,4 +381,39 @@ class Categories:
         else:
             return gtk.TRUE
 
- 
+    def _connectChild(self, parentId, childId):
+        childCategory = env.shelf.getCategory(childId)
+        parentCategory = env.shelf.getCategory(parentId)
+        parentCategory.connectChild(childCategory)
+        self._connectChildHelper(self._model, parentId, childCategory)
+        for category in self._model:
+            if category[self._COLUMN_CATEGORY_ID] == childId:
+                self._model.remove(category.iter)
+        
+    def _connectChildHelper(self, categories, parentId, child):
+        for c in categories:
+            if c[self._COLUMN_CATEGORY_ID] == parentId:
+                self._populateModel(c.iter, child)
+            self._connectChildHelper(c.iterchildren(), parentId, child)
+
+    def _disconnectChild(self, parentId, childId):
+        childCategory = env.shelf.getCategory(childId)
+        parentCategory = env.shelf.getCategory(parentId)
+        parentCategory.disconnectChild(childCategory)
+        self._disconnectChildHelper(self._model, None, childId, parentId)
+        if len(list(childCategory.getParents())) == 0:
+            self._populateModel(None, childCategory)
+        
+    def _disconnectChildHelper(self, categories, parent, childId, parentId):
+        for c in categories:
+            id = c[self._COLUMN_CATEGORY_ID]
+            if id == childId and parent == parentId:
+                self._model.remove(c.iter)
+            self._disconnectChildHelper(c.iterchildren(), id, childId, parentId)
+
+class ClipboardCategories:
+    COPY = 1
+    CUT = 2
+    categories = None
+    type = None
+
