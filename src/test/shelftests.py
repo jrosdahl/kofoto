@@ -443,8 +443,16 @@ class TestShelfMethods(TestShelfFixture):
             assert False
 
     def test_getImageVersionByLocation(self):
-        imageversion = self.shelf.getImageVersionByLocation(
-            os.path.join(PICDIR, "arlaharen.png"))
+        imageversion1 = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, u"arlaharen.png"))
+        currentDir = os.getcwd()
+        try:
+            os.chdir(PICDIR)
+            imageversion2 = self.shelf.getImageVersionByLocation(
+                u"arlaharen.png")
+        finally:
+            os.chdir(currentDir)
+        assert imageversion1 == imageversion2
 
     def test_negativeGetImageVersionByHash(self):
         try:

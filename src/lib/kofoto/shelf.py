@@ -996,6 +996,7 @@ class Shelf:
         """
         assert self.inTransaction
 
+        location = os.path.abspath(location)
         cursor = self.connection.cursor()
         cursor.execute(
             " select id"
