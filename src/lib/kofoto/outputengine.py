@@ -14,28 +14,29 @@ class OutputEngine:
 
 
     def getImageReference(self, image, widthlimit, heightlimit):
-        def helper():
+        def helper(ext):
             # Given the image, this function computes and returns a
             # suitable image name and a reference be appended to
-            # "@images/".
+            # "@images/<size>/".
+            year = "undated"
             captured = image.getAttribute(u"captured")
             if captured:
-                m = re.match("^(\d+)-(\d+)", captured)
+                m = re.match("^(\d{4})-?(\d{0,2})", captured)
                 if m:
-                    timestr = captured \
-                              .replace(" ", "_") \
-                              .replace(":", "") \
-                              .replace("-", "")
-                    name = "%s-%sx%s.jpg" % (
-                        timestr,
-                        widthlimit,
-                        heightlimit)
-                    return "/".join([m.group(1), m.group(2), name])
-            base, ext = os.path.splitext(os.path.basename(image.getLocation()))
-            return "/".join([
-                "undated",
-                "%s-%dx%d-%d%s" % (
-                    base, widthlimit, heightlimit, image.getId(), ext)])
+                    year = m.group(1)
+                    month = m.group(2)
+                    if month:
+                        timestr = captured \
+                                  .replace(" ", "_") \
+                                  .replace(":", "") \
+                                  .replace("-", "")
+                        # Also handle time stamps like "2004-11-11 +/- 3 days"
+                        filename = "%s%s" % (re.match("^(\w*)",
+                                                       timestr).group(1),
+                                              ext)
+                        return "/".join([year, month, filename])
+            filename = "%s%s" % (image.getId(), ext)
+            return "/".join([year, filename])
 
         key = (image.getHash(), widthlimit, heightlimit)
         if not self.imgref.has_key(key):
@@ -44,8 +45,11 @@ class OutputEngine:
                     image.getId(), widthlimit, heightlimit))
             imgabsloc, width, height = self.env.imageCache.get(
                 image, widthlimit, heightlimit)
+            ext = os.path.splitext(imgabsloc)[1]
             htmlimgloc = os.path.join(
-                "@images", helper().encode(self.env.codeset))
+                "@images",
+                "%sx%s" % (widthlimit, heightlimit),
+                helper(ext).encode(self.env.codeset))
             # Generate a unique htmlimgloc/imgloc.
             i = 1
             while True:
@@ -53,7 +57,7 @@ class OutputEngine:
                     self.generatedFiles.add(htmlimgloc)
                     break
                 base, ext = os.path.splitext(htmlimgloc)
-                htmlimgloc = re.sub(r"(-\d)?$", "-%d" % i, base) + ext
+                htmlimgloc = re.sub(r"(-\d*)?$", "-%d" % i, base) + ext
                 i += 1
             imgloc = os.path.join(self.dest, htmlimgloc)
             try:
