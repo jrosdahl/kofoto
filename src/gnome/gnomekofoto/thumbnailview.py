@@ -78,7 +78,7 @@ class ThumbnailView(ObjectCollectionView):
 ### Private
 
     __selectionLocked = gtk.FALSE
-    __maxWidth = env.thumbnailSize
+    __maxWidth = env.thumbnailSize[0]
 
     def __importSelection(self):
         self._viewWidget.unselect_all()        
