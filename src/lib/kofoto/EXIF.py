@@ -875,7 +875,10 @@ class EXIF_header:
     def decode_maker_note(self):
         note=self.tags['EXIF MakerNote']
         make=self.tags['Image Make'].printable
-        model=self.tags['Image Model'].printable
+        if hasattr(self.tags, 'Image Model'):
+            model=self.tags['Image Model'].printable
+        else:
+            model='TAG_UNAVAILABLE'
 
         # Nikon
         if make == 'NIKON':

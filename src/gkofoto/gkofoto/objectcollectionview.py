@@ -150,6 +150,8 @@ class ObjectCollectionView:
         self.__sortMenuGroup = None
 
     def _updateContextMenu(self, *foo):
+        if not self._hasFocus():
+            return
         env.debug("Updating context menu")
         self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
         env.widgets["menubarDestroy"].set_sensitive(False)

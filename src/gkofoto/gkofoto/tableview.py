@@ -23,6 +23,7 @@ class TableView(ObjectCollectionView):
         self.__createdColumns = {}
         self.__editedCallbacks = {}
         self._connectedOids = []
+        self.__hasFocus = False
         # Import the users setting in the configuration file for
         # which columns that shall be shown.
         columnLocation = 0
@@ -145,10 +146,14 @@ class TableView(ObjectCollectionView):
         ObjectCollectionView._clearContextMenu(self)
         self.__viewGroup = None
 
+    def _hasFocus(self):
+        return self.__hasFocus
+
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
     def _treeViewFocusInEvent(self, widget, event, data):
+        self.__hasFocus = True
         oc = self._objectCollection
         for widgetName, function in [
                 ("menubarCut", self._objectCollection.cut),
@@ -181,6 +186,7 @@ class TableView(ObjectCollectionView):
             env.widgets[widgetName].set_sensitive(True)
 
     def _treeViewFocusOutEvent(self, widget, event, data):
+        self.__hasFocus = False
         for (widget, oid) in self._connectedOids:
             widget.disconnect(oid)
         self._connectedOids = []

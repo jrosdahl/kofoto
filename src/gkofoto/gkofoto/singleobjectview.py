@@ -196,3 +196,6 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                   env.widgets["previousButton"].flags() & gtk.SENSITIVE):
                 self._goto(None, -1)
         return False
+
+    def _hasFocus(self):
+        return True

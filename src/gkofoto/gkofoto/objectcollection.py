@@ -268,7 +268,16 @@ class ObjectCollection(object):
     def __insertionWorker(self, objectList, location):
         for obj in objectList:
             self._freezeViews()
-            iterator = self.__treeModel.insert(location)
+
+#            self.__treeModel.insert(location)
+# Work-around for bug 171027 in PyGTK 2.6.1:
+            if location >= len(self.__treeModel):
+                iterator = self.__treeModel.append()
+            else:
+                iterator = self.__treeModel.insert_before(
+                    self.__treeModel[location])
+# End work-around.
+
             self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
             if obj.isAlbum():
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, True)
