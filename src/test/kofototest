@@ -1,4 +1,4 @@
 #! /bin/sh
 
-srcdir=$(dirname $0)
+srcdir=$(dirname $0)/..
 $srcdir/cmdline/kofoto --configfile=$srcdir/test.conf --shelf=$srcdir/test.shelf "$@"
