@@ -93,9 +93,13 @@ class ImageVersionsDialog:
                     break
             assert motherImage
 
+            for image in self._mergeImages:
+                if image != motherImage:
+                    for key, value in image.getAttributeMap().items():
+                        motherImage.setAttribute(key, value, overwrite=False)
+
             for data in self._versionDataList:
                 data.imageVersion.setImage(motherImage)
-                data.imageVersion.importExifTags(overwrite=False)
 
             descriptionTexts = []
             for image in self._mergeImages:
