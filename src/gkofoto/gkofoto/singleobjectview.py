@@ -55,8 +55,12 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 selectedObject = objectSelection[self.__selectedRowNr]
                 if selectedObject.isAlbum():
                     self.loadFile(env.albumIconFileName, False)
+                elif selectedObject.getPrimaryVersion():
+                    self.loadFile(
+                        selectedObject.getPrimaryVersion().getLocation(),
+                        False)
                 else:
-                    self.loadFile(selectedObject.getLocation(), False)
+                    self.loadFile(env.unknownImageIconFileName, False)
             enablePreviousButton = (self.__selectedRowNr > 0)
             env.widgets["previousButton"].set_sensitive(enablePreviousButton)
             env.widgets["menubarPreviousImage"].set_sensitive(enablePreviousButton)
@@ -151,7 +155,12 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             objid = model.get_value(model.get_iter(path), oc.COLUMN_OBJECT_ID)
             obj = env.shelf.getObject(objid)
             if not obj.isAlbum():
-                self.loadFile(obj.getLocation(), True)
+                if obj.getPrimaryVersion():
+                    self.loadFile(
+                        obj.getPrimaryVersion().getLocation(),
+                        True)
+                else:
+                    self.loadFile(env.unknownImageIconFileName, True)
 
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()

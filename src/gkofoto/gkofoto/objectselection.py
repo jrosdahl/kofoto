@@ -79,7 +79,9 @@ class ObjectSelection:
                 ux = oc.convertToUnsortedRowNr(x)
                 obj = self.__getObject(ux)
                 if not obj.isAlbum():
-                    filenames.append(obj.getLocation())
+                    imageversion = obj.getPrimaryVersion()
+                    if imageversion:
+                        filenames.append(imageversion.getLocation())
         env.debug("filenames to preload: %s" % str(filenames))
         return filenames
 

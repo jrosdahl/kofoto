@@ -192,12 +192,13 @@ class ObjectCollection(object):
             objectIds = Set()
             # Create a Set to avoid duplicated objects.
             for obj in Set(self.__objectSelection.getSelectedObjects()):
-                if deleteFiles:
-                    try:
-                        os.remove(obj.getLocation())
-                        # TODO: Delete from image cache too?
-                    except OSError:
-                        pass
+                if deleteFiles and not obj.isAlbum():
+                    for iv in obj.getImageVersions():
+                        try:
+                            os.remove(iv.getLocation())
+                            # TODO: Delete from image cache too?
+                        except OSError:
+                            pass
                 env.clipboard.removeObjects(obj)
                 env.shelf.deleteObject(obj.getId())
                 objectIds.add(obj.getId())
@@ -268,9 +269,13 @@ class ObjectCollection(object):
                 self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, None)
                 self.__nrOfAlbums += 1
             else:
+                if obj.getPrimaryVersion():
+                    ivlocation = obj.getPrimaryVersion().getLocation()
+                else:
+                    ivlocation = None
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, False)
                 self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, None)
-                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, obj.getLocation())
+                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, ivlocation)
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             for attribute, value in obj.getAttributeMap().items():
@@ -425,7 +430,11 @@ class ObjectCollection(object):
         env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
-                location = obj.getLocation().encode(env.codeset)
+                imageversion = obj.getPrimaryVersion()
+                if not imageversion:
+                    # Image has no versions. Skip it for now.
+                    continue
+                location = imageversion.getLocation().encode(env.codeset)
                 if angle == 90:
                     commandString = env.rotateRightCommand
                 else:
@@ -433,7 +442,7 @@ class ObjectCollection(object):
                 command = commandString.encode(env.codeset) % { "location":location }
                 result = os.system(command)
                 if result == 0:
-                    obj.contentChanged()
+                    imageversion.contentChanged()
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
                 else:
@@ -448,7 +457,11 @@ class ObjectCollection(object):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
             if not obj.isAlbum():
-                location = obj.getLocation()
+                imageversion = obj.getPrimaryVersion()
+                if not imageversion:
+                    # Image has no versions. Skip it for now.
+                    continue
+                location = imageversion.getLocation()
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
@@ -478,10 +491,14 @@ class ObjectCollection(object):
         obj = env.shelf.getObject(objectId)
         if obj.isAlbum():
             pixbuf = env.albumIconPixbuf
+        elif not obj.getPrimaryVersion():
+            pixbuf = env.unknownImageIconPixbuf
         else:
             try:
                 thumbnailLocation = env.imageCache.get(
-                    obj, env.thumbnailSize[0], env.thumbnailSize[1])[0]
+                    obj.getPrimaryVersion(),
+                    env.thumbnailSize[0],
+                    env.thumbnailSize[1])[0]
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:

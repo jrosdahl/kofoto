@@ -27,7 +27,7 @@ class ObjectCollectionFactory:
                 pass
         try:
             if validAlbumTag and not filterText:
-                self.__albumMembers.loadAlbum(env.shelf.getAlbum(query[1:]))
+                self.__albumMembers.loadAlbum(env.shelf.getAlbumByTag(query[1:]))
                 return self.__albumMembers
             else:
                 if filterText:

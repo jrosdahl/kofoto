@@ -3,9 +3,9 @@ import gobject
 import os
 from environment import env
 from kofoto.shelf import \
-     ImageDoesNotExistError, ImageExistsError, \
-     MultipleImagesAtOneLocationError, NotAnImageError, \
-     makeValidTag
+     ImageVersionDoesNotExistError, ImageVersionExistsError, \
+     MultipleImageVersionsAtOneLocationError, \
+     makeValidTag, computeImageHash
 from kofoto.clientutils import walk_files
 
 class HandleImagesDialog(gtk.FileChooserDialog):
@@ -53,8 +53,9 @@ class HandleImagesDialog(gtk.FileChooserDialog):
             except UnicodeDecodeError:
                 filepath = filepath.decode("latin1")
             try:
-                image = env.shelf.getImage(filepath)
-                if image.getLocation() == os.path.realpath(filepath):
+                imageversion = env.shelf.getImageVersionByHash(
+                    computeImageHash(filepath))
+                if imageversion.getLocation() == os.path.realpath(filepath):
                     # Registered.
                     knownUnchangedImages += 1
                     knownUnchangedImagesCount.set_text(
@@ -64,20 +65,19 @@ class HandleImagesDialog(gtk.FileChooserDialog):
                     knownMovedImages += 1
                     knownMovedImagesCount.set_text(str(knownMovedImages))
                     movedImages.append(filepath)
-            except ImageDoesNotExistError:
+            except ImageVersionDoesNotExistError:
                 try:
-                    image = env.shelf.getImage(
-                        filepath, identifyByLocation=True)
+                    env.shelf.getImageVersionByLocation(filepath)
                     # Modified.
                     unknownModifiedImages += 1
                     unknownModifiedImagesCount.set_text(
                         str(unknownModifiedImages))
                     modifiedImages.append(filepath)
-                except MultipleImagesAtOneLocationError:
+                except MultipleImageVersionsAtOneLocationError:
                     # Multiple images at one location.
                     # TODO: Handle this error.
                     pass
-                except ImageDoesNotExistError:
+                except ImageVersionDoesNotExistError:
                     # Unregistered.
                     unknownFiles += 1
                     unknownFilesCount.set_text(str(unknownFiles))
@@ -142,12 +142,11 @@ class HandleImagesDialog(gtk.FileChooserDialog):
     def _updateModifiedImages(self, filepaths):
         for filepath in filepaths:
             try:
-                image = env.shelf.getImage(
-                    filepath, identifyByLocation=True)
-                image.contentChanged()
-            except ImageDoesNotExistError:
+                imageversion = env.shelf.getImageVersionByLocation(filepath)
+                imageversion.contentChanged()
+            except ImageVersionDoesNotExistError:
                 self._error("Image does not exist: %s" % filepath)
-            except MultipleImagesAtOneLocationError:
+            except MultipleImageVersionsAtOneLocationError:
                 # TODO: Handle this.
                 pass
             except IOError, x:
@@ -157,11 +156,12 @@ class HandleImagesDialog(gtk.FileChooserDialog):
     def _updateMovedImages(self, filepaths):
         for filepath in filepaths:
             try:
-                image = env.shelf.getImage(filepath)
-                image.locationChanged(filepath)
-            except ImageDoesNotExistError:
+                imageversion = env.shelf.getImageVersionByHash(
+                    computeImageHash(filepath))
+                imageversion.locationChanged(filepath)
+            except ImageVersionDoesNotExistError:
                 self._error("Image does not exist: %s" % filepath)
-            except MultipleImagesAtOneLocationError:
+            except MultipleImageVersionsAtOneLocationError:
                 # TODO: Handle this.
                 pass
             except IOError, x:
