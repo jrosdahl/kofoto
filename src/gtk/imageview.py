@@ -119,3 +119,15 @@ class ImageView(gtk.ScrolledWindow):
         else:
             return FALSE
                 
+
+###########################
+        
+    def keyPressEventHandler(self, widget, gdkEvent):
+        if gdkEvent.type == gtk.gdk.KEY_PRESS:
+            if gdkEvent.keyval == gtk.keysyms.z:
+                self._imageView.fitToWindow()
+            if gdkEvent.keyval == gtk.keysyms.plus or gdkEvent.keyval == 65451:
+                self._imageView.zoomIn()
+            if gdkEvent.keyval == gtk.keysyms.minus or gdkEvent.keyval == 65453:
+                self._imageView.zoomOut()
+        return gtk.FALSE

@@ -1,60 +1,77 @@
-# TODO: How should a default size be set up for whole main window and its containg widgets? I have not managed to specify a default size for the scrollable ImageView widget.
-
 import gtk
+import gtk.gdk
 
-from albumview import *
+from environment import env
+
 class MainWindow(gtk.Window):
-    _imageView = None
-    _albumView = None
+    def _toggleExpandView(self, button):
+        if button.get_active():
+            env.widgets["notebook"].hide()
+        else:
+            env.widgets["notebook"].show()
 
-    def __init__(self, albumModel, albumView, imagelistModel, imageListView, imageView):
-        gtk.Window.__init__(self)
-        self.set_default_size(300, 200)
-        self.set_resizable(gtk.TRUE)
-        self.add_events(gtk.gdk.KEY_PRESS_MASK)
-        self.connect("key_press_event", self.keyPressEventHandler)
-        hpanedMain = gtk.HPaned()
-        hpanedSelection = gtk.HPaned()
-        hpanedMain.pack1(hpanedSelection, gtk.FALSE, gtk.TRUE)
-        self.add(hpanedMain)
+    def _toggleAttributesView(self, button):
+        if button.get_active():
+            env.widgets["attributeView"].show()
+        else:
+            env.widgets["attributeView"].hide()
 
-        # image view
-        self._imageView = imageView
-        hpanedMain.pack2(imageView, gtk.FALSE, gtk.TRUE)
-                
-        # image list
-        self._imageListView = imageListView
-        scrolledImageListView = gtk.ScrolledWindow()
-        scrolledImageListView.add(imageListView)
-        scrolledImageListView.set_size_request(400, 200)
-        hpanedSelection.pack2(scrolledImageListView, gtk.TRUE, gtk.TRUE )
+    def _toggleThumbnailsView(self, button):
+        if not self._toggleLock:
+            self._toggleLock = gtk.TRUE
+            button.set_active(gtk.TRUE)
+            env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["tableViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["thumbnailView"].show()
+            env.widgets["imageView"].hide()
+            env.widgets["tableViewScroll"].hide()
+            self._toggleLock = gtk.FALSE
 
-        # notebook
-        hpanedSelection.pack1(self._create_notebook(albumView), gtk.TRUE, gtk.TRUE)
-
-    def _create_notebook(self, albumView):
-        notebook = gtk.Notebook()
-
-        # Album view
-        self._albumView = albumView
-        self._new_notebook_page(notebook, albumView, '_Albums')
-
-        # TODO...
-        self._new_notebook_page(notebook, gtk.Label("Directories..."), '_Directories')
-        self._new_notebook_page(notebook, gtk.Label("Search..."), '_Search')
-        return notebook
-    
-    def _new_notebook_page(self, notebook, widget, label):
-        l = gtk.Label('')
-        l.set_text_with_mnemonic(label)
-        notebook.append_page(widget, l)
+    def _toggleImageView(self, button):
+        if not self._toggleLock:
+            self._toggleLock = gtk.TRUE
+            button.set_active(gtk.TRUE)
+            env.widgets["tableViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["thumbnailsViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["imageView"].show()
+            env.widgets["tableViewScroll"].hide()        
+            env.widgets["thumbnailView"].hide()
+            self._toggleLock = gtk.FALSE
+            
+    def _toggleTableView(self, button):
+        if not self._toggleLock:
+            self._toggleLock = gtk.TRUE
+            button.set_active(gtk.TRUE)
+            env.widgets["thumbnailsViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["tableViewScroll"].show()
+            env.widgets["thumbnailView"].hide()
+            env.widgets["imageView"].hide()
+            self._toggleLock = gtk.FALSE
         
-    def keyPressEventHandler(self, widget, gdkEvent):
-        if gdkEvent.type == gtk.gdk.KEY_PRESS:
-            if gdkEvent.keyval == gtk.keysyms.z:
-                self._imageView.fitToWindow()
-            if gdkEvent.keyval == gtk.keysyms.plus or gdkEvent.keyval == 65451:
-                self._imageView.zoomIn()
-            if gdkEvent.keyval == gtk.keysyms.minus or gdkEvent.keyval == 65453:
-                self._imageView.zoomOut()
-        return gtk.FALSE
+            
+    def __init__(self):
+        expandViewToggleButton = env.widgets["expandViewToggleButton"]
+        expandViewToggleButton.connect("toggled", self._toggleExpandView)
+        expandViewToggleButton.get_child().add(self.getIconImage("fullscreen-24.png"))
+
+        expandViewToggleButton = env.widgets["attributeToggleButton"]
+        expandViewToggleButton.connect("toggled", self._toggleAttributesView)
+
+        self._toggleLock = gtk.FALSE
+        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
+        env.widgets["imageViewToggleButton"].connect("clicked", self._toggleImageView)
+        env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
+
+    def getIconImage(self, name):
+        pixbuf = gtk.gdk.pixbuf_new_from_file(env.iconDir + name)
+        image = gtk.Image()
+        image.set_from_pixbuf(pixbuf)
+        image.show()
+        return image
+
+
+
+
+
+    
