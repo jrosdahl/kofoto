@@ -83,6 +83,8 @@ class Categories:
         for item in self._contextMenuGroup:
             self._contextMenu.append(item)
 
+        env.widgets["categorySearchButton"].set_sensitive(False)
+
         # Init menubar items.
         env.widgets["menubarDisconnectFromParent"].connect(
             "activate", self._disconnectCategory, None)
@@ -179,6 +181,8 @@ class Categories:
             except KeyError:
                  self.__selectedCategoriesIds[cid] = [parentId]
         self.__updateContextMenu()
+        env.widgets["categorySearchButton"].set_sensitive(
+            len(selectedCategoryRows) > 0)
 
     def _connectionToggled(self, renderer, path):
         categoryRow = self.__categoryModel[path]
