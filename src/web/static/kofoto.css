@@ -1,0 +1,49 @@
+html {
+    color: #000;
+    background: #ddd;
+    font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:link {
+    color: #000;
+}
+
+a:visited {
+    color: #000;
+}
+
+a:hover {
+    color: #22f;
+}
+
+ul {
+    list-style-type: none;
+    margin-left: 0.4em;
+    margin-top: 0.1em;
+    margin-right: 0.1em;
+    margin-bottom: 0.1em;
+    padding-left: 0em;
+    border-style: solid;
+    border-width: 1px;
+}
+
+ul li {
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
+    padding-left: 0.2em;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fff #c4c4d5 #c4c4d5 #fff;
+}
+
+li.odd {
+    background-color: #d2d2d2;
+}
+
+li.even {
+    background-color: #dddddd;
+}
