@@ -624,6 +624,10 @@ class Shelf:
             albumid)
         self._deleteObjectFromParents(albumid)
         cursor.execute(
+            " delete from member"
+            " where  albumid = %s",
+            albumid)
+        cursor.execute(
             " delete from object"
             " where  objectid = %s",
             albumid)
