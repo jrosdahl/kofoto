@@ -9,6 +9,7 @@
 # <notexpr> ::= "not" <term> | <term>
 #
 # <term> ::=   <bareword>
+#            | "exactly" <bareword>
 #            | <attribute> <attroper> <attrvalue>
 #            | "(" <expr> ")"
 #
@@ -129,6 +130,12 @@ class Parser:
         kind, token = self._scanner.next()
         if kind == "bareword":
             return self._snfactory.categoryNode(token, recursive=True)
+        elif kind == "exactly":
+            kind, token = self._scanner.next()
+            if kind != "bareword":
+                raise ParseError, \
+                      "expected category tag, got: " + token
+            return self._snfactory.categoryNode(token, recursive=False)
         elif kind == "attribute":
             attribute = token
             kind, token = self._scanner.next()
@@ -351,6 +358,7 @@ class Scanner:
             (r"<", "lt"),
             (r">", "gt"),
             (r"and", "and"),
+            (r"exactly", "exactly"),
             (r"or", "or"),
             (r"not", "not"),
             (r"\w+", "bareword"),
