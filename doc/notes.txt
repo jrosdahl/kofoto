@@ -136,3 +136,5 @@ Interesting links/projects/products:
     * http://www.gnu.org/software/gift/
     * http://curator.sourceforge.net/
     * http://www.adobe.com/products/photoshopalbum/
+    * http://www.photools.com/
+    * http://www.pixvue.com/
