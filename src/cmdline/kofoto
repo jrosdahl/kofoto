@@ -762,6 +762,11 @@ def main(argv):
             env.to_l(args[0]))
 
     try:
+        if env.shelf.isUpgradable():
+            printNotice(
+                "Upgrading %s to new database format...\n" % env.shelfLocation)
+            if not env.shelf.tryUpgrade():
+                printErrorAndExit("Failed to upgrade metadata database format.\n")
         env.shelf.begin()
     except ShelfNotFoundError, x:
         printErrorAndExit("Could not open metadata database \"%s\".\n" % (

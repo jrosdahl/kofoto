@@ -10,6 +10,27 @@ class Controller:
 
     def start(self, setupOk):
         if setupOk:
+            if env.shelf.isUpgradable():
+                dialog = gtk.MessageDialog(
+                    type=gtk.MESSAGE_INFO,
+                    buttons=gtk.BUTTONS_OK_CANCEL,
+                    message_format=
+                        "The metadata database format has changed."
+                        " Press OK to update it."
+                        " A backup copy of the old database will be made.")
+                dialog.set_default_response(gtk.RESPONSE_OK)
+                result = dialog.run()
+                dialog.destroy()
+                if result == gtk.RESPONSE_CANCEL:
+                    return
+                if not env.shelf.tryUpgrade():
+                    dialog = gtk.MessageDialog(
+                        type=gtk.MESSAGE_ERROR,
+                        buttons=gtk.BUTTONS_OK,
+                        message_format="Failed to upgrade metadata database format.\n")
+                    dialog.run()
+                    dialog.destroy()
+                    return
             try:
                 env.shelf.begin()
             except ShelfLockedError, e:
