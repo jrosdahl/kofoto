@@ -9,6 +9,7 @@ from __future__ import generators
 import sqlite as sql
 from kofoto.common import KofotoError
 from kofoto.sqlset import SqlSetFactory
+import threading
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
@@ -348,10 +349,12 @@ class Shelf:
                 self.connection.commit()
             else:
                 raise ShelfNotFoundError, location
+        self.transactionLock = threading.Lock()
 
 
     def begin(self):
         """Begin working with the shelf."""
+        self.transactionLock.acquire()
         # Instantiation of the first cursor starts the transaction in
         # PySQLite, so create one here.
         self.cursor = self.connection.cursor()
@@ -360,16 +363,22 @@ class Shelf:
 
     def commit(self):
         """Commit the work on the shelf."""
-        self.connection.commit()
-        del self.cursor
+        try:
+            del self.cursor
+            self.connection.commit()
+        finally:
+            self.transactionLock.release()
 
 
     def rollback(self):
         """Abort the work on the shelf.
 
         The changes (if any) will not be saved."""
-        self.connection.rollback()
-        del self.cursor
+        try:
+            del self.cursor
+            self.connection.rollback()
+        finally:
+            self.transactionLock.release()
 
 
     def getStatistics(self):
