@@ -3,7 +3,7 @@ import re
 from kofoto.outputengine import OutputEngine
 
 css = '''
-body {
+html {
     color: #000000;
     background: #dddddd;
     font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
