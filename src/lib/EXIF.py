@@ -62,6 +62,8 @@
 # * Finish Canon MakerNote format
 # * Better printing of ratios
 
+import struct
+
 # field type descriptions as (length, abbreviation, full name) tuples
 FIELD_TYPES=(
     (0, 'X',  'Dummy'), # no such type
@@ -627,22 +629,6 @@ MAKERNOTE_CANON_TAG_0x004={
     19: ('SubjectDistance', )
     }
 
-# extract multibyte integer in Motorola format (little endian)
-def s2n_motorola(str):
-    x=0
-    for c in str:
-        x=(x << 8) | ord(c)
-    return x
-
-# extract multibyte integer in Intel format (big endian)
-def s2n_intel(str):
-    x=0
-    y=0
-    for c in str:
-        x=x | (ord(c) << y)
-        y=y+8
-    return x
-
 # ratio object that eventually will be able to reduce itself to lowest
 # common denominator for printing
 def gcd(a, b):
@@ -702,14 +688,15 @@ class EXIF_header:
         self.file.seek(self.offset+offset)
         slice=self.file.read(length)
         if self.endian == 'I':
-            val=s2n_intel(slice)
+            endian_sign = '<'
         else:
-            val=s2n_motorola(slice)
-        # Sign extension ?
-        if signed:
-            msb=1 << (8*length-1)
-            if val & msb:
-                val=val-(msb << 1)
+            endian_sign = '>'
+        if length == 2:
+            val=struct.unpack(endian_sign + 'h', slice)
+        elif length == 4:
+            val=struct.unpack(endian_sign + 'i', slice)
+        else:
+            raise ValueError, 'bad slice length'
         return val
 
     # convert offset to string
