@@ -530,6 +530,8 @@ class Shelf:
                             client_encoding="UTF-8",
                             command_logfile=self.logfile),
                 "UTF-8")
+        except sql.OperationalError:
+            raise ShelfLockedError, self.location
         except sql.DatabaseError:
             raise ShelfNotFoundError, self.location
         self.categorydag = CachedObject(_createCategoryDAG, (self.connection,))

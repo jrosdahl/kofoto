@@ -17,6 +17,8 @@ def isUpgradable(location):
             return True
         else:
             return False
+    except sql.OperationalError:
+        raise kofoto.shelf.ShelfLockedError, location
     except sql.DatabaseError:
         raise kofoto.shelf.ShelfNotFoundError, location
 
