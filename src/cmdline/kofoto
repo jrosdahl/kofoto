@@ -581,7 +581,6 @@ def main(argv):
         file.close()
         sys.stdout.write("Created configuration file \"%s\".\n" %
                          configFilename)
-        sys.exit(0)
 
     conf = readConfig(configFilename)
 
@@ -601,6 +600,7 @@ def main(argv):
             printErrorAndExit(
                 "Could not create shelf file %s (already exists?).\n" %
                 filename)
+        sys.stdout.write("Created shelf \"%s\".\n" % shelfLocation)
         sys.exit(0)
 
     if not commandTable.has_key(args[0]):
