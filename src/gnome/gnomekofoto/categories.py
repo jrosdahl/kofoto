@@ -104,7 +104,7 @@ class Categories:
     def loadCategoryTree(self):
         self.__categoryModel.clear()
         env.shelf.flushCategoryCache()
-        for category in env.shelf.getRootCategories():
+        for category in self.__sortCategories(env.shelf.getRootCategories()):
             self.__loadCategorySubTree(None, category)
         if self.__objectCollection is not None:
             self.objectSelectionChanged()
@@ -306,7 +306,7 @@ class Categories:
         self.__categoryModel.set_value(iter, self.__COLUMN_DESCRIPTION, category.getDescription())
         self.__categoryModel.set_value(iter, self.__COLUMN_CONNECTED, False)
         self.__categoryModel.set_value(iter, self.__COLUMN_INCONSISTENT, False)
-        for child in category.getChildren():
+        for child in self.__sortCategories(category.getChildren()):
             self.__loadCategorySubTree(iter, child)
             
     def __buildQueryFromSelection(self):
@@ -478,7 +478,12 @@ class Categories:
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryId:
             category = env.shelf.getCategory(categoryId)
             categoryRow[self.__COLUMN_DESCRIPTION] = category.getDescription()
-    
+
+    def __sortCategories(self, categoryIter):
+        categories = list(categoryIter)
+        categories.sort(lambda x, y: cmp(x.getDescription(), y.getDescription()))
+        return categories
+            
 class ClipboardCategories:
     COPY = 1
     CUT = 2
