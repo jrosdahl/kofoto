@@ -222,7 +222,7 @@ class And:
             selectvar = "a0.objectid"
         else:
             selectvar = "objectid"
-            tables.append("object_category")
+            tables.append("object")
 
         if others:
             for node in others:
@@ -350,8 +350,8 @@ class Not:
     __str__ = __repr__
 
     def getQuery(self):
-        return (" select distinct objectid"
-                " from   object_category"
+        return (" select objectid"
+                " from   object"
                 " where  objectid not in (%s)" % self._subnode.getQuery())
 
 class Scanner:
