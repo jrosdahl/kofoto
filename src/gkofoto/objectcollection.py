@@ -7,6 +7,8 @@ from kofoto.shelf import *
 from menuhandler import *
 from environment import env
 from objectselection import *
+from albumdialog import AlbumDialog
+from registerimagesdialog import RegisterImagesDialog
 
 class ObjectCollection(object):
 
@@ -64,9 +66,23 @@ class ObjectCollection(object):
     def getDestroyLabel(self):
         return "Destroy..."
 
-    def getActions(self):
-        return None
-        # TODO implement
+    def getCreateAlbumChildLabel(self):
+        return "Create album child..."
+
+    def getRegisterImagesLabel(self):
+        return "Register and add images..."
+
+    def getAlbumPropertiesLabel(self):
+        return "Album properties..."
+
+    def getOpenImageLabel(self):
+        return "Open image in external program..."
+
+    def getRotateImageLeftLabel(self):
+        return "Rotate image left"
+
+    def getRotateImageRightLabel(self):
+        return "Rotate image right"
 
     def getObjectMetadataMap(self):
         return self.__objectMetadataMap
@@ -296,7 +312,47 @@ class ObjectCollection(object):
             # TODO Show dialog error box?
             print "Not allowed to set album tag on image"
 
-    def rotate(self, widget, angle):
+    def createAlbumChild(self, widget, data):
+        dialog = AlbumDialog("Create album")
+        dialog.run(self._createAlbumChildHelper)
+
+    def _createAlbumChildHelper(self, tag, desc):
+        newAlbum = env.shelf.createAlbum(tag)
+        if len(desc) > 0:
+            newAlbum.setAttribute(u"title", desc)
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        selectedAlbum = selectedObjects[0]
+        children = list(selectedAlbum.getChildren())
+        children.append(newAlbum)
+        selectedAlbum.setChildren(children)
+        env.mainwindow.reloadAlbumTree()
+
+    def registerAndAddImages(self, widget, data):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1 and selectedObjects[0].isAlbum()
+        selectedAlbum = selectedObjects[0]
+        dialog = RegisterImagesDialog(selectedAlbum)
+        dialog.run()
+
+    def albumProperties(self, widget, data):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1 and selectedObjects[0].isAlbum()
+        selectedAlbumId = selectedObjects[0].getId()
+        dialog = AlbumDialog("Edit album", selectedAlbumId)
+        dialog.run(self._albumPropertiesHelper)
+
+    def _albumPropertiesHelper(self, tag, desc):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        selectedAlbum = selectedObjects[0]
+        selectedAlbum.setTag(tag)
+        if len(desc) > 0:
+            selectedAlbum.setAttribute(u"title", desc)
+        else:
+            selectedAlbum.deleteAttribute(u"title")
+        env.mainwindow.reloadAlbumTree()
+        # TODO: Update objectCollection.
+
+    def rotateImage(self, widget, angle):
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
                 location = obj.getLocation().encode(env.codeset)
@@ -313,7 +369,7 @@ class ObjectCollection(object):
                 else:
                     print "failed to execute:", command
 
-    def open(self, widget, data):
+    def openImage(self, widget, data):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
             if not obj.isAlbum():

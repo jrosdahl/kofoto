@@ -55,7 +55,7 @@ class MenuGroup:
 
     def enable(self):
         for child in self.__childItems:
-            child.self.set_sensitive(True)
+            child.set_sensitive(True)
 
     def disable(self):
         for child in self.__childItems:

@@ -13,6 +13,7 @@ from gkofoto.objectcollection import *
 
 class MainWindow(gtk.Window):
     def __init__(self):
+        env.mainwindow = self
         self._toggleLock = False
         self.__currentObjectCollection = None
         self._currentView = None
@@ -31,7 +32,6 @@ class MainWindow(gtk.Window):
         env.widgets["quit"].connect("activate", env.controller.quit)
         env.widgets["save"].set_sensitive(False)
         env.widgets["revert"].set_sensitive(False)
-        env.widgets["registerImages"].connect("activate", env.controller.registerImages)
         env.widgets["previousButton"].set_sensitive(False)
         env.widgets["nextButton"].set_sensitive(False)
         env.widgets["zoom100"].set_sensitive(False)
@@ -68,6 +68,9 @@ class MainWindow(gtk.Window):
         self.__albums.loadAlbumTree()
         self.__categories.loadCategoryTree()
         self.loadQuery(self.__query)
+
+    def reloadAlbumTree(self):
+        self.__albums.loadAlbumTree()
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))

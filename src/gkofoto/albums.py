@@ -4,15 +4,17 @@ import gtk
 from environment import env
 from albumdialog import AlbumDialog
 from menuhandler import *
+from registerimagesdialog import RegisterImagesDialog
 
 class Albums:
 
 ###############################################################################
 ### Public
 
-    __createAlbumLabel = "Create child album"
-    __destroyAlbumLabel = "Destroy album"
-    __editAlbumLabel = "Album properties"
+    __createAlbumLabel = "Create child album..."
+    __registerImagesLabel = "Register and add images..."
+    __destroyAlbumLabel = "Destroy album..."
+    __editAlbumLabel = "Album properties..."
 
     # TODO This class should probably be splited in a model and a view when/if
     #      a multiple windows feature is introduced.
@@ -56,6 +58,7 @@ class Albums:
             selection = self.__albumView.get_selection()
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
         createMenuItem = self.__menuGroup[self.__createAlbumLabel]
+        registerMenuItem = self.__menuGroup[self.__registerImagesLabel]
         destroyMenuItem = self.__menuGroup[self.__destroyAlbumLabel]
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iterator:
@@ -64,16 +67,26 @@ class Albums:
             album = env.shelf.getAlbum(
                 albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID))
             createMenuItem.set_sensitive(album.isMutable())
+            registerMenuItem.set_sensitive(album.isMutable())
             destroyMenuItem.set_sensitive(album != env.shelf.getRootAlbum())
             editMenuItem.set_sensitive(True)
         else:
             createMenuItem.set_sensitive(False)
+            registerMenuItem.set_sensitive(False)
             destroyMenuItem.set_sensitive(False)
             editMenuItem.set_sensitive(False)
 
     def _createChildAlbum(self, *dummies):
         dialog = AlbumDialog("Create album")
         dialog.run(self._createAlbumHelper)
+
+    def _registerImages(self, *dummies):
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
+        selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
+        dialog = RegisterImagesDialog(selectedAlbum)
+        dialog.run()
+        # TODO: update objectCollection?
 
     def _createAlbumHelper(self, tag, desc):
         newAlbum = env.shelf.createAlbum(tag)
@@ -83,8 +96,8 @@ class Albums:
         if iterator is None:
             selectedAlbum = env.shelf.getRootAlbum()
         else:
-            selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
-            selectedAlbum = env.shelf.getAlbum(selectedAlbumTag.decode("utf-8"))
+            selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
+            selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
         children = list(selectedAlbum.getChildren())
         children.append(newAlbum)
         selectedAlbum.setChildren(children)
@@ -99,8 +112,8 @@ class Albums:
         result = dialog.run()
         if result == gtk.RESPONSE_OK:
             albumModel, iterator =  self.__albumView.get_selection().get_selected()
-            selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
-            env.shelf.deleteAlbum(selectedAlbumTag.decode("utf-8"))
+            selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
+            env.shelf.deleteAlbum(selectedAlbumId)
             # TODO The whole tree should not be reloaded
             self.loadAlbumTree()
             # TODO update objectCollection?
@@ -114,8 +127,8 @@ class Albums:
 
     def _editAlbumHelper(self, tag, desc):
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
-        selectedAlbumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
-        selectedAlbum = env.shelf.getAlbum(selectedAlbumTag)
+        selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
+        selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
         selectedAlbum.setTag(tag)
         if len(desc) > 0:
             selectedAlbum.setAttribute(u"title", desc)
@@ -167,6 +180,8 @@ class Albums:
         self.__menuGroup = MenuGroup()
         self.__menuGroup.addMenuItem(self.__createAlbumLabel,
                                      self._createChildAlbum)
+        self.__menuGroup.addMenuItem(self.__registerImagesLabel,
+                                     self._registerImages)
         self.__menuGroup.addMenuItem(self.__destroyAlbumLabel,
                                      self._destroyAlbum)
         self.__menuGroup.addMenuItem(self.__editAlbumLabel,

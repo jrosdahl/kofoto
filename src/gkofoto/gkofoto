@@ -117,10 +117,6 @@ class Controller:
             self.__mainWindow.reload()
         dialog.destroy()
 
-    def registerImages(self, app):
-        dialog = RegisterImagesDialog()
-        dialog.run()
-
 ######################################################################
 ### Start
 
