@@ -115,8 +115,10 @@ class ClientEnvironment(object):
                    self.configFileLocation)
 
         if shelfLocation == None:
-            self.__shelfLocation = self.unicodeToLocalizedString(
-                os.path.expanduser(self.config.get("database", "location")))
+            self.__shelfLocation = \
+                os.path.expanduser(
+                    self.unicodeToLocalizedString(
+                        self.config.get("database", "location")))
         else:
             self.__shelfLocation = shelfLocation
 
@@ -138,8 +140,9 @@ class ClientEnvironment(object):
                      self.shelfLocation)
 
         self.__imageCache = ImageCache(
-            self.unicodeToLocalizedString(
-                os.path.expanduser(self.config.get("image cache", "location"))),
+            os.path.expanduser(
+                self.unicodeToLocalizedString(
+                    self.config.get("image cache", "location"))),
             self.config.getboolean("image cache", "use_orientation_attribute"))
 
     def getCodeset(self):

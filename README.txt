@@ -55,17 +55,17 @@ A. Unix
 
            http://www.python.org
 
-     * GTK+ 2.2. Found at:
+     * GTK+ 2.4. Found at:
 
-           http://www.pygtk.org
+           http://www.gtk.org
 
-     * Glade 2.0. Found at:
+     * Glade 2.6. Found at:
 
            http://glade.gnome.org
 
-     * PyGTK for GTK+ 2.2 (including Glade bindings). Found at:
+     * PyGTK for GTK+ 2.4 (including Glade bindings). Found at:
 
-           http://www.gtk.org
+           http://www.pygtk.org
 
      * Python Imaging Library. Found at:
 
@@ -104,11 +104,11 @@ B. Windows
 
            http://www.python.org
 
-     * GTK+ 2.2 (including Glade 2.0) for Windows. Found at:
+     * GTK+ 2.4 (including Glade) for Windows. Found at:
 
-            http://www.dropline.net/gtk/
+            http://gladewin32.sourceforge.net
 
-     * PyGTK for GTK+ 2.2 (including Glade bindings) for Windows. Found at:
+     * PyGTK for GTK+ 2.4 (including Glade bindings) for Windows. Found at:
 
             http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
 

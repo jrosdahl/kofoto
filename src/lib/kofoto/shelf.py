@@ -220,7 +220,6 @@ schema = """
 """
 
 _ROOT_ALBUM_ID = 0
-_ROOT_ALBUM_DEFAULT_TAG = u"root"
 _SHELF_FORMAT_VERSION = 2
 
 ######################################################################
@@ -1167,7 +1166,7 @@ class Shelf:
             " insert into album (albumid, tag, deletable, type)"
             " values (%s, %s, 0, 'plain')",
             _ROOT_ALBUM_ID,
-            _ROOT_ALBUM_DEFAULT_TAG)
+            u"root")
         self.connection.commit()
 
         self.begin()
@@ -1180,6 +1179,9 @@ class Shelf:
             u"This album contains albums and images that are not" +
             u" linked from any album.")
         self.getRootAlbum().setChildren([orphansalbum])
+        self.createCategory(u"events", u"Events")
+        self.createCategory(u"locations", u"Locations")
+        self.createCategory(u"people", u"People")
         self.commit()
 
 

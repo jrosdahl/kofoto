@@ -34,17 +34,14 @@ class GenerateHTMLDialog:
 
     def _onBrowse(self, *unused):
         directorySelectedInDirList = False
-        dirDialog = gtk.FileSelection(title="Choose directory")
-        dirDialog.file_list.set_sensitive(False)
-        dirDialog.fileop_del_file.set_sensitive(False)
-        dirDialog.fileop_ren_file.set_sensitive(False)
+        dirDialog = gtk.FileChooserDialog(
+            title="Choose directory",
+            action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+            buttons=(
+                gtk.STOCK_OK, gtk.RESPONSE_OK,
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
         if dirDialog.run() == gtk.RESPONSE_OK:
-            model, iterator = dirDialog.dir_list.get_selection().get_selected()
-            directory = dirDialog.get_filename()
-            if iterator:
-                directory = os.path.join(
-                    directory, model.get_value(iterator, 0))
-            self.directoryTextEntry.set_text(directory)
+            self.directoryTextEntry.set_text(dirDialog.get_filename())
         dirDialog.destroy()
 
     def _onCancel(self, *unused):

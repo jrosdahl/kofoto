@@ -189,20 +189,26 @@ class ObjectCollection(object):
             else:
                 checkbutton = widgets.get_widget("deleteImageFilesCheckbutton")
                 deleteFiles = checkbutton.get_active()
-            for obj in self.__objectSelection.getSelectedObjects():
+            objectIds = Set()
+            # Create a Set to avoid duplicated objects.
+            for obj in Set(self.__objectSelection.getSelectedObjects()):
                 if deleteFiles:
                     try:
                         os.remove(obj.getLocation())
                         # TODO: Delete from image cache too?
                     except OSError:
                         pass
+                env.clipboard.removeObjects(obj)
                 env.shelf.deleteObject(obj.getId())
-            locations = list(self.getObjectSelection())
+                objectIds.add(obj.getId())
+            self.getObjectSelection().unselectAll()
+            unsortedModel = self.getUnsortedModel()
+            locations = [row.path for row in unsortedModel
+                         if row[ObjectCollection.COLUMN_OBJECT_ID] in objectIds]
             locations.sort()
             locations.reverse()
             for loc in locations:
-                del model[loc]
-            self.getObjectSelection().unselectAll()
+                del unsortedModel[loc]
         dialog.destroy()
         # TODO: If the removed objects are albums, update the album widget.
         self._thawViews()
