@@ -1775,6 +1775,7 @@ class PlainAlbum(Album):
         for (objid,) in cursor:
             child = self.shelf.getObject(objid)
             self.children.append(child)
+        for child in self.children:
             yield child
 
 
