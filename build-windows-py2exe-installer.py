@@ -17,28 +17,30 @@ options = {
         },
     }
 
-shutil.copy("src/gkofoto/start-installed.py", "kofoto.py")
-windows = ["kofoto.py"]
+shutil.copy("src/cmdline/kofoto", "kofoto.py")
+shutil.copy("src/gkofoto/start-installed.py", "gkofoto.py")
+console = ["kofoto.py"]
+windows = ["gkofoto.py"]
 sys.argv = [sys.argv[0], "py2exe"]
 
-setup.run(options=options, windows=windows)
+setup.run(options=options, console=console, windows=windows)
 
 os.unlink("kofoto.py")
+os.unlink("gkofoto.py")
 shutil.rmtree(glob.glob("dist/tcl")[0])
 os.remove(glob.glob("dist/tcl*.dll")[0])
 os.remove(glob.glob("dist/tk*.dll")[0])
 
 k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
 gtkdir = _winreg.QueryValueEx(k, "Path")[0]
-for dir in ["etc", "lib", "share"]:
-    destdir = join("dist", dir)
-    if not isdir(destdir):
-        os.mkdir(destdir)
-    for subdir in glob.glob(join(gtkdir, dir, "*")):
-        subdestdir = join(destdir, basename(subdir))
-        print "copying %s --> %s" % (subdir, subdestdir)
-        if not isdir(subdestdir):
-            shutil.copytree(subdir, subdestdir)
+for dir in ["bin", "etc", "lib", "share"]:
+    for dirpath, dirnames, filenames in os.walk(join(gtkdir, dir)):
+        destdir = join("dist", dirpath[len(gtkdir) + 1:])
+        if not isdir(destdir):
+            os.makedirs(destdir)
+        for filename in filenames:
+            print "copying %s --> %s" % (join(dirpath, filename), destdir)
+            shutil.copy(join(dirpath, filename), destdir)
 
 shutil.copy("COPYING.txt", "dist/license.txt")
 license_file = open("dist/license.txt", "a")

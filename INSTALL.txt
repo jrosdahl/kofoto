@@ -39,7 +39,7 @@ A. Unix
 
      * PySQLite for SQLite 2.8. Found at:
 
-           http://pysqlite.sourceforge.net
+           http://www.pysqlite.org
 
    On a Debian GNU/Linux machine, installing the packages
    python-glade2, python-gtk2, python-imaging and python-sqlite should
@@ -91,7 +91,7 @@ C. Windows with separately installed dependencies
 
      * PySQLite. Found at:
 
-           http://pysqlite.sourceforge.net
+           http://www.pysqlite.org
 
 
    Installing and running Kofoto

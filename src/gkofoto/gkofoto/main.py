@@ -11,20 +11,21 @@ def setupWindowsEnvironment(bindir):
 
     if  os.path.isdir(os.path.join(bindir, "etc")):
         # Case 1: Bundled GTK+ runtime.
-        pass
+        gtkdir = bindir
     else:
         # Case 2: Separately installed GTK+ runtime.
         try:
             k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
         except EnvironmentError:
-            print "You must install the GTK+ 2.2 Runtime Environment to run this",
+            print "You must install the GTK+ 2.4 Runtime Environment to run this",
             print "program."
             while not msvcrt.kbhit():
                 pass
             sys.exit(1)
         else:
-            gtkdir = _winreg.QueryValueEx(k, "Path")
-            os.environ["PATH"] += ";%s/lib;%s/bin" % (gtkdir[0], gtkdir[0])
+            gtkdir = _winreg.QueryValueEx(k, "Path")[0]
+
+    os.environ["PATH"] += ";%s/lib;%s/bin" % (gtkdir, gtkdir)
 
     # Allow (default) datafile location to be determined under Windows 98.
     if os.path.expanduser("~") == "~":

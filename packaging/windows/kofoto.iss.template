@@ -21,10 +21,10 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 Source: "%distdir%\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\Kofoto"; Filename: "{app}\kofoto.exe"
-Name: "{userdesktop}\Kofoto"; Filename: "{app}\kofoto.exe"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Kofoto"; Filename: "{app}\kofoto.exe"; Tasks: quicklaunchicon
+Name: "{group}\Kofoto"; Filename: "{app}\gkofoto.exe"
+Name: "{userdesktop}\Kofoto"; Filename: "{app}\gkofoto.exe"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Kofoto"; Filename: "{app}\gkofoto.exe"; Tasks: quicklaunchicon
 
 [Run]
-Filename: "{app}\kofoto.exe"; Description: "{cm:LaunchProgram,Kofoto}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\gkofoto.exe"; Description: "{cm:LaunchProgram,Kofoto}"; Flags: nowait postinstall skipifsilent
 
