@@ -70,7 +70,11 @@ metainformation från originalbilden (förutom vid importering, Björn
 anm.).
 
 
-speciella attribut:
+Speciella attribut:
 
-tidsstämpel
-kortnamn
+Time stamp
+Short name
+
+Ospeciella attribut:
+
+Caption: Bildtext, 0 till många rader, olämplig som länktext.
