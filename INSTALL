@@ -34,3 +34,13 @@ Installation:
 
         Run "make install" (installs into /usr/local) or "make install
         PREFIX=<prefix>".
+
+    GKofoto under Windows:
+
+        GTK+ for Windows. Found at:
+
+            http://www.dropline.net/gtk/
+
+        PyGTK for Windows. Found at:
+
+            http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
