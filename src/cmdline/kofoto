@@ -166,7 +166,7 @@ def displayHelp():
         "                 string (sorted by capture timestamp). The search string is\n"
         "                 read from the album's \"query\" attribute.\n"
         "\n"
-        % DEFAULT_CONFIGFILE)
+        % DEFAULT_CONFIGFILE_LOCATION)
 #                                                                 79 characters here:  |
 
 
