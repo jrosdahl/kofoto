@@ -145,12 +145,6 @@ class ObjectCollectionView:
         self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
         env.widgets["menubarDestroy"].set_sensitive(False)
         mutable = self._objectCollection.isMutable()
-        if env.clipboard.hasObjects():
-            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
-            env.widgets["menubarPaste"].set_sensitive(mutable)
-        else:
-            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(False)
-            env.widgets["menubarPaste"].set_sensitive(False)
         objectSelection = self._objectCollection.getObjectSelection()
         if objectSelection:
             model = self._objectCollection.getModel()
@@ -214,7 +208,6 @@ class ObjectCollectionView:
             self.__clipboardMenuGroup.disable()
             env.widgets["menubarCut"].set_sensitive(False)
             env.widgets["menubarCopy"].set_sensitive(False)
-            env.widgets["menubarPaste"].set_sensitive(False)
             env.widgets["menubarDelete"].set_sensitive(False)
 
             self.__objectMenuGroup.disable()
@@ -229,6 +222,14 @@ class ObjectCollectionView:
             env.widgets["menubarOpenImage"].set_sensitive(False)
             env.widgets["menubarRotateLeft"].set_sensitive(False)
             env.widgets["menubarRotateRight"].set_sensitive(False)
+
+        if env.clipboard.hasObjects():
+            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
+            env.widgets["menubarPaste"].set_sensitive(mutable)
+        else:
+            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(False)
+            env.widgets["menubarPaste"].set_sensitive(False)
+
 
 ###############################################################################
 ### Private
