@@ -1,6 +1,7 @@
 import gtk
 import gtk.gdk
 import math
+import locale
 import gobject
 import gc
 from gtk import TRUE, FALSE
@@ -35,12 +36,15 @@ class ImageView(gtk.ScrolledWindow):
     def loadFile(self, filename):
         # TODO: Loading file should be asyncronous to avoid freezing the gtk-main loop
         try:
+            locale.setlocale(locale.LC_ALL, "")
+            CODESET = locale.nl_langinfo(locale.CODESET)
             gc.collect()
-            self._pixBuf = gtk.gdk.pixbuf_new_from_file(filename)
+            self._pixBuf = gtk.gdk.pixbuf_new_from_file(filename.encode(CODESET))
             self._image.show()
             self._newImageLoaded = TRUE
             self.fitToWindow()
         except gobject.GError:
+            print "GError while loading ", filename
             self._pixBuf = None
             self._image.hide()
 
@@ -132,4 +136,3 @@ class ImageView(gtk.ScrolledWindow):
             return TRUE
         else:
             return FALSE
-
