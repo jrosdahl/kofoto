@@ -699,7 +699,6 @@ class Shelf:
         except IOError:
             raise NotAnImageError, path
 
-        import os
         location = unicode(os.path.abspath(path.encode(self.codeset)),
                            self.codeset)
         hash = computeImageHash(location.encode(self.codeset))
@@ -768,7 +767,6 @@ class Shelf:
             ref)
         row = cursor.fetchone()
         if not row:
-            import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
                     " select imageid, hash, directory, filename"
@@ -806,7 +804,6 @@ class Shelf:
         else:
             # No match. Check whether it's a path to a known file.
             imageid = None
-            import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
                     " select imageid, hash"
