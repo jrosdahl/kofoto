@@ -1796,15 +1796,22 @@ class Image(_Object):
 
 
     def locationChanged(self, location):
-        """Set the last known location of the image."""
+        """Set the last known location of the image.
+
+        The mtime is also updated."""
         cursor = self.shelf._getConnection().cursor()
         location = unicode(os.path.realpath(location))
+        try:
+            self.mtime = os.path.getmtime(location)
+        except OSError:
+            self.mtime = 0
         cursor.execute(
             " update image"
-            " set    directory = %s, filename = %s"
+            " set    directory = %s, filename = %s, mtime = %s"
             " where  imageid = %s",
             os.path.dirname(location),
             os.path.basename(location),
+            self.mtime,
             self.getId())
         self.location = location
         self.shelf._setModified()
