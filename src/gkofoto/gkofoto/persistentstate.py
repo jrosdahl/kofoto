@@ -14,10 +14,12 @@ class PersistentState(object):
         home = os.path.expanduser("~")
         if sys.platform.startswith("win"):
             self.__stateFile = os.path.join(
-                home, "KofotoData", "gkofoto-state.ini")
+                home, "KofotoData", "state", "gkofoto.ini")
         else:
             self.__stateFile = os.path.join(
-                home, ".kofoto", "gkofoto-state")
+                home, ".kofoto", "state", "gkofoto")
+        if not os.path.isdir(os.path.dirname(self.__stateFile)):
+            os.mkdir(os.path.dirname(self.__stateFile))
         if os.path.isfile(self.__stateFile):
             self.__configParser.read(self.__stateFile)
 
