@@ -478,6 +478,7 @@ class Shelf:
 
     def isModified(self):
         """Check whether the shelf has uncommited changes."""
+        assert self.inTransaction
         return self.modified
 
 
