@@ -51,7 +51,7 @@ def unix_install():
             "gkofoto",
             ]
         }
-    run(setup_options)
+    run(**setup_options)
     os.unlink("gkofoto")
 
 if __name__ == "__main__":

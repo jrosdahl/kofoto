@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 
+import os
 import setup
 import shutil
+import sys
 
 shutil.copy("src/gkofoto/start-installed.py", "gkofoto-start.pyw")
 scripts = [
