@@ -323,19 +323,22 @@ MAKERNOTE_NIKON_OLDER_TAGS={
 
 # decode Olympus SpecialMode tag in MakerNote
 def olympus_special_mode(v):
-    a={
-        0: 'Normal',
-        1: 'Unknown',
-        2: 'Fast',
-        3: 'Panorama'}
-    b={
-        0: 'Non-panoramic',
-        1: 'Left to right',
-        2: 'Right to left',
-        3: 'Bottom to top',
-        4: 'Top to bottom'}
-    return '%s - sequence %d - %s' % (a[v[0]], v[1], b[v[2]])
-        
+    try:
+        a={
+            0: 'Normal',
+            1: 'Unknown',
+            2: 'Fast',
+            3: 'Panorama'}
+        b={
+            0: 'Non-panoramic',
+            1: 'Left to right',
+            2: 'Right to left',
+            3: 'Bottom to top',
+            4: 'Top to bottom'}
+        return '%s - sequence %d - %s' % (a[v[0]], v[1], b[v[2]])
+    except(KeyError):
+        return ''
+    
 MAKERNOTE_OLYMPUS_TAGS={
     # ah HAH! those sneeeeeaky bastids! this is how they get past the fact
     # that a JPEG thumbnail is not allowed in an uncompressed TIFF file
