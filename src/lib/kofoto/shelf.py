@@ -6,11 +6,12 @@ from __future__ import generators
 ######################################################################
 ### Libraries.
 
+import re
+import threading
 import sqlite as sql
+from types import *
 from kofoto.common import KofotoError
 from kofoto.sqlset import SqlSetFactory
-import threading
-from types import *
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
@@ -45,6 +46,11 @@ schema = """
     --        |
     -- where \|/ is supposed to look like the subclass relation symbol.
     --        |
+
+    -- Administrative information about the database.
+    CREATE TABLE dbinfo (
+        version   INTEGER NOT NULL
+    );
 
     -- Superclass of objects in an album.
     CREATE TABLE object (
@@ -177,6 +183,9 @@ class ShelfNotFoundError(KofotoError):
     pass
 
 
+class UnsupportedShelfError(KofotoError):
+    """Unsupported shelf database format."""
+
 class ShelfLockedError(KofotoError):
     """The shelf is locked by another process."""
     pass
@@ -227,8 +236,8 @@ class UndeletableAlbumError(KofotoError):
     pass
 
 
-class ReservedAlbumTagError(KofotoError):
-    """The album tag is reserved for internal purposes."""
+class BadAlbumTagError(KofotoError):
+    """Bad album tag."""
     pass
 
 
@@ -247,8 +256,8 @@ class CategoryDoesNotExistError(KofotoError):
     pass
 
 
-class ReservedCategoryTagError(KofotoError):
-    """The category tag is reserved for internal purposes."""
+class BadCategoryTagError(KofotoError):
+    """Bad category tag."""
     pass
 
 
@@ -297,18 +306,20 @@ def verifyValidAlbumTag(tag):
     try:
         int(tag)
     except ValueError:
-        pass
+        if re.search(r"\s", tag):
+            raise BadAlbumTagError, tag
     else:
-        raise ReservedAlbumTagError, tag
+        raise BadAlbumTagError, tag
 
 
 def verifyValidCategoryTag(tag):
     try:
         int(tag)
     except ValueError:
-        pass
+        if re.search(r"\s", tag):
+            raise BadCategoryTagError, tag
     else:
-        raise ReservedCategoryTagError, tag
+        raise BadCategoryTagError, tag
 
 
 ######################################################################
@@ -343,8 +354,10 @@ class Shelf:
         try:
             cursor = self.connection.cursor()
             cursor.execute(
-                " select count(*)"
-                " from album")
+                " select version"
+                " from   dbinfo")
+            if cursor.fetchone()[0] != 0:
+                raise UnsupportedShelfError, location
             self.connection.rollback()
             if create:
                 raise FailedWritingError, location
@@ -353,6 +366,9 @@ class Shelf:
         except sql.DatabaseError:
             if create:
                 cursor.execute(schema)
+                cursor.execute(
+                    " insert into dbinfo"
+                    " values (0)")
                 cursor.execute(
                     " insert into object"
                     " values (%s)",
@@ -371,9 +387,10 @@ class Shelf:
     def begin(self):
         """Begin working with the shelf."""
         self.transactionLock.acquire()
-        # Instantiation of the first cursor starts the transaction in
-        # PySQLite, so create one here.
-        self.connection.cursor()
+        # In PySQLite, the transaction starts when the first SQL
+        # command is executed, so execute a dummy command here.
+        cursor = self.connection.cursor()
+        cursor.execute("select * from dbinfo")
         self.sqlsetFactory = SqlSetFactory(self.connection)
 
 

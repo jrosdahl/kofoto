@@ -419,7 +419,7 @@ def registerHelper(env, destalbum, paths):
                 try:
                     album = env.shelf.createAlbum(unicode(tag, env.codeset))
                     break
-                except (AlbumExistsError, ReservedAlbumTagError):
+                except (AlbumExistsError, BadAlbumTagError):
                     tag = tag + "_"
             newchildren.append(album)
             env.out("Registered directory %s as an album with tag %s\n" % (
@@ -718,6 +718,10 @@ def main(argv):
         printErrorAndExit(
             "Could not open shelf \"%s\".\n" % shelfLocation +
             "Another process is locking it.\n")
+    except UnsupportedShelfError, filename:
+        printErrorAndExit(
+            "Could not read shelf file %s (too new shelf format?).\n" %
+            filename)
     shelf.begin()
     try:
         env.codeset = CODESET
@@ -740,8 +744,8 @@ def main(argv):
             "Bad arguments to command. See \"kofoto --help\" for help.\n")
     except UndeletableAlbumError, x:
         printError("Undeletable album: \"%s\".\n" % _from_uc(x.args[0]))
-    except ReservedAlbumTagError, x:
-        printError("Reserved album tag: \"%s\".\n" % _from_uc(x.args[0]))
+    except BadAlbumTagError, x:
+        printError("Bad album tag: \"%s\".\n" % _from_uc(x.args[0]))
     except AlbumExistsError, x:
         printError("Album already exists: \"%s\".\n" % _from_uc(x.args[0]))
     except ImageDoesNotExistError, x:
@@ -758,8 +762,8 @@ def main(argv):
         printError("Category already exists: \"%s\".\n" % _from_uc(x.args[0]))
     except CategoryDoesNotExistError, x:
         printError("Category does not exist: \"%s\".\n" % _from_uc(x.args[0]))
-    except ReservedCategoryTagError, x:
-        printError("Reserved category tag: %s.\n" % _from_uc(x.args[0]))
+    except BadCategoryTagError, x:
+        printError("Bad category tag: %s.\n" % _from_uc(x.args[0]))
     except CategoryPresentError, x:
         printError("Object %s is already associated with category %s.\n" % (
             _from_uc(x.args[0]), _from_uc(x.args[1])))
