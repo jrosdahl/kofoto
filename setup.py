@@ -24,7 +24,9 @@ data_files = [
     ("share/gnomekofoto/icons", ["src/gnome/icons/fullscreen-24.png"])
     ]
 if os.name == "posix":
-    os.system("cd src/web && make")
+    if os.system("cd src/web && make") != 0:
+        import sys
+        sys.exit(1)
     package_dir["kofotoweb"] = "src/web/kofotoweb"
     packages.append("kofotoweb")
     scripts.append("src/web/webkofoto")
