@@ -268,7 +268,10 @@ class TestShelfFixture(unittest.TestCase):
             beta,
             self.shelf.createAlbum(u"gamma", u"allalbums"),
             self.shelf.createAlbum(u"delta", u"allimages")])
-        self.shelf.createAlbum(u"epsilon", u"plain") # Orphan album.
+        self.shelf.createAlbum(u"epsilon", u"plain") # Orphaned album.
+        zeta = self.shelf.createAlbum(u"zeta", u"search")
+        zeta.setAttribute(u"query", u"a")
+        root.setChildren(list(root.getChildren()) + [zeta])
 
         cat_a = self.shelf.createCategory(u"a", u"A")
         cat_b = self.shelf.createCategory(u"b", u"B")
@@ -293,19 +296,19 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getStatistics(self):
         s = self.shelf.getStatistics()
-        assert s["nalbums"] == 7
+        assert s["nalbums"] == 8
         assert s["nimages"] == 11
 
     def test_createdObjects(self):
         root = self.shelf.getRootAlbum()
         children = list(root.getChildren())
-        assert len(children) == 5
-        orphans, alpha, beta, gamma, delta = children
+        assert len(children) == 6
+        orphans, alpha, beta, gamma, delta, zeta = children
         assert self.shelf.getObject(u"alpha") == alpha
         assert self.shelf.getAlbum(u"beta") == beta
         assert len(list(alpha.getChildren())) == 11
         assert len(list(beta.getChildren())) == 1
-        assert len(list(gamma.getChildren())) == 7
+        assert len(list(gamma.getChildren())) == 8
         assert len(list(delta.getChildren())) == 11
 
     def test_createdAttributes(self):
@@ -344,7 +347,7 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getAllAlbums(self):
         albums = list(self.shelf.getAllAlbums())
-        assert len(albums) == 7
+        assert len(albums) == 8
 
     def test_getAllImages(self):
         images = list(self.shelf.getAllImages())
@@ -424,7 +427,7 @@ class TestShelfMethods(TestShelfFixture):
         attrnames.sort()
         assert attrnames == [
             "cameramake", "cameramodel", "captured", "description",
-            "orientation", "registered", "title"
+            "orientation", "query", "registered", "title"
             ]
 
     def test_negativeCreateCategory(self):
@@ -734,7 +737,7 @@ class TestAllAlbumsAlbum(TestShelfFixture):
 
     def test_getChildren(self):
         gamma = self.shelf.getAlbum(u"gamma")
-        assert len(list(gamma.getChildren())) == 7
+        assert len(list(gamma.getChildren())) == 8
 
     def test_getAlbumChildren(self):
         gamma = self.shelf.getAlbum(u"gamma")
@@ -783,12 +786,12 @@ class TestAllImagesAlbum(TestShelfFixture):
 
 class TestOrphansAlbum(TestShelfFixture):
     def test_getType(self):
-        alpha = self.shelf.getAlbum(u"orphans")
-        assert alpha.getType() == "orphans"
+        orphans = self.shelf.getAlbum(u"orphans")
+        assert orphans.getType() == "orphans"
 
     def test_isMutable(self):
-        alpha = self.shelf.getAlbum(u"orphans")
-        assert not alpha.isMutable()
+        orphans = self.shelf.getAlbum(u"orphans")
+        assert not orphans.isMutable()
 
     def test_getChildren(self):
         orphans = self.shelf.getAlbum(u"orphans")
@@ -813,12 +816,12 @@ class TestOrphansAlbum(TestShelfFixture):
 
 class TestSearchAlbum(TestShelfFixture):
     def test_getType(self):
-        searchalbum = self.shelf.createAlbum(u"search", u"search")
-        assert searchalbum.getType() == "search"
+        zeta = self.shelf.getAlbum(u"zeta")
+        assert zeta.getType() == "search"
 
     def test_isMutable(self):
-        searchalbum = self.shelf.createAlbum(u"search", u"search")
-        assert not searchalbum.isMutable()
+        zeta = self.shelf.getAlbum(u"zeta")
+        assert not zeta.isMutable()
 
     def test_getChildren(self):
         alpha = self.shelf.getAlbum(u"alpha")
@@ -827,10 +830,10 @@ class TestSearchAlbum(TestShelfFixture):
         cat_b = self.shelf.getCategory(u"b")
         image1.addCategory(cat_a)
         image2.addCategory(cat_b)
-        searchalbum = self.shelf.createAlbum(u"search", u"search")
-        assert searchalbum
-        searchalbum.setAttribute(u"query", u"b")
-        children = searchalbum.getChildren()
+        zeta = self.shelf.getAlbum(u"zeta")
+        assert zeta
+        zeta.setAttribute(u"query", u"b")
+        children = zeta.getChildren()
         assert list(children) == [image2]
 
     def test_getAlbumChildren(self):
@@ -840,23 +843,24 @@ class TestSearchAlbum(TestShelfFixture):
         cat_b = self.shelf.getCategory(u"b")
         image1.addCategory(cat_a)
         image2.addCategory(cat_b)
-        searchalbum = self.shelf.createAlbum(u"search", u"search")
-        assert searchalbum
-        searchalbum.setAttribute(u"query", u"b")
-        children = searchalbum.getAlbumChildren()
+        zeta = self.shelf.getAlbum(u"zeta")
+        assert zeta
+        zeta.setAttribute(u"query", u"b")
+        children = zeta.getAlbumChildren()
+        l = list(children)
         assert list(children) == []
 
     def test_setChildren(self):
-        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        zeta = self.shelf.getAlbum(u"zeta")
         try:
-            searchalbum.setChildren([])
+            zeta.setChildren([])
         except UnsettableChildrenError:
             pass
         else:
             assert False
 
     def test_isAlbum(self):
-        assert self.shelf.getAlbum(u"orphans").isAlbum()
+        assert self.shelf.getAlbum(u"zeta").isAlbum()
 
 ######################################################################
 

@@ -58,7 +58,7 @@ class SearchNodeFactory:
             album = tag_or_album
         else:
             album = self._shelf.getAlbum(tag_or_album)
-        return AlbumSearchNode(album.getId())
+        return AlbumSearchNode(self._shelf, album)
 
     def andNode(self, subnodes):
         return AndSearchNode(subnodes)
@@ -176,18 +176,43 @@ class Parser:
 ######################################################################
 
 class AlbumSearchNode:
-    def __init__(self, albumid):
-        self._id = albumid
+    def __init__(self, shelf, album):
+        self._shelf = shelf
+        self._album = album
 
     def __repr__(self):
-        return "AlbumSearchNode(%r)" % self._id
+        return "AlbumSearchNode(%r)" % (self._album)
 
     __str__ = __repr__
 
     def getQuery(self):
-        return (" select distinct objectid"
-                " from   member"
-                " where  albumid = %s" % self._id)
+        t = self._album.getType()
+        if t == "allalbums":
+            return "select 1 where null" # Return empty result set.
+        elif t == "allimages":
+            return (" select imageid"
+                    " from   image left join attribute"
+                    "            on imageid = objectid and name = 'captured'"
+                    " order by lcvalue, directory, filename")
+        elif t == "orphans":
+            return (" select imageid"
+                    " from   image left join attribute"
+                    " on     imageid = objectid and name = 'captured'"
+                    " where  imageid not in (select objectid from member)"
+                    " order by lcvalue, directory, filename")
+        elif t == "plain":
+            return (" select distinct objectid"
+                    " from   member"
+                    " where  albumid = %s" % self._album.getId())
+        elif t == "search":
+            query = self._album.getAttribute(u"query")
+            if not query:
+                return ""
+            parser = Parser(self._shelf)
+            tree = parser.parse(query)
+            return tree.getQuery()
+        else:
+            assert False, ("Unknown album type", t)
 
 class AndSearchNode:
     def __init__(self, subnodes):
