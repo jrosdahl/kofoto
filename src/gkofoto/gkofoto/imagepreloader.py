@@ -57,6 +57,10 @@ class ImagePreloader(object):
         for ps in self.__preloadStates.values():
             if ps.pixbufLoader:
                 ps.pixbufLoader.close()
+                # Set loadFinished to avoid an extra
+                # pixbufLoader.close() by the loop in
+                # _preloadImagesWorker.
+                ps.loadFinished = True
         self.__preloadStates = {}
 
     def getPixbuf(self, filename, maxWidth=None, maxHeight=None):
