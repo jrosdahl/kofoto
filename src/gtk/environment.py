@@ -1,6 +1,7 @@
 import sys
 import os
 import getopt
+import locale
 
 # Find libraries if installed in ../lib (like in the source tree).
 if os.path.islink(sys.argv[0]):
@@ -19,8 +20,11 @@ class Environment:
 
 from kofoto.common import *
 from kofoto.shelf import *
-   
+
+locale.setlocale(locale.LC_ALL, "")
+CODESET = locale.nl_langinfo(locale.CODESET)
+
 env = Environment()
 env.baseDir = bindir
 env.iconDir = bindir + "/icons/"
-env.shelf = Shelf(os.path.expanduser("~/.kofoto/shelf")) # TODO: Read from configuration file
+env.shelf = Shelf(os.path.expanduser("~/.kofoto/shelf"), CODESET) # TODO: Read from configuration file
