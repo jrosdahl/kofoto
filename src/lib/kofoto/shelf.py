@@ -604,7 +604,7 @@ class Shelf:
     def getAllAlbums(self):
         """Get all albums in the shelf (unsorted).
 
-        Returns an iterator returning the albums."""
+        Returns an iterable returning the albums."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select albumid, tag, type"
@@ -616,7 +616,7 @@ class Shelf:
     def getAllImages(self):
         """Get all images in the shelf (unsorted).
 
-        Returns an iterator returning the images."""
+        Returns an iterable returning the images."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select imageid, hash, directory, filename"
@@ -869,7 +869,7 @@ class Shelf:
     def getAllAttributeNames(self):
         """Get all used attribute names in the shelf (sorted).
 
-        Returns an iterator the attribute names."""
+        Returns an iterable the attribute names."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select distinct name"
@@ -970,7 +970,7 @@ class Shelf:
     def getRootCategories(self):
         """Get the categories that are roots, i.e. have no parents.
 
-        Returns an iterator returning Category instances."""
+        Returns an iterable returning Category instances."""
         for catid in self.categorydag.get().getRoots():
             yield self.getCategory(catid)
 
@@ -981,7 +981,7 @@ class Shelf:
         Use kofoto.search.Parser to construct a search node tree from
         a string.
 
-        Returns an iterator returning the objects."""
+        Returns an iterable returning the objects."""
         cursor = self.connection.cursor()
         cursor.execute(searchtree.getQuery())
         for (objid,) in cursor:
@@ -1173,7 +1173,7 @@ class Category:
         """Get child categories.
 
         If recursive is true, get all descendants. If recursive is
-        false, get only immediate children. Returns an iterator
+        false, get only immediate children. Returns an iterable
         returning of Category instances (unordered)."""
         catdag = self.shelf.categorydag.get()
         if recursive:
@@ -1188,7 +1188,7 @@ class Category:
         """Get parent categories.
 
         If recursive is true, get all ancestors. If recursive is
-        false, get only immediate parents. Returns an iterator
+        false, get only immediate parents. Returns an iterable
         returning of Category instances (unordered)."""
         catdag = self.shelf.categorydag.get()
         if recursive:
@@ -1343,7 +1343,7 @@ class _Object:
     def getAttributeNames(self):
         """Get all attribute names.
 
-        Returns an iterator returning the attributes."""
+        Returns an iterable returning the attributes."""
         if not self.allAttributesFetched:
             self.getAttributeMap()
         return self.attributes.iterkeys()
@@ -1417,7 +1417,7 @@ class _Object:
     def getCategories(self, recursive=False):
         """Get categories for this object.
 
-        Returns an iterator returning the categories."""
+        Returns an iterable returning the categories."""
         if not self.allCategoriesFetched:
             cursor = self.shelf.connection.cursor()
             cursor.execute(
@@ -1476,7 +1476,7 @@ class Album(_Object):
     def getAlbumParents(self):
         """Get the album's (album) parents.
 
-        Returns an iterator returning Album instances.
+        Returns an iterable returning Album instances.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1517,7 +1517,7 @@ class PlainAlbum(Album):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning Album/Images instances.
+        Returns an iterable returning Album/Images instances.
         """
         if self.children is not None:
             for child in self.children:
@@ -1540,7 +1540,7 @@ class PlainAlbum(Album):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning Album instances.
+        Returns an iterable returning Album instances.
         """
         if self.children is not None:
             for child in self.children:
@@ -1754,7 +1754,7 @@ class AllAlbumsAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the albums.
+        Returns an iterable returning the albums.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1768,7 +1768,7 @@ class AllAlbumsAlbum(MagicAlbum):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning the albums.
+        Returns an iterable returning the albums.
         """
         return self.getChildren()
 
@@ -1782,7 +1782,7 @@ class AllImagesAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the images.
+        Returns an iterable returning the images.
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
@@ -1812,7 +1812,7 @@ class OrphansAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the orphans.
+        Returns an iterable returning the orphans.
         """
         return self._getChildren(True)
 
@@ -1820,7 +1820,7 @@ class OrphansAlbum(MagicAlbum):
     def getAlbumChildren(self):
         """Get the album's album children.
 
-        Returns an iterator returning the orphans.
+        Returns an iterable returning the orphans.
         """
         return self._getChildren(False)
 
