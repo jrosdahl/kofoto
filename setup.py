@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from distutils.core import setup
+import shutil
 import os
 
 package_dir = {
@@ -24,8 +25,8 @@ data_files = [
                              "src/gkofoto/icons/thumbnailsview.png",
                              "src/gkofoto/icons/unknownimage.png"])
     ]
+
 if os.name == "posix":
-    import shutil
     shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto")
     scripts = [
         "src/cmdline/renameimage",
@@ -43,14 +44,17 @@ if os.name == "posix":
         "src/web/static/webkofoto.css",
         ]))
 else:
+    shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto-start.pyw")
     scripts = [
         "src/cmdline/kofoto",
+        "src/gkofoto/gkofoto-start.pyw",
         ]
 
 versionDict = {}
 execfile("src/lib/kofoto/version.py", versionDict)
 
 setup(
+    windows=["src/gkofoto/gkofoto-start.pyw"],
     name="kofoto",
     version=versionDict["version"],
     package_dir=package_dir,
@@ -61,4 +65,7 @@ setup(
     author_email="kofoto@rosdahl.net",
     url="http://svn.rosdahl.net/kofoto/kofoto/")
 
-os.unlink("src/gkofoto/gkofoto")
+if os.name == "posix":
+    os.unlink("src/gkofoto/gkofoto")
+else:
+    os.unlink("src/gkofoto/gkofoto-start.pyw")
