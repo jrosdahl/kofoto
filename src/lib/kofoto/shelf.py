@@ -747,10 +747,10 @@ class Shelf:
         import Image as PILImage
         try:
             pilimg = PILImage.open(path)
+            if not pilimg.mode in ("L", "RGB", "CMYK"):
+                pilimg = pilimg.convert("RGB")
 #        except IOError:
         except: # Work-around for buggy PIL.
-            raise NotAnImageError, path
-        if pilimg.format == "MPEG":
             raise NotAnImageError, path
         width, height = pilimg.size
         location = unicode(os.path.realpath(path.encode(self.codeset)),
