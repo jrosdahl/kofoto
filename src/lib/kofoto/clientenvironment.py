@@ -71,27 +71,29 @@ class ClientEnvironment(object):
 
         if configFileLocation == None:
             if sys.platform.startswith("win"):
-                configFileLocation = os.path.expanduser(
+                self.__configFileLocation = os.path.expanduser(
                     os.path.join("~", "KofotoData", "config.ini"))
             else:
-                configFileLocation = os.path.expanduser(
+                self.__configFileLocation = os.path.expanduser(
                     os.path.join("~", ".kofoto", "config"))
+        else:
+            self.__configFileLocation = configFileLocation
 
-        if not os.path.exists(configFileLocation):
-            confdir = os.path.dirname(configFileLocation)
+        if not os.path.exists(self.configFileLocation):
+            confdir = os.path.dirname(self.configFileLocation)
             if confdir and not os.path.exists(confdir):
                 os.mkdir(confdir)
                 self._writeInfo("Created directory \"%s\".\n" % confdir)
             if createMissingConfigFile:
-                createConfigTemplate(configFileLocation)
+                createConfigTemplate(self.configFileLocation)
                 self._writeInfo("Created configuration file \"%s\".\n" %
-                                configFileLocation)
+                                self.configFileLocation)
             else:
                 raise MissingConfigFileError, \
                     ("Missing configuration file: \"%s\"\n" %
-                         configFileLocation,
-                     configFileLocation)
-        self.__config = Config(configFileLocation, self.codeset)
+                         self.configFileLocation,
+                     self.configFileLocation)
+        self.__config = Config(self.configFileLocation, self.codeset)
 
         try:
             self.config.read()
@@ -99,37 +101,40 @@ class ClientEnvironment(object):
         except MissingSectionHeaderError, x:
             raise BadConfigFileError, \
                   ("Bad configuration (missing section headers).\n",
-                   configFileLocation)
+                   self.configFileLocation)
         except MissingConfigurationKeyError, (section, key):
             raise BadConfigFileError, \
                   ("Missing configuration key in %s section: %s.\n" % (
                        section, key),
-                   configFileLocation)
+                   self.configFileLocation)
         except BadConfigurationValueError, (section, key, value):
             raise BadConfigFileError, \
                   ("Bad configuration value for %s in %s section: %s.\n" % (
                     key, section, value),
-                   configFileLocation)
+                   self.configFileLocation)
 
         if shelfLocation == None:
-            shelfLocation = self.unicodeToLocalizedString(
+            self.__shelfLocation = self.unicodeToLocalizedString(
                 os.path.expanduser(self.config.get("shelf", "location")))
+        else:
+            self.__shelfLocation = shelfLocation
 
-        self.__shelf = Shelf(shelfLocation, self.codeset)
+        self.__shelf = Shelf(self.shelfLocation, self.codeset)
 
-        if not os.path.exists(shelfLocation):
+        if not os.path.exists(self.shelfLocation):
             if createMissingShelf:
                 try:
                     self.shelf.create()
-                except FailedWritingError, shelfLocation:
+                except FailedWritingError, self.shelfLocation:
                     raise BadShelfError, \
-                        ("Could not create shelf file %s.\n" % shelfLocation,
-                         shelfLocation)
-                self._writeInfo("Created shelf \"%s\".\n" % shelfLocation)
+                        ("Could not create shelf file %s.\n" % (
+                             self.shelfLocation),
+                         self.shelfLocation)
+                self._writeInfo("Created shelf \"%s\".\n" % self.shelfLocation)
             else:
                 raise MissingShelfError, \
-                    ("Could not open shelf \"%s\"" % shelfLocation,
-                     shelfLocation)
+                    ("Could not open shelf \"%s\"" % self.shelfLocation,
+                     self.shelfLocation)
 
         self.__imageCache = ImageCache(
             self.unicodeToLocalizedString(
@@ -144,9 +149,17 @@ class ClientEnvironment(object):
         return self.__config
     config = property(getConfig)
 
+    def getConfigFileLocation(self):
+        return self.__configFileLocation
+    configFileLocation = property(getConfigFileLocation)
+
     def getShelf(self):
         return self.__shelf
     shelf = property(getShelf)
+
+    def getShelfLocation(self):
+        return self.__shelfLocation
+    shelfLocation = property(getShelfLocation)
 
     def getImageCache(self):
         return self.__imageCache

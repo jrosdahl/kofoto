@@ -752,10 +752,11 @@ def main(argv):
     try:
         env.shelf.begin()
     except ShelfNotFoundError, x:
-        printErrorAndExit("Could not open shelf \"%s\".\n" % shelfLocation)
+        printErrorAndExit("Could not open shelf \"%s\".\n" % (
+            env.shelfLocation))
     except ShelfLockedError, x:
         printErrorAndExit(
-            "Could not open shelf \"%s\".\n" % shelfLocation +
+            "Could not open shelf \"%s\".\n" % env.shelfLocation +
             "Another process is locking it.\n")
     except UnsupportedShelfError, filename:
         printErrorAndExit(
