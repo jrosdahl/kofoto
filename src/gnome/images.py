@@ -1,6 +1,7 @@
 import os
 import gtk
 import gobject
+import gc
 from kofoto.imagecache import *
 
 from environment import env
@@ -38,6 +39,7 @@ class Images:
 
     def loadImageList(self, imageList):
         self.model.clear()
+        gc.collect()
         self._thumbnailSize = 0
         for image in imageList:
             iter = self.model.append()
