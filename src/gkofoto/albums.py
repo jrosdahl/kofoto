@@ -55,14 +55,19 @@ class Albums:
         if not selection:
             selection = self.__albumView.get_selection()
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        createMenuItem = self.__menuGroup[self.__createAlbumLabel]
         destroyMenuItem = self.__menuGroup[self.__destroyAlbumLabel]
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iterator:
             albumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
             self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
+            album = env.shelf.getAlbum(
+                albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID))
+            createMenuItem.set_sensitive(album.isMutable())
             destroyMenuItem.set_sensitive(True)
             editMenuItem.set_sensitive(True)
         else:
+            createMenuItem.set_sensitive(False)
             destroyMenuItem.set_sensitive(False)
             editMenuItem.set_sensitive(False)
 
