@@ -48,15 +48,15 @@ class ImageCache:
                     pass
 
 
-    def get(self, imageOrLocation, widthlimit, heightlimit):
+    def get(self, imageversionOrLocation, widthlimit, heightlimit):
         """Get a file path to a cached image and the cached image's
         size.
 
-        imageOrLocation could either be an kofoto.shelf.Image instance
-        or a location string. If it's a location, the path should
-        preferably be normalized (e.g. with os.path.realpath()). If
-        the image does not exist at the given location or cannot be
-        parsed, OSError is raised.
+        imageversionOrLocation could either be an
+        kofoto.shelf.ImageVersion instance or a location string. If
+        it's a location, the path should preferably be normalized
+        (e.g. with os.path.realpath()). If the image does not exist at
+        the given location or cannot be parsed, OSError is raised.
 
         If the original image doesn't fit within the limits, a smaller
         version of the image will be created and its path returned. If
@@ -65,16 +65,17 @@ class ImageCache:
 
         Returns a tuple of file path, width and height.
         """
-        if isinstance(imageOrLocation, (str, unicode)):
-            location = imageOrLocation
+        if isinstance(imageversionOrLocation, (str, unicode)):
+            location = imageversionOrLocation
             mtime = os.path.getmtime(location)
             width, height = PILImage.open(location).size
             orientation = "up"
         else:
-            image = imageOrLocation
-            location = image.getLocation()
-            mtime = image.getModificationTime()
-            width, height = image.getSize()
+            imageversion = imageversionOrLocation
+            image = imageversion.getImage()
+            location = imageversion.getLocation()
+            mtime = imageversion.getModificationTime()
+            width, height = imageversion.getSize()
             if self.useOrientation:
                 orientation = image.getAttribute(u"orientation")
                 if not orientation:
