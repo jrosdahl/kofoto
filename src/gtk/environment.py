@@ -31,4 +31,5 @@ env.imageCacheLocation = genconf["imagecache_location"]
 env.imageSizes = genconf["image_sizes"]
 env.baseDir = bindir
 env.iconDir = bindir + "/icons/"
+env.gladeFile = env.baseDir + "/glade/gkofoto.glade"
 env.shelf = Shelf(genconf["shelf_location"], CODESET)

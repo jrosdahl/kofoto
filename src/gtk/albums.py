@@ -8,15 +8,13 @@ class Albums:
     _COLUMN_ALBUM_ID  = 0
     _COLUMN_TAG       = 1
     _COLUMN_TYPE      = 2
-    _COLUMN_OBJECT    = 3
 
     _model = None
     
     def __init__(self):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                     gobject.TYPE_STRING,   # TAG
-                                    gobject.TYPE_STRING,   # TYPE
-                                    gobject.TYPE_PYOBJECT) # OBJECT
+                                    gobject.TYPE_STRING)   # TYPE
         albumView = env.widgets["albumView"]
         albumView.set_model(self._model)
         renderer = gtk.CellRendererText()
@@ -28,9 +26,7 @@ class Albums:
         self.reload()
         
     def reload(self):
-        env.shelf.begin()
         self._buildModel(None, env.shelf.getRootAlbum(), [])
-        env.shelf.rollback()
 
     def _buildModel(self, parent, object, visited):
         for child in object.getChildren():
@@ -39,7 +35,6 @@ class Albums:
                 iter = self._model.insert_before(parent, None)
                 self._model.set_value(iter, self._COLUMN_ALBUM_ID, albumId)
                 self._model.set_value(iter, self._COLUMN_TYPE, child.getType())
-                self._model.set_value(iter, self._COLUMN_OBJECT, child)
                 if albumId not in visited:
                     self._model.set_value(iter, self._COLUMN_TAG, child.getTag())
                     self._buildModel(iter, child, visited + [albumId])
@@ -48,15 +43,15 @@ class Albums:
                     self._model.set_value(iter, self._COLUMN_TAG, child.getTag() + "  [...]")
 
     def _albumSelectionHandler(self, selection):
-        env.shelf.begin()
         albumModel, iter = selection.get_selected()
         if iter:
-            album = albumModel.get_value(iter, self._COLUMN_OBJECT)
-            albumTag =  album.getTag()
+            albumId = albumModel.get_value(iter, self._COLUMN_ALBUM_ID)
+            albumTag =  albumModel.get_value(iter, self._COLUMN_TAG)
+            album = env.shelf.getAlbum(albumId)
             selectedImages = []
             for child in album.getChildren():
                 if not child.isAlbum():
                     selectedImages.append(child)
-        env.shelf.rollback()
-        if iter:
-            env.controller.loadImages(selectedImages, "Album: " + albumTag)
+            env.widgets["categoryView"].get_selection().unselect_all()
+            env.controller.loadImages(selectedImages, "album://" + albumTag)
+            

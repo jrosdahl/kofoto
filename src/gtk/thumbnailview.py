@@ -1,4 +1,5 @@
 import gtk
+import sys
 
 from environment import env
 from images import *
@@ -6,6 +7,14 @@ from images import *
 class ThumbnailView:
     _maxWidth = 0
     _thumbnailList = None
+    _selectSignalHandler = None
+    _unselectSignalHandler = None
+    _model = None
+    
+    def __init__(self):
+        widget = env.widgets["thumbnailList"]
+        self._selectSignalHandler = widget.connect("select_icon", self._iconSelected)
+        self._unSelectSignalHandler = widget.connect("unselect_icon", self._iconUnselected)
     
     def setModel(self, model):
         self._thumbnailList = env.widgets["thumbnailList"]
@@ -14,6 +23,7 @@ class ThumbnailView:
         model.connect("row_changed", self.on_row_changed)
         model.connect("row_deleted", self.on_row_deleted)
         iter = model.get_iter_first()
+        self._model = model
         for pos in range(model.iter_n_children(iter)):
             self._thumbnailList.updateThumbnail(model, iter, pos)
             model.iter_next(iter)
@@ -46,6 +56,30 @@ class ThumbnailView:
     
     def on_row_deleted(self, model, path):
         self._thumbnailList.remove(path[0])
-
+        
     def on_rows_reordered(self, path, iter, new_order):
         pass
+
+    def _iconSelected(self, widget, index, event):
+        iter = self._model.get_iter(index)
+        imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+        env.controller.selection.add(imageId)
+        env.controller.selectionUpdated()
+
+    def _iconUnselected(self, widget, index, event):
+        iter = self._model.get_iter(index)
+        imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+        env.controller.selection.remove(imageId)
+        env.controller.selectionUpdated()
+
+    def loadNewSelection(self):
+        self._thumbnailList.handler_block(self._selectSignalHandler)
+        self._thumbnailList.handler_block(self._unSelectSignalHandler)
+        self._thumbnailList.unselect_all()
+        indices = xrange(sys.maxint)
+        for image, index in zip(self._model, indices):
+            if image[Images.COLUMN_IMAGE_ID] in env.controller.selection:
+                self._thumbnailList.select_icon(index)
+        self._thumbnailList.handler_unblock(self._selectSignalHandler)
+        self._thumbnailList.handler_unblock(self._unSelectSignalHandler)
+

@@ -10,6 +10,7 @@ import gnome.ui
 from environment import env
 
 from kofoto.imagecache import *
+from kofoto.sets import *
 
 from albums import *
 from images import *
@@ -18,14 +19,14 @@ from tableview import *
 from thumbnailview import *
 from categories import *
 
+
 ######################################################################
 ### Classes
 
 class WidgetsWrapper:
     def __init__(self):
         gnome.init("GKofoto", "0.0001")
-        gladeFile = env.baseDir + "/glade/gkofoto.glade"
-        self.widgets = gtk.glade.XML(gladeFile, "mainWindow")
+        self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
     def __getitem__(self, key):
         return self.widgets.get_widget(key)
     def signal_autoconnect(self, dic):
@@ -35,33 +36,74 @@ class Controller:
     _loadedImages = None
     _loadedImagesTitel = ""
     _wantedThumbnailSize = None
-    _tableView = TableView()
-    _thumbnailView = ThumbnailView()
+    tableView = None
+    thumbnailView = None
+    _categories = None
+    selection = Set()
 
     def __init__(self):
         self._wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
         albums = Albums()
-        categories = Categories()
+        self._categories = Categories()
+        self.tableView = TableView()
+        self.thumbnailView = ThumbnailView()
         self.newDataModel()
-        MainWindow()
-
+        
     def start(self):
-        env.widgets["mainWindow"].connect('destroy', lambda w: gtk.main_quit())
+        MainWindow()
+        env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
         env.widgets["mainWindow"].show()
+        env.shelf.begin()
         gtk.main()
 
+    def quit(self, gnomeApp, cancelButton=gtk.TRUE):
+        if env.shelf.isModified():
+            widgets = gtk.glade.XML(env.gladeFile, "quitDialog")
+            quitDialog = widgets.get_widget("quitDialog")
+            if not cancelButton:
+                widgets.get_widget("cancel").set_sensitive(gtk.FALSE)
+            result = quitDialog.run()
+            if result == 0:
+                print "commit"
+                env.shelf.commit()
+                gtk.main_quit()
+            elif result == 1:
+                print "rollback"
+                env.shelf.rollback()
+                gtk.main_quit()
+            else:
+                quitDialog.destroy()
+                return
+        else:
+            print "rollback"
+            env.shelf.rollback()
+            gtk.main_quit()
+
+    def save(self, gnomeApp):
+        env.shelf.commit()
+        print "commit"
+        env.shelf.begin()
+        
     def newDataModel(self):
         self._loadedImages = Images()
-        self._tableView.setModel(self._loadedImages.sortedModel)
-        self._tableView.setAttributes(self._loadedImages.attributeNamesMap)
-        self._thumbnailView.setModel(self._loadedImages.sortedModel)
+        self.tableView.setModel(self._loadedImages.sortedModel)
+        self.tableView.setAttributes(self._loadedImages.attributeNamesMap)
+        self.thumbnailView.setModel(self._loadedImages.sortedModel)
         
-    def loadImages(self, imageList, title):
-        self._loadedImagesTitle = title
-        self._thumbnailView.freeze()
+    def loadImages(self, imageList, source):
+        env.widgets["sourceEntry"].set_text(source)
+        self._selection = Set()
+        self.tableView.loadNewSelection()
+        self.thumbnailView.loadNewSelection()
+        self.thumbnailView.freeze()
         self._loadedImages.loadImageList(imageList)
         self._loadedImages.loadThumbnails(self._wantedThumbnailSize)
-        self._thumbnailView.thaw()
+        self.thumbnailView.thaw()
+
+    def selectionUpdated(self):
+        self.thumbnailView.loadNewSelection()
+        self.tableView.loadNewSelection()
+        self._categories.imagesSelected(self._loadedImages.model)
 
         
 ######################################################################
