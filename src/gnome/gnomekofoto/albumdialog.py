@@ -6,7 +6,7 @@ from gnomekofoto.taganddescriptiondialog import *
 
 class AlbumDialog(TagAndDescriptionDialog):
     def __init__(self, title, albumId=None):
-        if albumId:
+        if albumId is not None:
             self._album = env.shelf.getAlbum(albumId)
             tagText = self._album.getTag()
             descText = self._album.getAttribute(u"title")
