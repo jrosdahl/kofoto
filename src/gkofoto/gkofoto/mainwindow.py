@@ -13,6 +13,7 @@ from gkofoto.objectcollection import *
 from gkofoto.registerimagesdialog import RegisterImagesDialog
 from gkofoto.handleimagesdialog import HandleImagesDialog
 from gkofoto.generatehtmldialog import GenerateHTMLDialog
+from gkofoto.persistentstate import PersistentState
 
 class MainWindow(gtk.Window):
     def __init__(self):
@@ -20,8 +21,10 @@ class MainWindow(gtk.Window):
         self._toggleLock = False
         self.__currentObjectCollection = None
         self._currentView = None
+        self.__persistentState = PersistentState()
         self.__sourceEntry = env.widgets["sourceEntry"]
         self.__filterEntry = env.widgets["filterEntry"]
+        self.__filterEntry.set_text(self.__persistentState.filterText)
         self.__isFilterEnabledCheckbox = env.widgets["isFilterEnabledCheckbox"]
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
@@ -81,25 +84,27 @@ class MainWindow(gtk.Window):
         self.__singleObjectView = SingleObjectView()
         self.__showTableView()
 
+    def saveState(self):
+        self.__persistentState.save()
+
     def _queryChanged(self, *foo):
         query = self.__sourceEntry.get_text().decode("utf-8")
         self.loadQuery(query)
         self.__sourceEntry.grab_remove()
+        self.__persistentState.filterText = self.__filterEntry.get_text()
 
     def loadQuery(self, query):
         self.__query = query
         self.__sourceEntry.set_text(query)
         useFilter = self.__isFilterEnabledCheckbox.get_active()
-        filter = self.__filterEntry.get_text().decode("utf-8")
+        filterText = self.__filterEntry.get_text().decode("utf-8")
         self.__filterEntry.set_sensitive(useFilter)
-        if useFilter and len(filter) > 0:
-            self.__setObjectCollection(
-                self.__factory.getObjectCollection("(" + query +
-                                                   u") and (" +
-                                                   filter + ")"))
+        if useFilter and len(filterText) > 0:
+            queryWithFilter = "(%s) and (%s)" % (query, filterText)
         else:
-            self.__setObjectCollection(
-                self.__factory.getObjectCollection(query))
+            queryWithFilter = query
+        self.__setObjectCollection(
+            self.__factory.getObjectCollection(queryWithFilter))
 
     def reload(self):
         self.__albums.loadAlbumTree()

@@ -48,16 +48,16 @@ class Controller:
             result = quitDialog.run()
             if result == 0:
                 env.shelf.commit()
-                gtk.main_quit()
+                self._doQuit()
             elif result == 1:
                 env.shelf.rollback()
-                gtk.main_quit()
+                self._doQuit()
             else:
                 quitDialog.destroy()
                 return
         else:
             env.shelf.rollback()
-            gtk.main_quit()
+            self._doQuit()
 
     def save(self, app):
         env.shelf.commit()
@@ -73,3 +73,7 @@ class Controller:
             env.shelf.begin()
             self.__mainWindow.reload()
         dialog.destroy()
+
+    def _doQuit(self):
+        self.__mainWindow.saveState()
+        gtk.main_quit()
