@@ -228,7 +228,7 @@ class And:
                     selectvar,
                     node.getQuery()))
 
-        return (" select %s"
+        return (" select distinct %s"
                 " from   %s"
                 " where  %s" % (
                     selectvar,
@@ -268,7 +268,7 @@ class AttributeCondition:
         return self._operator
 
     def getQuery(self):
-        return (" select objectid"
+        return (" select distinct objectid"
                 " from   attribute"
                 " where  name = '%s' and lcvalue %s '%s'" % (
                     self._name,
@@ -285,7 +285,7 @@ class Category:
     __str__ = __repr__
 
     def getQuery(self):
-        return (" select objectid"
+        return (" select distinct objectid"
                 " from   object_category"
                 " where  categoryid in (%s)" % (
                     ",".join([str(x) for x in self._ids])))
@@ -317,7 +317,7 @@ class Or:
         selects = []
         if catids:
             selects.append(
-                " select objectid"
+                " select distinct objectid"
                 " from   object_category"
                 " where  categoryid in (%s)" % (
                     ",".join([str(x) for x in catids])))
@@ -330,7 +330,7 @@ class Or:
                         attrcond.getOperator(),
                         attrcond.getAttributeValue().replace("'", "''")))
             selects.append(
-                " select objectid"
+                " select distinct objectid"
                 " from   attribute"
                 " where  %s" % (
                     " or ".join(orclauses)))
