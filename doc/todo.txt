@@ -42,8 +42,8 @@
 
 * Write a test suite.
 
-* Store images in the image cache in per-month directories instead of
-  the current two-level hash-based directory structure.
+* When generating an album, store images in per-month directories
+  instead of the current two-level hash-based directory structure.
 
 Think more about:
 
