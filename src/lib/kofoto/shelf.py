@@ -631,6 +631,7 @@ class Shelf:
         (unsorted).
 
         Returns an iterable returning the images."""
+        directory = os.path.realpath(directory)
         cursor = self.connection.cursor()
         cursor.execute(
             " select imageid, hash, directory, filename"
@@ -699,7 +700,7 @@ class Shelf:
         except IOError:
             raise NotAnImageError, path
 
-        location = unicode(os.path.abspath(path.encode(self.codeset)),
+        location = unicode(os.path.realpath(path.encode(self.codeset)),
                            self.codeset)
         hash = computeImageHash(location.encode(self.codeset))
         try:
@@ -1623,7 +1624,7 @@ class Image(_Object):
             " update image"
             " set    directory = %s, filename = %s"
             " where  imageid = %s",
-            os.path.dirname(location),
+            os.path.realpath(os.path.dirname(location)),
             os.path.basename(location),
             self.getId())
         self.location = location
