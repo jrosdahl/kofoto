@@ -98,6 +98,7 @@ class Albums:
         selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
         dialog = RegisterImagesDialog(selectedAlbum)
         dialog.run()
+        dialog.destroy()
         # TODO: update objectCollection?
 
     def _createAlbumHelper(self, tag, desc):
