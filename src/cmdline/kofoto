@@ -124,6 +124,9 @@ def displayHelp():
         "\n"
         "    add-category CAT OBJ [OBJ ...]   Add category CAT (tag or ID) to the given\n"
         "                                     objects.\n"
+        "    classify PATH [PATH ...]         Traverse the given paths and print whether\n"
+        "                                     each found file is a registered, modified,\n"
+        "                                     moved or unregistered image or a non-image.\n"
         "    delete-attribute NAME OBJ [OBJ ...]\n"
         "                                     Delete attribute NAME for the given\n"
         "                                     objects.\n"
@@ -258,6 +261,32 @@ def cmdCheck(env, args):
         env.out("\n")
     else:
         env.out(" none\n")
+
+
+def cmdClassify(env, args):
+    if len(args) < 1:
+        raise ArgumentError
+    import Image as PILImage
+    for filepath in _walk_files(args):
+        try:
+            image = env.shelf.getImage(filepath)
+            if image.getLocation() == os.path.realpath(filepath):
+                env.out("[Registered]   %s\n" % _from_uc(filepath))
+            else:
+                env.out("[Moved]        %s\n" % _from_uc(filepath))
+        except ImageDoesNotExistError:
+            try:
+                image = env.shelf.getImage(
+                    filepath, identifyByLocation=True)
+                env.out("[Modified]     %s\n" % _from_uc(filepath))
+            except MultipleImagesAtOneLocationError:
+                env.out("[Multiple]     %s\n" % _from_uc(filepath))
+            except ImageDoesNotExistError:
+                try:
+                    PILImage.open(_from_uc(filepath))
+                    env.out("[Unregistered] %s\n" % _from_uc(filepath))
+                except IOError:
+                    env.out("[Non-image]    %s\n" % _from_uc(filepath))
 
 
 def cmdCleanCache(env, args):
@@ -624,6 +653,7 @@ commandTable = {
     "add": cmdAdd,
     "add-category": cmdAddCategory,
     "check": cmdCheck,
+    "classify": cmdClassify,
     "clean-cache": cmdCleanCache,
     "connect-category": cmdConnectCategory,
     "create-album": cmdCreateAlbum,
