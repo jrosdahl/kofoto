@@ -3,7 +3,7 @@ __all__ = ["OutputEngine"]
 import os
 import time
 from kofoto.cachedir import CacheDir
-from kofoto.common import symlinkOrCopyFile, pathSplit
+from kofoto.common import symlinkOrCopyFile
 
 class OutputEngine:
     def __init__(self, env):
@@ -84,7 +84,7 @@ class OutputEngine:
                 if not os.path.isfile(imgloc):
                     symlinkOrCopyFile(imgabsloc, imgloc)
                 self.imgref[(child.getHash(), size)] = "/".join(
-                    pathSplit(imgloc)[-4:])
+                    imgloc.split(os.path.sep)[-4:])
             if self.env.verbose:
                 self.env.out("\n")
 

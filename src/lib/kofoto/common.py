@@ -3,7 +3,7 @@
 ######################################################################
 ### Public names.
 
-__all__ = ["KofotoError", "pathSplit", "symlinkOrCopyFile"]
+__all__ = ["KofotoError", "symlinkOrCopyFile"]
 
 ######################################################################
 ### Imports.
@@ -34,18 +34,3 @@ def symlinkOrCopyFile(source, destination):
             # Handle the case of "ln -s foo dir/bar".
             source = os.path.join(os.path.dirname(destination), source)
         shutil.copy(source, destination)
-
-def pathSplit(path):
-    """Split a path into a list of components.
-
-    Absolute paths are handled as relative paths from the root.
-    """
-    result = []
-    while True:
-        if not path:
-            break
-        path, tail = os.path.split(path)
-        if not tail:
-            break
-        result.insert(0, tail)
-    return result
