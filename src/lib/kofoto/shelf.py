@@ -872,12 +872,10 @@ class Shelf:
         cursor.execute(
             " delete from category_child"
             " where  parent = %s",
-            catid,
             catid)
         cursor.execute(
             " delete from category_child"
             " where  child = %s",
-            catid,
             catid)
         cursor.execute(
             " delete from object_category"
