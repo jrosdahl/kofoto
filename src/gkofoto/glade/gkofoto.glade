@@ -259,7 +259,7 @@
   <property name="title" translatable="yes">Properties</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="has_separator">True</property>
@@ -1562,7 +1562,7 @@
   <property name="title" translatable="yes">Destroy image(s)</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -1673,7 +1673,7 @@
   <property name="title" translatable="yes">Destroy album(s)</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -1755,7 +1755,7 @@ The album's children will not be destroyed.</property>
   <property name="title" translatable="yes">Destroy album(s)</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -1837,7 +1837,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">dialog1</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -1957,7 +1957,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">About Kofoto</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -2080,7 +2080,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">Registering images...</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="default_width">320</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
@@ -2357,7 +2357,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">Investigating images...</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="default_width">320</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
@@ -2682,7 +2682,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">Loading...</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="default_width">190</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
@@ -2739,7 +2739,7 @@ The categories' children will not be destroyed, nor will the images associated w
   <property name="title" translatable="yes">Generating HTML...</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
-  <property name="modal">False</property>
+  <property name="modal">True</property>
   <property name="default_width">250</property>
   <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
