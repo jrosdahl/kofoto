@@ -374,6 +374,8 @@ def verifyValidCategoryTag(tag):
 def makeValidTag(tag):
     tag = tag.lstrip("@")
     tag = re.sub(r"\s", "", tag)
+    if re.match("^\d+$", tag):
+        tag += "_"
     if not tag:
         tag = "_"
     return tag
