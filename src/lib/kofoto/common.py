@@ -36,10 +36,16 @@ def symlinkOrCopyFile(source, destination):
         shutil.copy(source, destination)
 
 def pathSplit(path):
+    """Split a path into a list of components.
+
+    Absolute paths are handled as relative paths from the root.
+    """
     result = []
     while True:
         if not path:
             break
         path, tail = os.path.split(path)
+        if not tail:
+            break
         result.insert(0, tail)
     return result
