@@ -268,7 +268,7 @@ class Categories:
         self.__expandAndCollapseRows(False, False)
 
     def _createRootCategory(self, item, data):
-        dialog = CategoryDialog("Create root category")
+        dialog = CategoryDialog("Create top-level category")
         dialog.run(self._createRootCategoryHelper)
 
     def _createRootCategoryHelper(self, tag, desc):
@@ -276,7 +276,7 @@ class Categories:
         self.__loadCategorySubTree(None, category)
 
     def _createChildCategory(self, item, data):
-        dialog = CategoryDialog("Create child category")
+        dialog = CategoryDialog("Create subcategory")
         dialog.run(self._createChildCategoryHelper)
 
     def _createChildCategoryHelper(self, tag, desc):
@@ -339,8 +339,8 @@ class Categories:
     __pasteCategoryLabel = "Paste as child(ren)"
     __destroyCategoryLabel = "Destroy..."
     __disconnectCategoryLabel = "Disconnect from parent"
-    __createChildCategoryLabel = "Create child"
-    __createRootCategoryLabel = "Create root"
+    __createChildCategoryLabel = "Create subcategory..."
+    __createRootCategoryLabel = "Create top-level category..."
     __propertiesLabel = "Properties"
 
     __COLUMN_CATEGORY_ID  = 0

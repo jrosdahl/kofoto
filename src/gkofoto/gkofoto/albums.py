@@ -11,7 +11,7 @@ class Albums:
 ###############################################################################
 ### Public
 
-    __createAlbumLabel = "Create child album..."
+    __createAlbumLabel = "Create subalbum..."
     __registerImagesLabel = "Register and add images..."
     __generateHtmlLabel = "Generate HTML..."
     __destroyAlbumLabel = "Destroy album..."
