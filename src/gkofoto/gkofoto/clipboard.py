@@ -46,6 +46,11 @@ class Clipboard:
         self.__types = None
         self.__invokeChangedCallbacks()
 
+    def removeObjects(self, object):
+        while object in self.__objects:
+            self.__objects.remove(object)
+        self.__invokeChangedCallbacks()
+
     def hasCategories(self):
         return (self.__types == Clipboard.CATEGORIES and len(self.__objects) > 0)
 

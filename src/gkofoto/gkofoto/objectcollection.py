@@ -196,6 +196,7 @@ class ObjectCollection(object):
                         # TODO: Delete from image cache too?
                     except OSError:
                         pass
+                env.clipboard.removeObjects(obj)
                 env.shelf.deleteObject(obj.getId())
             locations = list(self.getObjectSelection())
             locations.sort()
