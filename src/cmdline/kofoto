@@ -762,7 +762,7 @@ def main(argv):
         commandTable[args[0]](env, args[1:])
         if env.noAct:
             shelf.rollback()
-            sys.stdout.write("no-act: All changes to the shelf has been revoked!\n")
+            printOutput("no-act: All changes to the shelf have been revoked!\n")
         else:
             shelf.commit()
         sys.exit(0)
