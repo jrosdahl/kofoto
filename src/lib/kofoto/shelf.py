@@ -401,6 +401,7 @@ class Shelf:
         self.location = location
         self.codeset = codeset
         self.transactionLock = threading.Lock()
+        self.inTransaction = False
         self.categorydag = CachedObject(self._createCategoryDAG)
         self.objectcache = {}
         self.categorycache = {}
@@ -438,7 +439,9 @@ class Shelf:
 
     def begin(self):
         """Begin working with the shelf."""
+        assert not self.inTransaction
         self.transactionLock.acquire()
+        self.inTransaction = True
         # In PySQLite, the transaction starts when the first SQL
         # command is executed, so execute a dummy command here.
         cursor = self.connection.cursor()
@@ -447,12 +450,14 @@ class Shelf:
 
     def commit(self):
         """Commit the work on the shelf."""
+        assert self.inTransaction
         try:
             self.connection.commit()
         finally:
             self.flushCategoryCache()
             self.flushObjectCache()
             self._unsetModified()
+            self.inTransaction = False
             self.transactionLock.release()
 
 
@@ -460,12 +465,14 @@ class Shelf:
         """Abort the work on the shelf.
 
         The changes (if any) will not be saved."""
+        assert self.inTransaction
         try:
             self.connection.rollback()
         finally:
             self.flushCategoryCache()
             self.flushObjectCache()
             self._unsetModified()
+            self.inTransaction = False
             self.transactionLock.release()
 
 
@@ -493,16 +500,19 @@ class Shelf:
 
     def flushCategoryCache(self):
         """Flush the category cache."""
+        assert self.inTransaction
         self.categorydag.invalidate()
         self.categorycache = {}
 
 
     def flushObjectCache(self):
         """Flush the object cache."""
+        assert self.inTransaction
         self.objectcache = {}
 
 
     def getStatistics(self):
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select count(*)"
@@ -519,6 +529,7 @@ class Shelf:
         """Create an empty, orphaned album.
 
         Returns an Album instance."""
+        assert self.inTransaction
         verifyValidAlbumTag(tag)
         cursor = self.connection.cursor()
         try:
@@ -547,6 +558,7 @@ class Shelf:
 
         Returns an Album instance.
         """
+        assert self.inTransaction
         if tag in self.objectcache:
             return self.objectcache[tag]
         cursor = self.connection.cursor()
@@ -575,6 +587,7 @@ class Shelf:
 
         Returns an Album object.
         """
+        assert self.inTransaction
         return self.getAlbum(_ROOT_ALBUM_ID)
 
 
@@ -582,6 +595,7 @@ class Shelf:
         """Get all albums in the shelf (unsorted).
 
         Returns an iterable returning the albums."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select albumid, tag, type"
@@ -594,6 +608,7 @@ class Shelf:
         """Get all images in the shelf (unsorted).
 
         Returns an iterable returning the images."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select imageid, hash, directory, filename"
@@ -608,6 +623,7 @@ class Shelf:
         (unsorted).
 
         Returns an iterable returning the images."""
+        assert self.inTransaction
         directory = os.path.realpath(directory)
         cursor = self.connection.cursor()
         cursor.execute(
@@ -622,6 +638,7 @@ class Shelf:
 
     def deleteAlbum(self, tag):
         """Delete the album for a given album tag/ID."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select albumid, tag"
@@ -671,6 +688,7 @@ class Shelf:
         """Add a new, orphaned image to the shelf.
 
         Returns an Image instance."""
+        assert self.inTransaction
         import Image as PILImage
         try:
             pilimg = PILImage.open(path)
@@ -730,6 +748,7 @@ class Shelf:
 
         Returns an Image object.
         """
+        assert self.inTransaction
         if ref in self.objectcache:
             return self.objectcache[ref]
         cursor = self.connection.cursor()
@@ -765,6 +784,7 @@ class Shelf:
 
     def deleteImage(self, ref):
         """Delete the image for a given image hash/ID."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select imageid, hash"
@@ -821,6 +841,7 @@ class Shelf:
 
     def getObject(self, objid):
         """Get the object for a given object tag/ID."""
+        assert self.inTransaction
         if objid in self.objectcache:
             return self.objectcache[objid]
         try:
@@ -834,6 +855,7 @@ class Shelf:
 
     def deleteObject(self, objid):
         """Get the object for a given object tag/ID."""
+        assert self.inTransaction
         try:
             self.deleteImage(objid)
         except ImageDoesNotExistError:
@@ -847,6 +869,7 @@ class Shelf:
         """Get all used attribute names in the shelf (sorted).
 
         Returns an iterable the attribute names."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select distinct name"
@@ -860,6 +883,7 @@ class Shelf:
         """Create a category.
 
         Returns a Category instance."""
+        assert self.inTransaction
         verifyValidCategoryTag(tag)
         try:
             cursor = self.connection.cursor()
@@ -877,6 +901,7 @@ class Shelf:
 
     def deleteCategory(self, tag):
         """Delete a category for a given category tag/ID."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
             " select categoryid, tag"
@@ -921,6 +946,7 @@ class Shelf:
         """Get a category for a given category tag/ID.
 
         Returns a Category instance."""
+        assert self.inTransaction
         if catid in self.categorycache:
             return self.categorycache[catid]
         cursor = self.connection.cursor()
@@ -948,6 +974,7 @@ class Shelf:
         """Get the categories that are roots, i.e. have no parents.
 
         Returns an iterable returning Category instances."""
+        assert self.inTransaction
         for catid in self.categorydag.get().getRoots():
             yield self.getCategory(catid)
 
@@ -959,6 +986,7 @@ class Shelf:
         a string.
 
         Returns an iterable returning the objects."""
+        assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(searchtree.getQuery())
         for (objid,) in cursor:
@@ -1084,6 +1112,11 @@ class Shelf:
             fn(False)
 
 
+    def _getConnection(self):
+        assert self.inTransaction
+        return self.connection
+
+
 class Category:
     """A Kofoto category."""
 
@@ -1103,7 +1136,7 @@ class Category:
     def setTag(self, newtag):
         """Set category tag."""
         verifyValidCategoryTag(newtag)
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update category"
             " set    tag = %s"
@@ -1121,7 +1154,7 @@ class Category:
 
     def setDescription(self, newdesc):
         """Set category description."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update category"
             " set    description = %s"
@@ -1197,7 +1230,7 @@ class Category:
             self.shelf.categorydag.get().connect(parentid, childid)
         except LoopError:
             raise CategoryLoopError, (self.getTag(), category.getTag())
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " insert into category_child (parent, child)"
             " values (%s, %s)",
@@ -1211,7 +1244,7 @@ class Category:
         parentid = self.getId()
         childid = category.getId()
         self.shelf.categorydag.get().disconnect(parentid, childid)
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " delete from category_child"
             " where  parent = %s and child = %s",
@@ -1251,7 +1284,7 @@ class _Object:
         
         Note that the object may be included multiple times in a
         parent album."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select distinct album.albumid, album.tag, album.type"
             " from   member, album"
@@ -1270,7 +1303,7 @@ class _Object:
         """
         if name in self.attributes:
             return self.attributes[name]
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select value"
             " from   attribute"
@@ -1289,7 +1322,7 @@ class _Object:
         """Get a map of all attributes."""
         if self.allAttributesFetched:
             return self.attributes
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select name, value"
             " from   attribute"
@@ -1314,7 +1347,7 @@ class _Object:
 
     def setAttribute(self, name, value):
         """Set an attribute value."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update attribute"
             " set    value = %s, lcvalue = %s"
@@ -1337,7 +1370,7 @@ class _Object:
 
     def deleteAttribute(self, name):
         """Delete an attribute."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " delete from attribute"
             " where  objectid = %s and name = %s",
@@ -1352,7 +1385,7 @@ class _Object:
         objid = self.getId()
         catid = category.getId()
         try:
-            cursor = self.shelf.connection.cursor()
+            cursor = self.shelf._getConnection().cursor()
             cursor.execute(
                 " insert into object_category (objectid, categoryid)"
                 " values (%s, %s)",
@@ -1366,7 +1399,7 @@ class _Object:
 
     def removeCategory(self, category):
         """Remove a category."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         catid = category.getId()
         cursor.execute(
             " delete from object_category"
@@ -1382,7 +1415,7 @@ class _Object:
 
         Returns an iterable returning the categories."""
         if not self.allCategoriesFetched:
-            cursor = self.shelf.connection.cursor()
+            cursor = self.shelf._getConnection().cursor()
             cursor.execute(
                 " select categoryid from object_category"
                 " where  objectid = %s",
@@ -1417,7 +1450,7 @@ class Album(_Object):
 
     def setTag(self, newtag):
         verifyValidAlbumTag(newtag)
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update album"
             " set    tag = %s"
@@ -1441,7 +1474,7 @@ class Album(_Object):
 
         Returns an iterable returning Album instances.
         """
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select distinct member.albumid"
             " from   member, album"
@@ -1486,7 +1519,7 @@ class PlainAlbum(Album):
             for child in self.children:
                 yield child
             return
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select objectid"
             " from   member"
@@ -1510,7 +1543,7 @@ class PlainAlbum(Album):
                 if child.isAlbum():
                     yield child
             return
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select member.objectid"
             " from   member, album"
@@ -1525,7 +1558,7 @@ class PlainAlbum(Album):
     def setChildren(self, children):
         """Set an album's children."""
         albumid = self.getId()
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             "-- types int")
         cursor.execute(
@@ -1582,7 +1615,7 @@ class Image(_Object):
 
     def setLocation(self, location):
         """Set the last known location of the image."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image"
             " set    directory = %s, filename = %s"
@@ -1601,7 +1634,7 @@ class Image(_Object):
 
     def setHash(self, hash):
         """Set the hash of the image."""
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image"
             " set    hash = %s"
@@ -1726,7 +1759,7 @@ class AllAlbumsAlbum(MagicAlbum):
 
         Returns an iterable returning the albums.
         """
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select   albumid"
             " from     album"
@@ -1754,7 +1787,7 @@ class AllImagesAlbum(MagicAlbum):
 
         Returns an iterable returning the images.
         """
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select   imageid"
             " from     image left join attribute"
@@ -1798,7 +1831,7 @@ class OrphansAlbum(MagicAlbum):
     # Internal methods.
 
     def _getChildren(self, includeimages):
-        cursor = self.shelf.connection.cursor()
+        cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " select   albumid"
             " from     album"
