@@ -29,15 +29,12 @@ class Controller:
             if setupOk:
                 # Doesn't work with x[0].destroy(). Don't know why.
                 dialog.connect("response", lambda *x: x[0].hide())
-            else:
-                # Doesn't work with gtk.main_quit(). Don't know why.
-                dialog.connect("response", lambda *x: sys.exit(1))
             dialog.run()
         if setupOk:
             self.__mainWindow = MainWindow()
             env.widgets["mainWindow"].connect("destroy", self.quit, False)
             env.widgets["mainWindow"].show()
-        gtk.main()
+            gtk.main()
 
     def quit(self, app, cancelButton=True):
         if env.shelf.isModified():
