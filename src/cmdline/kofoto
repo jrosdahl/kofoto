@@ -44,8 +44,8 @@ def displayHelp():
         "    -h, --help                       Display this help.\n"
         "        --configfile FILE            Use configuration file FILE instead of the\n"
         "                                     default (%s).\n"
-        "    -l, --location LOCATION          Add/import to location LOCATION. Default:\n"
-        "                                     last.\n"
+        "    -l, --location LOCATION          Add/register to location LOCATION.\n"
+        "                                     Default: last.\n"
         "        --shelf SHELF                Use the shelf SHELF instead of the default\n"
         "                                     (specified in the configuration file).\n"
         "    -v, --verbose                    Be verbose.\n"
@@ -90,11 +90,12 @@ def displayHelp():
         "                                     to the album DEST. (The objects are placed\n"
         "                                     last.)\n"
         "    generate ALBUM DESTINATION       Generate output for ALBUM in DESTINATION.\n"
-        "    import DEST PATH1 [PATH2 ...]    Import objects (i.e. directories and\n"
-        "                                     images) to the album DEST. (The objects\n"
-        "                                     are placed last.) Directories are\n"
-        "                                     recursively scanned for other directories\n"
-        "                                     and images, which also will be imported.\n"
+        "    register DEST PATH1 [PATH2 ...]  Register objects (i.e. directories and\n"
+        "                                     images) and add them to the album DEST.\n"
+        "                                     (The objects are placed last.)\n"
+        "                                     Directories are recursively scanned for\n"
+        "                                     other directories and images, which also\n"
+        "                                     will be registered.\n"
         "\n"
         "    Miscellaneous\n"
         "    =============\n"
@@ -257,52 +258,6 @@ def cmdGetAttributes(env, args):
         env.out("%s: %s\n" % (name, object.getAttribute(name)))
 
 
-def cmdImport(env, args):
-    if len(args) < 2:
-        raise ArgumentError
-    destalbum = env.shelf.getAlbum(args[0])
-    importHelper(env, destalbum, args[1:])
-
-
-def importHelper(env, destalbum, paths):
-    paths.sort()
-    newchildren = []
-    for path in paths:
-        if env.verbose:
-            env.out("Processing %s ...\n" % path)
-        if os.path.isdir(path):
-            tag = os.path.basename(path)
-            if tag in _DIRECTORIES_TO_IGNORE:
-                if env.verbose:
-                    env.out("Ignoring.\n")
-                continue
-            while 1:
-                try:
-                    album = env.shelf.createAlbum(tag)
-                    break
-                except (AlbumExistsError, ReservedAlbumTagError):
-                    tag = tag + "_"
-            newchildren.append(album)
-            env.out("Imported directory %s as an album with tag %s\n" % (path, tag))
-            importHelper(env,
-                         album,
-                         [os.path.join(path, x) for x in os.listdir(path)])
-        elif os.path.isfile(path):
-            try:
-                image = env.shelf.createImage(path)
-                newchildren.append(image)
-                if env.verbose:
-                    env.out("Imported image: %s\n" % path)
-            except NotAnImageError, x:
-                if env.verbose:
-                    env.out("Ignoring non-image file: %s\n" % path)
-            except ImageExistsError, x:
-                env.err("Ignoring already imported image: %s\n" % path)
-        else:
-            env.err("No such file or directory (ignored): %s\n" % path)
-    addHelper(env, destalbum, newchildren)
-
-
 def cmdObliterate(env, args):
     if len(args) < 1:
         raise ArgumentError
@@ -350,6 +305,52 @@ def printGraphHelper(env, object, level, visited):
                                 "key": name,
                                 "value": object.getAttribute(name),
                                 })
+
+
+def cmdRegister(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    destalbum = env.shelf.getAlbum(args[0])
+    registerHelper(env, destalbum, args[1:])
+
+
+def registerHelper(env, destalbum, paths):
+    paths.sort()
+    newchildren = []
+    for path in paths:
+        if env.verbose:
+            env.out("Processing %s ...\n" % path)
+        if os.path.isdir(path):
+            tag = os.path.basename(path)
+            if tag in _DIRECTORIES_TO_IGNORE:
+                if env.verbose:
+                    env.out("Ignoring.\n")
+                continue
+            while 1:
+                try:
+                    album = env.shelf.createAlbum(tag)
+                    break
+                except (AlbumExistsError, ReservedAlbumTagError):
+                    tag = tag + "_"
+            newchildren.append(album)
+            env.out("Registered directory %s as an album with tag %s\n" % (path, tag))
+            registerHelper(env,
+                           album,
+                           [os.path.join(path, x) for x in os.listdir(path)])
+        elif os.path.isfile(path):
+            try:
+                image = env.shelf.createImage(path)
+                newchildren.append(image)
+                if env.verbose:
+                    env.out("Registered image: %s\n" % path)
+            except NotAnImageError, x:
+                if env.verbose:
+                    env.out("Ignoring non-image file: %s\n" % path)
+            except ImageExistsError, x:
+                env.err("Ignoring already registered image: %s\n" % path)
+        else:
+            env.err("No such file or directory (ignored): %s\n" % path)
+    addHelper(env, destalbum, newchildren)
 
 
 def cmdRemove(env, args):
@@ -447,9 +448,9 @@ commandTable = {
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
-    "import": cmdImport,
     "obliterate": cmdObliterate,
     "print-graph": cmdPrintGraph,
+    "register": cmdRegister,
     "remove": cmdRemove,
     "rename-tag": cmdRenameTag,
     "set-attribute": cmdSetAttribute,
