@@ -1359,12 +1359,12 @@ class PlainAlbum(Album):
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " select position, objectid"
+            " select objectid"
             " from   member"
             " where  albumid = %s"
             " order by position",
             self.getId())
-        for position, objid in cursor:
+        for (objid,) in cursor:
             yield self.shelf.getObject(objid)
 
 
@@ -1375,14 +1375,14 @@ class PlainAlbum(Album):
         """
         cursor = self.shelf.connection.cursor()
         cursor.execute(
-            " select member.position, member.objectid"
+            " select member.objectid"
             " from   member, album"
             " where  member.albumid = %s and"
             "        member.objectid = album.albumid"
             " order by position",
             self.getId())
-        for position, objid in cursor:
-            yield self.shelf.getObject(objid)
+        for (objid,) in cursor:
+            yield self.shelf.getAlbum(objid)
 
 
     def setChildren(self, children):
