@@ -1,0 +1,22 @@
+Source: kofoto
+Section: graphics
+Priority: optional
+Maintainer: Joel Rosdahl <joel@debian.org>
+Build-Depends: debhelper (>> 4.0.0)
+Standards-Version: 3.6.1
+
+Package: kofoto
+Architecture: all
+Depends: python (>= 2.3), python-sqlite, python-gtk2, python-imaging
+Conflicts:
+Description: digital image organizer and viewer
+ Kofoto is a tool for organizing and viewing digital images, typically
+ photographs from a digital camera. Images can be organized in an
+ album hierarchy and associated with categories organized in a
+ powerful category tree with no limits on depth or size. Images can be
+ found by searching for any combination of categories and image
+ attributes. Web photo albums of an album hierarchy can also be
+ generated. Both command-line and graphical, GTK+-based interfaces are
+ available.
+
+ See http://kofoto.rosdahl.net for more information.
