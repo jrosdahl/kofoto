@@ -569,13 +569,13 @@ def cmdGetImageVersions(env, args):
             env.out("%s\n" % iv.getId())
         elif env.verbose:
             env.out("%s\n  %s%s\n" % (
-                iv.getLocation(),
+                env.to_l(iv.getLocation()),
                 iv.isPrimary() and "Primary, " or "",
                 iv.getType()))
             if iv.getComment():
-                env.out("  %s\n" % iv.getComment())
+                env.out("  %s\n" % env.to_l(iv.getComment()))
         else:
-            env.out("%s\n" % iv.getLocation())
+            env.out("%s\n" % env.to_l(iv.getLocation()))
 
 
 def cmdInspectPath(env, args):
