@@ -1,6 +1,0 @@
-How to install PyGTK in Windows
--------------------------------
-
-Install GTK+ (http://www.dropline.net/gtk/) and PyGTK
-(http://www.pcpm.ucl.ac.be/~gustin/win32_ports/). Add C:\Program
-Files\Common Files\GTK\2.0\lib to PATH.

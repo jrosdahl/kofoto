@@ -138,8 +138,11 @@ class ImageCache:
 
     def _getCachedImagePath(self, location, mtime, width, height,
                             orientation):
-        assert location.startswith(os.path.sep)
-        directory, filename = os.path.split(location[1:])
+        drive, drivelessPath = os.path.splitdrive(location)
+        assert drivelessPath.startswith(os.path.sep), drivelessPath
+        directory, filename = os.path.split(drivelessPath[1:])
+        if drive:
+            directory = os.path.join(drive[0], directory)
         genname = "%s-%dx%d-%s-%s.jpg" % (
             filename,
             width,
