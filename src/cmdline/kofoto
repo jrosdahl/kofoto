@@ -731,35 +731,38 @@ def main(argv):
         printErrorAndExit(
             "Bad arguments to command. See \"kofoto --help\" for help.\n")
     except UndeletableAlbumError, x:
-        printError("Undeletable album: \"%s\".\n" % x)
+        printError("Undeletable album: \"%s\".\n" % _from_uc(x.args[0]))
     except ReservedAlbumTagError, x:
-        printError("Reserved album tag: \"%s\".\n" % x)
+        printError("Reserved album tag: \"%s\".\n" % _from_uc(x.args[0]))
     except AlbumExistsError, x:
-        printError("Album already exists: \"%s\".\n" % x)
+        printError("Album already exists: \"%s\".\n" % _from_uc(x.args[0]))
     except ImageDoesNotExistError, x:
-        printError("Image does not exist: \"%s\".\n" % x)
+        printError("Image does not exist: \"%s\".\n" % _from_uc(x.args[0]))
     except AlbumDoesNotExistError, x:
-        printError("Album does not exist: \"%s\".\n" % x)
+        printError("Album does not exist: \"%s\".\n" % _from_uc(x.args[0]))
     except ObjectDoesNotExistError, x:
-        printError("Object does not exist: \"%s\".\n" % x)
+        printError("Object does not exist: \"%s\".\n" % _from_uc(x.args[0]))
     except UnknownAlbumTypeError, x:
-        printError("Unknown album type: \"%s\".\n" % x)
+        printError("Unknown album type: \"%s\".\n" % _from_uc(x.args[0]))
     except UnsettableChildrenError, x:
-        printError("Cannot add children to \"%s\" (children are created virtually).\n" % x)
+        printError("Cannot add children to \"%s\" (children are created virtually).\n" % _from_uc(x.args[0]))
     except CategoryExistsError, x:
-        printError("Category already exists: \"%s\".\n" % x)
+        printError("Category already exists: \"%s\".\n" % _from_uc(x.args[0]))
     except CategoryDoesNotExistError, x:
-        printError("Category does not exist: \"%s\".\n" % x)
+        printError("Category does not exist: \"%s\".\n" % _from_uc(x.args[0]))
     except ReservedCategoryTagError, x:
-        printError("Reserved category tag: %s.\n" % x)
+        printError("Reserved category tag: %s.\n" % _from_uc(x.args[0]))
     except CategoryPresentError, x:
-        printError("Object %s is already associated with category %s.\n" % (x[0], x[1]))
+        printError("Object %s is already associated with category %s.\n" % (
+            _from_uc(x.args[0]), _from_uc(x.args[1])))
     except CategoriesAlreadyConnectedError, x:
-        printError("Categories %s and %s are already connected.\n" % (x[0], x[1]))
+        printError("Categories %s and %s are already connected.\n" % (
+            _from_uc(x.args[0]), _from_uc(x.args[1])))
     except CategoryLoopError, x:
-        printError("Connecting %s to %s would make a loop in the categories.\n" % (x[0], x[1]))
+        printError("Connecting %s to %s would make a loop in the categories.\n" % (
+            _from_uc(x.args[0]), _from_uc(x.args[1])))
     except SearchExpressionParseError, x:
-        printError("Error while parsing search expression: %s.\n" % x)
+        printError("Error while parsing search expression: %s.\n" % _from_uc(x.args[0]))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     shelf.rollback()
