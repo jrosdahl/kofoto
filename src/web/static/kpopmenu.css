@@ -1,0 +1,30 @@
+ul.kpopmenu {
+    display: block;
+    position: absolute;
+    background-color: #efefef;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #fff #000 #000 #fff;
+    visibility: hidden;
+    z-index: 1000;
+    width: 10em;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+ul.kpopmenu li {
+    list-style-type: none;
+    border-width: 0;
+    padding-left: 0;
+    margin-left: 0;
+    cursor: pointer;
+}
+
+ul.kpopmenu li a {
+    display: block;
+}
+
+ul.kpopmenu li a:hover {
+    background-color: #33f;
+    color: #fff;
+}

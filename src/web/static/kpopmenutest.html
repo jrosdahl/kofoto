@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<link rel="stylesheet" href="webkofoto.css" type="text/css" />
+<link rel="stylesheet" href="kpopmenu.css" type="text/css" />
+<script type="text/javascript" language="javascript" src="kpopmenu.js"></script>
+<script type="text/javascript" language="javascript">
+function setupMenus() {
+    kpopSetupMenu('menulink_1', 'mymenu');
+    kpopSetupMenu('menulink_2', 'mymenu');
+}
+</script>
+</head>
+<body onload="setupMenus();">
+<p>
+<span id="menulink_1" class="pmenulink">Show</span>
+<span id="menulink_2" class="kpopmenulink">Show2</span>
+</p>
+<p>
+The quick brown fox jumped over the lazy dog. The quick brown fox
+jumped over the lazy dog. The quick brown fox jumped over the lazy
+dog. The quick brown fox jumped over the lazy dog. The quick brown fox
+jumped over the lazy dog.
+</p>
+<ul id="mymenu" class="kpopmenu">
+<li><a href="foo?kpopid=">Foo</a></li>
+<li><a href="bar?kpopid=">Bar</a></li>
+<li><a href="gazonk?kpopid=">Gazonk gazonk gazonk</a></li>
+</ul>
+</body>
+</html>
