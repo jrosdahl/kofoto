@@ -1,8 +1,8 @@
 import gtk
 import sys
 from environment import env
-from gnomekofoto.imageview import *
-from gnomekofoto.objectcollectionview import *
+from gkofoto.imageview import *
+from gkofoto.objectcollectionview import *
 
 class SingleObjectView(ObjectCollectionView, ImageView):
 

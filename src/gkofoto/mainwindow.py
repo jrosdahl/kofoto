@@ -2,14 +2,14 @@ import gtk
 import gtk.gdk
 import os
 
-from gnomekofoto.categories import *
-from gnomekofoto.albums import *
+from gkofoto.categories import *
+from gkofoto.albums import *
 from environment import env
-from gnomekofoto.tableview import *
-from gnomekofoto.thumbnailview import *
-from gnomekofoto.singleobjectview import *
-from gnomekofoto.objectcollectionfactory import *
-from gnomekofoto.objectcollection import *
+from gkofoto.tableview import *
+from gkofoto.thumbnailview import *
+from gkofoto.singleobjectview import *
+from gkofoto.objectcollectionfactory import *
+from gkofoto.objectcollection import *
 
 class MainWindow(gtk.Window):
     def __init__(self):

@@ -1,6 +1,6 @@
 import gtk
-from gnomekofoto.objectcollectionview import *
-from gnomekofoto.objectcollection import *
+from gkofoto.objectcollectionview import *
+from gkofoto.objectcollection import *
 from environment import env
 
 class ThumbnailView(ObjectCollectionView):

@@ -6,26 +6,26 @@ import os
 package_dir = {
     "": "src/lib",
     "kofoto": "src/lib/kofoto",
-    "gnomekofoto": "src/gnome/gnomekofoto",
+    "gkofoto": "src/gkofoto",
     }
 packages = [
     "kofoto",
     "kofoto.output",
-    "gnomekofoto",
+    "gkofoto",
     ]
 scripts = [
     "src/cmdline/renameimage",
     "src/cmdline/kofoto",
     "src/cmdline/kofoto-upload",
-    "src/gnome/gkofoto",
+    "src/gkofoto/gkofoto",
     ]
 data_files = [
-    ("share/gnomekofoto/glade", ["src/gnome/glade/gkofoto.glade"]),
-    ("share/gnomekofoto/icons", ["src/gnome/icons/album.png",
-                                 "src/gnome/icons/fullscreen-24.png",
-                                 "src/gnome/icons/objectview.png",
-                                 "src/gnome/icons/tableview.png",
-                                 "src/gnome/icons/thumbnailsview.png"])
+    ("share/gkofoto/glade", ["src/gkofoto/glade/gkofoto.glade"]),
+    ("share/gkofoto/icons", ["src/gkofoto/icons/album.png",
+                             "src/gkofoto/icons/fullscreen-24.png",
+                             "src/gkofoto/icons/objectview.png",
+                             "src/gkofoto/icons/tableview.png",
+                             "src/gkofoto/icons/thumbnailsview.png"])
     ]
 if os.name == "posix":
     if os.system("cd src/web && make") != 0:
