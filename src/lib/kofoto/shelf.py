@@ -1429,12 +1429,12 @@ class Image(_Object):
                     "EXIF DateTimeOriginal",
                     "EXIF DateTimeDigitized"]:
             value = tags.get(tag)
-            if value:
+            if value and not cmp(value, "0000:00:00 00:00:00"):
                 a = str(value).split(":")
                 if len(a) == 5:
                     value = u"-".join(a[0:2] + [":".join(a[2:5])])
                     self.setAttribute(u"captured", value)
-
+                    
         value = tags.get("EXIF ExposureTime")
         if value:
             self.setAttribute(u"exposuretime", unicode(value))
@@ -1468,7 +1468,27 @@ class Image(_Object):
                 self.setAttribute(u"orientation", unicode(m[str(value)]))
             except KeyError:
                 pass
-
+        value = tags.get("EXIF ExposureProgram")
+        if value:
+            self.setAttribute(u"exposureprogram", unicode(value))
+        value = tags.get("EXIF ISOSpeedRatings")
+        if value:
+            self.setAttribute(u"iso", unicode(value))            
+        value = tags.get("EXIF ExposureBiasValue")
+        if value:
+            self.setAttribute(u"exposurebias", unicode(value))
+        value = tags.get("MakerNote SpecialMode")
+        if value:
+            self.setAttribute(u"specialmode", unicode(value))
+        value = tags.get("MakerNote JPEGQual")
+        if value:
+            self.setAttribute(u"jpegquality", unicode(value))
+        value = tags.get("MakerNote Macro")
+        if value:
+            self.setAttribute(u"macro", unicode(value))
+        value = tags.get("MakerNote DigitalZoom")
+        if value:
+            self.setAttribute(u"digitalzoom", unicode(value))            
 
     ##############################
     # Internal methods.
