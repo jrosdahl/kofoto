@@ -51,7 +51,8 @@ class ImageCache:
 
 
     def get(self, imageOrLocation, widthlimit, heightlimit):
-        """Get a file path to a cached image.
+        """Get a file path to a cached image and the cached image's
+        size.
 
         imageOrLocation could either be an kofoto.shelf.Image instance
         or a location string. If it's a location, the path should
@@ -63,6 +64,8 @@ class ImageCache:
         version of the image will be created and its path returned. If
         the original image fits within the limits, a path to a copy of
         the original image will be returned.
+
+        Returns a tuple of file path, width and height.
         """
         if isinstance(imageOrLocation, (str, unicode)):
             location = imageOrLocation
@@ -94,7 +97,7 @@ class ImageCache:
         # Check whether a cached version already exists.
         path = self._getCachedImagePath(location, mtime, w, h, orientation)
         if os.path.exists(path):
-            return path
+            return path, w, h
 
         # No version of the wanted size existed in the cache. Create
         # one.
@@ -118,7 +121,7 @@ class ImageCache:
             elif orientation == "left":
                 pilimg = pilimg.rotate(270)
         pilimg.save(path, "JPEG")
-        return path
+        return path, w, h
 
 
     def _calcImageSize(self, width, height, widthlimit, heightlimit,

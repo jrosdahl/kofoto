@@ -80,7 +80,7 @@ mask:
 
 view:
     def image(self, imageid, widthlimit, heightlimit):
-        path = imagecache.get(
+        path, width, height = imagecache.get(
             shelf.getImage(int(imageid)), int(widthlimit), int(heightlimit))
         return file(path).read()
 

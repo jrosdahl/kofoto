@@ -398,15 +398,16 @@ class OutputGenerator(OutputEngine):
 
                     frontimage = self._getFrontImage(subalbum)
                     if frontimage:
-                        thumbimgref = self.getImageReference(
-                            frontimage,
-                            self.env.thumbnailsizelimit[0],
-                            self.env.thumbnailsizelimit[1])
+                        thumbimgref, thumbwidth, thumbheight = \
+                            self.getImageReference(
+                                frontimage,
+                                self.env.thumbnailsizelimit[0],
+                                self.env.thumbnailsizelimit[1])
                     else:
                         thumbimgref = "%s/%s" % (self.iconsdir, "1x1.png")
+                        thumbwidth = self.env.thumbnailsizelimit[0]
+                        thumbheight = 3 * self.env.thumbnailsizelimit[0] // 4
 
-                    thumbwidth = self.env.thumbnailsizelimit[0]
-                    thumbheight = 3 * self.env.thumbnailsizelimit[0] // 4
                     title = (subalbum.getAttribute(u"title") or
                              subalbum.getTag())
                     subalbumtextElements.append(subalbum_entry_template % {
@@ -444,7 +445,7 @@ class OutputGenerator(OutputEngine):
                         "thumbimgref": self.getImageReference(
                             image,
                             self.env.thumbnailsizelimit[0],
-                            self.env.thumbnailsizelimit[1]),
+                            self.env.thumbnailsizelimit[1])[0],
                         })
                     number += 1
                 imagetextElements.append("</tr>\n")
@@ -497,7 +498,7 @@ class OutputGenerator(OutputEngine):
                         "thumbimgref": "../" + self.getImageReference(
                             image,
                             self.env.thumbnailsizelimit[0],
-                            self.env.thumbnailsizelimit[1]),
+                            self.env.thumbnailsizelimit[1])[0],
                         })
                 number += 1
             thumbnailstext = "\n".join(thumbnailsframeElements)
@@ -661,7 +662,7 @@ class OutputGenerator(OutputEngine):
                     "imgid": image.getId(),
                     "imgmaxwidth": wlim,
                     "imgref": "../" + self.getImageReference(
-                                          image, wlim, hlim),
+                                          image, wlim, hlim)[0],
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,

@@ -42,7 +42,8 @@ class OutputEngine:
             if self.env.verbose:
                 self.env.out("Generating image %d, size limit %dx%d..." % (
                     image.getId(), widthlimit, heightlimit))
-            imgabsloc = self.env.imagecache.get(image, widthlimit, heightlimit)
+            imgabsloc, width, height = self.env.imagecache.get(
+                image, widthlimit, heightlimit)
             htmlimgloc = os.path.join(
                 "@images", helper().encode(self.env.codeset))
             # Generate a unique htmlimgloc/imgloc.
@@ -60,7 +61,9 @@ class OutputEngine:
             except OSError:
                 pass
             symlinkOrCopyFile(imgabsloc, imgloc)
-            self.imgref[key] = "/".join(htmlimgloc.split(os.sep))
+            self.imgref[key] = ("/".join(htmlimgloc.split(os.sep)),
+                                width,
+                                height)
             if self.env.verbose:
                 self.env.out("\n")
         return self.imgref[key]
