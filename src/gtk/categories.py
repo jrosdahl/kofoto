@@ -25,6 +25,7 @@ class Categories:
                                     gobject.TYPE_BOOLEAN,  # CONNECTED
                                     gobject.TYPE_BOOLEAN)  # INCONSISTENT
         categoryView = env.widgets["categoryView"]
+        categoryView.realize()        
         categoryView.set_model(self._model)
 
         # Create columns
