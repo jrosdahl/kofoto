@@ -59,6 +59,10 @@ class TableView:
     def show(self):
         env.widgets["tableViewScroll"].show()
         self._tableView.grab_focus()
+        for image in self._model:
+            if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
+                self._tableView.scroll_to_cell(image.path, None, gtk.TRUE, 0, 0)
+                break
 
     def hide(self):
         env.widgets["tableViewScroll"].hide()

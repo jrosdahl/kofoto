@@ -76,6 +76,10 @@ class ThumbnailView:
         env.widgets["thumbnailView"].show()
         env.widgets["thumbnailList"].grab_focus()
         self._unblockModel()
+        for image in self._model:
+            if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
+                env.widgets["thumbnailList"].moveto(image.path[0], 0.0)
+                break
 
     def hide(self):
         env.widgets["thumbnailView"].hide()
