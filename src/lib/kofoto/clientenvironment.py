@@ -15,10 +15,7 @@ import sys
 from kofoto.config import *
 from kofoto.shelf import Shelf, FailedWritingError
 from kofoto.imagecache import ImageCache
-try:
-    from kofoto.version import version as kofotoVersion
-except ImportError:
-    kofotoVersion = "development version"
+from kofoto.version import version as kofotoVersion
 
 ######################################################################
 # Public classes.

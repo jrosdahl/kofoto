@@ -3,8 +3,6 @@
 from distutils.core import setup
 import os
 
-version = "0.1"
-
 package_dir = {
     "kofoto": "src/lib/kofoto",
     "gkofoto": "src/gkofoto",
@@ -49,13 +47,12 @@ else:
         "src/cmdline/kofoto",
         ]
 
-f = file("src/lib/kofoto/version.py", "w")
-f.write('version = "%s"' % version)
-f.close()
+versionDict = {}
+execfile("src/lib/kofoto/version.py", versionDict)
 
 setup(
     name="kofoto",
-    version=version,
+    version=versionDict["version"],
     package_dir=package_dir,
     packages=packages,
     scripts=scripts,
@@ -64,5 +61,4 @@ setup(
     author_email="kofoto@rosdahl.net",
     url="http://svn.rosdahl.net/kofoto/kofoto/")
 
-os.unlink("src/lib/kofoto/version.py")
 os.unlink("src/gkofoto/gkofoto")
