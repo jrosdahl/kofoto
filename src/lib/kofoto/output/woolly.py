@@ -539,7 +539,7 @@ class OutputGenerator(OutputEngine):
                 els = []
                 for node in path:
                     title = node.getAttribute(u"title") or u""
-                    els.append('''<a href="%(htmlref)s" target="_top">%(title)s</a>''' % {
+                    els.append('''<a href="../%(htmlref)s" target="_top">%(title)s</a>''' % {
                         "htmlref": "%s-%s.html" % (
                             node.getTag().encode(self.charEnc),
                             size),
