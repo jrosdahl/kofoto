@@ -5,7 +5,9 @@ VERSION = $(shell sed -n 's/^version = "\(.*\)"$$/\1/p' src/lib/kofoto/version.p
 help:
 	@echo "Available targets:"
 	@echo
+	@echo "check"
 	@echo "clean"
+	@echo "dist"
 	@echo "install [PREFIX=prefix]"
 
 clean:
