@@ -37,9 +37,9 @@ Installation:
 
     GKofoto under Windows:
 
-        GTK+ for Windows. Found at:
+        GTK+ 2.2 for Windows. Found at:
 
-            http://www.dropline.net/gtk/
+            http://gladewin32.sourceforge.net
 
         PyGTK for Windows. Found at:
 
