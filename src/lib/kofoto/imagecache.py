@@ -16,6 +16,8 @@ class ImageCache:
             pilimg = PILImage.open(origpath)
             width, height = pilimg.size
             largest = max(width, height)
+            savepath = genpath
+
             if limit < largest:
                 if width > height:
                     size = limit, (limit * height) / width
@@ -27,12 +29,11 @@ class ImageCache:
                     self.cachelocation,
                     self._getCacheImageName(origpath, image.getHash(), largest))
                 if os.path.isfile(largestpath):
-                    try:
-                        os.symlink(largestpath, genpath)
-                    except AttributeError:
-                        import shutil
-                        shutil.copy(largestpath, genpath)
+                    self._symlinkOrCopyFile(largestpath, genpath)
                     return genpath
+                else:
+                    savepath = largestpath
+
             orientation = image.getAttribute("orientation")
             if orientation:
                 if orientation == "right":
@@ -41,7 +42,9 @@ class ImageCache:
                     pilimg = pilimg.rotate(180)
                 elif orientation == "left":
                     pilimg = pilimg.rotate(270)
-            pilimg.save(genpath)
+            pilimg.save(savepath)
+            if limit > largest:
+                self._symlinkOrCopyFile(savepath, genpath)
         return genpath
 
 
@@ -61,3 +64,11 @@ class ImageCache:
         extension = origpath.split(".")[-1]
         genname = "%s-%s.%s" % (hash, limit, extension)
         return genname
+
+
+    def _symlinkOrCopyFile(source, destination):
+        try:
+            os.symlink(source, destination)
+        except AttributeError:
+            import shutil
+            shutil.copy(source, destination)
