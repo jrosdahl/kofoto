@@ -60,6 +60,8 @@
 
 * More output modules?
 
+* Slideshow functionality in generated HTML-albums.
+
 * Add possibility of giving an optional filter parameter when
   generating albums. Add default filter parameter. Example: Supplying
   the filter "not private" would exclude all images with the "private"
@@ -141,3 +143,11 @@
 * Add a possibility of defining a filter in gkofoto. A filter of "not
   private" would for instance exclude images with the category
   "private" from search results.
+
+* Slideshow functionality in gkofoto.
+
+* Add keyboard shortcuts for the forward/backward buttons in gkofoto.
+  (forward=space? backward=b?)
+
+* Add possibility to edit attributes for multiple objects at once, in
+  gkofoto.
