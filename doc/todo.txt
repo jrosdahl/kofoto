@@ -9,8 +9,6 @@
     pictures matching the filter when generating an album would also
     be nice.
 
-* Cache database lookups.
-
 * Ability to set JPEG quality (and progression?).
 
 * Implement more magic albums.
@@ -54,10 +52,10 @@
   stored in a single directory right now). And likewise for generated
   albums.
 
-* Create configuration module. Use ConfigParser.
-
 * Make it possible to generate an album with images symlinked to a
   local image store, not the system-wide cache.
+
+* Write a test suite.
 
 Think more about:
 
