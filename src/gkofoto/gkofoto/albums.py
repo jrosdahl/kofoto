@@ -201,6 +201,7 @@ class Albums:
                 "menubarRegisterAndAddImages",
                 "menubarGenerateHtml",
                 "menubarProperties",
+                "menubarDestroy",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 
