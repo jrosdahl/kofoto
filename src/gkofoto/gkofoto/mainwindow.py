@@ -24,6 +24,7 @@ class MainWindow(gtk.Window):
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
 #        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
+        env.widgets["thumbnailsViewToggleButton"].hide()
         env.widgets["thumbnailsViewToggleButton"].set_sensitive(False)
         env.widgets["thumbnailsViewToggleButton"].get_child().add(self.getIconImage("thumbnailsview.png"))
         env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
@@ -45,7 +46,7 @@ class MainWindow(gtk.Window):
         env.widgets["menubarRevert"].set_sensitive(False)
         env.widgets["menubarQuit"].connect("activate", env.controller.quit)
 
-        env.widgets["menubarThumbnailsView"].set_sensitive(False)
+        env.widgets["menubarThumbnailsView"].hide()
 
         env.widgets["menubarNextImage"].set_sensitive(False)
         env.widgets["menubarPreviousImage"].set_sensitive(False)
