@@ -388,7 +388,7 @@ def cmdSetAttribute(env, args):
 
 
 def cmdUpdateChecksums(env, args):
-    for image in env.shelf.getAllImagesAlbum().getChildren():
+    for image in env.shelf.getAllImages():
         location = image.getLocation()
         if os.path.isfile(location):
             try:
