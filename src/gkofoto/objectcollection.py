@@ -220,6 +220,13 @@ class ObjectCollection(object):
         env.exit("Object collection loading objects. (albums=" + str(self.__nrOfAlbums) + " images=" + str(self.__nrOfImages) + ")")
 
     def _insertObjectList(self, objectList, location=None):
+        widgets = gtk.glade.XML(env.gladeFile, "loadingProgressDialog")
+        loadingProgressDialog = widgets.get_widget(
+            "loadingProgressDialog")
+        loadingProgressDialog.show()
+        while gtk.events_pending():
+            gtk.main_iteration()
+
         # location = None means insert last, otherwise insert before
         # location.
         #
@@ -247,7 +254,9 @@ class ObjectCollection(object):
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
-        self. _handleNrOfObjectsUpdate()
+        self._handleNrOfObjectsUpdate()
+
+        loadingProgressDialog.destroy()
 
     def _handleNrOfObjectsUpdate(self):
         updatedDisabledFields = Set()
