@@ -169,8 +169,8 @@ default_image_size_limit = 640
 other_image_size_limits = 400 1024x800
 
 ######################################################################
-## Configuration for the GNOME client "gkofoto".
-[gnome client]
+## Configuration for the graphical client "gkofoto".
+[gkofoto]
 
 # Size limit of thumbnails. Use the same size limit as in the album
 # generation section above to share cached thumbnails.
