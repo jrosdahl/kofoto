@@ -1,49 +1,53 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <kofotoshelf>
-  <unlinked-album-name>Unlinked</unlinked-album-name>
-
   <images>
-    <image id="deadbeef">
-      <cached-location>originalbilder1/foo1.jpg</cached-location>
-      <photographer>Björn Brenander</photographer>
-      <caption>Foo.</caption>
-      <keyword>kaktus</keyword>
-      <keyword>mentalsjukhus</keyword>
-      <orientation>270</orientation>
+    <image id="81a95583629f6326546dac0a8f185fa9">
+      <cached-location>/joelhome/joel/projekt/kofoto/referensbilder/Canon_Digital_IXUS.jpg</cached-location>
+      <shortdesc>Fredrik och Maria</shortdesc>
+      <longdesc>De ser samlade ut, trots händelserna...</longdesc>
+      <keyword>fredrik örvill</keyword>
+      <keyword>maria uhlin</keyword>
+<height>1200</height>
+<width>1600</width>
       <aperture>5.6</aperture>
+      <exposure-time>1/30</exposure-time>
+      <flash>fired</flash>
+      <make>Canon</make>
+      <model>Canon DIGITAL IXUS</model>
+      <orientation>0</orientation>
+      <photographer>Joel Rosdahl</photographer>
+      <timestamp>1012684851</timestamp>
     </image>
 
-    <image id="defaced">
-      <cached-location>originalbilder1/foo2.jpg</cached-location>
+    <image id="653a4460d77326d9ac73f59cb4847ae6">
+      <cached-location>/joelhome/joel/projekt/kofoto/referensbilder/Canon_Digital_IXUSv.jpg</cached-location>
       <photographer>Björn Brenander</photographer>
-      <orientation>270</orientation>
-      <aperture>5.6</aperture>
+      <shortdesc>Kissen fiskar</shortdesc>
     </image>
   </images>
 
   <albums>
-    <album id="root">
-      <description>Alla album.</description>
-      <albumref id="semestrar" name="Semestrar"/>
-      <albumref id="favvo" name="Favoritalbum"/>
+    <album id="_root">
+      <description>Root album.</description>
+      <albumref id="_unlinked" name="Unlinked"/>
     </album>
 
-    <album id="semestrar">
-      <description>Alla semestrar.</description>
-      <albumref id="mallorca-2002" name="2002"/>
+    <album id="referensbilder">
+      <shortdesc>Referensbilder</shortdesc>
+      <imageref id="81a95583629f6326546dac0a8f185fa9"/>
+      <imageref id="653a4460d77326d9ac73f59cb4847ae6"/>
     </album>
 
-    <album id="favvo">
-      <description>De bästa albumen.</description>
-      <albumref id="mallorca-2002" name="Mallorca 2002"/>
-    </album>
-
-    <album id="mallorca-2002">
-      <description>Solig semester på Mallorca 2002.</description>
-      <imageref id="defaced"/>
-      <imageref id="deadbeef">
-        <caption>Här ser vi Foo Barsson.  Kolla in solrodnaden!</caption>
+    <album id="kattbilder">
+      <shortdesc>Kattbilder</shortdesc>
+      <longdesc>Kattbilder (egna och andras)</longdesc>
+      <imageref id="653a4460d77326d9ac73f59cb4847ae6">
+        <shortdesc>Kissen tycker att akvarieväxter verkar spännande</shortdesc>
       </imageref>
+    </album>
+
+    <album id="djurbilder>
+      <albumref id="kattbilder"/>
     </album>
   </albums>
 </kofotoshelf>
