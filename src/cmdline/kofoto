@@ -726,6 +726,7 @@ def main(argv):
         env.thumbnailsize = genconf["thumbnail_image_size"]
         env.defaultsize = genconf["default_image_size"]
         env.imagesizes = genconf["image_sizes"]
+        env.config = conf
 
         commandTable[args[0]](env, args[1:])
         shelf.commit()

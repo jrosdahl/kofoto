@@ -1,4 +1,5 @@
 import os
+import re
 from kofoto.outputengine import OutputEngine
 
 css = '''
@@ -279,7 +280,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <td align="center"><img class="thinborder" src="%(imgref)s" align="center" /></td>
 <td width="50%%"></td>
 </tr>
-<tr><td></td><td class="info">%(description)s</td><td></td></tr>
+<tr><td></td><td class="info">%(info)s</td><td></td></tr>
 <tr>
 <td></td>
 <td class="footer">
@@ -304,6 +305,24 @@ class OutputGenerator(OutputEngine):
         OutputEngine.__init__(self, env)
         self.env = env
         self.charEnc = character_encoding
+        if env.config.has_option("woolly", "display_categories"):
+            displayCategories = re.split(r"(?:,|\s)\s*", env.config.get(
+                "woolly",
+                "display_categories"))
+            self.displayCategories = [env.shelf.getCategory(x)
+                                      for x in displayCategories
+                                      if x]
+        else:
+            self.displayCategories = []
+        self.autoImageDescTemplate = ""
+        try:
+            if env.config.getboolean("woolly", "enable_auto_descriptions"):
+                tmpl = env.config.get("woolly", "auto_descriptions_template")
+                self.autoImageDescTags = re.findall("<(.*?)>", tmpl)
+                self.autoImageDescTemplate = re.sub(
+                    "<(.*?)>", r"%(\1)s", tmpl).encode(self.charEnc)
+        except ValueError:
+            pass
 
 
     def generateIndex(self, root):
@@ -570,6 +589,50 @@ class OutputGenerator(OutputEngine):
             title = image.getAttribute(u"title") or u""
             title = title.encode(self.charEnc)
 
+            imageCategories = list(image.getCategories())
+            infotextElements = []
+            if desc:
+                descElement = desc
+            else:
+                if self.autoImageDescTemplate:
+                    catdict = {}
+                    for tag in self.autoImageDescTags:
+                        catlist = []
+                        cat = self.env.shelf.getCategory(tag)
+                        for imgcat in imageCategories:
+                            if cat.isParentOf(imgcat, True):
+                                catlist.append(imgcat)
+                        catdict[tag] = ", ".join(
+                            [x.getDescription().encode(self.charEnc)
+                             for x in catlist])
+                    descElement = self.autoImageDescTemplate % catdict
+                else:
+                    descElement = ""
+            infotextElements.append("<p>%s</p>\n" % descElement)
+            infotextElements.append('<table border="0" cellpadding="0" cellspacing="0" width="100%">\n<tr>')
+            firstrow = True
+            for dispcat in self.displayCategories:
+                matching = [x.getDescription().encode(self.charEnc)
+                            for x in imageCategories
+                            if dispcat.isParentOf(x, True)]
+                if matching:
+                    if firstrow:
+                        firstrow = False
+                    else:
+                        infotextElements.append("<td></td></tr>\n<tr>")
+                    infotextElements.append(
+                        '<td align="left"><small><b>%s</b>: %s</small></td>' % (
+                            dispcat.getDescription().encode(self.charEnc),
+                            ", ".join(matching)))
+            infotextElements.append('</td><td align="right">')
+            timestamp = image.getAttribute(u"timestamp")
+            if timestamp:
+                infotextElements.append(
+                    "<small>%s</small><br />" % (
+                    timestamp.encode(self.charEnc)))
+            infotextElements.append("</td></tr></table>")
+            infotext = "".join(infotextElements)
+
             self.writeFile(
                 "%s-%s-%s.html" % (
                     album.getId(),
@@ -578,10 +641,10 @@ class OutputGenerator(OutputEngine):
                 image_frame_template % {
                     "blurb": self.blurb,
                     "charenc": self.charEnc,
-                    "description": desc,
                     "imgid": image.getId(),
                     "imgmaxwidth": size,
                     "imgref": self.getImageReference(image, size),
+                    "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
                     "paths": pathtext,

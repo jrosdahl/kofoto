@@ -107,4 +107,18 @@ other_image_sizes = 400 1024
 
 ## Configuration for the default output module "woolly".
 [woolly]
+
+# A list of tags for categories to display on image pages.
+display_categories = 
+
+# Whether automatic descriptions should be used. If enabled and
+# neither title nor description is set for an image, a description is
+# constructed using the template given by auto_descriptions_template.
+enable_auto_descriptions = no
+
+# Template to use when constructing automatic descriptions. The
+# template may contain category tags enclosed in angle brackets. If an
+# image has several matching subcategories, they are delimited with
+# commas.
+auto_descriptions_template = <depicted> (<location>)
 """)
