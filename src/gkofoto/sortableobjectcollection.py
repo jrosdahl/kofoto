@@ -87,7 +87,10 @@ class SortableObjectCollection(ObjectCollection):
 
     def __configureSortedModel(self, sortColumnName, sortOrder):
         if (sortOrder != None and sortColumnName != None):
-            sortColumnNr = self.getObjectMetadataMap()[sortColumnName][self.COLUMN_NR]
+            metaDataMap = self.getObjectMetadataMap()
+            if not metaDataMap.has_key(sortColumnName):
+                sortColumnName = u"id"
+            sortColumnNr = metaDataMap[sortColumnName][self.COLUMN_NR]
             model = self.getModel()
             model.set_sort_column_id(sortColumnNr, self.__sortOrder)
             # It is important that the attributeSortFunc is not an class member method,
