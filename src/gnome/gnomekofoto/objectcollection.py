@@ -247,8 +247,7 @@ class ObjectCollection(object):
 ##                    command = "jpegtran -rotate %(angle)s -perfect -copy all -outfile %(location)s %(location)s" % { "angle":angle, "location":location}
 ##                    result = os.system(command)
 ##                    if result == 0:
-##                        newHash = computeImageHash(location)
-##                        object.setHash(newHash)
+##                        object.contentChanged()
 ##                    else:
 ##                        print "failed to execute:", command
 ##
