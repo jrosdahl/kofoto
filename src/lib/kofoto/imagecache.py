@@ -4,6 +4,8 @@ import Image as PILImage
 class ImageCache:
     def __init__(self, cachelocation):
         self.cachelocation = cachelocation
+        if not os.path.isdir(cachelocation):
+            os.mkdir(cachelocation)
 
 
     def get(self, image, limit, regenerate=0):
@@ -20,6 +22,17 @@ class ImageCache:
                 else:
                     size = (limit * width) / height, limit
                 pilimg = pilimg.resize(size)
+            elif limit > largest:
+                largestpath = os.path.join(
+                    self.cachelocation,
+                    self._getCacheImageName(origpath, image.getHash(), largest))
+                if os.path.isfile(largestpath):
+                    try:
+                        os.symlink(largestpath, genpath)
+                    except AttributeError:
+                        import shutil
+                        shutil.copy(largestpath, genpath)
+                    return genpath
             orientation = image.getAttribute("orientation")
             if orientation:
                 if orientation == "right":
