@@ -5,14 +5,21 @@ from environment import env
 from kofoto.shelf import ImageExistsError, NotAnImageError, makeValidTag
 from kofoto.clientutils import walk_files
 
-class RegisterImagesDialog(gtk.FileSelection):
+class RegisterImagesDialog(gtk.FileChooserDialog):
     def __init__(self, albumToAddTo=None):
-        gtk.FileSelection.__init__(self, title="Register images")
+        gtk.FileChooserDialog.__init__(
+            self,
+            title="Register images",
+            action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+            buttons=(
+                gtk.STOCK_OK, gtk.RESPONSE_OK,
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
         self.__albumToAddTo = albumToAddTo
-        self.set_select_multiple(True)
-        self.ok_button.connect("clicked", self._ok)
+        self.connect("response", self._response)
 
-    def _ok(self, widget):
+    def _response(self, widget, responseId):
+        if responseId == gtk.RESPONSE_CANCEL:
+            return
         widgets = gtk.glade.XML(env.gladeFile, "registrationProgressDialog")
         registrationProgressDialog = widgets.get_widget(
             "registrationProgressDialog")
@@ -35,7 +42,7 @@ class RegisterImagesDialog(gtk.FileSelection):
         filesInvestigated = 0
         images = []
         registrationTimeString = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
-        for filepath in walk_files(self.get_selections()):
+        for filepath in walk_files([self.get_filename()]):
             try:
                 try:
                     filepath = filepath.decode("utf-8")

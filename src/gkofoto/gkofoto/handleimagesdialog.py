@@ -8,13 +8,20 @@ from kofoto.shelf import \
      makeValidTag
 from kofoto.clientutils import walk_files
 
-class HandleImagesDialog(gtk.FileSelection):
+class HandleImagesDialog(gtk.FileChooserDialog):
     def __init__(self):
-        gtk.FileSelection.__init__(self, title="Register images")
-        self.set_select_multiple(True)
-        self.ok_button.connect("clicked", self._ok)
+        gtk.FileChooserDialog.__init__(
+            self,
+            title="Handle images",
+            action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+            buttons=(
+                gtk.STOCK_OK, gtk.RESPONSE_OK,
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        self.connect("response", self._response)
 
-    def _ok(self, widget):
+    def _response(self, widget, responseId):
+        if responseId == gtk.RESPONSE_CANCEL:
+            return
         widgets = gtk.glade.XML(env.gladeFile, "handleImagesProgressDialog")
         handleImagesProgressDialog = widgets.get_widget(
             "handleImagesProgressDialog")
@@ -40,7 +47,7 @@ class HandleImagesDialog(gtk.FileSelection):
         investigatedFiles = 0
         modifiedImages = []
         movedImages = []
-        for filepath in walk_files(self.get_selections()):
+        for filepath in walk_files([self.get_filename()]):
             try:
                 filepath = filepath.decode("utf-8")
             except UnicodeDecodeError:
