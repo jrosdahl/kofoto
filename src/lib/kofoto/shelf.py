@@ -363,7 +363,8 @@ def verifyValidCategoryTag(tag):
     try:
         int(tag)
     except ValueError:
-        if not tag or tag[0] == "@" or re.search(r"\s", tag):
+        if (not tag or tag[0] == "@" or re.search(r"\s", tag) or
+            tag in ["and", "exactly", "not", "or"]:
             raise BadCategoryTagError, tag
     else:
         raise BadCategoryTagError, tag
