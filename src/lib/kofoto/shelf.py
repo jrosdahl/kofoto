@@ -46,6 +46,8 @@ schema = """
         tag         VARCHAR(256) NOT NULL,
         -- Whether it is possible to delete the album.
         deletable   INTEGER NOT NULL,
+        -- Album type (plain, orphans, allalbums, ...).
+        type        VARCHAR(256) NOT NULL,
 
         UNIQUE      (tag),
         FOREIGN KEY (albumid) REFERENCES object,
@@ -94,14 +96,8 @@ schema = """
     );
 """
 
-_ALLIMAGES_ALBUM_ID = -2
-_ALLALBUMS_ALBUM_ID = -1
 _ROOT_ALBUM_ID = 0
-_magic_albums = {
-    _ALLIMAGES_ALBUM_ID: "_allimages",
-    _ALLALBUMS_ALBUM_ID: "_allalbums",
-    _ROOT_ALBUM_ID: "root", # Just the default.
-}
+_ROOT_ALBUM_DEFAULT_TAG = "root"
 
 ######################################################################
 ### Exceptions.
@@ -141,18 +137,33 @@ class ObjectDoesNotExist(KofotoError):
     pass
 
 
-class AlbumDoesNotExist(KofotoError):
+class AlbumDoesNotExist(ObjectDoesNotExist):
     """Album does not exist in the album."""
     pass
 
 
-class ImageDoesNotExist(KofotoError):
+class ImageDoesNotExist(ObjectDoesNotExist):
     """Image does not exist in the album."""
     pass
 
 
-class ReservedAlbumError(KofotoError):
-    """The album (tag/ID) is reserved for other internal purposes."""
+class UnknownAlbumTypeError(KofotoError):
+    """The album type is unknown."""
+    pass
+
+
+class UndeletableAlbumError(KofotoError):
+    """Album is not deletable."""
+    pass
+
+
+class ReservedAlbumTagError(KofotoError):
+    """The album tag is reserved for internal purposes."""
+    pass
+
+
+class UnsettableChildrenError(KofotoError):
+    """The album is magic and doesn't have any explicit children."""
     pass
 
 
@@ -172,16 +183,13 @@ def computeImageHash(filename):
     return m.hexdigest()
 
 
-def verifyValidAlbumTag(tag, allowid):
-    if not tag or not type(tag) == type("") or tag[0] == "_" or "\0" in tag:
-        raise ReservedAlbumError, tag
-    if not allowid:
-        try:
-            int(tag)
-        except ValueError:
-            pass
-        else:
-            raise ReservedAlbumError, tag
+def verifyValidAlbumTag(tag):
+    try:
+        int(tag)
+    except ValueError:
+        pass
+    else:
+        raise ReservedAlbumTagError, tag
 
 ######################################################################
 ### Public classes.
@@ -210,21 +218,15 @@ class Shelf:
         except sql.DatabaseError:
             if create:
                 cursor.execute(schema)
-                for id, tag in _magic_albums.items():
-                    cursor.execute(
-                        " insert into album"
-                        " values (%(id)s, %(tag)s, 0)",
-                        locals())
                 cursor.execute(
-                    " insert into member"
-                    " values (%s, 0, %s)",
-                    _ROOT_ALBUM_ID,
-                    _ALLALBUMS_ALBUM_ID)
+                    " insert into object"
+                    " values (%s)",
+                    _ROOT_ALBUM_ID)
                 cursor.execute(
-                    " insert into member"
-                    " values (%s, 1, %s)",
+                    " insert into album"
+                    " values (%s, %s, 0, 'plain')",
                     _ROOT_ALBUM_ID,
-                    _ALLIMAGES_ALBUM_ID)
+                    _ROOT_ALBUM_DEFAULT_TAG)
                 self.connection.commit()
             else:
                 raise ShelfNotFoundError, location
@@ -251,9 +253,21 @@ class Shelf:
         del self.cursor
 
 
-    def createAlbum(self, tag):
-        """Create an empty, unlinked album."""
-        verifyValidAlbumTag(tag, allowid=0)
+    def getStatistics(self):
+        self.cursor.execute(
+            " select count(*)"
+            " from   album")
+        nalbums = int(self.cursor.fetchone()[0])
+        self.cursor.execute(
+            " select count(*)"
+            " from   image")
+        nimages = int(self.cursor.fetchone()[0])
+        return {"nalbums": nalbums, "nimages": nimages}
+
+
+    def createAlbum(self, tag, albumtype="plain"):
+        """Create an empty, orphaned album."""
+        verifyValidAlbumTag(tag)
         try:
             self.cursor.execute(
                 " insert into object"
@@ -262,10 +276,14 @@ class Shelf:
             lastrowid = self.cursor.lastrowid
             self.cursor.execute(
                 " insert into album"
-                " values (%(lastrowid)s, %(tag)s, 1)",
+                " values (%(lastrowid)s, %(tag)s, 1, %(albumtype)s)",
                 locals())
-            return Album(self, lastrowid)
+            return self._albumFactory(lastrowid, albumtype)
         except sql.IntegrityError:
+            self.cursor.execute(
+                " delete from object"
+                " where objectid = %(lastrowid)s",
+                locals())
             raise AlbumExistsError, tag
 
 
@@ -274,23 +292,28 @@ class Shelf:
 
         Returns an Album instance.
         """
-        if tag == _magic_albums[_ALLALBUMS_ALBUM_ID]:
-            return self.getAllAlbumsAlbum()
-        elif tag == _magic_albums[_ALLIMAGES_ALBUM_ID]:
-            return self.getAllImagesAlbum()
         try:
             albumid = int(tag)
+            self.cursor.execute(
+                " select type"
+                " from album"
+                " where albumid = %(albumid)s",
+                locals())
+            if self.cursor.rowcount > 0:
+                albumtype = self.cursor.fetchone()[0]
+            else:
+                raise AlbumDoesNotExist, tag
         except ValueError:
             self.cursor.execute(
-                " select albumid"
+                " select albumid, type"
                 " from album"
                 " where tag = %(tag)s",
                 locals())
             if self.cursor.rowcount > 0:
-                albumid = self.cursor.fetchone()[0]
+                albumid, albumtype = self.cursor.fetchone()
             else:
                 raise AlbumDoesNotExist, tag
-        return Album(self, albumid)
+        return self._albumFactory(albumid, albumtype)
 
 
     def getRootAlbum(self):
@@ -298,73 +321,65 @@ class Shelf:
 
         Returns an Album object.
         """
-        return Album(self, 0)
+        return self.getAlbum("0")
 
 
-    def getAllAlbumsAlbum(self):
-        """Get the magic \"all albums\" album."""
-        return AllAlbumsAlbum(self, _ALLALBUMS_ALBUM_ID)
+    def getAllAlbums(self):
+        self.cursor.execute(
+            " select albumid, type"
+            " from   album")
+        albums = []
+        for albumid, albumtype in self.cursor.fetchall():
+            albums.append(self._albumFactory(albumid, albumtype))
+        return albums
 
 
-    def getAllImagesAlbum(self):
-        """Get the magic \"all images\" album."""
-        return AllImagesAlbum(self, _ALLIMAGES_ALBUM_ID)
+    def getAllImages(self):
+        self.cursor.execute(
+            " select imageid"
+            " from   image")
+        images = []
+        for (imageid,) in self.cursor.fetchall():
+            images.append(Image(self, imageid))
+        return images
 
 
     def deleteAlbum(self, tag):
-        verifyValidAlbumTag(tag, allowid=1)
+        """Delete the album for a given album tag/ID."""
         try:
             albumid = int(tag)
         except ValueError:
             self.cursor.execute(
-                " select albumid"
+                " select albumid, type"
                 " from album"
                 " where tag = %(tag)s",
                 locals())
             row = self.cursor.fetchone()
             if not row:
                 raise AlbumDoesNotExist, tag
-            albumid = row[0]
+            albumid, albumtype = row
         if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
-            raise ReservedAlbumError, tag
-        self.cursor.execute(
-            " select albumid"
-            " from member"
-            " where objectid = %(albumid)s",
-            locals())
-        parents = [x[0] for x in self.cursor.fetchall()]
-        for parentid in parents:
-            self.cursor.execute(
-                " select position"
-                " from   member"
-                " where  albumid = %(parentid)s and"
-                "        objectid = %(delid)s",
-                locals())
-            positions = [x[0] for x in self.cursor.fetchall()]
-            for position in positions:
-                self.cursor.execute(
-                    " delete from member"
-                    " where  albumid = %(parentid)s and"
-                    "        position = %(position)s",
-                    locals())
-                self.cursor.execute(
-                    " update member"
-                    " set    position = position - 1"
-                    " where  position > %(position)s",
-                    locals())
+            raise UndeletableAlbumError, tag
         self.cursor.execute(
             " delete from album"
-            " where  albumid = %(delid)s",
+            " where  albumid = %(albumid)s",
+            locals())
+        if self.cursor.rowcount == 0:
+            raise AlbumDoesNotExist, tag
+        self._deleteObjectFromParents(albumid)
+        self.cursor.execute(
+            " delete from object"
+            " where  objectid = %(albumid)s",
             locals())
         self.cursor.execute(
             " delete from attribute"
-            " where  objectid = %(delid)s",
+            " where  objectid = %(albumid)s",
             locals())
 
 
     def createImage(self, path):
-        """Add a new, unlinked image to the shelf.
+        """Add a new, orphaned image to the shelf.
 
         The ID of the image is returned."""
         location = os.path.abspath(path)
@@ -381,6 +396,10 @@ class Shelf:
                 locals())
             return Image(self, lastrowid)
         except sql.IntegrityError:
+            self.cursor.execute(
+                " delete from object"
+                " where objectid = %(lastrowid)s",
+                locals())
             raise ImageExistsError, path
 
 
@@ -391,6 +410,13 @@ class Shelf:
         """
         try:
             imageid = int(hash)
+            self.cursor.execute(
+                " select imageid"
+                " from image"
+                " where imageid = %(imageid)s",
+                locals())
+            if self.cursor.rowcount == 0:
+                raise ImageDoesNotExist, hash
         except ValueError:
             self.cursor.execute(
                 " select imageid"
@@ -404,8 +430,104 @@ class Shelf:
         return Image(self, imageid)
 
 
+    def deleteImage(self, hash):
+        """Delete the image for a given image hash/ID."""
+        try:
+            imageid = int(hash)
+        except ValueError:
+            self.cursor.execute(
+                " select imageid"
+                " from image"
+                " where hash = %(hash)s",
+                locals())
+            row = self.cursor.fetchone()
+            if not row:
+                raise ImageDoesNotExist, hash
+            imageid = row[0]
+        self.cursor.execute(
+            " delete from image"
+            " where  imageid = %(imageid)s",
+            locals())
+        if self.cursor.rowcount == 0:
+            raise ImageDoesNotExist, hash
+        self._deleteObjectFromParents(imageid)
+        self.cursor.execute(
+            " delete from object"
+            " where  objectid = %(imageid)s",
+            locals())
+        self.cursor.execute(
+            " delete from attribute"
+            " where  objectid = %(imageid)s",
+            locals())
+
+
+    def getObject(self, objid):
+        """Get the object for a given object tag/ID."""
+        try:
+            return self.getImage(objid)
+        except ImageDoesNotExist:
+            try:
+                return self.getAlbum(objid)
+            except AlbumDoesNotExist:
+                raise ObjectDoesNotExist, objid
+
+
+    def deleteObject(self, objid):
+        """Get the object for a given object tag/ID."""
+        try:
+            self.deleteImage(objid)
+        except ImageDoesNotExist:
+            try:
+                self.deleteAlbum(objid)
+            except AlbumDoesNotExist:
+                raise ObjectDoesNotExist, objid
+
+
     ##############################
     # Internal methods.
+
+    def _albumFactory(shelf, albumid, albumtype="plain"):
+        albumtypemap = {
+            "allalbums": AllAlbumsAlbum,
+            "allimages": AllImagesAlbum,
+            "orphans": OrphansAlbum,
+            "plain": PlainAlbum,
+        }
+        try:
+            return albumtypemap[albumtype](shelf, albumid, albumtype)
+        except KeyError:
+            raise UnknownAlbumTypeError, albumtype
+
+
+    def _deleteObjectFromParents(self, objid):
+        self.cursor.execute(
+            " select distinct albumid"
+            " from member"
+            " where objectid = %(objid)s",
+            locals())
+        parents = [x[0] for x in self.cursor.fetchall()]
+        for parentid in parents:
+            self.cursor.execute(
+                " select   position"
+                " from     member"
+                " where    albumid = %(parentid)s and"
+                "          objectid = %(objid)s"
+                " order by position desc",
+                locals())
+            positions = [x[0] for x in self.cursor.fetchall()]
+            for position in positions:
+                self.cursor.execute(
+                    " delete from member"
+                    " where  albumid = %(parentid)s and"
+                    "        position = %(position)s",
+                    locals())
+                self.cursor.execute(
+                    " update member"
+                    " set    position = position - 1"
+                    " where  albumid = %(parentid)s and"
+                    "        position > %(position)s",
+                    locals())
+
 
 class _Object:
     def __init__(self, shelf, objid):
@@ -418,12 +540,13 @@ class _Object:
 
 
     def getAttributeNames(self):
-        """Returns a (unsorted) list of available attributes."""
+        """Returns a sorted list of available attributes."""
         objid = self.objid
         self.shelf.cursor.execute(
             " select name"
             " from   attribute"
-            " where  objectid = %(objid)s",
+            " where  objectid = %(objid)s"
+            " order by name",
             locals())
         return [x[0] for x in self.shelf.cursor.fetchall()]
 
@@ -458,10 +581,8 @@ class _Object:
             locals())
         if self.shelf.cursor.rowcount == 0:
             self.shelf.cursor.execute(
-                " insert attribute"
-                " set    value = %(value)s"
-                " where  objectid = %(objid)s and"
-                "        name = %(name)s",
+                " insert into attribute"
+                " values (%(objid)s, %(name)s, %(value)s)",
             locals())
 
 
@@ -476,7 +597,56 @@ class _Object:
 
 
 class Album(_Object):
-    """A Kofoto album."""
+    """Base class of Kofoto albums."""
+
+    ##############################
+    # Public methods.
+
+    def getType(self):
+        return self.albumtype
+
+
+    def getTag(self):
+        """Get the tag of the album."""
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            " select tag"
+            " from   album"
+            " where  albumid = %(albumid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
+
+
+    def setTag(self, newtag):
+        verifyValidAlbumTag(newtag)
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            " update album"
+            " set    tag = %(newtag)s"
+            " where  albumid = %(albumid)s",
+            locals())
+
+
+    def getChildren(self):
+        raise UnimplementedError
+
+
+    def setChildren(self):
+        raise UnimplementedError
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, albumid, albumtype):
+        """Constructor of an Album."""
+        _Object.__init__(self, shelf, albumid)
+        self.shelf = shelf
+        self.albumtype = albumtype
+
+
+class PlainAlbum(Album):
+    """A plain Kofoto album."""
 
     ##############################
     # Public methods.
@@ -488,29 +658,24 @@ class Album(_Object):
         """
         albumid = self.getId()
         self.shelf.cursor.execute(
-            " select 'album', position, member.objectid"
+            " select 'album', position, member.objectid, album.type"
             " from   member, album"
             " where  member.albumid = %(albumid)s and"
             "        member.objectid = album.albumid"
             " union"
-            " select 'image', position, member.objectid"
+            " select 'image', position, member.objectid, NULL"
             " from   member, image"
             " where  member.albumid = %(albumid)s and"
             "        member.objectid = image.imageid"
             " order by position",
             locals())
         objects = []
-        for objtype, position, objid in self.shelf.cursor.fetchall():
+        for objtype, position, objid, atype in self.shelf.cursor.fetchall():
             if objtype == "album":
-                if objid == _ALLALBUMS_ALBUM_ID:
-                    childtype = AllAlbumsAlbum
-                elif objid == _ALLIMAGES_ALBUM_ID:
-                    childtype = AllImagesAlbum
-                else:
-                    childtype = Album
+                child = self.shelf._albumFactory(objid, atype)
             else:
-                childtype = Image
-            objects.append(childtype(self.shelf, objid))
+                child = Image(self.shelf, objid)
+            objects.append(child)
         return objects
 
 
@@ -529,7 +694,6 @@ class Album(_Object):
         for ix in range(newchcnt):
             childid = children[ix].getId()
             if ix < oldchcnt:
-                print "updating"
                 self.shelf.cursor.execute(
                     " update member"
                     " set    objectid = %(childid)s"
@@ -537,7 +701,6 @@ class Album(_Object):
                     "        position = %(ix)s",
                     locals())
             else:
-                print "inserting"
                 self.shelf.cursor.execute(
                     " insert into member"
                     " values (%(albumid)s, %(ix)s, %(childid)s)",
@@ -547,36 +710,6 @@ class Album(_Object):
             " where  albumid = %(albumid)s and"
             "        position >= %(newchcnt)s",
             locals())
-
-
-    def getTag(self):
-        """Get the tag of the album."""
-        albumid = self.getId()
-        self.shelf.cursor.execute(
-            " select tag"
-            " from   album"
-            " where  albumid = %(albumid)s",
-            locals())
-        return self.shelf.cursor.fetchone()[0]
-
-
-    def setTag(self, newtag):
-        verifyValidAlbumTag(newtag, allowid=0)
-        albumid = self.getId()
-        self.shelf.cursor.execute(
-            " update album"
-            " set    tag = %(newtag)s"
-            " where  albumid = %(albumid)s",
-            locals())
-
-
-    ##############################
-    # Internal methods.
-
-    def __init__(self, shelf, albumid):
-        """Constructor of an Album."""
-        _Object.__init__(self, shelf, albumid)
-        self.shelf = shelf
 
 
 class Image(_Object):
@@ -646,20 +779,7 @@ class MagicAlbum(Album):
     # Public methods.
 
     def setChildren(self, children):
-        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
-
-
-    def setTag(self, tag):
-        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
-
-
-    ##############################
-    # Internal methods.
-
-    def __init__(self, shelf, albumid):
-        assert _magic_albums.has_key(albumid)
-        Album.__init__(self, shelf, albumid)
-        self.shelf = shelf
+        raise UnsettableChildrenError, self.albumid
 
 
 class AllAlbumsAlbum(MagicAlbum):
@@ -675,21 +795,12 @@ class AllAlbumsAlbum(MagicAlbum):
         """
         objects = []
         self.shelf.cursor.execute(
-            " select   albumid"
+            " select   albumid, type"
             " from     album"
             " order by tag")
-        for (objid,) in self.shelf.cursor.fetchall():
-            objects.append(Album(self.shelf, objid))
+        for (objid, albumtype) in self.shelf.cursor.fetchall():
+            objects.append(self.shelf._albumFactory(objid, albumtype))
         return objects
-
-
-    ##############################
-    # Internal methods.
-
-    def __init__(self, shelf, albumid):
-        assert albumid == _ALLALBUMS_ALBUM_ID
-        MagicAlbum.__init__(self, shelf, albumid)
-        self.shelf = shelf
 
 
 class AllImagesAlbum(MagicAlbum):
@@ -715,13 +826,39 @@ class AllImagesAlbum(MagicAlbum):
         return objects
 
 
-    ##############################
-    # Internal methods.
+class OrphansAlbum(MagicAlbum):
+    """An album with all albums and images that are orphans."""
 
-    def __init__(self, shelf, albumid):
-        assert albumid == _ALLIMAGES_ALBUM_ID
-        MagicAlbum.__init__(self, shelf, albumid)
-        self.shelf = shelf
+    ##############################
+    # Public methods.
+
+    def getChildren(self):
+        """Get the album's children.
+
+        Returns a list of all images.
+        """
+        rootid = _ROOT_ALBUM_ID
+        albums = []
+        self.shelf.cursor.execute(
+            " select   albumid, type"
+            " from     album"
+            " where    albumid not in (select objectid from member) and"
+            "          albumid != %(rootid)s"
+            " order by tag",
+            locals())
+        for albumid, albumtype in self.shelf.cursor.fetchall():
+            albums.append(self.shelf._albumFactory(albumid, albumtype))
+        images = []
+        self.shelf.cursor.execute(
+            " select   imageid"
+            " from     image left join attribute"
+            " on       imageid = objectid"
+            " where    imageid not in (select objectid from member) and"
+            "          name = 'timestamp'"
+            " order by value, location")
+        for (imageid,) in self.shelf.cursor.fetchall():
+            images.append(Image(self.shelf, imageid))
+        return albums + images
 
 
 ######################################################################
