@@ -64,7 +64,7 @@ class Albums:
             album = env.shelf.getAlbum(
                 albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID))
             createMenuItem.set_sensitive(album.isMutable())
-            destroyMenuItem.set_sensitive(True)
+            destroyMenuItem.set_sensitive(album != env.shelf.getRootAlbum())
             editMenuItem.set_sensitive(True)
         else:
             createMenuItem.set_sensitive(False)

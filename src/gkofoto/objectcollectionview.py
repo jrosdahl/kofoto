@@ -110,15 +110,20 @@ class ObjectCollectionView:
         objectSelection = self._objectCollection.getObjectSelection()
         if objectSelection:
             model = self._objectCollection.getModel()
+            rootAlbumId = env.shelf.getRootAlbum().getId()
 
             albumsSelected = False
             imagesSelected = False
+            rootAlbumSelected = False
             for position in objectSelection:
                 iterator = model.get_iter(position)
                 isAlbum = model.get_value(
                     iterator, self._objectCollection.COLUMN_IS_ALBUM)
                 if isAlbum:
                     albumsSelected = True
+                    if rootAlbumId == model.get_value(
+                        iterator, self._objectCollection.COLUMN_OBJECT_ID):
+                        rootAlbumSelected = True
                 else:
                     imagesSelected = True
 
@@ -126,7 +131,7 @@ class ObjectCollectionView:
             self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable)
             self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable)
             self.__clipboardMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(
-                imagesSelected ^ albumsSelected)
+                imagesSelected ^ albumsSelected and not rootAlbumSelected)
             self.__commandMenuGroup["Open image"].set_sensitive(True)
             self.__commandMenuGroup[90].set_sensitive(True)
             self.__commandMenuGroup[270].set_sensitive(True)
