@@ -795,7 +795,11 @@ class EXIF_header:
                     # optional 2nd tag element is present
                     if callable(tag_entry[1]):
                         # call mapping function
-                        printable=tag_entry[1](values)
+                        try:
+                            printable=tag_entry[1](values)
+                        except:
+                            # Ugly work-around for now. /Joel 2005-01-27
+                            continue
                     else:
                         printable=''
                         for i in values:
