@@ -66,6 +66,6 @@ class ImageCache:
         orientation = image.getAttribute("orientation")
         if orientation not in ("up", "down", "left", "right"):
             orientation = "up"
-        genname = "%s-%s-%s.%s" % (image.getId(), limit,
+        genname = "%s-%s-%s.%s" % (image.getHash(), limit,
                                    orientation, extension)
         return genname
