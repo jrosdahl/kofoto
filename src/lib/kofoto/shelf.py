@@ -188,8 +188,8 @@ def computeImageHash(filename):
     """Compute the canonical image ID for an image file."""
     import md5
     m = md5.new()
-    f = open(filename, "rb")
-    while 1:
+    f = file(filename, "rb")
+    while True:
         data = f.read(2**16)
         if not data:
             break
@@ -214,7 +214,7 @@ class Shelf:
     ##############################
     # Public methods.
 
-    def __init__(self, location, create=0):
+    def __init__(self, location, create=False):
         """Constructor.
         """
         self.location = location
@@ -703,7 +703,7 @@ class Album(_Object):
 
 
     def isAlbum(self):
-        return 1
+        return True
 
 
     ##############################
@@ -832,13 +832,13 @@ class Image(_Object):
 
 
     def isAlbum(self):
-        return 0
+        return False
 
 
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
         import EXIF
-        tags = EXIF.process_file(open(self.getLocation(), "rb"))
+        tags = EXIF.process_file(file(self.getLocation(), "rb"))
 
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",

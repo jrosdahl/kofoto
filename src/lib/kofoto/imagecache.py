@@ -56,7 +56,7 @@ class ImageCache:
             maxsize = max(int(image.getAttribute("height")),
                           int(image.getAttribute("width")))
             for size in sizes + [maxsize]:
-                keep[self._getCacheImageName(image, size)] = 1
+                keep[self._getCacheImageName(image, size)] = True
         for file in os.listdir(self.cachelocation):
             if not keep.has_key(file):
                 os.unlink(os.path.join(self.cachelocation, file))

@@ -305,7 +305,7 @@ def registerHelper(env, destalbum, paths):
                 if env.verbose:
                     env.out("Ignoring.\n")
                 continue
-            while 1:
+            while True:
                 try:
                     album = env.shelf.createAlbum(tag)
                     break
@@ -503,7 +503,7 @@ def main(argv):
         pass
     env = CommandEnvironment()
     env.location = -1
-    env.verbose = 0
+    env.verbose = False
     env.type = None
 
     shelfLocation = None
@@ -527,7 +527,7 @@ def main(argv):
         elif opt in ("-t", "--type"):
             env.type = optarg
         elif opt in ("-v", "--verbose"):
-            env.verbose = 1
+            env.verbose = True
         elif opt in ("-V", "--version"):
             sys.stdout.write("crowbar\n")
             sys.exit(0)
@@ -541,8 +541,8 @@ def main(argv):
         if confdir and not os.path.exists(confdir):
             os.mkdir(confdir)
             sys.stdout.write("Created directory \"%s\".\n" % confdir)
-        file = open(configFilename, "w")
-        file.write(
+        conffile = file(configFilename, "w")
+        conffile.write(
             "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
             "\n"
             "# Default location of the shelf. This is where information about\n"
@@ -562,7 +562,7 @@ def main(argv):
             "# A list of image sizes (other than default_image_size) to include in\n"
             "# album.\n"
             "other_image_sizes = [400, 1024]\n")
-        file.close()
+        conffile.close()
         sys.stdout.write("Created configuration file \"%s\".\n" %
                          configFilename)
 
@@ -579,7 +579,7 @@ def main(argv):
 
     if args[0] == "create-shelf":
         try:
-            Shelf(shelfLocation, create=1)
+            Shelf(shelfLocation, create=True)
         except FailedWritingError, filename:
             printErrorAndExit(
                 "Could not create shelf file %s (already exists?).\n" %

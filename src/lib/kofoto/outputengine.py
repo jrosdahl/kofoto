@@ -13,12 +13,12 @@ class OutputEngine:
         return self.imgref[(image.getHash(), size)]
 
 
-    def writeFile(self, filename, text, binary=0):
+    def writeFile(self, filename, text, binary=False):
         if binary:
             mode = "wb"
         else:
             mode = "w"
-        open(os.path.join(self.dest, filename), mode).write(text)
+        file(os.path.join(self.dest, filename), mode).write(text)
 
 
     def symlinkFile(self, source, destination):
