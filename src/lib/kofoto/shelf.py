@@ -356,7 +356,7 @@ class Shelf:
         self.connection = _UnicodeConnectionDecorator(
             sql.connect(location,
                         client_encoding="UTF-8",
-                        command_log_file=logfile),
+                        command_logfile=logfile),
             "UTF-8")
         try:
             cursor = self.connection.cursor()
