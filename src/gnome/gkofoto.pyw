@@ -1,0 +1,2 @@
+execfile("gkofoto")
+
