@@ -547,7 +547,11 @@ class Shelf:
         cursor.execute(
             " select albumid, tag, type"
             " from   album"
-            " where  albumid = %s or tag = %s",
+            " where  albumid = %s"
+            " union"
+            " select albumid, tag, type"
+            " from   album"
+            " where  tag = %s",
             tag,
             tag)
         row = cursor.fetchone()
@@ -598,7 +602,11 @@ class Shelf:
         cursor.execute(
             " select albumid, tag"
             " from   album"
-            " where  albumid = %s or tag = %s",
+            " where  albumid = %s"
+            " union"
+            " select albumid, tag"
+            " from   album"
+            " where  tag = %s",
             tag,
             tag)
         row = cursor.fetchone()
@@ -700,7 +708,11 @@ class Shelf:
         cursor.execute(
             " select imageid, hash, location"
             " from   image"
-            " where  imageid = %s or hash = %s",
+            " where  imageid = %s"
+            " union"
+            " select imageid, hash, location"
+            " from   image"
+            " where  hash = %s",
             ref,
             ref)
         row = cursor.fetchone()
@@ -728,7 +740,11 @@ class Shelf:
         cursor.execute(
             " select imageid, hash"
             " from   image"
-            " where  imageid = %s or hash = %s",
+            " where  imageid = %s"
+            " union"
+            " select imageid, hash"
+            " from   image"
+            " where  hash = %s",
             ref,
             ref)
         row = cursor.fetchone()
@@ -837,7 +853,11 @@ class Shelf:
         cursor.execute(
             " select categoryid, tag"
             " from   category"
-            " where  categoryid = %s or tag = %s",
+            " where  categoryid = %s"
+            " union"
+            " select categoryid, tag"
+            " from   category"
+            " where  tag = %s",
             tag,
             tag)
         row = cursor.fetchone()
@@ -846,7 +866,12 @@ class Shelf:
         catid, tag = row
         cursor.execute(
             " delete from category_child"
-            " where  parent = %s or child = %s",
+            " where  parent = %s",
+            catid,
+            catid)
+        cursor.execute(
+            " delete from category_child"
+            " where  child = %s",
             catid,
             catid)
         cursor.execute(
@@ -876,7 +901,11 @@ class Shelf:
         cursor.execute(
             " select categoryid, tag, description"
             " from   category"
-            " where  categoryid = %s or tag = %s",
+            " where  categoryid = %s"
+            " union"
+            " select categoryid, tag, description"
+            " from   category"
+            " where  tag = %s",
             catid,
             catid)
         row = cursor.fetchone()
