@@ -29,29 +29,35 @@ def checkSubset(idMapping, subsetName, supersetName):
 connection = sqlite.connect(sys.argv[1])
 idMapping = {}
 
-getIds(connection, idMapping, "object.id")
-getIds(connection, idMapping, "album.id")
-getIds(connection, idMapping, "image.id")
-getIds(connection, idMapping, "image.primary_version")
-getIds(connection, idMapping, "image_version.id")
-getIds(connection, idMapping, "image_version.image")
-getIds(connection, idMapping, "member.album")
-getIds(connection, idMapping, "member.object")
-getIds(connection, idMapping, "attribute.object")
-getIds(connection, idMapping, "category.id")
-getIds(connection, idMapping, "category_child.parent")
-getIds(connection, idMapping, "category_child.child")
-getIds(connection, idMapping, "object_category.object")
-getIds(connection, idMapping, "object_category.category")
+for tableColumn in [
+    "object.id",
+    "album.id",
+    "image.id",
+    "image.primary_version",
+    "image_version.id",
+    "image_version.image",
+    "member.album",
+    "member.object",
+    "attribute.object",
+    "category.id",
+    "category_child.parent",
+    "category_child.child",
+    "object_category.object",
+    "object_category.category",
+    ]:
+    getIds(connection, idMapping, tableColumn)
 
-checkSubset(idMapping, "album.id", "object.id")
-checkSubset(idMapping, "image.id", "object.id")
-checkSubset(idMapping, "image.primary_version", "image_version.id")
-checkSubset(idMapping, "image_version.image", "image.id")
-checkSubset(idMapping, "member.album", "album.id")
-checkSubset(idMapping, "member.object", "object.id")
-checkSubset(idMapping, "attribute.object", "object.id")
-checkSubset(idMapping, "category_child.parent", "category.id")
-checkSubset(idMapping, "category_child.child", "category.id")
-checkSubset(idMapping, "object_category.object", "object.id")
-checkSubset(idMapping, "object_category.category", "category.id")
+for subset, superset in [
+    ("album.id", "object.id"),
+    ("image.id", "object.id"),
+    ("image.primary_version", "image_version.id"),
+    ("image_version.image", "image.id"),
+    ("member.album", "album.id"),
+    ("member.object", "object.id"),
+    ("attribute.object", "object.id"),
+    ("category_child.parent", "category.id"),
+    ("category_child.child", "category.id"),
+    ("object_category.object", "object.id"),
+    ("object_category.category", "category.id"),
+    ]:
+    checkSubset(idMapping, subset, superset)
