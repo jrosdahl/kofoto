@@ -101,6 +101,7 @@ class MainWindow(gtk.Window):
         dialog = RegisterImagesDialog()
         dialog.run()
         dialog.destroy()
+        self.reload() # TODO: don't reload everything.
 
     def handleModifiedOrRenamedImages(self, widget, data):
         dialog = HandleImagesDialog()

@@ -99,7 +99,7 @@ class Albums:
         dialog = RegisterImagesDialog(selectedAlbum)
         dialog.run()
         dialog.destroy()
-        # TODO: update objectCollection?
+        self.__mainWindow.reload() # TODO: don't reload everything.
 
     def _createAlbumHelper(self, tag, desc):
         newAlbum = env.shelf.createAlbum(tag)
