@@ -1208,7 +1208,7 @@ class _Object:
             "        member.albumid = album.albumid",
             self.getId())
         for albumid, albumtag, albumtype in cursor:
-            yield self._albumFactory(albumid, albumtag, albumtype)
+            yield self.shelf._albumFactory(albumid, albumtag, albumtype)
 
 
     def getAttribute(self, name):
