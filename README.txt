@@ -134,6 +134,13 @@ B. Windows
 VERSION HISTORY
 ===============
 
+0.2.1 (2004-09-19)
+
+    Corrections:
+
+      * Handle missing image files gracefully in the image preloader
+        (ticket #67).
+
 0.2 (2004-09-19)
 
     Enhancements:
