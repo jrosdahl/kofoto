@@ -13,11 +13,6 @@ class _MyPixbufLoader(gtk.gdk.PixbufLoader):
             gtk.gdk.PixbufLoader.close(self)
             self.__closed = True
 
-    def __del__(self):
-        if not self.__closed:
-            gtk.gdk.PixbufLoader.close(self)
-        gtk.gdk.PixbufLoader.__del__(self)
-
 class _PreloadState:
     def __init__(self, filename, fileSystemCodeset):
         self.fullsizePixbuf = None
@@ -29,6 +24,10 @@ class _PreloadState:
         except (IOError, OSError):
             self.loadFinished = True
             self.pixbufLoader = None
+
+    def __del__(self):
+        if self.pixbufLoader:
+            self.pixbufLoader.close()
 
 class ImagePreloader(object):
     def __init__(self, fileSystemCodeset, debugPrintFunction=None):
