@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import gc
 import os
 import sys
 import unittest
