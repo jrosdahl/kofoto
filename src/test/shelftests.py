@@ -29,6 +29,22 @@ def removeTmpDb():
         if os.path.exists(x):
             os.unlink(x)
 
+class LockerThread(threading.Thread):
+    def __init__(self, mContinue, ltContinue):
+        threading.Thread.__init__(self)
+        self.mContinue = mContinue
+        self.ltContinue = ltContinue
+
+    def run(self):
+        s = Shelf(db, codeset)
+        s.create()
+        s.begin()
+        self.mContinue.set()
+        self.ltContinue.wait()
+        s.rollback()
+
+######################################################################
+
 class TestPublicShelfFunctions(unittest.TestCase):
     def test_computeImageHash(self):
         s = computeImageHash(os.path.join(PICDIR, "arlaharen.png"))
@@ -107,17 +123,9 @@ class TestNegativeShelfOpens(unittest.TestCase):
             assert False
 
     def test_LockedShelf(self):
-        class LockerThread(threading.Thread):
-            def run(self):
-                s = Shelf(db, codeset)
-                s.create()
-                s.begin()
-                mContinue.set()
-                ltContinue.wait()
-                s.rollback()
-        lt = LockerThread()
         mContinue = threading.Event()
         ltContinue = threading.Event()
+        lt = LockerThread(mContinue, ltContinue)
         lt.start()
         mContinue.wait()
         try:
