@@ -61,3 +61,16 @@ for subset, superset in [
     ("object_category.category", "category.id"),
     ]:
     checkSubset(idMapping, subset, superset)
+
+cursor = connection.cursor()
+cursor.execute(
+    " select i1.id, iv.id, i2.id"
+    " from   image as i1,"
+    "        image_version as iv,"
+    "        image as i2"
+    " where  i1.primary_version = iv.id and"
+    "        iv.image = i2.id and"
+    "        i1.id != i2.id")
+for image1_id, imageversion_id, image2_id in cursor.fetchall():
+    print "Image %d has primary version %d, but version %d belongs to " \
+          "image %d" % (image1_id, imageversion_id, imageversion_id, image2_id)
