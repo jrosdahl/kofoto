@@ -34,10 +34,6 @@ img.icon {
     display: inline;
 }
 
-.albottom {
-    vertical-align: bottom;
-}
-
 a.toc {
     display: block;
     align: center;
@@ -190,20 +186,20 @@ subalbum_entry_template = '''<td align="center" valign="top">
 <p>%(title)s</p>
 <table border="0" cellspacing="0" cellpadding="0">
 <tr>
-<td><img class="albottom" src="images/frame-topleft.png" /></td>
-<td><img class="albottom" src="images/frame-top.png" width="6" height="6" /></td>
-<td><img class="albottom" src="images/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" /></td>
-<td class="albottom" rowspan="2"><img class="albottom" src="images/frame-topright.png" /></td>
+<td><img src="images/frame-topleft.png" /></td>
+<td><img src="images/frame-top.png" width="6" height="6" /></td>
+<td><img src="images/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" /></td>
+<td rowspan="2"><img src="images/frame-topright.png" /></td>
 </tr>
 <tr>
-<td rowspan="2"><img class="albottom" src="images/frame-left.png" width="6" height="%(thumbheight)s" /></td>
-<td rowspan="2" colspan="2"><a href="%(htmlref)s"><img class="albottom" src="%(thumbimgref)s" width="%(thumbwidth)s" height="%(thumbheight)s"/></a></td>
+<td rowspan="2"><img src="images/frame-left.png" width="6" height="%(thumbheight)s" /></td>
+<td rowspan="2" colspan="2"><a href="%(htmlref)s"><img src="%(thumbimgref)s" width="%(thumbwidth)s" height="%(thumbheight)s"/></a></td>
 </tr>
-<tr><td><img class="albottom" src="images/frame-right.png" width="17" height="%(thumbheight_minus_6)s" /></td></tr>
+<tr><td><img src="images/frame-right.png" width="17" height="%(thumbheight_minus_6)s" /></td></tr>
 <tr>
-<td colspan="2"><img class="albottom" src="images/frame-bottomleft.png" /></td>
-<td><img class="albottom" src="images/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" /></td>
-<td><img class="albottom" src="images/frame-bottomright.png" /></td>
+<td colspan="2"><img src="images/frame-bottomleft.png" /></td>
+<td><img src="images/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" /></td>
+<td><img src="images/frame-bottomright.png" /></td>
 </tr>
 </table>
 </td>
