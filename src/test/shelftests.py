@@ -2,8 +2,10 @@
 
 import gc
 import os
+import shutil
 import sys
 import unittest
+import Image as PILImage
 
 if __name__ == "__main__":
     cwd = os.getcwd()
@@ -215,14 +217,14 @@ class TestShelfFixture(unittest.TestCase):
         root = self.shelf.getRootAlbum()
         alpha = self.shelf.createAlbum(u"alpha")
         beta = self.shelf.createAlbum(u"beta")
-        children = [alpha, beta]
+        children = [beta]
         for x in os.listdir(PICDIR):
             loc = os.path.join(PICDIR, x)
             if not os.path.isfile(loc):
                 continue
             children.append(self.shelf.createImage(loc))
         del children[-1] # The last image becomes orphaned.
-        alpha.setChildren(children) # This creates a cycle.
+        alpha.setChildren(children)
         beta.setChildren(list(beta.getChildren()) + [children[-1]])
         root.setChildren(list(root.getChildren()) + [
             alpha,
@@ -240,9 +242,10 @@ class TestShelfFixture(unittest.TestCase):
         cat_b.connectChild(cat_d)
         cat_c.connectChild(cat_d)
 
+        self.shelf.flushObjectCache()
+        self.shelf.flushCategoryCache()
+
     def tearDown(self):
-        # Break cycle mentioned in setUp above.
-        self.shelf.getAlbum(u"alpha").setChildren([])
         self.shelf.rollback()
         removeTmpDb()
 
@@ -263,7 +266,7 @@ class TestShelfMethods(TestShelfFixture):
         orphans, alpha, beta, gamma, delta = children
         assert self.shelf.getObject(u"alpha") == alpha
         assert self.shelf.getAlbum(u"beta") == beta
-        assert len(list(alpha.getChildren())) == 12
+        assert len(list(alpha.getChildren())) == 11
         assert len(list(beta.getChildren())) == 1
         assert len(list(gamma.getChildren())) == 7
         assert len(list(delta.getChildren())) == 11
@@ -383,8 +386,8 @@ class TestShelfMethods(TestShelfFixture):
         attrnames = list(self.shelf.getAllAttributeNames())
         attrnames.sort()
         assert attrnames == [
-            "cameramake", "cameramodel", "captured", "description", "height",
-            "orientation", "registered", "title", "width"
+            "cameramake", "cameramodel", "captured", "description",
+            "orientation", "registered", "title"
             ]
 
     def test_negativeCreateCategory(self):
@@ -576,7 +579,7 @@ class TestAlbum(TestShelfFixture):
         alpha = self.shelf.getAlbum(u"alpha")
         parents = list(alpha.getAlbumParents())
         parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
-        assert parents == [alpha, root]
+        assert parents == [root]
 
     def test_isAlbum(self):
         assert self.shelf.getRootAlbum().isAlbum()
@@ -595,7 +598,7 @@ class TestPlainAlbum(TestShelfFixture):
         beta = self.shelf.getAlbum(u"beta")
         epsilon = self.shelf.getAlbum(u"epsilon")
         alphaAlbumChildren = list(alpha.getAlbumChildren())
-        assert alphaAlbumChildren == [alpha, beta]
+        assert alphaAlbumChildren == [beta]
         assert list(epsilon.getAlbumChildren()) == []
 
     def test_setChildren(self):
@@ -608,30 +611,51 @@ class TestPlainAlbum(TestShelfFixture):
         assert list(beta.getChildren()) == []
 
 class TestImage(TestShelfFixture):
+    def test_getHash(self):
+        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
+        assert image.getHash() == "39a1266d2689f53d48b09a5e0ca0af1f"
+
     def test_getLocation(self):
         location = os.path.join(PICDIR, "arlaharen.png")
         image = self.shelf.getImage(location)
         assert image.getLocation() == os.path.realpath(location)
 
-    def test_setLocation(self):
+    def test_getModificationTime(self):
+        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
+        t = image.getModificationTime()
+        assert isinstance(t, int)
+        assert t > 0
+
+    def test_getSize(self):
+        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
+        assert image.getSize() == (304, 540)
+
+    def test_contentChanged(self):
+        path = os.path.join(PICDIR, "arlaharen.png")
+        self.shelf.deleteImage(path)
+        newpath = u"tmp.png"
+        try:
+            shutil.copy2(path, newpath)
+            image = self.shelf.createImage(newpath)
+            oldmtime = image.getModificationTime()
+            pilimg = PILImage.open(newpath)
+            pilimg.thumbnail((100, 100))
+            pilimg.save(newpath, "PNG")
+            image.contentChanged()
+            assert image.getHash() == "d55a9cc74371c09d484b163c71497cab"
+            assert image.getSize() == (56, 100)
+            assert image.getModificationTime() > oldmtime
+        finally:
+            try:
+                os.unlink(newpath)
+            except OSError:
+                pass
+
+    def test_locationChanged(self):
         location = os.path.join(PICDIR, "arlaharen.png")
         image = self.shelf.getImage(location)
-        image.setLocation(u"/foo/../bar")
+        image.locationChanged(u"/foo/../bar")
         assert image.getLocation() == "/bar"
-
-    def test_getHash(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        assert image.getHash() == "39a1266d2689f53d48b09a5e0ca0af1f"
-
-    def test_setHash(self):
-        image1 = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        image2 = self.shelf.getImage(
-            os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
-        image2.setLocation(os.path.join(PICDIR, "arlaharen.png"))
-        h = image1.getHash()
-        self.shelf.deleteImage(h)
-        image2.setHash(h)
-        assert image2.getHash() == "39a1266d2689f53d48b09a5e0ca0af1f"
 
     def test_isAlbum(self):
         image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))

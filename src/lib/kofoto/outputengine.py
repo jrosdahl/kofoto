@@ -1,9 +1,9 @@
 __all__ = ["OutputEngine"]
 
 import os
+import re
 import time
 from sets import Set
-from kofoto.cachedir import CacheDir
 from kofoto.common import symlinkOrCopyFile
 
 class OutputEngine:
@@ -13,16 +13,41 @@ class OutputEngine:
 
 
     def getImageReference(self, image, widthlimit, heightlimit):
+        def helper():
+            # Given the image, this function computes and returns a
+            # suitable image name and a path to be appended to
+            # <self.dest>/@images.
+            captured = image.getAttribute(u"captured")
+            if captured:
+                m = re.match("^(\d+)-(\d+)", captured)
+                if m:
+                    name = "%s-%sx%s.jpg" % (
+                        captured.replace(" ", "_"),
+                        widthlimit,
+                        heightlimit)
+                    return os.path.join(m.group(1), m.group(2), name)
+            base, ext = os.path.splitext(os.path.basename(image.getLocation()))
+            return os.path.join(
+                "undated",
+                "%s-%dx%d-%d%s" % (
+                    base, widthlimit, heightlimit, image.getId(), ext))
+
         key = (image.getHash(), widthlimit, heightlimit)
         if not self.imgref.has_key(key):
             if self.env.verbose:
                 self.env.out("Generating image %d, size limit %dx%d..." % (
                     image.getId(), widthlimit, heightlimit))
             imgabsloc = self.env.imagecache.get(image, widthlimit, heightlimit)
-            imgloc = self.imagesdest.getFilepath(os.path.basename(imgabsloc))
+            htmlimgloc = os.path.join(
+                "@images", helper().encode(self.env.codeset))
+            imgloc = os.path.join(self.dest, htmlimgloc)
             if not os.path.isfile(imgloc):
+                try:
+                    os.makedirs(os.path.dirname(imgloc))
+                except OSError:
+                    pass
                 symlinkOrCopyFile(imgabsloc, imgloc)
-            self.imgref[key] = "/".join(imgloc.split(os.sep)[-4:])
+            self.imgref[key] = "/".join(htmlimgloc.split(os.sep))
             if self.env.verbose:
                 self.env.out("\n")
         return self.imgref[key]
@@ -52,7 +77,6 @@ class OutputEngine:
             os.mkdir(self.dest)
         except OSError:
             pass
-        self.imagesdest = CacheDir(os.path.join(self.dest, "@images"))
         self.imgref = {}
 
         self.env.out("Calculating album paths...\n")

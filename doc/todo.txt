@@ -50,8 +50,9 @@
 
 * Write test suites for modules that lack one.
 
-* When generating an album, store images in per-month directories
-  instead of the current two-level hash-based directory structure.
+* Store undated images (i.e. those without a "captured" attribute) in
+  a better way in generated albums. They are currently put in a single
+  directory.
 
 * Write a simple, run-once client that creates a temporary shelf,
   registers images in given directories, generates an album and
@@ -89,12 +90,6 @@
   picture and want to register the edited picture too while keeping
   the original. I then want the categories and the description
   attribute to be inherited in some way.
-
-* Rewrite image cache interface. LysKOM texts: 10411506 with comments.
-  Executive summary: Store image location and timestamp (filesystem
-  mtime) in addition to the MD5 checksum in the database. Use location
-  and timestamp when looking up images in the cache instead of the
-  checksum. This makes it possible to cache unregistered images too.
 
 * Use ImageMagick/jpegtran if PIL isn't available?
 

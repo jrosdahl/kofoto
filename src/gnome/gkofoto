@@ -37,6 +37,7 @@ class Controller:
         self._clipboard = None
 
     def start(self):
+        env.shelf.begin()
         self._source = Source()
         self._selectedObjects = ObjectSelection(self._objectSelectionChanged)
         self._loadedObjects = Objects(self._selectedObjects)
@@ -58,7 +59,6 @@ class Controller:
         MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
         env.widgets["mainWindow"].show()
-        env.shelf.begin()
         gtk.main()
 
     def quit(self, gnomeApp, cancelButton=gtk.TRUE):

@@ -57,6 +57,22 @@ def _from_uc(s):
 def _to_uc(s):
     return s.decode(CODESET)
 
+def _walk_files(paths):
+    for x in paths:
+        if os.path.isfile(x):
+            yield x
+        elif os.path.isdir(x):
+            if os.path.basename(x) in _DIRECTORIES_TO_IGNORE:
+                continue
+            for dirpath, dirnames, filenames in os.walk(x):
+                for igndir in _DIRECTORIES_TO_IGNORE:
+                    try:
+                        dirnames.remove(igndir)
+                    except ValueError:
+                        pass
+                for filename in filenames:
+                    yield os.path.join(dirpath, filename)
+
 def displayHelp():
     sys.stdout.write(
 #                                                                 79 characters here:  |
@@ -96,11 +112,11 @@ def displayHelp():
         "                                     root). If -v/--verbose is given, also print\n"
         "                                     images and attributes.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
-        "    update-checksums                 Traverse all images in the shelf and\n"
-        "                                     remember their new checksums.\n"
-        "    update-locations DIR [DIR ...]   Traverse the given directories\n"
-        "                                     recursively and remember the new\n"
-        "                                     locations of images.\n"
+        "    update-contents PATH [PATH ...]  Traverse the given paths recursively and\n"
+        "                                     remember the new contents (checksum, width\n"
+        "                                     and height) of found images.\n"
+        "    update-locations PATH [PATH ...] Traverse the given paths recursively and\n"
+        "                                     remember the new locations of found images.\n"
         "\n"
         "    For albums and images\n"
         "    =====================\n"
@@ -246,9 +262,7 @@ def cmdCleanCache(env, args):
         raise ArgumentError
     if len(args) != 0:
         raise ArgumentError
-    env.imagecache.cleanup(
-        env.shelf.getAllImages(),
-        env.imagesizelimits + [env.thumbnailsizelimit])
+    env.imagecache.cleanup()
 
 
 def cmdConnectCategory(env, args):
@@ -535,66 +549,52 @@ def cmdSetCategoryDescription(env, args):
     env.shelf.getCategory(args[0]).setDescription(args[1])
 
 
-def cmdUpdateChecksums(env, args):
-    if len(args) != 0:
+def cmdUpdateContents(env, args):
+    if len(args) < 1:
         raise ArgumentError
-    for image in env.shelf.getAllImages():
-        location = _from_uc(image.getLocation())
-        if os.path.isfile(location):
-            try:
-                hash = computeImageHash(location)
-                oldhash = image.getHash()
-                if oldhash != hash:
-                    image.setHash(hash)
-                    env.out("New checksum for %s\n" % location)
-                else:
-                    if env.verbose:
-                        env.out("Same checksum as before for %s\n" %
-                                location)
-            except IOError, x:
-                env.err("Failed to read: %s\n" % location)
-        else:
-            env.err("Image does not exist: %s\n" % location)
+    for filepath in _walk_files(args):
+        try:
+            image = env.shelf.getImage(
+                filepath, identifyByLocation=True)
+            oldhash = image.getHash()
+            image.contentChanged()
+            if image.getHash() != oldhash:
+                env.out("New checksum: %s\n" % _from_uc(filepath))
+            else:
+                if env.verbose:
+                    env.out("Same checksum as before: %s\n" %
+                            _from_uc(filepath))
+        except ImageDoesNotExistError:
+            if env.verbose:
+                env.out("Unregistered image/file: %s\n" % _from_uc(filepath))
+        except MultipleImagesAtOneLocationError:
+            env.errexit(
+                "Multiple known images at this location: %s\n",
+                _from_uc(filepath))
 
 
 def cmdUpdateLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
-    for dir in args:
-        os.path.walk(os.path.realpath(_from_uc(dir)),
-                     updateLocationsHelper,
-                     env)
-
-
-def updateLocationsHelper(env, dir, files):
-    for x in _DIRECTORIES_TO_IGNORE:
+    for filepath in _walk_files(args):
         try:
-            files.remove(x)
-        except ValueError:
-            # x not in files.
-            pass
-    for file in files:
-        location = os.path.join(dir, file)
-        if os.path.isfile(location):
-            try:
-                hash = computeImageHash(location)
-                image = env.shelf.getImage(hash)
-                oldlocation = _from_uc(image.getLocation())
-                if oldlocation != location:
-                    image.setLocation(_to_uc(location))
-                    env.out("New location: %s --> %s\n" % (
-                        oldlocation,
-                        location))
-                else:
-                    if env.verbose:
-                        env.out("Same location as before: %s\n" %
-                                location)
-            except IOError, x:
+            image = env.shelf.getImage(filepath)
+            oldlocation = image.getLocation()
+            if oldlocation != os.path.realpath(filepath):
+                image.locationChanged(filepath)
+                env.out("New location: %s --> %s\n" % (
+                    _from_uc(oldlocation),
+                    _from_uc(filepath)))
+            else:
                 if env.verbose:
-                    env.out("Failed to read: %s\n" % location)
-            except ImageDoesNotExistError, x:
-                if env.verbose:
-                    env.out("Image does not exist: %s\n" % location)
+                    env.out("Same location as before: %s\n" %
+                            _from_uc(filepath))
+        except IOError, x:
+            if env.verbose:
+                env.out("Failed to read: %s\n" % _from_uc(filepath))
+        except ImageDoesNotExistError:
+            if env.verbose:
+                env.out("Unregistered image/file: %s\n" % _from_uc(filepath))
 
 
 commandTable = {
@@ -623,7 +623,7 @@ commandTable = {
     "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
     "set-category-description": cmdSetCategoryDescription,
-    "update-checksums": cmdUpdateChecksums,
+    "update-contents": cmdUpdateContents,
     "update-locations": cmdUpdateLocations,
 }
 

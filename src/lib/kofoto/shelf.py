@@ -16,6 +16,7 @@ __all__ = [
     "FailedWritingError",
     "ImageDoesNotExistError",
     "ImageExistsError",
+    "MultipleImagesAtOneLocationError",
     "NotAnImageError",
     "ObjectDoesNotExistError",
     "ObjectExistsError",
@@ -125,6 +126,12 @@ schema = """
         -- Filename part of the last known location (local pathname)
         -- of the image.
         filename    VARCHAR(256) NOT NULL,
+        -- Last known time of modification (UNIX epoch time).
+        mtime       INTEGER NOT NULL,
+        -- Image width.
+        width       INTEGER NOT NULL,
+        -- Image height.
+        height      INTEGER NOT NULL,
 
         UNIQUE      (hash),
         FOREIGN KEY (imageid) REFERENCES object,
@@ -210,7 +217,7 @@ schema = """
 
 _ROOT_ALBUM_ID = 0
 _ROOT_ALBUM_DEFAULT_TAG = u"root"
-_SHELF_FORMAT_VERSION = 1
+_SHELF_FORMAT_VERSION = 2
 
 ######################################################################
 ### Exceptions.
@@ -266,6 +273,12 @@ class ImageDoesNotExistError(ObjectDoesNotExistError):
 
 class NotAnImageError(KofotoError):
     """Could not recognise file as an image."""
+    pass
+
+
+class MultipleImagesAtOneLocationError(KofotoError):
+    """Failed to identify image by location since the location isn't
+    unique."""
     pass
 
 
@@ -562,7 +575,10 @@ class Shelf:
         """
         assert self.inTransaction
         if tag in self.objectcache:
-            return self.objectcache[tag]
+            album = self.objectcache[tag]
+            if not album.isAlbum():
+                raise AlbumDoesNotExistError, tag
+            return album
         cursor = self.connection.cursor()
         cursor.execute(
             " select albumid, tag, type"
@@ -614,14 +630,15 @@ class Shelf:
         assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, directory, filename"
+            " select imageid, hash, directory, filename, mtime, width, height"
             " from   image")
-        for imageid, hash, directory, filename in cursor:
+        for imageid, hash, directory, filename, mtime, width, height in cursor:
             location = os.path.join(directory, filename)
             if imageid in self.objectcache:
                 yield self.objectcache[imageid]
             else:
-                yield self._imageFactory(self, imageid, hash, location)
+                yield self._imageFactory(
+                    imageid, hash, location, mtime, width, height)
 
 
     def getImagesInDirectory(self, directory):
@@ -633,16 +650,17 @@ class Shelf:
         directory = unicode(os.path.realpath(directory))
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, directory, filename"
+            " select imageid, hash, directory, filename, mtime, width, height"
             " from   image"
             " where  directory = %s",
             directory)
-        for imageid, hash, directory, filename in cursor:
+        for imageid, hash, directory, filename, mtime, width, height in cursor:
             location = os.path.join(directory, filename)
             if imageid in self.objectcache:
                 yield self.objectcache[imageid]
             else:
-                yield self._imageFactory(self, imageid, hash, location)
+                yield self._imageFactory(
+                    imageid, hash, location, mtime, width, height)
 
 
     def deleteAlbum(self, tag):
@@ -703,124 +721,190 @@ class Shelf:
             pilimg = PILImage.open(path)
         except IOError:
             raise NotAnImageError, path
-
+        width, height = pilimg.size
         location = unicode(os.path.realpath(path.encode(self.codeset)),
                            self.codeset)
+        mtime = os.path.getmtime(location)
         hash = computeImageHash(location.encode(self.codeset))
+        cursor = self.connection.cursor()
         try:
-            cursor = self.connection.cursor()
             cursor.execute(
                 " insert into object (objectid)"
                 " values (null)")
             imageid = cursor.lastrowid
             cursor.execute(
-                " insert into image (imageid, hash, directory, filename)"
-                " values (%s, %s, %s, %s)",
+                " insert into image (imageid, hash, directory, filename, mtime,"
+                "                    width, height)"
+                " values (%s, %s, %s, %s, %s, %s, %s)",
                 imageid,
                 hash,
                 os.path.dirname(location),
-                os.path.basename(location))
-            width, height = pilimg.size
-            cursor.execute(
-                " insert into attribute (objectid, name, value, lcvalue)"
-                " values (%s, 'width', %s, %s)",
-                imageid,
+                os.path.basename(location),
+                mtime,
                 width,
-                width)
-            cursor.execute(
-                " insert into attribute (objectid, name, value, lcvalue)"
-                " values (%s, 'height', %s, %s)",
-                imageid,
-                height,
                 height)
-            now = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
-            cursor.execute(
-                " insert into attribute (objectid, name, value, lcvalue)"
-                " values (%s, 'registered', %s, %s)",
-                imageid,
-                now,
-                now)
-            image = self._imageFactory(imageid, hash, location)
-            image.importExifTags()
-            self._setModified()
-            return image
         except sql.IntegrityError:
             cursor.execute(
                 " delete from object"
                 " where objectid = %s",
                 imageid)
             raise ImageExistsError, path
+        now = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
+        cursor.execute(
+            " insert into attribute (objectid, name, value, lcvalue)"
+            " values (%s, 'registered', %s, %s)",
+            imageid,
+            now,
+            now)
+        image = self._imageFactory(
+            imageid, hash, location, mtime, width, height)
+        image = self.getImage(imageid)
+        image.importExifTags()
+        self._setModified()
+        return image
 
 
-    def getImage(self, ref):
-        """Get the image for a given image hash/ID/path.
+    def getImage(self, ref, identifyByLocation=False):
+        """Get the image for a given image ID/hash/location.
+
+        ref should be a reference to an image registered with Kofoto.
+        It should be one of the following:
+
+        * An integer (or long) representing an image ID.
+        * A string convertible to an integer representing an image ID.
+        * A string containing an image hash.
+        * A location (path) to an image.
+
+        If ref is a location and identifyByLocation is False (the
+        default), the checksum of the image at the given location will
+        be computed and used for identification. If ref is a location
+        and identifyByLocation is True, the image is identified just
+        by the location. Note, though, that an image location is not
+        required to be unique in the shelf; if several images have the
+        same location, MultipleImagesAtOneLocationError is raised. If
+        ref isn't a location, the value of identifyByLocation is
+        irrelevant.
 
         Returns an Image instance.
         """
         assert self.inTransaction
-        if ref in self.objectcache:
-            return self.objectcache[ref]
-        cursor = self.connection.cursor()
-        cursor.execute(
-            " select imageid, hash, directory, filename"
-            " from   image"
-            " where  imageid = %s"
-            " union"
-            " select imageid, hash, directory, filename"
-            " from   image"
-            " where  hash = %s",
-            ref,
-            ref)
+        # Image ID or stringified image ID of an image already in the
+        # cache?
+        try:
+            imageid = int(ref)
+        except ValueError:
+            imageid = None
+        else:
+            if imageid in self.objectcache:
+                img = self.objectcache[imageid]
+                if img.isAlbum():
+                    raise ImageDoesNotExistError, imageid
+                return img
+
+        queryHeader = (
+            " select imageid, hash, directory, filename, mtime, width, height"
+            " from   image")
+        if imageid is None:
+            #
+            # It's a hash or location.
+            #
+
+            # Hash of an image already in the cache?
+            if ref in self.objectcache:
+                img = self.objectcache[ref]
+                if img.isAlbum():
+                    raise ImageDoesNotExistError, ref
+                return img
+
+            # A path to an image in the cache?
+            location = ref.encode(self.codeset)
+            if os.path.isfile(location):
+                if identifyByLocation:
+                    location = os.path.realpath(location)
+                    cursor = self.connection.cursor()
+                    cursor.execute(queryHeader +
+                                   " where  directory = %s and filename = %s",
+                                   os.path.dirname(
+                                       location.decode(self.codeset)),
+                                   os.path.basename(
+                                       location.decode(self.codeset)))
+                    if cursor.rowcount > 1:
+                        raise MultipleImagesAtOneLocationError, \
+                              location.decode(self.codeset)
+                else:
+                    hash = computeImageHash(location)
+                    if hash in self.objectcache:
+                        img = self.objectcache[hash]
+                        if img.isAlbum():
+                            raise ImageDoesNotExistError, hash
+                        return img
+                    cursor = self.connection.cursor()
+                    cursor.execute(queryHeader + " where  hash = %s", hash)
+            else:
+                hash = ref
+                cursor = self.connection.cursor()
+                cursor.execute(queryHeader + " where  hash = %s", hash)
+        else:
+            #
+            # It's an image ID, but the image wasn't in the cache.
+            #
+            cursor = self.connection.cursor()
+            cursor.execute(queryHeader + " where  imageid = %s", imageid)
         row = cursor.fetchone()
         if not row:
-            if os.path.isfile(ref.encode(self.codeset)):
-                cursor.execute(
-                    " select imageid, hash, directory, filename"
-                    " from   image"
-                    " where  hash = %s",
-                    computeImageHash(ref.encode(self.codeset)))
-                row = cursor.fetchone()
-            if not row:
-                raise ImageDoesNotExistError, ref
-        imageid, hash, directory, filename = row
+            raise ImageDoesNotExistError, ref
+        imageid, hash, directory, filename, mtime, width, height = row
+        if identifyByLocation:
+            if imageid in self.objectcache:
+                return self.objectcache[imageid]
         location = os.path.join(directory, filename)
-        return self._imageFactory(imageid, hash, location)
+        return self._imageFactory(
+            imageid, hash, location, mtime, width, height)
 
 
     def deleteImage(self, ref):
-        """Delete the image for a given image hash/ID."""
+        """Delete the image for a given image ID/hash/location.
+
+        ref should be a reference to an image registered with Kofoto.
+        It should be one of the following:
+
+        * An integer (or long) representing an image ID.
+        * A string convertible to an integer representing an image ID.
+        * A string containing an image hash.
+        * A location (path) to an image.
+        """
+        assert self.inTransaction
+        try:
+            imageid = int(ref)
+        except ValueError:
+            imageid = None
+
+        queryHeader = (
+            " select imageid, hash"
+            " from   image")
         assert self.inTransaction
         cursor = self.connection.cursor()
-        cursor.execute(
-            " select imageid, hash"
-            " from   image"
-            " where  imageid = %s"
-            " union"
-            " select imageid, hash"
-            " from   image"
-            " where  hash = %s",
-            ref,
-            ref)
-        row = cursor.fetchone()
-        if row:
-            imageid, hash = row
-        else:
-            # No match. Check whether it's a path to a known file.
-            imageid = None
-            if os.path.isfile(ref.encode(self.codeset)):
-                cursor.execute(
-                    " select imageid, hash"
-                    " from   image"
-                    " where  hash = %s",
-                    computeImageHash(ref.encode(self.codeset)))
-                row = cursor.fetchone()
-                if row:
-                    imageid, hash = row
-        if not imageid:
-            # Oh well.
-            raise ImageDoesNotExistError, ref
+        if imageid is None:
+            #
+            # It's a hash or location.
+            #
 
-        cursor = self.connection.cursor()
+            # A path to an image in the cache?
+            location = ref.encode(self.codeset)
+            if os.path.isfile(location):
+                hash = computeImageHash(location)
+            else:
+                hash = ref
+            cursor.execute(queryHeader + " where  hash = %s", hash)
+        else:
+            #
+            # It's an image ID.
+            #
+            cursor.execute(queryHeader + " where  imageid = %s", imageid)
+        row = cursor.fetchone()
+        if not row:
+            raise ImageDoesNotExistError, ref
+        imageid, hash = row
         cursor.execute(
             " delete from image"
             " where  imageid = %s",
@@ -1063,8 +1147,8 @@ class Shelf:
         return album
 
 
-    def _imageFactory(self, imageid, hash, location):
-        image = Image(self, imageid, hash, location)
+    def _imageFactory(self, imageid, hash, location, mtime, width, height):
+        image = Image(self, imageid, hash, location, mtime, width, height)
         self.objectcache[imageid] = image
         self.objectcache[unicode(imageid)] = image
         self.objectcache[hash] = image
@@ -1612,12 +1696,52 @@ class Image(_Object):
     ##############################
     # Public methods.
 
+    def getHash(self):
+        """Get the hash of the image."""
+        return self.hash
+
+
     def getLocation(self):
         """Get the last known location of the image."""
         return self.location
 
 
-    def setLocation(self, location):
+    def getModificationTime(self):
+        return self.mtime
+
+
+    def getSize(self):
+        return self.size
+
+
+    def contentChanged(self):
+        """Record new image information for an edited image.
+
+        Checksum, width, height and mtime are updated.
+
+        It is assumed that the image location is still correct."""
+        self.hash = computeImageHash(self.location)
+        import Image as PILImage
+        try:
+            pilimg = PILImage.open(self.location)
+        except IOError:
+            raise NotAnImageError, self.location
+        self.size = pilimg.size
+        self.mtime = os.path.getmtime(self.location)
+        cursor = self.shelf._getConnection().cursor()
+        cursor.execute(
+            " update image"
+            " set    hash = %s, width = %s, height = %s, mtime = %s"
+            " where  imageid = %s",
+            self.hash,
+            self.size[0],
+            self.size[1],
+            self.mtime,
+            self.getId())
+        self.shelf._setModified()
+
+
+    def locationChanged(self, location):
         """Set the last known location of the image."""
         cursor = self.shelf._getConnection().cursor()
         location = unicode(os.path.realpath(location))
@@ -1629,31 +1753,6 @@ class Image(_Object):
             os.path.basename(location),
             self.getId())
         self.location = location
-        self.shelf._setModified()
-
-
-    def getHash(self):
-        """Get the hash of the image."""
-        return self.hash
-
-
-    def setHash(self, hash):
-        """Set the hash of the image."""
-        cursor = self.shelf._getConnection().cursor()
-        cursor.execute(
-            " update image"
-            " set    hash = %s"
-            " where  imageid = %s",
-            hash,
-            self.getId())
-        self.hash = hash
-        import Image as PILImage
-        try:
-            pilimg = PILImage.open(self.location)
-        except IOError:
-            raise NotAnImageError, self.location
-        self.setAttribute(u"width", unicode(pilimg.size[0]))
-        self.setAttribute(u"height", unicode(pilimg.size[1]))
         self.shelf._setModified()
 
 
@@ -1735,12 +1834,14 @@ class Image(_Object):
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, imageid, hash, location):
+    def __init__(self, shelf, imageid, hash, location, mtime, width, height):
         """Constructor of an Image."""
         _Object.__init__(self, shelf, imageid)
         self.shelf = shelf
         self.hash = hash
         self.location = location
+        self.mtime = mtime
+        self.size = width, height
 
 
 class MagicAlbum(Album):
@@ -1794,13 +1895,15 @@ class AllImagesAlbum(MagicAlbum):
         """
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
-            " select   imageid, hash, directory, filename"
+            " select   imageid, hash, directory, filename, mtime,"
+            "          width, height"
             " from     image left join attribute"
             " on       imageid = objectid and name = 'captured'"
             " order by lcvalue, directory, filename")
-        for imageid, hash, directory, filename in cursor:
+        for imageid, hash, directory, filename, mtime, width, height in cursor:
             location = os.path.join(directory, filename)
-            yield self.shelf._imageFactory(imageid, hash, location)
+            yield self.shelf._imageFactory(
+                imageid, hash, location, mtime, width, height)
 
 
     def getAlbumChildren(self):
@@ -1849,14 +1952,17 @@ class OrphansAlbum(MagicAlbum):
             yield self.shelf.getAlbum(albumid)
         if includeimages:
             cursor.execute(
-                " select   imageid, hash, directory, filename"
+                " select   imageid, hash, directory, filename, mtime,"
+                "          width, height"
                 " from     image left join attribute"
                 " on       imageid = objectid and name = 'captured'"
                 " where    imageid not in (select objectid from member)"
                 " order by lcvalue, directory, filename")
-            for imageid, hash, directory, filename in cursor:
+            for (imageid, hash, directory, filename, mtime, width,
+                 height) in cursor:
                 location = os.path.join(directory, filename)
-                yield self.shelf._imageFactory(imageid, hash, location)
+                yield self.shelf._imageFactory(
+                    imageid, hash, location, mtime, width, height)
 
 
 ######################################################################
