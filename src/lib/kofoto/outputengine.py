@@ -52,6 +52,9 @@ class OutputEngine:
     def getLimitedSize(self, image, limit):
         width = int(image.getAttribute("width"))
         height = int(image.getAttribute("height"))
+        orientation = image.getAttribute("orientation")
+        if orientation in ("left", "right"):
+            width, height = height, width
         largest = max(height, width)
         if limit < largest:
            if width > height:
