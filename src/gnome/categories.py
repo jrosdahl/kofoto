@@ -95,14 +95,15 @@ class Categories:
         categorySelection = categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
-        categorySelection.connect('changed', self._queryUpdated)
 
         # Connect events
         categoryView.connect("button_press_event", self._button_pressed)
         categoryView.connect("button_release_event", self._button_released)
         categoryView.connect("row-activated", self._rowActivated)
-        env.widgets["categoriesOr"].connect('toggled', self._queryUpdated)
-
+                                            
+        # Connect search button
+        env.widgets["categorySearchButton"].connect('clicked', self._queryUpdated)
+        
         # Load data into model
         self.reload()
     
