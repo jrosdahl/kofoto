@@ -342,6 +342,7 @@ NIKON_99x_MAKERNOTE = MakerNoteTags(NIKON_99x_MAKERNOTE_TAG_MAP)
 MAKERNOTE_MAP = {
 	('NIKON', 'E990'):  NIKON_99x_MAKERNOTE,
 	('NIKON', 'E995'):  NIKON_99x_MAKERNOTE,
+#        ('NIKON', 'E5000'): NIKON_99x_MAKERNOTE,
 }
 
 ## ---------------------------------------------------------------------------
@@ -350,28 +351,47 @@ MAKERNOTE_MAP = {
 ## ---------------------------------------------------------------------------
 
 TAG_MAP = {
-	0x00fe: Tag('NewSubFileType'),
 	0x0100: Tag('ImageWidth'),
 	0x0101: Tag('ImageLength'),
 	0x0102: Tag('BitsPerSample'),
-	0x0103: Tag('Compression'),
-	0x0106: Tag('PhotometricInterpretation'),
-	0x010a: Tag('FillOrder'),
-	0x010d: Tag('DocumentName'),
+	0x0103: Tag('Compression',
+                FormatMap({
+                        1:	'Uncompressed',
+			6:	'JPEG Compression'
+                })),
+	0x0106: Tag('PhotometricInterpretation',
+                FormatMap({
+                        2:	'RGB',
+			6:	'YCbCr'
+                })),
 	0x010e: Tag('ImageDescription'),
 	0x010f: Tag('Make'),
 	0x0110: Tag('Model'),
 	0x0111: Tag('StripOffsets'),
-	0x0112: Tag('Orientation'),
+        0x0112: Tag('Orientation',
+                FormatMap({
+                        1:	'Top Left',
+			2:	'Top Right',
+			3:	'Bottom Right',
+                        4:	'Bottom Left',
+                        5:	'Left Top',
+                        6:	'Rigth Top',
+                        7:	'Right Bottom',
+                        8:	'Left Bottom'
+                })),
 	0x0115: Tag('SamplesPerPixel'),
 	0x0116: Tag('RowsPerStrip'),
 	0x0117: Tag('StripByteCounts'),
 	0x011a: Tag('XResolution'),
 	0x011b: Tag('YResolution'),
-	0x011c: Tag('PlanarConfiguration'),
+	0x011c: Tag('PlanarConfiguration',
+                FormatMap({
+                        1:	'Chunky Format',
+			2:	'Planar Format'
+                })),
 	0x0128: Tag('ResolutionUnit',
 		FormatMap({
-			1:	'Not Absoulute',
+			1:	'Not Absolute',
 			2:	'Inch',
 			3:	'Centimeter'
 		})),
@@ -392,7 +412,11 @@ TAG_MAP = {
 	0x0202: Tag('JPEGInterchangeFormatLength'),
 	0x0211: Tag('YCbCrCoefficients'),
 	0x0212: Tag('YCbCrSubSampling'),
-	0x0213: Tag('YCbCrPositioning'),
+	0x0213: Tag('YCbCrPositioning',
+                FormatMap({
+                        1:	'Centerd',
+			2:	'Co-Sited'
+                })),
 	0x0214: Tag('ReferenceBlackWhite'),
 	0x828d: Tag('CFARepeatPatternDim'),
 	0x828e: Tag('CFAPattern'),
@@ -401,6 +425,7 @@ TAG_MAP = {
 	0x829a: Tag('ExposureTime', 	    	FormatRatioAsTime() ),
 	0x829d: Tag('FNumber',	    	    	FormatRatioAsFloat() ),
 	0x83bb: Tag('IPTC_NAA'),
+	0x8769: Tag('ExifOffset'),
 	0x8773: Tag('InterColorProfile'),
 	0x8822: Tag('ExposureProgram',
 		    FormatMap({
@@ -417,15 +442,14 @@ TAG_MAP = {
 	0x8824: Tag('SpectralSensitivity'),
 	0x8825: Tag('GPSInfo'),
 	0x8827: Tag('ISOSpeedRatings'),
-	0x8828: Tag('OECF'),
-	0x8829: Tag('Interlace'),
+	0x8829: Tag('OECF'),
+##	0x8829: Tag('Interlace'),
 	0x882a: Tag('TimeZoneOffset'),
 	0x882b: Tag('SelfTimerMode'),
-	0x8769: Tag('ExifOffset'),
-	0x9000: Tag('ExifVersion'),
+	0x9000: Tag('ExifVersion'), ## FIXME
 	0x9003: Tag('DateTimeOriginal'),
 	0x9004: Tag('DateTimeDigitized'),
-	0x9101: Tag('ComponentsConfiguration'),
+	0x9101: Tag('ComponentsConfiguration'), ## FIXME
 	0x9102: Tag('CompressedBitsPerPixel'),
 	0x9201: Tag('ShutterSpeedValue',	FormatRatioAsApexTime() ),
 	0x9202: Tag('ApertureValue',   	    	FormatRatioAsFloat() ),
@@ -440,9 +464,9 @@ TAG_MAP = {
 			2:	'CenterWeightedAverage',
 			3:	'Spot',
 			4:	'MultiSpot',
-		},
-    	    	make_ext = {
-	    	    	'NIKON':    { 5: 'Matrix' },
+                        5:	'Pattern',
+			6:	'Partial',
+                        255:    'Other',
     	    	})),
 	0x9208: Tag('LightSource',
 		FormatMap({
@@ -450,16 +474,25 @@ TAG_MAP = {
                         1:   'Daylight',
                         2:   'Fluorescent',
                         3:   'Tungsten',
-                        10:  'Flash',
+                        4:   'Flash',
+                        9:   'Fine Weather',
+                        10:  'Cloudy Weather',
+                        11:  'Shade',
+                        12:  'Daylight Fluorescent',
+                        13:  'Day White Fluorescent',
+                        14:  'Cool White Fluorescent',
+                        15:  'White Fluorescent',
                         17:  'Standard light A',
                         18:  'Standard light B',
                         19:  'Standard light C',
                         20:  'D55',
                         21:  'D65',
                         22:  'D75',
+                        23:  'D50',
+                        24:  'ISO Studio Tungsten',
                         255: 'Other'
 		})),
-	0x9209: Tag('Flash',
+	0x9209: Tag('Flash', ## FIXME
 		FormatMap({
 			0:	'no',
 			1:	'fired',
@@ -476,7 +509,6 @@ TAG_MAP = {
 			32:	'not available'
 		})),
 	0x920a: Tag('FocalLength',  	    	FormatRatioAsFloat()),
-	0x920b: Tag('FlashEnergy'),
 	0x920c: Tag('SpatialFrequencyResponse'),
 	0x920d: Tag('Noise'),
 	0x920e: Tag('FocalPlaneXResolution'),
@@ -492,15 +524,112 @@ TAG_MAP = {
 	0x9211: Tag('ImageNumber'),
 	0x9212: Tag('SecurityClassification'),
 	0x9213: Tag('ImageHistory'),
-	0x9214: Tag('SubjectLocation'),
+	0x9214: Tag('SubjectArea'), ## FIXME
 	0x9215: Tag('ExposureIndex'),
 	0x9216: Tag('TIFF_EPStandardID'),
 	0x9217: Tag('SensingMethod'),
 	0x927c: Tag('MakerNote'),
+        0x9286: Tag('UserComment'),
+        0x9290: Tag('SubsecTime'),
+        0x9291: Tag('SubsecTimeOriginal'),
+        0x9292: Tag('SubsecTimeDigitized'),
+        0xa000: Tag('FlashPixVersion'), ## FIXME
 	0xa001: Tag('ColorSpace'),
-	0xa002: Tag('ExifImageWidth'),
-	0xa003: Tag('ExifImageHeight'),
+	0xa002: Tag('PixelXDimension'),
+	0xa003: Tag('PixelYDimension'),
+        0xa004: Tag('RelatedSoundFile'),
 	0xa005: Tag('Interoperability_IFD_Pointer'),
+        0xa20b: Tag('FlashEnergy'),
+        0xa20c: Tag('SpatialFrequencyResponse'), ## FIXME
+        0xa20e: Tag('FocalPlaceXResolution'),
+        0xa20f: Tag('FocalPlaceYResolution'),
+        0xa210: Tag('FocalPlaceResolutionUnit',
+                FormatMap({
+			1:	'Not Absolute',
+			2:	'Inch',
+			3:	'Centimeter'
+		})),
+        0xa214: Tag('SubjectLocation'),
+        0xa215: Tag('ExposureIndex'),
+        0xa217: Tag('SensingMethod',
+		FormatMap({
+			1:  	'Not Defined',
+			2:  	'One-Chip Color Area Sensor',
+			3:  	'Two-Chip Colow Area Sensor',
+			4:  	'Three-Chip Colow Area Sensor',
+			5:  	'Color Sequential Area Sensor',
+                        7:  	'Trilinear Sensor',
+			8:  	'Color Sequential Linear Sensor',
+		})),
+        0xa300: Tag('FileSource',
+		FormatMap({
+			'\x03':  	'DSC',
+                 })),
+        0xa301: Tag('SceneType',
+		FormatMap({
+			'\x01':  	'Directly Photographed Image',
+                 })),
+        0xa302: Tag('CFAPattern'),
+        0xa401: Tag('CustomRendered',
+		FormatMap({
+			0:  	'Normal Process',
+			1:  	'Custom Process',
+		})),
+        0xa402: Tag('ExposureMode',
+                FormatMap({
+			0:  	'Auto Exposure',
+			1:  	'Manual Exposure',
+                        2:      'Auto Bracket',
+		})),
+        0xa403: Tag('WhiteBalance',
+                FormatMap({
+			0:  	'Auto White Balance',
+			1:  	'Manual White Balance',
+		})),
+        0xa404: Tag('DigitalZoomRatio'),  ## FIXME
+        0xa405: Tag('FocalLengthIn35mmFilm'),
+        0xa406: Tag('SceneCaptureType',
+                FormatMap({
+			0:  	'Standard',
+			1:  	'Landscape',
+			2:  	'Portait',
+			3:  	'Night Scene',
+		})),
+        0xa407: Tag('GainControl',
+                FormatMap({
+			0:  	'None',
+			1:  	'Low Gain Up',
+			2:  	'High Gain Up',
+			3:  	'Low Gain Down',
+                        4:      'High Gain Down'
+		})),
+        0xa408: Tag('Contrast',
+                FormatMap({
+			0:  	'Normal',
+			1:  	'Soft',
+			2:  	'Hard',
+		})),
+        0xa409: Tag('Saturation',
+                FormatMap({
+			0:  	'Normal',
+			1:  	'Low Saturation',
+			2:  	'High Saturation',
+		})),
+        0xa40a: Tag('Sharpness',
+                FormatMap({
+			0:  	'Normal',
+			1:  	'Soft',
+			2:  	'Hard',
+		})),
+        0xa40b: Tag('DeviceSettingDescription'),
+        0xa40c: Tag('SubjectDistanceRange',
+                FormatMap({
+			0:  	'Unknown',
+			1:  	'Macro',
+			2:  	'Close View',
+			3:  	'Distant View',
+		})),
+        0xa420: Tag('ImageUniqueID'),
 }
 
 def parse_tag(tiff, mode, value_map, tag_map):
