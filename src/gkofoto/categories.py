@@ -116,7 +116,7 @@ class Categories:
         self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)
         self.objectSelectionChanged()
 
-    def objectSelectionChanged(self):
+    def objectSelectionChanged(self, objectSelection=None):
         self.__updateToggleColumn()
         self.__updateContextMenu()
         self.__expandAndCollapseRows(env.widgets["autoExpand"].get_active(),
