@@ -40,7 +40,6 @@ class SingleImageView(ImageView):
                 self.clear()
                 env.widgets["previousButton"].set_sensitive(gtk.FALSE)
                 env.widgets["nextButton"].set_sensitive(gtk.FALSE)
-                print "no image to load"
             self._locked = gtk.FALSE
 
     def _updateSelection(self, imageId):
