@@ -103,8 +103,7 @@ class Controller:
     def _imageSelectionChanged(self):
         self._currentView.selectionUpdated()
         self._imageContextMenu.updateContextMenu()
-        if len(self._selectedImages) > 0:
-            self._categories.updateView()
+        self._categories.updateView()
 
     def _viewChanged(self):
         self._currentView.show()
