@@ -54,7 +54,7 @@ setup(
     data_files=data_files,
     author="Joel Rosdahl and Ulrik Svensson",
     author_email="kofoto@rosdahl.net",
-    url="http://svn.rosdahl.net/kofoto/kofoto/",
+    url="http://kofoto.rosdahl.net",
     )
 
 if windows_mode:
