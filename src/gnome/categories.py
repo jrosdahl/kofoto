@@ -159,11 +159,11 @@ class Categories:
 
     def updateContextMenu(self, *foo):
         categorySelection = env.widgets["categoryView"].get_selection()
-        self._nrOfSelectedCategories = 0
+        nrOfSelectedCategories = [0]
         def inc(*garbage):
-            self._nrOfSelectedCategories += 1
+            nrOfSelectedCategories[0] += 1
         categorySelection.selected_foreach(inc, None)
-        if self._nrOfSelectedCategories == 0:
+        if nrOfSelectedCategories[0] == 0:
             self._deleteItem.set_sensitive(gtk.FALSE)
             self._createChildItem.set_sensitive(gtk.FALSE)
             self._copyItem.set_sensitive(gtk.FALSE)
@@ -180,7 +180,7 @@ class Categories:
             else:
                 self._pasteItem.set_sensitive(gtk.FALSE)
             self._disconnectItem.set_sensitive(gtk.TRUE)
-        if self._nrOfSelectedCategories == 1:
+        if nrOfSelectedCategories[0] == 1:
             self._propertiesItem.set_sensitive(gtk.TRUE)
         else:
             self._propertiesItem.set_sensitive(gtk.FALSE)
