@@ -304,8 +304,8 @@ def cmdGenerate(env, args):
 def cmdGetAttribute(env, args):
     if len(args) != 2:
         raise ArgumentError
-    object = env.shelf.getObject(args[0])
-    value = object.getAttribute(args[1])
+    object = env.shelf.getObject(args[1])
+    value = object.getAttribute(args[0])
     if value:
         env.out(_from_uc(value) + "\n")
 
