@@ -27,6 +27,17 @@ Attributes:
     * width: Image width (could be fetched from EXIF attribute
       ExifImageWidth).
 
+Key features (why we can't use J. Random Photo Album software):
+
+    * Command-line interface available.
+    * Generation of static HTML pages that can be burned to a CD-ROM
+      and viewed with an ordinary web browser with no special demands
+      on the browser.
+    * The album tree is separate from where the images are stored.
+    * Original image files are never modified.
+    * The meta data may be stored in a human-readable, future-proof
+      way.
+
 ======================================================================
 
 originalbildfiler ändras aldrig
