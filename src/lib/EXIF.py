@@ -691,12 +691,14 @@ class EXIF_header:
             endian_sign = '<'
         else:
             endian_sign = '>'
-        if length == 2:
+        if length == 1:
+            val=struct.unpack(endian_sign + 'b', slice)[0]
+        elif length == 2:
             val=struct.unpack(endian_sign + 'h', slice)[0]
         elif length == 4:
             val=struct.unpack(endian_sign + 'i', slice)[0]
         else:
-            raise ValueError, 'bad slice length'
+            raise ValueError, ('bad slice length: %s' % length)
         return val
 
     # convert offset to string
