@@ -50,6 +50,10 @@ from kofoto.cachedobject import CachedObject
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")
+warnings.filterwarnings(
+    "ignore",
+    ".*losing bits or changing sign will return a long.*",
+    FutureWarning)
 
 ######################################################################
 ### Database schema.
