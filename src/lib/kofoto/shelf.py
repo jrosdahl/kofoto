@@ -3,25 +3,109 @@
 ######################################################################
 ### Libraries
 
-import fcntl
 import md5
-import os
-import shutil
-import time
-from xml.dom.minidom import parse as parseXmlFile
+import sqlite as sql
 from kofoto.common import KofotoError
 
+schema = """
+    -- EER diagram without attributes:
+    -- 
+    --                                ,^.
+    --              N +--------+ 1  ,'   '.  N +-----------+
+    --      +---------| object |---<  has  >===| attribute |
+    --      |         +--------+    '.   ,'    +-----------+
+    --    ,/\.          |    |        'v'
+    --  ,'    '.     __/      \__
+    -- < member >   |            |
+    --  '.    ,'   \|/          \|/
+    --    '\/'      |            |
+    --      | 1 +-------+    +-------+
+    --      +---| album |    | image |
+    --          +-------+    +-------+
+    -- 
+    --        |
+    -- where \|/ is supposed to look like the subclass relation symbol.
+    --        |
+
+    -- Superclass of objects in an album.
+    CREATE TABLE object (
+        -- Identifier of the object.
+        objectid    INTEGER NOT NULL,
+
+        PRIMARY KEY (objectid)
+    );
+
+    CREATE TABLE album (
+        -- Identifier of the album. Shared primary key with object.
+        albumid     INTEGER NOT NULL,
+        -- Human-memorizable tag.
+        tag         VARCHAR(256) NOT NULL,
+        -- Whether it is possible to delete the album.
+        deletable   INTEGER NOT NULL,
+
+        UNIQUE      (tag),
+        FOREIGN KEY (albumid) REFERENCES object,
+        PRIMARY KEY (albumid)
+    );
+
+    CREATE TABLE image (
+        -- Identifier of the image. Shared primary key with object.
+        imageid     INTEGER NOT NULL,
+        -- MD5 sum in hex format of the first 4711 bytes of the image.
+        hash        CHAR(32) NOT NULL,
+        -- Last known location (local pathname) of the image.
+        location    VARCHAR(256) NOT NULL,
+
+        UNIQUE      (hash),
+        FOREIGN KEY (imageid) REFERENCES object,
+        PRIMARY KEY (imageid)
+    );
+
+    CREATE TABLE member (
+        -- Identifier of the album.
+        albumid     INTEGER NOT NULL,
+        -- Member position, from 0 and up.
+        position    UNSIGNED NOT NULL,
+        -- Key of the member object.
+        objectid    INTEGER NOT NULL,
+
+        FOREIGN KEY (albumid) REFERENCES album,
+        FOREIGN KEY (objectid) REFERENCES object,
+        PRIMARY KEY (albumid, position)
+    );
+
+    CREATE INDEX member_objectid_index ON member (objectid);
+
+    CREATE TABLE attribute (
+        -- Key of the object.
+        objectid    INTEGER NOT NULL,
+        -- Name of the attribute.
+        name        TEXT NOT NULL,
+        -- Value of the attribute.
+        value       TEXT NOT NULL,
+
+        FOREIGN KEY (objectid) REFERENCES object,
+        PRIMARY KEY (objectid, name)
+    );
+"""
+
+_ALLIMAGES_ALBUM_ID = -2
+_ALLIMAGES_ALBUM_TAG = "_allimages"
+_ALLALBUMS_ALBUM_ID = -1
+_ALLALBUMS_ALBUM_TAG = "_allalbums"
+_ROOT_ALBUM_ID = 0
+_ROOT_ALBUM_DEFAULT_TAG = "root"
 
 ######################################################################
 ### Exceptions.
 
 class FailedWritingError(KofotoError):
-    """Kofoto shelf file already exists."""
+    """Kofoto shelf already exists."""
     pass
 
 
 class ShelfNotFoundError(KofotoError):
-    """Kofoto shelf file not found."""
+    """Kofoto shelf not found."""
     pass
 
 
@@ -40,55 +124,44 @@ class ImageExistsError(ObjectExistsError):
     pass
 
 
-class NameExistsError(KofotoError):
-    """Name already exists in the album."""
+class ObjectDoesNotExist(KofotoError):
+    """Object does not exist in the album."""
     pass
 
 
-class ReservedAlbumIdError(KofotoError):
+class AlbumDoesNotExist(KofotoError):
+    """Album does not exist in the album."""
+    pass
+
+
+class ImageDoesNotExist(KofotoError):
+    """Image does not exist in the album."""
+    pass
+
+
+class ReservedAlbumTagError(KofotoError):
     """The album ID is reserved for other internal purposes."""
+    pass
+
+
+class UnimplementedError(KofotoError):
+    """Unimplemented action."""
     pass
 
 
 ######################################################################
 ### Public functions.
 
-def computeImageId(filename):
+def computeImageHash(filename):
     """Compute the canonical image ID for an image file."""
     m = md5.new()
     f = open(filename)
     while 1:
-        data = f.read(2**16)
+        data = f.read(4711)
         if not data:
             break
         m.update(data)
     return m.hexdigest()
-
-
-def createNewShelfFile(filename):
-    """Create a new Kofoto shelf file.
-
-    The file is written to FILENAME.  If the file could not be written
-    (e.g. already exists), FailedWritingError will be raised.
-    """
-    try:
-        fd = os.open(filename, os.O_WRONLY|os.O_CREAT|os.O_EXCL, 0666)
-        f = os.fdopen(fd, "w")
-        f.write("""<?xml version="1.0" encoding="iso-8859-1"?>
-<kofotoshelf>
-  <images>
-  </images>
-  <albums>
-    <album id=\"_root\">
-      <description>Root album.</description>
-      <albumref id=\"_unlinked\" name=\"Unlinked\"/>
-    </album>
-  </albums>
-</kofotoshelf>
-""")
-        f.close()
-    except OSError:
-        raise FailedWritingError, filename
 
 
 ######################################################################
@@ -100,119 +173,109 @@ class Shelf:
     ##############################
     # Public methods.
 
-    def __init__(self, filename):
-        """Constructor."""
-        self.filename = filename
-
-
-    def beginFiddling(self):
-        """Begin fiddling with the database.
-
-        This method locks the database and reads it into memory.  If
-        the database is not found, ShelfNotFoundError is raised.
+    def __init__(self, location, create=0):
+        """Constructor.
         """
-        self.albumMap = {}
-        self.imageMap = {}
-        unlinkedImages = {}
-        unlinkedAlbums = {}
-
-        # Magical albums.
-        self.albumMap["_unlinked"] = Album(self, "_unlinked", magical=1)
-
+        self.location = location
+        self.connection = sql.connect(location)
         try:
-            self.lockfd = os.open(self.filename, os.O_WRONLY)
-        except IOError:
-            raise ShelfNotFoundError, self.filename
-        fcntl.lockf(self.lockfd, fcntl.LOCK_EX)
-
-        documentElement = parseXmlFile(self.filename)
-        shelfTag = documentElement.childNodes[0]
-        for node in shelfTag.childNodes:
-            if node.nodeType != node.ELEMENT_NODE:
-                pass
-            elif node.nodeName == "images":
-                for imageElement in _xmlElements(node.childNodes):
-                    imageId = _latin1(imageElement.getAttribute("id"))
-                    if self.imageMap.has_key(imageId):
-                        raise ImageExistsError, imageId
-                    image = Image(self, imageId)
-                    unlinkedImages[imageId] = 1
-                    for attrElement in _xmlElements(imageElement.childNodes):
-                        elementName = _latin1(attrElement.nodeName)
-                        newAttribute = _latin1(attrElement.childNodes[0].data)
-                        attrs = image.getAttributes(elementName)
-                        attrs.append(newAttribute)
-                        image.setAttributes(elementName, attrs)
-                    self.imageMap[imageId] = image
-            elif node.nodeName == "albums":
-                # Go through the album list twice to allow references
-                # to albums that have not yet been read.
-
-                for albumElement in _xmlElements(node.childNodes):
-                    albumId = _latin1(albumElement.getAttribute("id"))
-                    album = Album(self, albumId)
-                    if self.albumMap.has_key(albumId):
-                        raise AlbumExistsError, albumId
-                    self.albumMap[albumId] = album
-                    unlinkedAlbums[albumId] = 1
-
-                for albumElement in _xmlElements(node.childNodes):
-                    albumId = _latin1(albumElement.getAttribute("id"))
-                    album = self.albumMap[albumId]
-
-                    for attrElement in _xmlElements(albumElement.childNodes):
-                        elementName = _latin1(attrElement.nodeName)
-                        if elementName == "imageref":
-                            imgName = _latin1(attrElement.getAttribute("name"))
-                            imgId = _latin1(attrElement.getAttribute("id"))
-                            album.addChild(imgName, self.imageMap[imgId])
-                            if unlinkedImages.has_key(imgId):
-                                del unlinkedImages[imgId]
-                        elif elementName == "albumref":
-                            albName = _latin1(attrElement.getAttribute("name"))
-                            albId = _latin1(attrElement.getAttribute("id"))
-                            album.addChild(albName, self.albumMap[albId])
-                            if unlinkedAlbums.has_key(albId):
-                                del unlinkedAlbums[albId]
-                        else:
-                            newAttribute = _latin1(
-                                attrElement.childNodes[0].data)
-                            attrs = album.getAttributes(elementName)
-                            attrs.append(newAttribute)
-                            album.setAttributes(elementName, attrs)
-
-        rootChildren = self.getRootAlbum().getChildren()
-
-        theUnlinkedAlbum = self.getAlbum("_unlinked")
-        for albumId in unlinkedAlbums.keys():
-            if albumId[0] != "_":
-                theUnlinkedAlbum.addChild(albumId, self.getAlbum(albumId))
-        for imageId in unlinkedImages.keys():
-            theUnlinkedAlbum.addChild(imageId, self.getImage(imageId))
-
-        documentElement.unlink()  # Clean up XML tree.
-        self.dirty = 0
+            cursor = self.connection.cursor()
+            cursor.execute(
+                " select count(*)"
+                " from album")
+            self.connection.rollback()
+            if create:
+                raise FailedWritingError, location
+        except sql.DatabaseError:
+            if create:
+                cursor.execute(schema)
+                cursor.execute(
+                    " insert into album"
+                    " values (%s, %s, 0)",
+                    _ALLIMAGES_ALBUM_ID,
+                    _ALLIMAGES_ALBUM_TAG)
+                cursor.execute(
+                    " insert into album"
+                    " values (%s, %s, 0)",
+                    _ALLALBUMS_ALBUM_ID,
+                    _ALLALBUMS_ALBUM_TAG)
+                cursor.execute(
+                    " insert into album"
+                    " values (%s, %s, 0)",
+                    _ROOT_ALBUM_ID,
+                    _ROOT_ALBUM_DEFAULT_TAG)
+                cursor.execute(
+                    " insert into member"
+                    " values (%s, 0, %s)",
+                    _ROOT_ALBUM_ID,
+                    _ALLALBUMS_ALBUM_ID)
+                cursor.execute(
+                    " insert into member"
+                    " values (%s, 1, %s)",
+                    _ROOT_ALBUM_ID,
+                    _ALLIMAGES_ALBUM_ID)
+                self.connection.commit()
+            else:
+                raise ShelfNotFoundError, location
 
 
-    def abortFiddling(self):
-        """Abort fiddling with the database.
+    def begin(self):
+        """Begin working with the shelf."""
+        # Instantiation of the first cursor starts the transaction in
+        # PySQLite, so create one here.
+        self.cursor = self.connection.cursor()
 
-        This method unlocks the database without saving.
+
+    def commit(self):
+        """Commit the work on the shelf."""
+        self.connection.commit()
+        del self.cursor
+
+
+    def rollback(self):
+        """Abort the work on the shelf.
+
+        The changes (if any) will not be saved."""
+        self.connection.rollback()
+        del self.cursor
+
+
+    def createAlbum(self, tag):
+        """Create an empty, unlinked album."""
+        self.verifyAlbumTag(tag)
+        try:
+            self.cursor.execute(
+                " insert into object"
+                " values (null)",
+                locals())
+            self.cursor.execute(
+                " insert into album"
+                " values (last_insert_rowid(), %(tag)s, 1)",
+                locals())
+        except sql.IntegrityError:
+            raise AlbumExistsError, tag
+
+
+    def getAlbum(self, tag):
+        """Get the album for a given album tag.
+
+        Returns an Album instance.
         """
-        del self.albumMap
-        del self.imageMap
-        os.close(self.lockfd)  # Also releases the lock.
+        if tag == _ALLALBUMS_ALBUM_TAG:
+            return self.getAllAlbumsAlbum()
+        elif tag == _ALLIMAGES_ALBUM_TAG:
+            return self.getAllImagesAlbum()
 
-
-    def endFiddling(self):
-        """End fiddling with the database.
-
-        The database fiddling will be saved if necessary.
-        """
-        if self.dirty:
-            self.saveFiddling()
+        self.cursor.execute(
+            " select albumid"
+            " from album"
+            " where tag = %(tag)s",
+            locals())
+        row = self.cursor.fetchone()
+        if row:
+            return Album(self, row[0])
         else:
-            self.abortFiddling()
+            raise AlbumDoesNotExist, tag
 
 
     def getRootAlbum(self):
@@ -220,306 +283,421 @@ class Shelf:
 
         Returns an Album object.
         """
-        return self.albumMap["_root"]
+        return Album(self, 0)
 
 
-    def createAlbum(self, albumId):
-        """Create an empty, unlinked album."""
-        self.verifyAlbumId(albumId)
-        if self.getAlbum(albumId):
-            raise AlbumExistsError, albumId
-        else:
-            self.setDirty()
-            self.albumMap[albumId] = Album(self, albumId)
+    def getAllAlbumsAlbum(self):
+        """Get the magic \"all albums\" album."""
+        return AllAlbumsAlbum(self, _ALLALBUMS_ALBUM_ID)
 
 
-    def getAlbum(self, albumId):
-        """Get the album for a given album ID.
-
-        Returns an Image object, or None if no album found.
-        """
-        return self.albumMap.get(albumId)
+    def getAllImagesAlbum(self):
+        """Get the magic \"all images\" album."""
+        return AllImagesAlbum(self, _ALLIMAGES_ALBUM_ID)
 
 
-    def getAllAlbums(self):
-        """Get a list of all albums."""
-        return self.albumMap.values()
-
-
-    def renameAlbumId(self, oldAlbumId, newAlbumId):
-        self.verifyAlbumId(newAlbumId)
-        if self.getAlbum(newAlbumId):
-            raise AlbumExistsError, newAlbumId
-        else:
-            self.setDirty()
-            alb = self.albumMap[oldAlbumId]
-            del self.albumMap[oldAlbumId]
-            self.albumMap[newAlbumId] = alb
+    def deleteAlbum(self, tag):
+        self.verifyAlbumTag(tag)
+        self.cursor.execute(
+            " select albumid"
+            " from album"
+            " where tag = %(tag)s",
+            locals())
+        row = self.cursor.fetchone()
+        if not row:
+            raise AlbumDoesNotExist, tag
+        if id == _ROOT_ALBUM_ID:
+            # Don't delete the root album!
+            raise ReservedAlbumTagError, tag
+        delid = row[0] # The album to delete.
+        self.cursor.execute(
+            " select albumid"
+            " from member"
+            " where objectid = %(delid)s",
+            locals())
+        parents = [x[0] for x in self.cursor.fetchall()]
+        for parentid in parents:
+            self.cursor.execute(
+                " select position"
+                " from   member"
+                " where  albumid = %(parentid)s and"
+                "        objectid = %(delid)s",
+                locals())
+            positions = [x[0] for x in self.cursor.fetchall()]
+            for position in positions:
+                self.cursor.execute(
+                    " delete from member"
+                    " where  albumid = %(parentid)s and"
+                    "        position = %(position)s",
+                    locals())
+                self.cursor.execute(
+                    " update member"
+                    " set    position = position - 1"
+                    " where  position > %(position)s",
+                    locals())
+        self.cursor.execute(
+            " delete from album"
+            " where  albumid = %(delid)s",
+            locals())
+        self.cursor.execute(
+            " delete from attribute"
+            " where  objectid = %(delid)s",
+            locals())
 
 
     def createImage(self, filename):
         """Add a new, unlinked image to the shelf.
 
         The ID of the image is returned."""
-        imageId = computeImageId(filename)
-        if self.getImage(imageId):
-            raise ImageExistsError, imageId
-        else:
-            self.setDirty()
-            self.imageMap[imageId] = Image(self, imageId)
-            return imageId
+        imageid = computeImageHash(filename)
+        try:
+            self.cursor.execute(
+                " insert into object"
+                " values (null)",
+                locals())
+            self.cursor.execute(
+                " insert into image"
+                " values (last_insert_rowid(), %(imageid)s, %(location)s)",
+                locals())
+        except sql.IntegrityError:
+            raise ImageExistsError, tag
 
 
-    def getImage(self, imageId):
+    def getImage(self, hash):
         """Get the image for a given image ID.
 
-        Returns an Image object, or None if no image found.
+        Returns an Image object.
         """
-        return self.imageMap.get(imageId)
-
-
-    def getAllImages(self):
-        """Get a list of all images."""
-        return self.imageMap.values()
+        self.cursor.execute(
+            " select imageid"
+            " from   image"
+            " where  hash = %(hash)s",
+            locals())
+        if self.cursor.rowcount > 0:
+            return Image(self, self.cursor.fetchone()[0])
+        else:
+            raise ImageDoesNotExist, hash
 
 
     ##############################
     # Internal methods.
 
-    def setDirty(self):
-        """Called by albums and images when saving the database has
-        become necessary."""
-
-        self.dirty = 1
+    def verifyAlbumTag(self, tag):
+        if not tag or tag[0] == "_" or "\0" in tag:
+            raise ReservedAlbumTagError, tag
 
 
-    def saveFiddling(self):
-        """This method commits the changes and unlocks the database."""
-
-        backupname = self.filename + time.strftime("-%Y-%m-%d-%H:%M:%S")
-        shutil.copy2(self.filename, backupname)
-        f = os.fdopen(self.lockfd, "w")
-        f.truncate(0)
-
-        #
-        # Header.
-        #
-        f.write("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
-                "<kofotoshelf>\n")
-
-        #
-        # Images.
-        #
-        f.write("  <images>\n")
-        for imageId, image in self.imageMap.items():
-            f.write("    <image id=\"%s\">\n" % imageId)
-            names = image.getAttributeNames()
-            names.sort()
-            for name in names:
-                values = image.getAttributes(name)
-                if name == "timestamp":
-                    for value in values:
-                        f.write("      <%s>%s</%s> <!-- %s -->\n" % (
-                            name,
-                            value,
-                            name,
-                            time.ctime(int(value))))
-                else:
-                    for value in values:
-                        f.write("      <%s>%s</%s>\n" % (name, value, name))
-            f.write("    </image>\n")
-        f.write("  </images>\n")
-
-        #
-        # Albums.
-        #
-        f.write("  <albums>\n")
-        for albumId, album in self.albumMap.items():
-            if album.isMagical():
-                continue
-
-            f.write("    <album id=\"%s\">\n" % albumId)
-            names = album.getAttributeNames()
-            names.sort()
-            for name in names:
-                values = album.getAttributes(name)
-                for value in values:
-                    f.write("      <%s>%s</%s>\n" % (name, value, name))
-            for childName, child in album.getChildren():
-                if isinstance(child, Image):
-                    referenceType = "image"
-                else:
-                    referenceType = "album"
-                f.write("      <%sref id=\"%s\" name=\"%s\"/>\n" % (
-                    referenceType,
-                    child.getId(),
-                    childName))
-            f.write("    </album>\n")
-        f.write("  </albums>\n")
-
-        #
-        # Finished.
-        #
-        f.write("</kofotoshelf>\n")
-        del self.albumMap
-        del self.imageMap
-        f.close()  # Also releases the lock.
+class _Object:
+    def __init__(self, shelf, objid):
+        self.shelf = shelf
+        self.objid = objid
 
 
-    def verifyAlbumId(self, albumId):
-        if albumId[0] == "_":
-            raise ReservedAlbumIdError, albumId
+    def getId(self):
+        return self.objid
 
 
-class Album:
+    def getAttributeNames(self):
+        """Returns a (unsorted) list of available attributes."""
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " select name"
+            " from   attribute"
+            " where  objectid = %(objid)s",
+            locals())
+        return [x[0] for x in self.shelf.cursor.fetchall()]
+
+
+    def getAttribute(self, name):
+        """Get the value of an attribute.
+
+        Returns the value as string, or None if there was no matching
+        attribute.
+        """
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " select value"
+            " from   attribute"
+            " where  objectid = %(objid)s and"
+            "        name = %(name)s",
+            locals())
+        if self.shelf.cursor.rowcount > 0:
+            return self.shelf.cursor.fetchone()[0]
+        else:
+            return None
+
+
+    def setAttribute(self, name, value):
+        """Set an attribute value."""
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " update attribute"
+            " set    value = %(value)s"
+            " where  objectid = %(objid)s and"
+            "        name = %(name)s",
+            locals())
+        if self.shelf.cursor.rowcount == 0:
+            self.shelf.cursor.execute(
+                " insert attribute"
+                " set    value = %(value)s"
+                " where  objectid = %(objid)s and"
+                "        name = %(name)s",
+            locals())
+
+
+    def deleteAttribute(self, name):
+        """Delete an attribute."""
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " delete from attribute"
+            " where  objectid = %(objid)s and"
+            "        name = %(name)s",
+            locals())
+
+
+class Album(_Object):
     """A Kofoto album."""
 
     ##############################
     # Public methods.
 
-    def getId(self):
-        """Get the album ID."""
-        return self.albumId
-
-
-    def setId(self, albumId):
-        """Set the album ID."""
-        self.albumId = albumId
-
-
     def getChildren(self):
         """Get the album's children.
 
-        Returns a list of tuples (name, child) where name is a string
-        and child is an Album or Image object.
+        Returns a list of Albums and Images.
         """
-        return self.children
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            " select 'album', position, member.objectid"
+            " from   member, album"
+            " where  member.albumid = %(albumid)s and"
+            "        member.objectid = album.albumid"
+            " union"
+            " select 'image', position, member.objectid"
+            " from   member, image"
+            " where  member.albumid = %(albumid)s and"
+            "        member.objectid = image.imageid"
+            " order by position",
+            locals())
+        objects = []
+        for objtype, position, objid in self.shelf.cursor.fetchall():
+            if objtype == "album":
+                if objid == _ALLALBUMS_ALBUM_ID:
+                    childtype = AllAlbumsAlbum
+                elif objid == _ALLIMAGES_ALBUM_ID:
+                    childtype = AllImagesAlbum
+                else:
+                    childtype = Album
+            else:
+                childtype = Image
+            objects.append(childtype(self.shelf, objid))
+        return objects
 
 
-    def addChild(self, name, child, position=-1):
-        """Add a child object.
-
-        NAME (a string) is the name of the object.  CHILD is an Album
-        or Image object.  If POSITION is negative, the object is
-        placed last.  Otherwise, it is placed before the POSITIONth
-        child.
-        """
-        self.shelf.setDirty()
-        if position < 0:
-            self.children.append((name, child))
-        else:
-            self.children.insert(position, (name, child))
-
-
-    def unlinkChild(self, position):
-        """Remove a child at a given position.
-
-        The removed tuple (name, child) is returned."""
-        self.shelf.setDirty()
-        x = self.children[position]
-        del self.children[position]
-        return x
-
-
-    def getAttributes(self, name):
-        """Get the attributes with a given name.
-
-        Returns a list of strings.  If there are no matching
-        attribute, an empty list is returned.
-        """
-        return self.attributeMap.get(name, [])
-
-
-    def setAttributes(self, name, valueList):
-        """Set attribute values.
-
-        VALUELIST should be an empty list or a list of strings.  If it
-        is an empty list, the attributes are removed.  If it is a list
-        of strings, the strings represent the attribute values."""
-        self.shelf.setDirty()
-        if valueList:
-            self.attributeMap[name] = valueList
-        elif self.attributeMap.has_key(name):
-            del self.attributeMap[name]
+    def setChildren(self, children):
+        """Set an album's children."""
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            "-- types int")
+        self.shelf.cursor.execute(
+            " select max(position)"
+            " from   member"
+            " where  albumid = %(albumid)s",
+            locals())
+        oldchcnt = self.shelf.fetchone()[0]
+        newchcnt = len(children)
+        for ix in range(newchcnt):
+            childid = children[ix].getId()
+            if ix < oldchcnt:
+                self.shelf.cursor.execute(
+                    " update member"
+                    " set    objectid = %(childid)s"
+                    " where  albumid = %(albumid)s and"
+                    "        position = %(ix)s",
+                    locals())
+            else:
+                self.shelf.cursor.execute(
+                    " insert into member"
+                    " values (%(albumid)s, %(position)s, %(childid)s",
+                    locals())
+        self.shelf.cursor.execute(
+            " delete from member"
+            " where  albumid = %(albumid)s and"
+            "        position >= %(newchcnt)s",
+            locals())
 
 
-    def getAttributeNames(self):
-        """Returns a list of available attributes."""
-        return self.attributeMap.keys()
+    def getTag(self):
+        """Get the tag of the album."""
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            " select tag"
+            " from   album"
+            " where  albumid = %(albumid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
 
 
-    def isMagical(self):
-        """Returns true iff the album is magical."""
-        return self.magical
+    def setTag(self, newtag):
+        self.shelf.verifyAlbumTag(newtag)
+        albumid = self.getId()
+        self.shelf.cursor.execute(
+            " update album"
+            " set    tag = %(newtag)s"
+            " where  albumid = %(albumid)s",
+            locals())
 
 
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, albumId, magical=0):
+    def __init__(self, shelf, albumid):
         """Constructor of an Album."""
+        _Object.__init__(self, shelf, albumid)
         self.shelf = shelf
-        self.albumId = albumId
-        self.attributeMap = {}
-        self.children = []
-        self.magical = magical
 
 
-class Image:
+class Image(_Object):
     """A Kofoto image."""
 
     ##############################
     # Public methods.
 
-    def getId(self):
-        """Get the image ID."""
-        return self.imageId
+    def getLocation(self):
+        """Get the last known location of the image."""
+        imageid = self.getId()
+        self.shelf.cursor.execute(
+            " select location"
+            " from   image"
+            " where  imageid = %(imageid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
 
 
-    def getAttributes(self, name):
-        """Get the attributes with a given name.
-
-        Returns a list of strings.  If there are no matching
-        attribute, an empty list is returned.
-        """
-        return self.attributeMap.get(name, [])
-
-
-    def setAttributes(self, name, valueList):
-        """Set attribute values.
-
-        VALUELIST should be an empty list or a list of strings.  If it
-        is an empty list, the attributes are removed.  If it is a list
-        of strings, the strings represent the attribute values."""
-        self.shelf.setDirty()
-        if valueList:
-            self.attributeMap[name] = valueList
-        elif self.attributeMap.has_key(name):
-            del self.attributeMap[name]
+    def setLocation(self, location):
+        """Set the last known location of the image."""
+        imageid = self.getId()
+        self.shelf.cursor.execute(
+            " update image"
+            " set    location = %(location)s"
+            " where  imageid = %(imageid)s",
+            locals())
 
 
-    def getAttributeNames(self):
-        """Returns a list of available attributes."""
-        return self.attributeMap.keys()
+    def getHash(self):
+        """Get the hash of the image."""
+        imageid = self.getId()
+        self.shelf.cursor.execute(
+            " select hash"
+            " from   image"
+            " where  imageid = %(imageid)s",
+            locals())
+        return self.shelf.cursor.fetchone()[0]
 
 
     ##############################
     # Internal methods.
 
-    def __init__(self, shelf, imageId):
+    def __init__(self, shelf, imageid):
         """Constructor of an Image."""
+        _Object.__init__(self, shelf, imageid)
         self.shelf = shelf
-        self.imageId = imageId
+        self.imageid = imageid
         self.attributeMap = {}
+        self.children = []
 
+
+# Magic albums have the following public methods:
+#
+# getChildren()
+# getId()
+# getTag()
+
+class AllAlbumsAlbum:
+    """A magic \"all albums\" album."""
+
+    ##############################
+    # Public methods.
+
+    def getChildren(self):
+        """Get the album's children.
+
+        Returns a list of all albums.
+        """
+        objects = []
+        self.shelf.cursor.execute(
+            " select   albumid"
+            " from     album"
+            " order by tag")
+        for (objid,) in self.shelf.cursor.fetchall():
+            objects.append(Album(self.shelf, objid))
+        return objects
+
+
+    def getId(self):
+        return _ALLALBUMS_ALBUM_ID
+
+
+    def getTag(self):
+        return _ALLALBUMS_ALBUM_TAG
+
+
+    def setTag(self, tag):
+        raise ReservedAlbumTagError, _ALLALBUMS_ALBUM_TAG
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, albumid):
+        assert albumid == _ALLALBUMS_ALBUM_ID
+        self.shelf = shelf
+
+
+class AllImagesAlbum:
+    """A magic \"all images\" album."""
+
+    ##############################
+    # Public methods.
+
+    def getChildren(self):
+        """Get the album's children.
+
+        Returns a list of all images.
+        """
+        objects = []
+        self.shelf.cursor.execute(
+            " select   imageid"
+            " from     image left join attribute"
+            " on       imageid = objectid"
+            " where    name = 'timestamp'"
+            " order by value")
+        for (objid,) in self.shelf.cursor.fetchall():
+            objects.append(Image(self.shelf, objid))
+        return objects
+
+
+    def getId(self):
+        return _ALLIMAGES_ALBUM_ID
+
+
+    def getTag(self):
+        return _ALLIMAGES_ALBUM_TAG
+
+
+    def setTag(self, tag):
+        raise ReservedAlbumTagError, _ALLIMAGES_ALBUM_TAG
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, albumid):
+        assert albumid == _ALLIMAGES_ALBUM_ID
+        self.shelf = shelf
 
 ######################################################################
 # Internal functions.
-
-def _xmlElements(xmlNodes):
-    """Returns the XML elements of a list of XML nodes."""
-    return [x for x in xmlNodes if x.nodeType == x.ELEMENT_NODE]
-
 
 def _latin1(unicodeString):
     """Converts a Unicode string to Latin1."""

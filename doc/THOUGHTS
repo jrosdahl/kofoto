@@ -11,8 +11,6 @@ Attributes:
 
     * aperture: Aperture (could be fetched from EXIF attribute
       FNumber).
-    * cached-location: Volatile cache of last known filesystem
-      location of the image.
     * exposure-time: Exposure time (could be fetched from EXIF
       attribute ExposureTime).
     * flash: Whether flash was fired (could be fetched from EXIF
@@ -23,7 +21,6 @@ Attributes:
     * model: Camera model (ex: Canon DIGITAL IXUS).
     * orientation: Image orientation in degrees (0, 90, 180 or 270).
     * photographer: Photographer.
-    * timestamp: When the image was taken (UNIX epoch time).
     * width: Image width (could be fetched from EXIF attribute
       ExifImageWidth).
 
@@ -37,6 +34,87 @@ Key features (why we can't use J. Random Photo Album software):
     * Original image files are never modified.
     * The meta data may be stored in a human-readable, future-proof
       way.
+    * One and the same image can be included in several albums. And
+      likewise for albums.
+    * "Magical" albums, e.g. one listing images that aren't included
+      in any album, and one listing images sorted after timestamp.
+    * (Overridable attributes depending on the location of the
+      album/image.) -- would be nice...
+
+Meta data:
+
+    Meta data is stored in a BerkeleyDB database environment, whose
+    default location is ~/.kofoto/shelf. The shelf records information
+    about registered images and albums. Information is e.g. attributes
+    (as listed above) and the image list for an album.
+
+Configuration:
+
+    Configuration not specific to a shelf is stored in
+    ~/.kofoto/config.
+
+Database location:
+
+    The default database file is ~/.kofoto/shelf.db.
+
+Database schema:
+
+    See shelf.py.
+
+Special albums:
+
+    root - The root album.
+    _allalbums - An album with all (normal) albums as children.
+
+Design requirements and goals:
+
+    * It should be very hard to lose any information.
+
+      - Original image files (downloaded from the camera) are never
+        changed.
+      - Meta information can be exported to a future-safe format.
+      - Original image files can be renamed/moved without loss of meta
+        information.
+
+    * It should be possible to uniquely identify images.
+
+      - A checksum of (parts of) an image is used as identifier.
+
+    * It should be possible to uniquely identify album.
+
+      - Each album have a unique human-recognizable tag.
+
+    * Albums should contain an ordered list of albums and images.
+
+      - Albums contain an ordered list of albums and images.
+
+    * The same album/image should be able to be a part of several
+      different albums.
+
+      - The same album/image can be a part of several different
+        albums without duplication of information.
+
+    * It should be possible to view the albums without a specialized program.
+
+      - Standard HTML pages that can be viewed with an ordinary web
+        browser are generated.
+
+    * It should be possible to view the album from read-only media.
+
+      - A set of static HTML pages and images are generated manually
+        (not on demand).
+
+    * It should be possible to add meta information and new kinds of
+      meta information.
+
+      - It is possible to associate arbitrary attributes with images
+        and albums.
+
+    * It should be possible to store information about image
+      orientation, gamma value and other parameters that may affect
+      generated images.
+
+      - Stored as image attributes.
 
 ======================================================================
 
