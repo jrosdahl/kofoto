@@ -64,6 +64,7 @@
 # To do:
 # * Better printing of ratios
 
+import string
 import struct
 
 # field type descriptions as (length, abbreviation, full name) tuples
@@ -711,6 +712,8 @@ class EXIF_header:
             size_char='i'
         else:
             raise ValueError, ('bad slice length: %s' % length)
+        if not signed:
+            size_char=string.upper(size_char)
         return struct.unpack(endian_sign + size_char, slice)[0]
 
     # convert offset to string
