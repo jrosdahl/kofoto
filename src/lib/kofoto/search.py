@@ -99,8 +99,8 @@ class Parser:
         expr = self.expr()
         kind, token = self._scanner.next()
         if kind != "eof":
-            raise (ParseError,
-                   "expected end of expression or conjunction, got: " + token)
+            raise ParseError, \
+                "expected end of expression or conjunction, got: \"%s\"" % token
         return expr
 
     def expr(self):
@@ -145,7 +145,7 @@ class Parser:
             kind, token = self._scanner.next()
             if kind != "bareword":
                 raise ParseError, \
-                      "expected category tag after \"exactly\", got: " + token
+                      "expected category tag after \"exactly\", got: \"%s\"" % token
             return self._snfactory.categoryNode(token, recursive=False)
         elif kind == "album":
             return self._snfactory.albumNode(token[1:])
@@ -156,22 +156,22 @@ class Parser:
                 attroper = token
             else:
                 raise ParseError, \
-                      "expected comparison operator, got: " + token
+                      "expected comparison operator, got: \"%s\"" % token
             kind, token = self._scanner.next()
             if kind in ("bareword", "string"):
                 value = token
             else:
                 raise ParseError, \
-                      "expected bareword or quoted string, got: " + token
+                      "expected bareword or quoted string, got: \"%s\"" % token
             return self._snfactory.attrcondNode(attribute[1:], attroper, value)
         elif kind == "lparen":
             expr = self.expr()
             kind, token = self._scanner.next()
             if kind != "rparen":
                 raise ParseError, \
-                      "expected right parenthesis or conjunction, got: " + token
+                      "expected right parenthesis or conjunction, got: \"%s\"" % token
             return expr
-        raise ParseError, "expected expression, got: " + token
+        raise ParseError, "expected expression, got: \"%s\"" % token
 
 ######################################################################
 
