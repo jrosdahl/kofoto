@@ -55,7 +55,7 @@ def _from_uc(s):
         return s
 
 def _to_uc(s):
-    return unicode(s, CODESET)
+    return s.decode(CODESET)
 
 def displayHelp():
     sys.stdout.write(
