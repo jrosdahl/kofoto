@@ -8,19 +8,22 @@
 OVERVIEW
 ========
 
-Kofoto is a tool for organizing and viewing digital images.
+Kofoto is an open source tool for organizing and viewing digital
+images, typically photographs from a digital camera. Both graphical
+and command-line interfaces are available.
 
 With Kofoto, you can:
 
-  * A graphical GTK+-based client (gkofoto).
-  * A command-line utility (kofoto).
-  * Organize images in an album tree.
-  * Organize images by use of categories.
-  * Associate images with attributes.
-  * Search for images matching a search expression.
-  * View images.
-  * Rotate images.
-  * Generate HTML pages of an album subtree.
+    * Organize images by use of categories (AKA "tags").
+    * Organize images in an album tree.
+    * Associate images with attributes.
+    * Search for images matching a search expression.
+    * View images.
+    * Rotate images.
+    * Generate HTML pages of an album tree. 
+
+Kofoto is currently a bit rough on the edges, yet functional. But
+please go ahead and try it, if you like!
 
 
 LICENSE
@@ -78,7 +81,7 @@ A. Unix
    0. Install the prerequisites, if necessary.
    1. Unpack the kofoto-*.tar.gz archive.
    2. Run "python setup.py install" in the created directory to
-      install Kofoto at the default location (e.g. /usr/local). See
+      install Kofoto at the default location. See
       http://www.python.org/doc/current/inst/inst.html for more
       information.
    3. Run gkofoto or "kofoto --help".
@@ -126,4 +129,6 @@ B. Windows
 VERSION HISTORY
 ===============
 
-To be written.
+0.1 (2004-08-08)
+
+    First public version.
