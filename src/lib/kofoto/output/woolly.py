@@ -615,6 +615,7 @@ class OutputGenerator(OutputEngine):
                             for x in imageCategories
                             if dispcat.isParentOf(x, True)]
                 if matching:
+                    matching.sort()
                     if firstrow:
                         firstrow = False
                     else:
