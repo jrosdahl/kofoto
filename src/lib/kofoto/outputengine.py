@@ -84,7 +84,7 @@ class OutputEngine:
                 if not os.path.isfile(imgloc):
                     symlinkOrCopyFile(imgabsloc, imgloc)
                 self.imgref[(child.getHash(), size)] = "/".join(
-                    imgloc.split(os.path.sep)[-4:])
+                    imgloc.split(os.sep)[-4:])
             if self.env.verbose:
                 self.env.out("\n")
 
