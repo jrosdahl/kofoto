@@ -63,7 +63,7 @@ class ObjectCollection(object):
 
     def getDestroyLabel(self):
         return "Destroy..."
-    
+
     def getActions(self):
         return None
         # TODO implement
@@ -76,19 +76,19 @@ class ObjectCollection(object):
 
     def getUnsortedModel(self):
         return self.__treeModel
-    
+
     def convertToUnsortedRowNr(self, rowNr):
         return rowNr
-    
+
     def convertFromUnsortedRowNr(self, unsortedRowNr):
         return unsortedRowNr
 
     def getObjectSelection(self):
         return self.__objectSelection
-        
+
     def getDisabledFields(self):
         return self.__disabledFields
-            
+
     def registerView(self, view):
         env.debug("Register view to object collection")
         self.__registeredViews.append(view)
@@ -107,7 +107,7 @@ class ObjectCollection(object):
         self.__nrOfImages = 0
         self._handleNrOfObjectsUpdate()
         self.__objectSelection.unselectAll()
-        if freeze:        
+        if freeze:
             self._thawViews()
 
     def cut(self, *foo):
@@ -128,8 +128,8 @@ class ObjectCollection(object):
     COLUMN_VALID_LOCATION = 0
     COLUMN_VALID_CHECKSUM = 1
     COLUMN_ROW_EDITABLE   = 2
-    COLUMN_IS_ALBUM       = 3    
-    
+    COLUMN_IS_ALBUM       = 3
+
     # Columns visible to user
     COLUMN_OBJECT_ID      = 4
     COLUMN_LOCATION       = 5
@@ -142,8 +142,8 @@ class ObjectCollection(object):
     EDITED_CALLBACK      = 2
     EDITED_CALLBACK_DATA = 3
 
-    
-        
+
+
 ######################################################################
 ### Only for subbclasses
 
@@ -194,8 +194,8 @@ class ObjectCollection(object):
             view.fieldsDisabled(updatedDisabledFields - self.__disabledFields)
             view.fieldsEnabled(self.__disabledFields - updatedDisabledFields)
         self.__disabledFields = updatedDisabledFields
-        env.debug("The following fields are disabled: " + str(self.__disabledFields))        
-        
+        env.debug("The following fields are disabled: " + str(self.__disabledFields))
+
     def _getTreeModel(self):
         return self.__treeModel
 
@@ -206,8 +206,8 @@ class ObjectCollection(object):
     def _thawViews(self):
         for view in self.__registeredViews:
             view.thaw()
-    
-    
+
+
 ###############################################################################
 ### Callback functions
 
@@ -226,7 +226,7 @@ class ObjectCollection(object):
             obj.setAttribute(attributeName, value)
             model.set_value(iterator, columnNumber, value)
             env.debug("Object attribute edited")
-            
+
     def _albumTagEdited(self, renderer, path, value, column, columnNumber):
         model = self.getModel()
         iterator = model.get_iter(path)
@@ -243,7 +243,7 @@ class ObjectCollection(object):
                 # TODO Handle invalid album tag?
                 model.set_value(iterator, columnNumber, value)
                 # TODO Update the album tree widget.
-                env.debug("Album tag edited")                
+                env.debug("Album tag edited")
         else:
             # TODO Show dialog error box?
             print "Not allowed to set album tag on image"
@@ -277,11 +277,11 @@ class ObjectCollection(object):
             # characters. I tried latin-1 and utf-8 without success.
             result = os.system(command + " &")
             if result != 0:
-                print "failed to execute:", command                    
-        
+                print "failed to execute:", command
+
 ######################################################################
 ### Private
-    
+
     def __addAttribute(self, name):
         self.__objectMetadataMap["@" + name] = (gobject.TYPE_STRING,
                                                 len(self.__columnsType),
@@ -303,4 +303,3 @@ class ObjectCollection(object):
             except IOError:
                 pixbuf = env.unknownImageIconPixbuf
         model.set_value(iterator, self.COLUMN_THUMBNAIL, pixbuf)
-

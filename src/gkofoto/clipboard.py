@@ -9,7 +9,7 @@ class Clipboard:
     # TYPES
     OBJECTS    = 0 # shelf.Album and shelf.Image
     CATEGORIES = 1 # shelf.Category
-    
+
     def __init__(self):
         self.__changedCallbacks = Set()
         self.clear()
@@ -40,7 +40,7 @@ class Clipboard:
             raise "Object is not a ClipboardCategories" # TODO
         self.__types = Clipboard.CATEGORIES
         self.__invokeChangedCallbacks()
-        
+
     def clear(self):
         self.__objects = []
         self.__types = None
@@ -51,7 +51,7 @@ class Clipboard:
 
     def hasObjects(self):
         return (self.__types == Clipboard.OBJECTS and len(self.__objects) > 0)
-        
+
     def __len__(self):
         return len(self.__objects)
 

@@ -13,7 +13,7 @@ if sys.platform.startswith("win"):
         while not msvcrt.kbhit():
             pass
         sys.exit(1)
-    else:    
+    else:
         gtkdir = _winreg.QueryValueEx(k, "Path")
         import os
         os.environ["PATH"] += ";%s/lib;%s/bin" % (gtkdir[0], gtkdir[0])

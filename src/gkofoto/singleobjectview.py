@@ -6,9 +6,9 @@ from gkofoto.objectcollectionview import *
 
 class SingleObjectView(ObjectCollectionView, ImageView):
 
-###############################################################################            
+###############################################################################
 ### Public
-    
+
     def __init__(self):
         env.debug("Init SingleObjectView")
         ImageView.__init__(self)
@@ -52,7 +52,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                     self.loadFile(selectedObject.getLocation(), False)
             if self.__selectedRowNr <= 0:
                 env.widgets["previousButton"].set_sensitive(False)
-            else: 
+            else:
                 env.widgets["previousButton"].set_sensitive(True)
             if (self.__selectedRowNr == -1 or self.__selectedRowNr >= len(model) - 1):
                 env.widgets["nextButton"].set_sensitive(False)
@@ -60,7 +60,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 env.widgets["nextButton"].set_sensitive(True)
             self.__selectionLocked = False
         self._updateContextMenu()
-        
+
     def _showHelper(self):
         env.enter("SingleObjectView.showHelper()")
         env.widgets["objectView"].show()
@@ -95,7 +95,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self._clearAllConnections()
         self.clear()
         env.exit("SingleObjectView.freezeHelper()")
-        
+
     def _thawHelper(self):
         env.enter("SingleObjectView.thawHelper()")
         model = self._objectCollection.getModel()
@@ -107,10 +107,10 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self._connect(model, "row_deleted", self._modelUpdated)
         self.importSelection(self._objectCollection.getObjectSelection())
         env.exit("SingleObjectView.thawHelper()")
-        
+
     def _modelUpdated(self, *foo):
         env.debug("SingleObjectView is handling model update")
-        self.importSelection(self._objectCollection.getObjectSelection())        
+        self.importSelection(self._objectCollection.getObjectSelection())
 
     def _rowChanged(self, model, path, iter):
         if path[0] == self.__selectedRowNr:
@@ -119,7 +119,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             obj = objectSelection[path[0]]
             if not obj.isAlbum():
                 self.loadFile(obj.getLocation(), True)
-        
+
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])

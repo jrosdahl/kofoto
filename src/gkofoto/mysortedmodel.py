@@ -5,7 +5,7 @@ class MySortedModel(gtk.TreeModelSort):
     def __init__(self, model):
         gtk.TreeModelSort.__init__(self, model)
         self._model = model
-    
+
     def __getitem__(self, path):
         child_path = self.convert_path_to_child_path(path)
         if child_path:
@@ -25,7 +25,7 @@ class MySortedModel(gtk.TreeModelSort):
         else:
             return None
 
-    # Workaround until http://bugzilla.gnome.org/show_bug.cgi?id=121633 is solved.       
+    # Workaround until http://bugzilla.gnome.org/show_bug.cgi?id=121633 is solved.
     def __iter__(self):
         if len(self._model) > 0:
             return gtk.TreeModelSort.__iter__(self)

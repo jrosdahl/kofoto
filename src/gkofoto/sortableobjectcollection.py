@@ -32,8 +32,8 @@ class SortableObjectCollection(ObjectCollection):
         return True
 
     def isReorderable(self):
-        return False    
-    
+        return False
+
     def getModel(self):
         return self.__sortedTreeModel
 
@@ -42,7 +42,7 @@ class SortableObjectCollection(ObjectCollection):
 
     def convertToUnsortedRowNr(self, rowNr):
         return self.__sortedTreeModel.convert_path_to_child_path(rowNr)[0]
-    
+
     def convertFromUnsortedRowNr(self, unsortedRowNr):
         return self.__sortedTreeModel. convert_child_path_to_path(unsortedRowNr)[0]
 
@@ -51,17 +51,17 @@ class SortableObjectCollection(ObjectCollection):
 
     def getSortColumnName(self):
         return self.__sortColumnName
-    
+
     def setSortOrder(self, widget=None, order=None):
         if widget != None and not widget.get_active():
             # ignore the callback when the radio menu item is unselected
-            return        
+            return
         if self.__sortOrder != order:
             env.debug("Setting sort order to: " + str(order))
             self.__sortOrder = order
             self.__configureSortedModel(self.__sortColumnName, self.__sortOrder)
             self.__emitSortOrderChanged()
-            
+
     def setSortColumnName(self, widget=None, columnName=None):
         if widget != None and not widget.get_active():
             # ignore the callback when the radio menu item is unselected
@@ -80,11 +80,11 @@ class SortableObjectCollection(ObjectCollection):
     def __emitSortOrderChanged(self):
         for view in self._getRegisteredViews():
             view.sortOrderChanged(self.__sortOrder)
-                
+
     def __emitSortColumnChanged(self):
         for view in self._getRegisteredViews():
-            view.sortColumnChanged(self.__sortColumnName)        
-            
+            view.sortColumnChanged(self.__sortColumnName)
+
     def __configureSortedModel(self, sortColumnName, sortOrder):
         if (sortOrder != None and sortColumnName != None):
             sortColumnNr = self.getObjectMetadataMap()[sortColumnName][self.COLUMN_NR]

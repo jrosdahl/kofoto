@@ -1460,7 +1460,7 @@ class _Object:
         """Get the parent albums of an object.
 
         Returns an iterable returning the albums.
-        
+
         Note that the object may be included multiple times in a
         parent album."""
         cursor = self.shelf._getConnection().cursor()

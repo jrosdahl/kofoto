@@ -7,9 +7,9 @@ from objectcollection import *
 from menuhandler import *
 class TableView(ObjectCollectionView):
 
-###############################################################################            
+###############################################################################
 ### Public
-    
+
     def __init__(self):
         env.debug("Init TableView")
         ObjectCollectionView.__init__(self, env.widgets["tableView"])
@@ -29,7 +29,7 @@ class TableView(ObjectCollectionView):
             columnLocation += 1
 
     def importSelection(self, objectSelection):
-        if not self.__selectionLocked:        
+        if not self.__selectionLocked:
             env.debug("TableView is importing selection")
             self.__selectionLocked = True
             selection = self._viewWidget.get_selection()
@@ -52,7 +52,7 @@ class TableView(ObjectCollectionView):
         self.__removeColumnsAndUpdateLocation(fields)
         for columnName in fields:
             self.__viewGroup[columnName].set_sensitive(False)
-                
+
     def fieldsEnabled(self, fields):
         env.debug("Table view enable fields: " + str(fields))
         objectMetadataMap = self._objectCollection.getObjectMetadataMap()
@@ -61,7 +61,7 @@ class TableView(ObjectCollectionView):
             if columnName not in self.__createdColumns:
                 if columnName in self.__userChoosenColumns:
                     self.__createColumn(columnName, objectMetadataMap, self.__userChoosenColumns[columnName])
-            
+
     def _showHelper(self):
         env.enter("TableView.showHelper()")
         env.widgets["tableViewScroll"].show()
@@ -69,9 +69,9 @@ class TableView(ObjectCollectionView):
         env.exit("TableView.showHelper()")
 
     def _hideHelper(self):
-        env.enter("TableView.hideHelper()")        
+        env.enter("TableView.hideHelper()")
         env.widgets["tableViewScroll"].hide()
-        env.exit("TableView.hideHelper()")                
+        env.exit("TableView.hideHelper()")
 
     def _connectObjectCollectionHelper(self):
         env.enter("Connecting TableView to object collection")
@@ -111,15 +111,15 @@ class TableView(ObjectCollectionView):
 
     def _freezeHelper(self):
         env.enter("TableView.freezeHelper()")
-        self._clearAllConnections()        
+        self._clearAllConnections()
         env.exit("TableView.freezeHelper()")
-        
+
     def _thawHelper(self):
         env.enter("TableView.thawHelper()")
         self._initDragAndDrop()
         self._connect(self._viewWidget.get_selection(), 'changed', self._widgetSelectionChanged)
         env.exit("TableView.thawHelper()")
-        
+
     def _createContextMenu(self, objectCollection):
         ObjectCollectionView._createContextMenu(self, objectCollection)
         columnNames = list(objectCollection.getObjectMetadataMap().keys())
@@ -134,12 +134,12 @@ class TableView(ObjectCollectionView):
     def _clearContextMenu(self):
         ObjectCollectionView._clearContextMenu(self)
         self.__viewGroup = None
-        
+
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
     def _widgetSelectionChanged(self, selection):
-        if not self.__selectionLocked:        
+        if not self.__selectionLocked:
             env.enter("TableView selection changed")
             self.__selectionLocked = True
             rowNrs = []
@@ -149,11 +149,11 @@ class TableView(ObjectCollectionView):
                                        rowNrs.append(path[0]))
             self._objectCollection.getObjectSelection().setSelection(rowNrs)
             self.__selectionLocked = False
-            env.exit("TableView selection changed")        
-            
+            env.exit("TableView selection changed")
+
     def _onDragDataGet(self, widget, dragContext, selection, info, timestamp):
         selectedRows = []
-        # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API                
+        # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API
         self._viewWidget.get_selection().selected_foreach(lambda model,
                                                           path,
                                                           iter:
@@ -167,7 +167,7 @@ class TableView(ObjectCollectionView):
         else:
             env.debug("Ignoring drag&drop when only one row is selected")
 
-            
+
     def _onDragDataReceived(self, treeview, dragContext, x, y, selection, info, eventtime):
         targetData = treeview.get_dest_row_at_pos(x, y)
         if selection.get_text() == None:
@@ -206,7 +206,7 @@ class TableView(ObjectCollectionView):
                                                               targetPath[0] + 1))
                     model.insert_after(sibling=targetIter, row=sourceRow)
                     model.remove(sourceRow.iter)
-                    # TODO update the album tree widget?                    
+                    # TODO update the album tree widget?
                 objectSelection.setSelection([targetPath[0]])
                 # I've experienced that the drag-data-delete signal isn't
                 # always emitted when I drag & drop rapidly in the TreeView.
@@ -236,8 +236,8 @@ class TableView(ObjectCollectionView):
                 pass
             if columnName in self.__createdColumns:
                 self.__removeColumn(columnName)
-            
-###############################################################################        
+
+###############################################################################
 ### Private
 
     def __createColumn(self, columnName, objectMetadataMap, location=-1):
@@ -297,8 +297,8 @@ class TableView(ObjectCollectionView):
                if columnName in self.__createdColumns:
                    self.__removeColumn(columnName)
                    self.__userChoosenColumns[columnName] = columnLocation
-           columnLocation += 1        
-        
+           columnLocation += 1
+
     def __moveListItem(self, list, currentIndex, newIndex):
         if currentIndex == newIndex:
             return list

@@ -5,41 +5,41 @@ from objectcollection import *
 
 class ObjectCollectionView:
 
-###############################################################################            
+###############################################################################
 ### Public
-    
+
     def __init__(self, view):
         self._viewWidget = view
         self._objectCollection = None
         self._contextMenu = None
         self.__objectCollectionLoaded = False
         self.__hidden = True
-        self.__connections = []        
+        self.__connections = []
         view.connect("button_press_event", self._mouse_button_pressed)
 
     def show(self, objectCollection):
         if self.__hidden:
             self.__hidden = False
             self.__connectObjectCollection(objectCollection)
-            self._showHelper()            
+            self._showHelper()
         else:
             self.setObjectCollection(objectCollection)
-        
+
     def hide(self):
         if not self.__hidden:
             self.__hidden = True
             self._hideHelper()
             self.__disconnectObjectCollection()
-    
+
     def setObjectCollection(self, objectCollection):
         if not self.__hidden:
             env.debug("ObjectCollectionView sets object collection")
             self.__connectObjectCollection(objectCollection)
-        
+
     def freeze(self):
         self._freezeHelper()
         self._objectCollection.getObjectSelection().removeChangedCallback(self.importSelection)
-        env.clipboard.removeChangedCallback(self._updateContextMenu)        
+        env.clipboard.removeChangedCallback(self._updateContextMenu)
 
     def thaw(self):
         self._thawHelper()
@@ -51,14 +51,14 @@ class ObjectCollectionView:
     def sortOrderChanged(self, sortOrder):
         env.debug("Sort order is " + str(sortOrder))
         self.__sortMenuGroup[sortOrder].activate()
-        
+
     def sortColumnChanged(self, sortColumn):
         env.debug("Sort column is " + str(sortColumn))
         self.__sortMenuGroup[sortColumn].activate()
 
     def fieldsDisabled(self, fields):
         pass
-        
+
     def fieldsEnabled(self, fields):
         pass
 
@@ -92,7 +92,7 @@ class ObjectCollectionView:
             self._contextMenu.add(item)
         self.__sortMenuGroup = self.__createSortMenuGroup(objectCollection)
         self._contextMenu.add(self.__sortMenuGroup.createGroupMenuItem())
-        
+
     def _clearContextMenu(self):
         env.debug("Clearing view context menu")
         self._contextMenu = None
@@ -120,9 +120,9 @@ class ObjectCollectionView:
             self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(False)
             self.__commandMenuGroup["Open image"].set_sensitive(False)
             self.__commandMenuGroup[90].set_sensitive(False)
-            self.__commandMenuGroup[270].set_sensitive(False)            
-            
-###############################################################################        
+            self.__commandMenuGroup[270].set_sensitive(False)
+
+###############################################################################
 ### Private
 
     def __connectObjectCollection(self, objectCollection):
@@ -141,7 +141,7 @@ class ObjectCollectionView:
             self._disconnectObjectCollectionHelper()
             self._clearContextMenu()
             self._objectCollection = None
-        
+
     def __createSortMenuGroup(self, objectCollection):
         menuGroup = MenuGroup("Sort by")
         if objectCollection.isSortable():
@@ -150,9 +150,9 @@ class ObjectCollectionView:
                                        objectCollection.setSortOrder,
                                        gtk.SORT_ASCENDING)
             menuGroup.addRadioMenuItem("Descending",
-                                       objectCollection.setSortOrder,                            
+                                       objectCollection.setSortOrder,
                                        gtk.SORT_DESCENDING)
-            menuGroup.addSeparator()            
+            menuGroup.addSeparator()
             objectMetadataMap = objectCollection.getObjectMetadataMap()
             columnNames = list(objectMetadataMap.keys())
             columnNames.sort()
@@ -179,6 +179,6 @@ class ObjectCollectionView:
         menuGroup = MenuGroup()
         menuGroup.addMenuItem("Open image", oc.open)
         menuGroup.addMenuItem("Rotate JPEG left", oc.rotate, 270)
-        menuGroup.addMenuItem("Rotate JPEG right", oc.rotate, 90)        
+        menuGroup.addMenuItem("Rotate JPEG right", oc.rotate, 90)
         menuGroup.addSeparator()
-        return menuGroup        
+        return menuGroup

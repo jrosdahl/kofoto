@@ -17,4 +17,3 @@ class SearchResult(SortableObjectCollection):
 
 ######################################################################
 ### Private functions and datastructures
-

@@ -7,21 +7,21 @@ from menuhandler import *
 
 class Albums:
 
-###############################################################################            
+###############################################################################
 ### Public
 
     __createAlbumLabel = "Create child album"
     __destroyAlbumLabel = "Destroy album"
     __editAlbumLabel = "Album properties"
-    
+
     # TODO This class should probably be splited in a model and a view when/if
     #      a multiple windows feature is introduced.
-    
+
     def __init__(self, mainWindow):
         self.__albumModel = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                           gobject.TYPE_STRING,   # TAG
                                           gobject.TYPE_STRING,   # TEXT
-                                          gobject.TYPE_STRING,   # TYPE                                          
+                                          gobject.TYPE_STRING,   # TYPE
                                           gobject.TYPE_BOOLEAN)  # SELECTABLE
         self.__mainWindow = mainWindow
         self.__albumView = env.widgets["albumView"]
@@ -43,7 +43,7 @@ class Albums:
         self.__albumModel.clear()
         self.__loadAlbumTreeHelper()
         env.widgets["albumView"].expand_row(0, False) # Expand root album
-        
+
 
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
@@ -61,7 +61,7 @@ class Albums:
             albumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
             self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
             destroyMenuItem.set_sensitive(True)
-            editMenuItem.set_sensitive(True)            
+            editMenuItem.set_sensitive(True)
         else:
             destroyMenuItem.set_sensitive(False)
             editMenuItem.set_sensitive(False)
@@ -86,7 +86,7 @@ class Albums:
         # TODO The whole tree should not be reloaded
         self.loadAlbumTree()
         # TODO update objectCollection?
-        
+
     def _destroyAlbum(self, *dummies):
         # TODO add confirmation dialog?
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
@@ -114,15 +114,15 @@ class Albums:
         # TODO The whole tree should not be reloaded
         self.loadAlbumTree()
         # TODO update objectCollection?
-        
+
     def _button_pressed(self, treeView, event):
         if event.button == 3:
             self.__contextMenu.popup(None,None,None,event.button,event.time)
             return True
         else:
             return False
-            
-###############################################################################        
+
+###############################################################################
 ### Private
 
     __COLUMN_ALBUM_ID   = 0
@@ -135,7 +135,7 @@ class Albums:
         if not album:
             album = env.shelf.getRootAlbum()
         iterator = self.__albumModel.append(parentAlbum)
-        # TODO Do we have to use iterators here or can we use pygtks simplified syntax?        
+        # TODO Do we have to use iterators here or can we use pygtks simplified syntax?
         self.__albumModel.set_value(iterator, self.__COLUMN_ALBUM_ID, album.getId())
         self.__albumModel.set_value(iterator, self.__COLUMN_TYPE, album.getType())
         self.__albumModel.set_value(iterator, self.__COLUMN_TAG, album.getTag())
@@ -162,4 +162,3 @@ class Albums:
         self.__menuGroup.addMenuItem(self.__editAlbumLabel,
                                      self._editAlbum)
         return self.__menuGroup.createGroupMenu()
-

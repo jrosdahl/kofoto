@@ -6,7 +6,7 @@ class MenuGroup:
         self.__childItems = []
         self.__childItemsMap = {}
         self.__radioGroup = None
-        
+
     def addMenuItem(self, label, callback, callbackData=None):
         item = gtk.MenuItem(label)
         self.__addItem(item, label, callback, callbackData)
@@ -25,7 +25,7 @@ class MenuGroup:
         self.__childItems.append(separator)
         separator.show()
         self.__radioGroup = None
-        
+
     def __getitem__(self, key):
         return self.__childItemsMap[key]
 
@@ -43,12 +43,12 @@ class MenuGroup:
             menuItem.set_submenu(subMenu)
         else:
             menuItem.set_sensitive(False)
-        menuItem.show()            
+        menuItem.show()
         return menuItem
 
     def __len__(self):
         return len(self.__childItems)
-    
+
     def __iter__(self):
         for child in self.__childItems:
             yield child

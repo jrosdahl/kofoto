@@ -9,7 +9,7 @@ class ObjectCollectionFactory:
 
 ######################################################################
 ### Public functions and constants
-    
+
     def __init__(self):
         env.debug("Init ObjectCollectionFactory")
         self.__searchResult = SearchResult()
@@ -30,7 +30,7 @@ class ObjectCollectionFactory:
 
 ######################################################################
 ### Private functions
-    
+
     def __clear(self):
         self.__searchResult.clear()
         self.__albumMembers.clear()

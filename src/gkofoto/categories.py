@@ -11,7 +11,7 @@ class Categories:
 
 ######################################################################
 ### Public
-    
+
     def __init__(self, mainWindow):
         self.__toggleColumn = None
         self.__objectCollection = None
@@ -25,7 +25,7 @@ class Categories:
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
         self.__mainWindow = mainWindow
-        
+
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
         toggleRenderer.connect("toggled", self._connectionToggled)
@@ -50,7 +50,7 @@ class Categories:
         self._cutItem.show()
         self._cutItem.connect("activate", self._cutCategory, None)
         self._contextMenu.append(self._cutItem)
-        
+
         self._copyItem = gtk.MenuItem("Copy")
         self._copyItem.show()
         self._copyItem.connect("activate", self._copyCategory, None)
@@ -75,12 +75,12 @@ class Categories:
         self._createChildItem.show()
         self._createChildItem.connect("activate", self._createChildCategory, None)
         self._contextMenu.append(self._createChildItem)
-        
+
         self._createRootItem = gtk.MenuItem("Create root")
         self._createRootItem.show()
         self._createRootItem.connect("activate", self._createRootCategory, None)
         self._contextMenu.append(self._createRootItem)
-        
+
         self._propertiesItem = gtk.MenuItem("Properties")
         self._propertiesItem.show()
         self._propertiesItem.connect("activate", self._editProperties, None)
@@ -113,16 +113,16 @@ class Categories:
         if self.__objectCollection is not None:
             self.__objectCollection.getObjectSelection().removeChangedCallback(self.objectSelectionChanged)
         self.__objectCollection = objectCollection
-        self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)        
+        self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)
         self.objectSelectionChanged()
-        
+
     def objectSelectionChanged(self):
         self.__updateToggleColumn()
-        self.__updateContextMenu()        
+        self.__updateContextMenu()
         self.__expandAndCollapseRows(env.widgets["autoExpand"].get_active(),
                                      env.widgets["autoCollapse"].get_active())
 
-        
+
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
@@ -134,7 +134,7 @@ class Categories:
     def _categorySelectionChanged(self, selection):
         selectedCategoryRows = []
         selection = self.__categoryView.get_selection()
-        # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API              
+        # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API
         selection.selected_foreach(lambda model,
                                    path,
                                    iter:
@@ -154,7 +154,7 @@ class Categories:
             except KeyError:
                  self.__selectedCategoriesIds[cid] = [parentId]
         self.__updateContextMenu()
-        
+
     def _connectionToggled(self, renderer, path):
         categoryRow = self.__categoryModel[path]
         category = env.shelf.getCategory(categoryRow[self.__COLUMN_CATEGORY_ID])
@@ -172,7 +172,7 @@ class Categories:
             for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
                 obj.removeCategory(category)
             categoryRow[self.__COLUMN_CONNECTED] = False
-            categoryRow[self.__COLUMN_INCONSISTENT] = False            
+            categoryRow[self.__COLUMN_INCONSISTENT] = False
 
     def _button_pressed(self, treeView, event):
         if event.button == 3:
@@ -187,11 +187,11 @@ class Categories:
     def _button_released(self, treeView, event):
         self.__ignoreSelectEvent = False
         return False
-        
+
     def _rowActivated(self, a, b, c):
         # TODO What should happen if the user dubble-click on a category?
         pass
-    
+
     def _copyCategory(self, item, data):
         cc = ClipboardCategories()
         cc.type = cc.COPY
@@ -203,7 +203,7 @@ class Categories:
         cc.type = cc.CUT
         cc.categories = self.__selectedCategoriesIds
         env.clipboard.setCategories(cc)
-        
+
     def _pasteCategory(self, item, data):
         if not env.clipboard.hasCategories():
             raise Exception("No categories in clipboard") # TODO
@@ -233,11 +233,11 @@ class Categories:
             print "Error: Category loop detected"
             # TODO: Show dialog box with error message
         self.__expandAndCollapseRows(False, False)
-        
+
     def _createRootCategory(self, item, data):
         dialog = CategoryDialog("Create root category")
         dialog.run(self._createRootCategoryHelper)
-       
+
     def _createRootCategoryHelper(self, tag, desc):
         category = env.shelf.createCategory(tag, desc)
         self.__loadCategorySubTree(None, category)
@@ -290,7 +290,7 @@ class Categories:
     def _selectionFunction(self, path, b):
         return not self.__ignoreSelectEvent
 
-        
+
 ######################################################################
 ### Private
 
@@ -298,7 +298,7 @@ class Categories:
     __COLUMN_DESCRIPTION  = 1
     __COLUMN_CONNECTED    = 2
     __COLUMN_INCONSISTENT = 3
-        
+
     def __loadCategorySubTree(self, parent, category):
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?
         iterator = self.__categoryModel.append(parent)
@@ -308,7 +308,7 @@ class Categories:
         self.__categoryModel.set_value(iterator, self.__COLUMN_INCONSISTENT, False)
         for child in self.__sortCategories(category.getChildren()):
             self.__loadCategorySubTree(iterator, child)
-            
+
     def __buildQueryFromSelection(self):
         if env.widgets["categoriesOr"].get_active():
             operator = " or "
@@ -340,7 +340,7 @@ class Categories:
             self._propertiesItem.set_sensitive(True)
         else:
             self._propertiesItem.set_sensitive(False)
-        
+
     def __updateToggleColumn(self):
         # find out which categories are connected, not connected or
         # partitionally connected to selected objects
@@ -383,7 +383,7 @@ class Categories:
         for categoryRow in categoryRows:
             function(categoryRow, data)
             self.__forEachCategoryRow(function, data, categoryRow.iterchildren())
-        
+
     def __expandAndCollapseRows(self, autoExpand, autoCollapse, categoryRows=None):
         if categoryRows is None:
             categoryRows=self.__categoryModel
@@ -410,7 +410,7 @@ class Categories:
             elif autoCollapse:
                 self.__categoryView.collapse_row(categoryRow.path)
         return someRowsExpanded
-                
+
     def __connectChildToCategory(self, childId, parentId):
         try:
             # Update shelf
@@ -422,7 +422,7 @@ class Categories:
             # If we reload the whole category tree from the shelf, we would lose
             # the widgets information about current selected categories,
             # expanded categories and the widget's scroll position. Hence,
-            # we update our previously loaded model instead.        
+            # we update our previously loaded model instead.
             self.__connectChildToCategoryHelper(parentId,
                                                 childCategory,
                                                 self.__categoryModel)
@@ -436,7 +436,7 @@ class Categories:
                 self.__loadCategorySubTree(categoryRow.iter, childCategory)
             else:
                 self.__connectChildToCategoryHelper(parentId, childCategory, categoryRow.iterchildren())
-                                     
+
     def __disconnectChild(self, childId, parentId):
         # Update shelf
         childCategory = env.shelf.getCategory(childId)
@@ -469,7 +469,7 @@ class Categories:
             if cid == wantedChildId and parentId == wantedParentId:
                 self.__categoryModel.remove(categoryRow.iter)
             self.__disconnectChildHelper(wantedChildId, wantedParentId, cid, categoryRow.iterchildren())
-            
+
     def __updatePropertiesFromShelf(self, categoryRow, categoryId):
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryId:
             category = env.shelf.getCategory(categoryId)
@@ -479,10 +479,9 @@ class Categories:
         categories = list(categoryIter)
         categories.sort(lambda x, y: cmp(x.getDescription(), y.getDescription()))
         return categories
-            
+
 class ClipboardCategories:
     COPY = 1
     CUT = 2
     categories = None
     type = None
-

@@ -8,14 +8,14 @@ class AlbumMembers(ObjectCollection):
 
     def __init__(self):
         env.debug("Init AlbumMembers")
-        ObjectCollection.__init__(self)        
+        ObjectCollection.__init__(self)
         self.__album = None
 
     def loadAlbum(self, album):
         env.debug("Loading album: " + album.getTag())
         self.__album = album
         self._loadObjectList(album.getChildren())
-        
+
     def isReorderable(self):
         return self.__album and self.__album.isMutable()
 
@@ -27,8 +27,8 @@ class AlbumMembers(ObjectCollection):
 
     def cut(self, *foo):
         self.copy()
-        self.delete()    
-    
+        self.delete()
+
     def paste(self, *foo):
         # This method assumes that self.getModel() returns an unsorted
         # and mutable model.
@@ -51,7 +51,7 @@ class AlbumMembers(ObjectCollection):
                                  currentChildren[insertLocation + 1:])
         self._insertObjectList(newObjects, iterator)
         # TODO If the added object is an album, update the album widget
-        self._thawViews()        
+        self._thawViews()
 
     def delete(self, *foo):
         # This method assumes that self.getModel() returns an unsorted
@@ -69,8 +69,6 @@ class AlbumMembers(ObjectCollection):
         self.getObjectSelection().unselectAll()
         # TODO If the removed objects are albums, update the album widget
         self._thawViews()
-            
+
 ######################################################################
 ### Private functions
-
-    

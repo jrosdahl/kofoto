@@ -40,7 +40,7 @@ class ObjectSelection:
             self.__invokeChangedCallbacks()
 
     def removeSelection(self, rowNr, notify=True):
-        unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)        
+        unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         del self.__selectedObjects[unsortedRowNr]
         if notify:
             self.__invokeChangedCallbacks()
@@ -58,7 +58,7 @@ class ObjectSelection:
 
     def getMap(self):
         return self.__selectedObjects
-        
+
     def __contains__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         return unsortedRowNr in self.__selectedObjects.keys()
@@ -74,7 +74,7 @@ class ObjectSelection:
     def __getitem__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         return self.__selectedObjects[unsortedRowNr]
-    
+
     def __invokeChangedCallbacks(self):
         env.debug("Invoking selection changed callbacks: " + str(self.__selectedObjects.keys()))
         for callback in self.__changedCallbacks:
@@ -83,4 +83,3 @@ class ObjectSelection:
     def __getObject(self, unsortedRowNr):
         objectId = self.__objectCollection.getUnsortedModel()[unsortedRowNr][self.__objectCollection.COLUMN_OBJECT_ID]
         return env.shelf.getObject(objectId)
-    

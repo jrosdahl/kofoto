@@ -5,11 +5,11 @@ from environment import env
 
 class ThumbnailView(ObjectCollectionView):
 
-###############################################################################            
+###############################################################################
 ### Public
-    
+
     def __init__(self):
-        env.debug("Init ThumbnailView")        
+        env.debug("Init ThumbnailView")
 ##        ObjectCollectionView.__init__(self,
 ##                                      env.widgets["thumbnailList"])
         ObjectCollectionView.__init__(self,
@@ -21,9 +21,9 @@ class ThumbnailView(ObjectCollectionView):
         self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
 
     def importSelection(self, objectSelection):
-        if not self.__selectionLocked:        
+        if not self.__selectionLocked:
             env.debug("ThumbnailView is importing selection.")
-            self.__selectionLocked = True            
+            self.__selectionLocked = True
             self._viewWidget.unselect_all()
             for rowNr in objectSelection:
                 self._viewWidget.select_icon(rowNr)
@@ -35,8 +35,8 @@ class ThumbnailView(ObjectCollectionView):
         env.widgets["thumbnailView"].show()
         self._viewWidget.grab_focus()
         self.__scrollToFirstSelectedObject()
-        env.exit("ThumbnailView.showHelper()")            
-        
+        env.exit("ThumbnailView.showHelper()")
+
     def _hideHelper(self):
         env.enter("ThumbnailView.hideHelper()")
         env.widgets["thumbnailView"].hide()
@@ -57,7 +57,7 @@ class ThumbnailView(ObjectCollectionView):
         self._clearAllConnections()
         self._viewWidget.clear()
         env.exit("ThumbnailView.freezeHelper()")
-        
+
     def _thawHelper(self):
         env.enter("ThumbnailView.thawHelper()")
         model = self._objectCollection.getModel()
@@ -67,8 +67,8 @@ class ThumbnailView(ObjectCollectionView):
         self._connect(model, "row_deleted",    self._rowDeleted)
         self._connect(model, "rows_reordered", self._rowsReordered)
         self._connect(model, "row_changed",    self._rowChanged)
-        env.exit("ThumbnailView.thawHelper()")        
-        
+        env.exit("ThumbnailView.thawHelper()")
+
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
@@ -83,7 +83,7 @@ class ThumbnailView(ObjectCollectionView):
         if path[0] in self._objectCollection.getObjectSelection():
             self._viewWidget.select_icon(path[0])
         self.__selectionLocked = False
-            
+
     def _rowInserted(self, model, path, iterator):
         env.debug("ThumbnailView row inserted.")
         self.__loadRow(model[path])
@@ -92,7 +92,7 @@ class ThumbnailView(ObjectCollectionView):
         env.debug("ThumbnailView rows reordered.")
         # TODO I Don't know how to parse which rows that has
         #      been reordered. Hence I must reload all rows.
-        self._viewWidget.clear()        
+        self._viewWidget.clear()
         for row in self._objectCollection.getModel():
             self.__loadRow(row)
         self.importSelection(self._objectCollection.getObjectSelection())
@@ -100,7 +100,7 @@ class ThumbnailView(ObjectCollectionView):
     def _rowDeleted(self, model, path):
         env.debug("ThumbnailView row deleted.")
         self._viewWidget.remove(path[0])
-        
+
     def _widgetIconSelected(self, widget, index, event):
         if not self.__selectionLocked:
             env.enter("ThumbnailView selection changed")
@@ -114,8 +114,8 @@ class ThumbnailView(ObjectCollectionView):
             self.__selectionLocked = True
             self._objectCollection.getObjectSelection().removeSelection(index)
             self.__selectionLocked = False
-    
-###############################################################################        
+
+###############################################################################
 ### Private
 
     def __loadRow(self, row, location=None):

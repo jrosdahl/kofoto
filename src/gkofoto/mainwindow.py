@@ -49,11 +49,11 @@ class MainWindow(gtk.Window):
         self.__setObjectCollection(self.__factory.getObjectCollection(
             widget.get_text().decode("utf-8")))
         self.__sourceEntry.grab_remove()
-        
+
     def setQuery(self, query):
         self.__query = query
         self.__sourceEntry.set_text(query)
-        
+
     def loadQuery(self, query):
         self.setQuery(query)
         self.__setObjectCollection(self.__factory.getObjectCollection(query))
@@ -62,7 +62,7 @@ class MainWindow(gtk.Window):
         self.__albums.loadAlbumTree()
         self.__categories.loadCategoryTree()
         self.loadQuery(self.__query)
-        
+
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
         image = gtk.Image()
@@ -88,7 +88,7 @@ class MainWindow(gtk.Window):
     def __showSingleObjectView(self):
         self._currentView = self.__singleObjectView
         self._hiddenViews = [self.__tableView, self.__thumbnailView]
-        self._viewChanged()    
+        self._viewChanged()
 
     def _toggleExpandView(self, button):
         if button.get_active():
@@ -134,5 +134,3 @@ class MainWindow(gtk.Window):
             self.__categories.setCollection(objectCollection)
             if self._currentView is not None:
                 self._currentView.setObjectCollection(objectCollection)
-
-        

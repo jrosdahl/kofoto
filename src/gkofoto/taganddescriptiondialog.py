@@ -24,8 +24,8 @@ class TagAndDescriptionDialog:
     def run(self, ok=None, data=None):
         result = self._dialog.run()
         tag = self._tagWidget.get_text().decode("utf-8")
-        desc = self._descWidget.get_text().decode("utf-8")            
-        self._dialog.destroy()       
+        desc = self._descWidget.get_text().decode("utf-8")
+        self._dialog.destroy()
         if result == gtk.RESPONSE_OK:
             if ok == None:
                 return None
@@ -56,7 +56,7 @@ class TagAndDescriptionDialog:
         return string.translate(descText.encode(env.codeset),
                                 string.maketrans("", ""),
                                 string.whitespace)
-        
+
     def _descriptionChanged(self, description, tag):
         newDescText = description.get_text().decode("utf-8")
         currentTagText = self._tagWidget.get_text()
