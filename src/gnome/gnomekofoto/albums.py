@@ -75,8 +75,11 @@ class Albums:
         if len(desc) > 0:
             newAlbum.setAttribute(u"title", desc)
         albumModel, iter =  self.__albumView.get_selection().get_selected()
-        selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
-        selectedAlbum = env.shelf.getAlbum(selectedAlbumTag)
+        if iter is None:
+            selectedAlbum = env.shelf.getRootAlbum()
+        else:
+            selectedAlbumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
+            selectedAlbum = env.shelf.getAlbum(selectedAlbumTag)
         children = list(selectedAlbum.getChildren())
         children.append(newAlbum)
         selectedAlbum.setChildren(children)
