@@ -265,12 +265,7 @@ def printGraphHelper(env, object, level, visited):
     imgtmpl = "%(indent)s[I] %(name)s <%(id)s>\n"
     albtmpl = "%(indent)s[A] %(name)s <%(id)s> (%(type)s)\n"
     indentspaces = PRINT_GRAPH_INDENT * " "
-    if isinstance(object, Image):
-        env.out(imgtmpl % {"indent": level * indentspaces,
-                           "name": object.getLocation(),
-                           "id": object.getId(),
-                           })
-    else:
+    if object.isAlbum():
         tag = object.getTag()
         env.out(albtmpl % {"indent": level * indentspaces,
                            "name": tag,
@@ -285,6 +280,11 @@ def printGraphHelper(env, object, level, visited):
                                  child,
                                  level + 1,
                                  visited + [tag])
+    else:
+        env.out(imgtmpl % {"indent": level * indentspaces,
+                           "name": object.getLocation(),
+                           "id": object.getId(),
+                           })
     if env.verbose:
         attrtmpl = "%(indent)s%(key)s: %(value)s\n"
         names = object.getAttributeNames()
@@ -460,7 +460,7 @@ def main(argv):
                 sys.stdout.write("Created directory \"%s\".\n" % confdir)
             file = open(configFilename, "w")
             file.write(
-                "# Configuration file for Kofoto. (This is Python code.)\n"
+                "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
                 "\n"
                 "shelf = \"~/.kofoto/shelf\"\n")
             file.close()

@@ -4,7 +4,6 @@
 ### Libraries.
 
 import sqlite as sql
-import Image as PILImage
 from kofoto.common import KofotoError
 
 import warnings
@@ -390,6 +389,7 @@ class Shelf:
         """Add a new, orphaned image to the shelf.
 
         The ID of the image is returned."""
+        import Image as PILImage
         try:
             pilimg = PILImage.open(path)
         except IOError:
@@ -669,6 +669,10 @@ class Album(_Object):
         raise UnimplementedError
 
 
+    def isAlbum(self):
+        return 1
+
+
     ##############################
     # Internal methods.
 
@@ -794,6 +798,10 @@ class Image(_Object):
             locals())
 
 
+    def isAlbum(self):
+        return 0
+
+
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
         import EXIF
@@ -845,6 +853,7 @@ class Image(_Object):
         value = tags.get("")
         if value:
             self.setAttribute("up", str(value))
+
 
     ##############################
     # Internal methods.
