@@ -86,6 +86,7 @@ def displayHelp():
         "        --gencharenc ENC             Generate HTML pages with character\n"
         "                                     encoding ENC instead of the default\n"
         "                                     (taken from locale settings).\n"
+        "        --ids                        Print ID numbers instead of locations.\n"
         "    -l, --location LOCATION          Add/register to location LOCATION.\n"
         "                                     Default: last.\n"
         "        --no-act                     Do everything which is supposed to be done,\n"
@@ -530,9 +531,14 @@ def cmdSearch(env, args):
         raise ArgumentError
     parser = Parser(env.shelf)
     objects = env.shelf.search(parser.parse(args[0]))
-    locations = [_from_uc(x.getLocation()) for x in objects if not x.isAlbum()]
-    if locations:
-        env.out("\n".join(locations) + "\n")
+    if env.printIDs:
+        ids = [str(x.getId()) for x in objects if not x.isAlbum()]
+        if ids:
+            env.out(" ".join(ids) + "\n")
+    else:
+        locations = [_from_uc(x.getLocation()) for x in objects if not x.isAlbum()]
+        if locations:
+            env.out("\n".join(locations) + "\n")
 
 
 def cmdSetAttribute(env, args):
@@ -641,6 +647,7 @@ def main(argv):
             ["configfile=",
              "gencharenc=",
              "help",
+             "ids",
              "location=",
              "no-act",
              "shelf=",
@@ -653,6 +660,7 @@ def main(argv):
     class CommandEnvironment:
         pass
     env = CommandEnvironment()
+    env.printIDs = False
     env.location = -1
     env.noAct = False
     env.verbose = False
@@ -669,6 +677,8 @@ def main(argv):
         elif opt in ("-h", "--help"):
             displayHelp()
             sys.exit(0)
+        elif opt == "--ids":
+            env.printIDs = True
         elif opt in ("-l", "--location"):
             if optarg == "last":
                 env.location = -1
