@@ -370,7 +370,8 @@ def cmdInspectLocations(env, args):
                 try:
                     PILImage.open(env.to_l(filepath))
                     env.out("[Unregistered] %s\n" % env.to_l(filepath))
-                except IOError:
+#                except IOError:
+                except: # Work-around for buggy PIL.
                     env.out("[Non-image]    %s\n" % env.to_l(filepath))
 
 
