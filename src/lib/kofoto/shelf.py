@@ -162,7 +162,7 @@ schema = """
 """
 
 _ROOT_ALBUM_ID = 0
-_ROOT_ALBUM_DEFAULT_TAG = "root"
+_ROOT_ALBUM_DEFAULT_TAG = u"root"
 
 ######################################################################
 ### Exceptions.
