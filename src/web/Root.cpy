@@ -1,6 +1,7 @@
 use Page
 
 import os
+from kofoto.clientenvironment import *
 from kofoto.common import *
 from kofoto.config import *
 from kofoto.imagecache import *
@@ -8,16 +9,10 @@ from kofoto.search import *
 from kofoto.shelf import *
 
 def initServer():
-    global shelf
-    global imagecache
-    conf = Config(os.path.expanduser("~/.kofoto/config"), "utf8")
-    conf.read()
-    genconf = conf.getGeneralConfig()
-    imagecache = ImageCache(
-        genconf["imagecache_location"],
-        genconf["use_orientation_attribute"])
-    shelf = Shelf(genconf["shelf_location"], "utf8")
-    shelf.begin()
+    global env
+    env = ClientEnvironment()
+    env.setup()
+    env.shelf.begin()
 
 def initNonStaticResponse():
     if request.path == "image":
@@ -46,7 +41,7 @@ mask:
     def treeframe(self):
         <py-eval="self.header()">
         <ul>
-        <py-eval="self.albumTreeHelper(shelf.getRootAlbum(), 0, [])">
+        <py-eval="self.albumTreeHelper(env.shelf.getRootAlbum(), 0, [])">
         </ul>
         <py-eval="self.footer()">
 
@@ -61,7 +56,7 @@ mask:
         <input type="hidden" name="origin" value="<py-eval="request.browserUrl">" />
         <input type="submit" value="Save" />
         <table>
-        <py-exec="images = [x for x in shelf.getAlbum(unicode(albumid)).getChildren() if not x.isAlbum()]">
+        <py-exec="images = [x for x in env.shelf.getAlbum(unicode(albumid)).getChildren() if not x.isAlbum()]">
         <py-for="image in images">
         <py-exec="description = image.getAttribute(u'description') or u''">
         <tr>
@@ -80,8 +75,8 @@ mask:
 
 view:
     def image(self, imageid, widthlimit, heightlimit):
-        path, width, height = imagecache.get(
-            shelf.getImage(int(imageid)), int(widthlimit), int(heightlimit))
+        path, width, height = env.imageCache.get(
+            env.shelf.getImage(int(imageid)), int(widthlimit), int(heightlimit))
         return file(path).read()
 
     def submitAlbum(self, **kw):
@@ -90,10 +85,10 @@ view:
         for key, value in kw.items():
             if key.startswith("description-"):
                 objectid = int(key.split("-")[1])
-                object = shelf.getObject(objectid)
+                object = env.shelf.getObject(objectid)
                 object.setAttribute(u"description", value.decode("utf-8"))
-        shelf.commit()
-        shelf.begin()
+        env.shelf.commit()
+        env.shelf.begin()
         return ""
 
 function:

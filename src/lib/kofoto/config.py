@@ -14,7 +14,7 @@ from ConfigParser import *
 ConfigParserMissingSectionHeaderError = MissingSectionHeaderError
 import os
 import re
-from sets import Set
+import sys
 from kofoto.common import KofotoError
 
 DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
@@ -41,7 +41,7 @@ class Config(ConfigParser):
         try:
             ConfigParser.read(self, self.filename)
         except ConfigParserMissingSectionHeaderError:
-            raise MissingConfigurationKeyError
+            raise MissingSectionHeaderError
 
     def get(self, *args, **kwargs):
         return unicode(ConfigParser.get(self, *args, **kwargs), self.encoding)
@@ -64,25 +64,12 @@ class Config(ConfigParser):
             ret.append((x, y))
         return ret
 
-    def getGeneralConfig(self):
-        """Get configuration from the general section as a
-        dictionary.
+    def getImageSizeList(self):
+        """Returns image size limits as a sorted list of unique tuples
+        of width and height."""
+        return imgsizes
 
-        Contents:
-
-            * shelf_location: Location of the shelf (encoded in the
-              local character encoding).
-            * imagecache_location: Location of the image cache
-              (encoded in the local character encoding).
-            * use_orientation_attribute: Whether the image cache
-              should pay attention to the orientation attribute.
-            * thumbnail_size_limit: Thumbnail size limit (a tuple of
-              width and height).
-            * default_image_size_limit: Default image size limit (a
-              tuple of width and height).
-            * image_size_limits: Image size limits (a sorted list of
-              unique tuples of width and height.
-        """
+    def verify(self):
         def checkConfigurationItem(section, key, function):
             if not self.has_option(section, key):
                 raise MissingConfigurationKeyError, (section, key)
@@ -100,30 +87,15 @@ class Config(ConfigParser):
             "album generation", "default_image_size_limit", None)
         checkConfigurationItem(
             "album generation", "other_image_size_limits", None)
-        result = {}
-        for key, section, option in [
-            ("shelf_location", "shelf", "location"),
-            ("imagecache_location", "image cache",  "location")]:
-            result[key] = os.path.expanduser(
-                self.get(section, option).encode(self.encoding))
-        for key, section, option in [
-            ("use_orientation_attribute",
-             "image cache",
-             "use_orientation_attribute")]:
-            result[key] = self.getboolean(section, option)
-        for key in ["thumbnail_size_limit", "default_image_size_limit"]:
-            result[key] = self.getcoordlist("album generation", key)[0]
 
-        imgsizesval = self.getcoordlist(
-            "album generation", "other_image_size_limits")
-        imgsizesset = Set(imgsizesval) # Get rid of duplicates.
-        imgsizesset.add(result["default_image_size_limit"])
-        imgsizes = list(imgsizesset)
-        imgsizes.sort(lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
-        result["image_size_limits"] = imgsizes
-        return result
 
 def createConfigTemplate(filename):
+    if sys.platform.startswith("win"):
+        defaultShelfLocation = "~/KofotoData/shelf.db"
+        defaultImageCacheLocation = "~/KofotoData/imagecache"
+    else:
+        defaultShelfLocation = "~/.kofoto/shelf"
+        defaultImageCacheLocation = "~/.kofoto/imagecache"
     file(filename, "w").write(
         """### Configuration file for Kofoto.
 
@@ -133,7 +105,7 @@ def createConfigTemplate(filename):
 
 # Default location of the shelf. This is where information about
 # albums, images, categories, etc., is stored.
-location = ~/.kofoto/shelf
+location = %s
 
 ######################################################################
 ## Configuration of the image cache.
@@ -141,7 +113,7 @@ location = ~/.kofoto/shelf
 
 # Location of the image cache. This is where generated images are
 # stored.
-location = ~/.kofoto/imagecache
+location = %s
 
 # Whether generated/displayed images should be rotated based on the
 # orientation attribute, which in turn is derived from the EXIF
@@ -176,9 +148,9 @@ default_table_columns = thumbnail @captured @title @description albumtag
 # The column to sort on by default.
 default_sort_column = @captured
 
-open_command = gimp-remote --new %(locations)s
-rotate_right_command = jpegtran -rotate 90 -perfect -copy all -outfile %(location)s %(location)s
-rotate_left_command = jpegtran -rotate 270 -perfect -copy all -outfile %(location)s %(location)s
+open_command = gimp-remote --new %%(locations)s
+rotate_right_command = jpegtran -rotate 90 -perfect -copy all -outfile %%(location)s %%(location)s
+rotate_left_command = jpegtran -rotate 270 -perfect -copy all -outfile %%(location)s %%(location)s
 
 ######################################################################
 ## Configuration for the default output module "woolly".
@@ -197,4 +169,4 @@ enable_auto_descriptions = no
 # image has several matching subcategories, they are delimited with
 # commas.
 auto_descriptions_template = <depicted> (<location>)
-""")
+""" % (defaultShelfLocation, defaultImageCacheLocation))

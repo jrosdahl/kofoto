@@ -5,31 +5,37 @@ import getopt
 import locale
 import re
 
+from kofoto.clientenvironment import *
 from kofoto.common import *
 from kofoto.shelf import *
 from kofoto.config import *
 from kofoto.imagecache import *
 
-class Environment:
-    def init(self, bindir):
-        self.codeset = locale.getpreferredencoding()
+class Environment(ClientEnvironment):
+    def __init__(self):
+        ClientEnvironment.__init__(self)
+        self.startupNotices = []
+
+    def setup(self, bindir):
+        try:
+            ClientEnvironment.setup(self)
+        except ClientEnvironmentError, e:
+            self.startupNotices += [e[0]]
+            return False
+
         # TODO: Make it possible for the user to specify configuration file on the command line.
-        conf = Config(DEFAULT_CONFIGFILE, self.codeset)
-        conf.read()
-        genconf = conf.getGeneralConfig()
-        self.imageCache = ImageCache(genconf["imagecache_location"])
-        self.thumbnailSize = conf.getcoordlist(
+        self.thumbnailSize = self.config.getcoordlist(
             "gkofoto", "thumbnail_size_limit")[0]
         self.defaultTableViewColumns = re.findall(
             "\S+",
-            conf.get("gkofoto", "default_table_columns"))
-        self.defaultSortColumn = conf.get(
+            self.config.get("gkofoto", "default_table_columns"))
+        self.defaultSortColumn = self.config.get(
             "gkofoto", "default_sort_column")
-        self.openCommand = conf.get(
+        self.openCommand = self.config.get(
             "gkofoto", "open_command", True)
-        self.rotateRightCommand = conf.get(
+        self.rotateRightCommand = self.config.get(
             "gkofoto", "rotate_right_command", True)
-        self.rotateLeftCommand = conf.get(
+        self.rotateLeftCommand = self.config.get(
             "gkofoto", "rotate_left_command", True)
 
         dataDir = os.path.join(bindir, "..", "share", "gkofoto")
@@ -45,9 +51,11 @@ class Environment:
         from clipboard import Clipboard
         self.clipboard = Clipboard()
 
-        self.shelf = Shelf(genconf["shelf_location"], self.codeset)
+        self.isDebug = False # TODO get as a command line parameter
+        return True
 
-        self.isDebug=False # TODO get as a command line parameter
+    def _writeInfo(self, infoString):
+        self.startupNotices += [infoString]
 
     def debug(self, msg):
         if self.isDebug:

@@ -42,7 +42,7 @@ class OutputEngine:
             if self.env.verbose:
                 self.env.out("Generating image %d, size limit %dx%d..." % (
                     image.getId(), widthlimit, heightlimit))
-            imgabsloc, width, height = self.env.imagecache.get(
+            imgabsloc, width, height = self.env.imageCache.get(
                 image, widthlimit, heightlimit)
             htmlimgloc = os.path.join(
                 "@images", helper().encode(self.env.codeset))

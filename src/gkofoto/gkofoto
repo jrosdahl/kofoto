@@ -39,7 +39,6 @@ from kofoto.imagecache import *
 from gkofoto.mainwindow import *
 from gkofoto.registerimagesdialog import RegisterImagesDialog
 from gkofoto.environment import env
-env.init(bindir)
 
 class WidgetsWrapper:
     def __init__(self):
@@ -52,18 +51,35 @@ class Controller:
     def __init__(self):
         self.__clipboard = None
 
-    def start(self):
-        try:
-            env.shelf.begin()
-        except ShelfLockedError, e:
-            sys.stderr.write(
-                "Error: Could not open shelf \"%s\"." % e +
-                " Another process is locking it.\n")
-            sys.exit(1)
-        self.__mainWindow = MainWindow()
-        env.widgets["mainWindow"].connect('destroy', self.quit, False)
-        env.widgets["mainWindow"].show()
-        currentObjects = None
+    def start(self, setupOk):
+        if setupOk:
+            try:
+                env.shelf.begin()
+            except ShelfLockedError, e:
+                env.startupNotices += [
+                    "Error: Could not open shelf \"%s\"." % e +
+                    " Another process is locking it.\n"]
+                setupOk = False
+        if env.startupNotices:
+            if setupOk:
+                dialogtype = gtk.MESSAGE_INFO
+            else:
+                dialogtype = gtk.MESSAGE_ERROR
+            dialog = gtk.MessageDialog(
+                type=dialogtype,
+                buttons=gtk.BUTTONS_OK,
+                message_format="".join(env.startupNotices))
+            if setupOk:
+                # Doesn't work with x[0].destroy(). Don't know why.
+                dialog.connect("response", lambda *x: x[0].hide())
+            else:
+                # Doesn't work with gtk.main_quit(). Don't know why.
+                dialog.connect("response", lambda *x: sys.exit(1))
+            dialog.run()
+        if setupOk:
+            self.__mainWindow = MainWindow()
+            env.widgets["mainWindow"].connect("destroy", self.quit, False)
+            env.widgets["mainWindow"].show()
         gtk.main()
 
     def quit(self, app, cancelButton=True):
@@ -108,6 +124,7 @@ class Controller:
 ######################################################################
 ### Start
 
+setupOk = env.setup(bindir)
 env.widgets = WidgetsWrapper()
 env.controller = Controller()
-env.controller.start()
+env.controller.start(setupOk)
