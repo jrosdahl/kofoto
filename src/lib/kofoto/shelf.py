@@ -402,7 +402,6 @@ class Shelf:
         self.codeset = codeset
         self.transactionLock = threading.Lock()
         self.inTransaction = False
-        self.categorydag = CachedObject(self._createCategoryDAG)
         self.objectcache = {}
         self.categorycache = {}
         self.modified = False
@@ -430,6 +429,8 @@ class Shelf:
                 raise FailedWritingError, location
             else:
                 raise ShelfNotFoundError, location
+
+        self.categorydag = CachedObject(_createCategoryDAG, (self.connection,))
 
         if create:
             self._createShelf(logfile)
@@ -1088,20 +1089,6 @@ class Shelf:
                     " where  albumid = %s and position > %s",
                     parentid,
                     position)
-
-
-    def _createCategoryDAG(self):
-        cursor = self.connection.cursor()
-        cursor.execute(
-            " select categoryid"
-            " from   category")
-        dag = DAG([x[0] for x in cursor])
-        cursor.execute(
-            " select parent, child"
-            " from   category_child")
-        for parent, child in cursor:
-            dag.connect(parent, child)
-        return dag
 
 
     def _setModified(self):
@@ -1860,6 +1847,20 @@ class OrphansAlbum(MagicAlbum):
 
 ######################################################################
 ### Internal helper functions and classes.
+
+def _createCategoryDAG(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        " select categoryid"
+        " from   category")
+    dag = DAG([x[0] for x in cursor])
+    cursor.execute(
+        " select parent, child"
+        " from   category_child")
+    for parent, child in cursor:
+        dag.connect(parent, child)
+    return dag
+
 
 class _UnicodeConnectionDecorator:
     def __init__(self, connection, encoding):
