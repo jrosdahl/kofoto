@@ -1646,6 +1646,13 @@ class Image(_Object):
             hash,
             self.getId())
         self.hash = hash
+        import Image as PILImage
+        try:
+            pilimg = PILImage.open(self.location)
+        except IOError:
+            raise NotAnImageError, self.location
+        self.setAttribute(u"width", unicode(pilimg.size[0]))
+        self.setAttribute(u"height", unicode(pilimg.size[1]))
         self.shelf._setModified()
 
 
