@@ -10,13 +10,14 @@ class Generator:
         self.env = env
         try:
             outputmodule = getattr(
-                __import__("kofoto.output.%s" % outputtype).output,
+                __import__("kofoto.output.%s" %
+                           outputtype.encode(env.codeset)).output,
                 outputtype)
         except ImportError:
             raise OutputTypeError, outputtype
         self.ogclass = outputmodule.OutputGenerator
 
 
-    def generate(self, root, dest):
-        og = self.ogclass(self.env)
+    def generate(self, root, dest, character_encoding):
+        og = self.ogclass(self.env, character_encoding)
         og.generate(root, dest)

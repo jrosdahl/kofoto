@@ -124,11 +124,13 @@ larger_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x1
 
 nolarger_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x18\x08\x03\x00\x00\x00\xd7\xa9\xcd\xca\x00\x00\x00\xf3PLTE\xff\xff\xff\x7f\x7f\x7f\xaf\xaf\xaf\x97\x97\x97\xc7\xc7\xc7\xbb\xbb\xbb\xa4\xa4\xa4\xd3\xd3\xd3\x8b\x8b\x8b\x85\x85\x85\xb5\xb5\xb5\x9d\x9d\x9d\xcd\xcd\xcd\xc1\xc1\xc1\xd9\xd9\xd9\xac\xac\xac\x92\x92\x92\x82\x82\x82\xb3\xb3\xb3\x9a\x9a\x9a\xbe\xbe\xbe\xd6\xd6\xd6\x8e\x8e\x8e\x88\x88\x88\xb8\xb8\xb8\xa1\xa1\xa1\xd0\xd0\xd0\xc4\xc4\xc4\xdc\xdc\xdc\xca\xca\xca\xa7\xa7\xa7\x94\x94\x94\x81\x81\x81\xb1\xb1\xb1\x99\x99\x99\xc9\xc9\xc9\xbd\xbd\xbd\xa6\xa6\xa6\xd5\xd5\xd5\x8d\x8d\x8d\x87\x87\x87\x9f\x9f\x9f\xcf\xcf\xcf\xc3\xc3\xc3\xdb\xdb\xdb\xae\xae\xae\x84\x84\x84\x9c\x9c\x9c\xc0\xc0\xc0\xd8\xd8\xd8\x90\x90\x90\x8a\x8a\x8a\xba\xba\xba\xd2\xd2\xd2\xc6\xc6\xc6\xde\xde\xde\x80\x80\x80\x98\x98\x98\xc8\xc8\xc8\xbc\xbc\xbc\xd4\xd4\xd4\x8c\x8c\x8c\x9e\x9e\x9e\xce\xce\xce\xc2\xc2\xc2\xad\xad\xad\x93\x93\x93\x83\x83\x83\xb4\xb4\xb4\xbf\xbf\xbf\xd7\xd7\xd7\x8f\x8f\x8f\x89\x89\x89\xb9\xb9\xb9\xa2\xa2\xa2\xd1\xd1\xd1\xc5\xc5\xc5\xdd\xdd\xdd\xcb\xcb\xcb\xa8\xa8\xa8\x95\x95\x95\xec#\\\x17\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x01\x18IDATx\xda\x85\xd0\xedR\x82@\x18\x05`\xd6\xc9\xc2\xd2M*\xa0\xc0X\x1d\x88\x92\x8f\xca)\x08\x11\x83P\x10\x026\xee\xffj\xa2\xe4C*\xa7\xf3\xf3<\xef\xbb\xb3\xbb\x04\xf1O6\xb7K\x92$\x7f\xd5\x0cs3\x89/;W\x11\xdb\xee\xc9i\xec\xa5i\xea\x05\xebyo\xb7\x7f\x12\xbc\x03l\xd0\xb3\x903\xa5\xd7U\xd3G\'\xbc\xc8\xc1Q6\xd2 \xed\x06\xa8\x11\xb6k\x1bZ\x96\xe5y\xa6\x85\x8er\\\xc3\xdd\xa1\xe9\x16\xf3/_\x00\xe5\x04?P%\xf4\xd6\xa2\x0c\xb5\x06:\xe3\x12\xee\x1f\xfb4\xcc\xbf\x83\x90\xcc\xe1\x8b\nV\x03\xc5\t\xd1\xb6GG\xae\xb8\xb0J\xa0\xce\\C\x0e!DhF;\n6\xdfj\x98^\xbb\x89#\xd3\xc59\x86\x82mo\x0e\xaakQ\xb1\x88\x15.\xf1}\xa5\x8fmub\xd5\xef\x18\x0fy\xd3\xc6ED;\xf5$\x064O\xb7\xce\x83\x81\xca\xf3\xaa\xea\x05\xdd\x1c\xec~\x96\xc5\xe8\x0b\xa9\xc8\xf3\xe9\x12\x80\x96\x00\x0b}\xe8\xba\xe0\x17-\xf8I\xa0j\xa2\xa8-\xcd\xc8\xfbf\x9f\x08\xc3\xbd;\xec\xdf@\xecY\xd8\xe6\x13m\xda.x\xed\x89\x8d\x00\x00\x00\x00\x00IEND\xaeB`\x82'
 
-album_template = '''<!DOCTYPE html
+album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
 <link href="woolly.css" type="text/css" rel="stylesheet" />
 <title>%(title)s</title>
 </head>
@@ -161,11 +163,13 @@ album_template = '''<!DOCTYPE html
 </html>
 '''
 
-thumbnails_frame_template = '''<!DOCTYPE html
+thumbnails_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
 <link rel="stylesheet" href="woolly.css" type="text/css" />
 </head>
 <body>
@@ -214,11 +218,13 @@ image_entry_template = '''<td align="left" valign="bottom">
 </td>
 '''
 
-image_frameset_template = '''<!DOCTYPE html
+image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
 <link rel="stylesheet" href="woolly.css" type="text/css" />
 <title>%(albumtitle)s</title>
 </head>
@@ -232,11 +238,13 @@ This album needs frames. Sorry.
 </html>
 '''
 
-image_frame_template = '''<!DOCTYPE html
+image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+<!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
 <link href="woolly.css" type="text/css" rel="stylesheet" />
 <title>%(title)s</title>
 </head>
@@ -293,14 +301,15 @@ image_frame_template = '''<!DOCTYPE html
 
 
 class OutputGenerator(OutputEngine):
-    def __init__(self, env):
+    def __init__(self, env, character_encoding):
         OutputEngine.__init__(self, env)
         self.env = env
+        self.charEnc = character_encoding
 
 
     def generateIndex(self, root):
         symlinkOrCopyFile(
-            "%s.html" % root.getTag(),
+            "%s.html" % root.getTag().encode(self.charEnc),
             os.path.join(self.dest, "index.html"))
         self.writeFile("woolly.css", css)
         for data, filename in [
@@ -332,8 +341,9 @@ class OutputGenerator(OutputEngine):
         # ------------------------------------------------------------
 
         self.symlinkFile(
-            "%s-%s.html" % (album.getTag(), self.env.defaultsize),
-            "%s.html" % album.getTag())
+            "%s-%s.html" % (album.getTag().encode(self.charEnc),
+                            self.env.defaultsize),
+            "%s.html" % album.getTag().encode(self.charEnc))
 
         # ------------------------------------------------------------
         # Create album overview pages, one per size.
@@ -346,8 +356,11 @@ class OutputGenerator(OutputEngine):
                 els = []
                 for node in path:
                     els.append('''<a href="%(htmlref)s">%(title)s</a>''' % {
-                        "htmlref": "%s-%s.html" % (node.getTag(), size),
-                        "title": node.getAttribute("title"),
+                        "htmlref": "%s-%s.html" % (
+                            node.getTag().encode(self.charEnc),
+                            size),
+                        "title": node.getAttribute(u"title").encode(
+                            self.charEnc),
                         })
                 pathtextElements.append(" » ".join(els))
             pathtext = "<br />\n".join(pathtextElements)
@@ -371,14 +384,18 @@ class OutputGenerator(OutputEngine):
                         thumbwidth = self.env.thumbnailsize
                         thumbheight = 3 * self.env.thumbnailsize / 4
 
+                    title = subalbum.getAttribute(u"title")
                     subalbumtextElements.append(subalbum_entry_template % {
-                        "htmlref": "%s-%s.html" % (subalbum.getTag(), size),
+                        "htmlref": "%s-%d.html" % (
+                            subalbum.getTag().encode(self.charEnc),
+                            size),
                         "thumbheight": thumbheight,
                         "thumbheight_minus_6": thumbheight - 6,
                         "thumbwidth": thumbwidth,
                         "thumbwidth_minus_6": thumbwidth - 6,
                         "thumbimgref": thumbimgref,
-                        "title": subalbum.getAttribute("title"),
+                        "title": subalbum.getAttribute(u"title").encode(
+                            self.charEnc),
                         })
                     number += 1
                 subalbumtextElements.append("</tr>\n")
@@ -408,16 +425,23 @@ class OutputGenerator(OutputEngine):
                 imagetext = ""
 
             # Album overview.
+            desc = (album.getAttribute(u"description") or
+                    album.getAttribute(u"title") or
+                    u"")
+            desc = desc.encode(self.charEnc)
+            title = album.getAttribute(u"title") or u""
+            title = title.encode(self.charEnc)
+
             self.writeFile(
-                "%s-%s.html" % (album.getTag(), size),
+                "%s-%s.html" % (album.getTag().encode(self.charEnc), size),
                 album_template % {
                     "blurb": self.blurb,
-                    "description": (album.getAttribute("description") or
-                                    album.getAttribute("title")),
+                    "charenc": self.charEnc,
+                    "description": desc,
                     "imageentries": imagetext,
                     "paths": pathtext,
                     "subalbumentries": subalbumtext,
-                    "title": album.getAttribute("title"),
+                    "title": title,
                 })
 
         # ------------------------------------------------------------
@@ -445,8 +469,12 @@ class OutputGenerator(OutputEngine):
 
             # Image thumbnails frame.
             self.writeFile(
-                "%s-%s-thumbnails.html" % (album.getTag(), size),
-                thumbnails_frame_template % {"entries": thumbnailstext})
+                "%s-%s-thumbnails.html" % (
+                    album.getTag().encode(self.charEnc),
+                    size),
+                thumbnails_frame_template % {
+                    "charenc": self.charEnc,
+                    "entries": thumbnailstext})
 
 
     def generateImage(self, album, image, images, number, paths):
@@ -461,14 +489,16 @@ class OutputGenerator(OutputEngine):
                     number,
                     size),
                 image_frameset_template % {
-                    "albumtitle": album.getAttribute("title"),
+                    "albumtitle": album.getAttribute(u"title").encode(
+                        self.charEnc),
+                    "charenc": self.charEnc,
                     "imageframeref": "%s-%s-%s.html" % (
                         album.getId(),
                         number,
                         size),
                     "imagenumber": number,
                     "thumbnailsframeref": "%s-%s-thumbnails.html" % (
-                        album.getTag(),
+                        album.getTag().encode(self.charEnc),
                         size),
                     "thumbnailsframesize": self.env.thumbnailsize + 70,
                     })
@@ -486,8 +516,11 @@ class OutputGenerator(OutputEngine):
                 els = []
                 for node in path:
                     els.append('''<a href="%(htmlref)s" target="_top">%(title)s</a>''' % {
-                        "htmlref": "%s-%s.html" % (node.getTag(), size),
-                        "title": node.getAttribute("title"),
+                        "htmlref": "%s-%s.html" % (
+                            node.getTag().encode(self.charEnc),
+                            size),
+                        "title": node.getAttribute(u"title").encode(
+                            self.charEnc),
                         })
                 pathtextElements.append(" » ".join(els))
             pathtext = "<br />\n".join(pathtextElements)
@@ -528,6 +561,13 @@ class OutputGenerator(OutputEngine):
             else:
                 largertext = '<img class="icon" src="images/nolarger.png" />'
 
+            desc = (album.getAttribute(u"description") or
+                    album.getAttribute(u"title") or
+                    u"")
+            desc = desc.encode(self.charEnc)
+            title = album.getAttribute(u"title") or u""
+            title = title.encode(self.charEnc)
+
             self.writeFile(
                 "%s-%s-%s.html" % (
                     album.getId(),
@@ -535,8 +575,8 @@ class OutputGenerator(OutputEngine):
                     size),
                 image_frame_template % {
                     "blurb": self.blurb,
-                    "description": (image.getAttribute("description") or
-                                    image.getAttribute("title")),
+                    "charenc": self.charEnc,
+                    "description": desc,
                     "imgid": image.getId(),
                     "imgmaxwidth": size,
                     "imgref": self.getImageReference(image, size),
@@ -545,7 +585,7 @@ class OutputGenerator(OutputEngine):
                     "paths": pathtext,
                     "previous": previoustext,
                     "smaller": smallertext,
-                    "title": image.getAttribute("title"),
+                    "title": title,
                     })
 
 
@@ -557,7 +597,7 @@ class OutputGenerator(OutputEngine):
             if not visited:
                 visited = []
             visited.append(object.getId())
-            thumbid = object.getAttribute("frontimage")
+            thumbid = object.getAttribute(u"frontimage")
             if thumbid:
                 from kofoto.shelf import ImageDoesNotExistError
                 try:

@@ -50,10 +50,10 @@ class OutputEngine:
 
 
     def getLimitedSize(self, image, limit):
-        width = int(image.getAttribute("width"))
-        height = int(image.getAttribute("height"))
-        orientation = image.getAttribute("orientation")
-        if orientation in ("left", "right"):
+        width = int(image.getAttribute(u"width"))
+        height = int(image.getAttribute(u"height"))
+        orientation = image.getAttribute(u"orientation")
+        if orientation in ["left", "right"]:
             width, height = height, width
         largest = max(height, width)
         if limit < largest:
@@ -72,7 +72,7 @@ class OutputEngine:
         imagechildren = [x for x in album.getChildren() if not x.isAlbum()]
         for child in imagechildren:
             if self.env.verbose:
-                self.env.out("Generating image %s..." % (child.getId()))
+                self.env.out("Generating image %d..." % child.getId())
             for size in [self.env.thumbnailsize] + self.env.imagesizes:
                 if self.env.verbose:
                     self.env.out(" %s" % size)
@@ -92,7 +92,8 @@ class OutputEngine:
 
     def _generateAlbumHelper(self, album, paths):
         if self.env.verbose:
-            self.env.out("Generating album page for %s...\n" % album.getTag())
+            self.env.out("Generating album page for %s...\n" %
+                         album.getTag().encode(self.env.codeset))
 
         # Design choice: This output engine sorts subalbums before
         # images.
@@ -107,9 +108,9 @@ class OutputEngine:
             child = imagechildren[ix]
             if self.env.verbose:
                 self.env.out(
-                    "Generating image page for image %s in album %s...\n" % (
+                    "Generating image page for image %d in album %s...\n" % (
                         child.getId(),
-                        album.getTag()))
+                        album.getTag().encode(self.env.codeset)))
             self.generateImage(album, child, imagechildren, ix, paths)
 
 

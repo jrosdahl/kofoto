@@ -11,15 +11,15 @@ class ImageCache:
 
     def get(self, image, limit):
         origpath = image.getLocation()
-        orientation = image.getAttribute("orientation")
+        orientation = image.getAttribute(u"orientation")
         genname = self._getCacheImageName(image, limit)
         genpath = os.path.join(self.cachelocation, genname)
 
         if os.path.exists(genpath):
             return genpath
 
-        height = int(image.getAttribute("height"))
-        width = int(image.getAttribute("width"))
+        height = int(image.getAttribute(u"height"))
+        width = int(image.getAttribute(u"width"))
         largest = max(height, width)
         if limit > largest:
             largestpath = os.path.join(
@@ -53,8 +53,8 @@ class ImageCache:
     def cleanup(self, imagesToKeep, sizes):
         keep = {}
         for image in imagesToKeep:
-            maxsize = max(int(image.getAttribute("height")),
-                          int(image.getAttribute("width")))
+            maxsize = max(int(image.getAttribute(u"height")),
+                          int(image.getAttribute(u"width")))
             for size in sizes + [maxsize]:
                 keep[self._getCacheImageName(image, size)] = True
         for file in os.listdir(self.cachelocation):
@@ -63,8 +63,10 @@ class ImageCache:
 
 
     def _getCacheImageName(self, image, limit):
-        orientation = image.getAttribute("orientation")
+        orientation = image.getAttribute(u"orientation")
         if orientation not in ("up", "down", "left", "right"):
             orientation = "up"
-        genname = "%s-%s-%s.jpg" % (image.getHash(), limit, orientation)
+        genname = "%s-%s-%s.jpg" % (str(image.getHash()),
+                                    limit,
+                                    str(orientation))
         return genname

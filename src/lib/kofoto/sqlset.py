@@ -14,7 +14,7 @@ class SqlSetFactory:
     def newSet(self):
         """Create a new SqlSet instance."""
         self.tablecount += 1
-        return SqlSet(self.connection, "foo%d" % self.tablecount)
+        return SqlSet(self.connection, u"foo%d" % self.tablecount)
 
 
 class SqlSet:

@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
+import getopt
+import locale
 import os
 import sys
-import getopt
 
 ######################################################################
 
@@ -21,6 +22,12 @@ from kofoto.shelf import *
 from kofoto.imagecache import *
 
 ######################################################################
+### Locale.
+
+locale.setlocale(locale.LC_ALL, "")
+CODESET = locale.nl_langinfo(locale.CODESET)
+
+######################################################################
 ### Constants.
 
 DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
@@ -36,6 +43,12 @@ class ArgumentError:
 ######################################################################
 ### Helper functions.
 
+def _from_uc(s):
+    return s.encode(CODESET)
+
+def _to_uc(s):
+    return unicode(s, CODESET)
+
 def displayHelp():
     sys.stdout.write(
 #                                                                 79 characters here:  |
@@ -46,6 +59,9 @@ def displayHelp():
         "    -h, --help                       Display this help.\n"
         "        --configfile FILE            Use configuration file FILE instead of the\n"
         "                                     default (%s).\n"
+        "        --gencharenc ENC             Generate HTML pages with character\n"
+        "                                     encoding ENC instead of the default\n"
+        "                                     (taken from locale settings).\n"
         "    -l, --location LOCATION          Add/register to location LOCATION.\n"
         "                                     Default: last.\n"
         "        --shelf SHELF                Use the shelf SHELF instead of the default\n"
@@ -193,7 +209,7 @@ def cmdCheck(env, args):
     for image in env.shelf.getAllImages():
         location = image.getLocation()
         if env.verbose:
-            env.out("Checking %s ...\n" % location)
+            env.out("Checking %s ...\n" % _from_uc(location))
         try:
             realId = computeImageHash(location)
             storedId = image.getHash()
@@ -205,9 +221,9 @@ def cmdCheck(env, args):
     env.out("Missing images:")
     if badchecksums or missingfiles:
         for path in badchecksums:
-            env.out("\n    (bad checksum) %s" % path)
+            env.out("\n    (bad checksum) %s" % _from_uc(path))
         for path in missingfiles:
-            env.out("\n    (missing) %s" % path)
+            env.out("\n    (missing) %s" % _from_uc(path))
         env.out("\n")
     else:
         env.out(" none\n")
@@ -233,7 +249,7 @@ def cmdCreateAlbum(env, args):
     if env.type:
         atype = env.type
     else:
-        atype = "plain"
+        atype = u"plain"
     env.shelf.createAlbum(args[0], atype)
 
 
@@ -273,13 +289,13 @@ def cmdGenerate(env, args):
     if env.type:
         otype = env.type
     else:
-        otype = "woolly"
+        otype = u"woolly"
     import kofoto.generate
     try:
         generator = kofoto.generate.Generator(otype, env)
-        generator.generate(root, dest)
+        generator.generate(root, dest, env.gencharenc)
     except kofoto.generate.OutputTypeError, x:
-        env.errexit("No such output module: %s\n" % x)
+        env.errexit("No such output module: %s\n" % _from_uc(x))
 
 
 def cmdGetAttribute(env, args):
@@ -288,7 +304,7 @@ def cmdGetAttribute(env, args):
     object = env.shelf.getObject(args[0])
     value = object.getAttribute(args[1])
     if value:
-        env.out(value + "\n")
+        env.out(_from_uc(value) + "\n")
 
 
 def cmdGetAttributes(env, args):
@@ -296,7 +312,8 @@ def cmdGetAttributes(env, args):
         raise ArgumentError
     object = env.shelf.getObject(args[0])
     for name in object.getAttributeNames():
-        env.out("%s: %s\n" % (name, object.getAttribute(name)))
+        env.out("%s: %s\n" % (_from_uc(name),
+                              _from_uc(object.getAttribute(name))))
 
 
 def cmdGetCategories(env, args):
@@ -304,8 +321,8 @@ def cmdGetCategories(env, args):
         raise ArgumentError
     object = env.shelf.getObject(args[0])
     for category in object.getCategories():
-        env.out("%s (%s) <%s>\n" % (category.getDescription(),
-                                    category.getTag(),
+        env.out("%s (%s) <%s>\n" % (_from_uc(category.getDescription()),
+                                    _from_uc(category.getTag()),
                                     category.getId()))
 
 def cmdObliterate(env, args):
@@ -326,8 +343,8 @@ def printCategoriesHelper(env, category, level):
     indentspaces = PRINT_GRAPH_INDENT * " "
     env.out("%s%s (%s) <%s>\n" % (
         level * indentspaces,
-        category.getDescription(),
-        category.getTag(),
+        _from_uc(category.getDescription()),
+        _from_uc(category.getTag()),
         category.getId()))
     for child in category.getChildren():
         printCategoriesHelper(env, child, level + 1)
@@ -348,9 +365,9 @@ def printGraphHelper(env, object, level, visited):
     if object.isAlbum():
         tag = object.getTag()
         env.out(albtmpl % {"indent": level * indentspaces,
-                           "name": tag,
+                           "name": _from_uc(tag),
                            "id": object.getId(),
-                           "type": object.getType(),
+                           "type": _from_uc(object.getType()),
                            })
         if tag in visited:
             env.out("%s[...]\n" % ((level + 1) * indentspaces))
@@ -362,24 +379,25 @@ def printGraphHelper(env, object, level, visited):
                                  visited + [tag])
     else:
         env.out(imgtmpl % {"indent": level * indentspaces,
-                           "name": object.getLocation(),
+                           "name": _from_uc(object.getLocation()),
                            "id": object.getId(),
                            })
     if env.verbose:
         attrtmpl = "%(indent)s%(key)s: %(value)s\n"
         names = object.getAttributeNames()
         for name in names:
-            env.out(attrtmpl % {"indent": (level + 1) * indentspaces,
-                                "key": name,
-                                "value": object.getAttribute(name),
-                                })
+            env.out(attrtmpl % {
+                "indent": (level + 1) * indentspaces,
+                "key": _from_uc(name),
+                "value": _from_uc(object.getAttribute(name)),
+                })
 
 
 def cmdRegister(env, args):
     if len(args) < 2:
         raise ArgumentError
     destalbum = env.shelf.getAlbum(args[0])
-    registerHelper(env, destalbum, args[1:])
+    registerHelper(env, destalbum, [_from_uc(x) for x in args[1:]])
 
 
 def registerHelper(env, destalbum, paths):
@@ -401,7 +419,9 @@ def registerHelper(env, destalbum, paths):
                 except (AlbumExistsError, ReservedAlbumTagError):
                     tag = tag + "_"
             newchildren.append(album)
-            env.out("Registered directory %s as an album with tag %s\n" % (path, tag))
+            env.out("Registered directory %s as an album with tag %s\n" % (
+                path,
+                _from_uc(tag)))
             registerHelper(env,
                            album,
                            [os.path.join(path, x) for x in os.listdir(path)])
@@ -430,12 +450,12 @@ def cmdRemove(env, args):
         try:
             positions.append(int(pos))
         except ValueError:
-            env.errexit("Bad position: %s\n" % pos)
+            env.errexit("Bad position: %s\n" % _from_uc(pos))
     positions.sort()
     positions.reverse()
     children = album.getChildren()
     if not (0 <= positions[0] < len(children)):
-        env.errexit("Bad position: %s\n" % positions[0])
+        env.errexit("Bad position: %d\n" % positions[0])
     for pos in positions:
         del children[pos]
     album.setChildren(children)
@@ -465,8 +485,9 @@ def cmdSearch(env, args):
     if len(args) != 1:
         raise ArgumentError
     objects = env.shelf.search(args[0])
-    if objects:
-        env.out(" ".join([str(x.getId()) for x in objects]) + "\n")
+    strids = [str(x.getId()) for x in objects]
+    if strids:
+        env.out(" ".join(strids) + "\n")
 
 
 def cmdSetAttribute(env, args):
@@ -493,14 +514,15 @@ def cmdUpdateChecksums(env, args):
                 oldhash = image.getHash()
                 if oldhash != hash:
                     image.setHash(hash)
-                    env.out("New checksum for %s\n" % location)
+                    env.out("New checksum for %s\n" % _from_uc(location))
                 else:
                     if env.verbose:
-                        env.out("Same checksum as before for %s\n" % location)
+                        env.out("Same checksum as before for %s\n" %
+                                _from_uc(location))
             except IOError, x:
-                env.err("Failed to read: %s\n" % location)
+                env.err("Failed to read: %s\n" % _from_uc(location))
         else:
-            env.err("Image does not exist: %s\n" % location)
+            env.err("Image does not exist: %s\n" % _from_uc(location))
 
 
 def cmdUpdateLocations(env, args):
@@ -528,17 +550,19 @@ def updateLocationsHelper(env, dir, files):
                 oldlocation = image.getLocation()
                 if oldlocation != location:
                     image.setLocation(location)
-                    env.out("New location: %s --> %s\n" % (oldlocation,
-                                                           location))
+                    env.out("New location: %s --> %s\n" % (
+                        _from_uc(oldlocation),
+                        _from_uc(location)))
                 else:
                     if env.verbose:
-                        env.out("Same location as before: %s\n" % location)
+                        env.out("Same location as before: %s\n" %
+                                _from_uc(location))
             except IOError, x:
                 if env.verbose:
-                    env.out("Failed to read: %s\n" % location)
+                    env.out("Failed to read: %s\n" % _from_uc(location))
             except ImageDoesNotExistError, x:
                 if env.verbose:
-                    env.out("Image does not exist: %s\n" % location)
+                    env.out("Image does not exist: %s\n" % _from_uc(location))
 
 
 commandTable = {
@@ -613,11 +637,14 @@ def checkConfigurationItem(conf, key, function):
 ### Main
 
 def main(argv):
+    for i in range(len(argv)):
+        argv[i] = _to_uc(argv[i])
     try:
         optlist, args = getopt.getopt(
             argv[1:],
             "hl:t:vV",
             ["configfile=",
+             "gencharenc=",
              "help",
              "location=",
              "shelf=",
@@ -636,9 +663,12 @@ def main(argv):
 
     shelfLocation = None
     configFilename = DEFAULT_CONFIGFILE
+    genCharEnc = CODESET
     for opt, optarg in optlist:
         if opt == "--configfile":
-            configFilename = optarg
+            configFilename = _from_uc(optarg)
+        elif opt == "--gencharenc":
+            genCharEnc = str(optarg)
         elif opt in ("-h", "--help"):
             displayHelp()
             sys.exit(0)
@@ -649,9 +679,10 @@ def main(argv):
                 try:
                     env.location = int(optarg)
                 except ValueError:
-                    printErrorAndExit("Invalid location: \"%s\"\n" % optarg)
+                    printErrorAndExit("Invalid location: \"%s\"\n" %
+                                      _from_uc(optarg))
         elif opt == "--shelf":
-            shelfLocation = optarg
+            shelfLocation = _from_uc(optarg)
         elif opt in ("-t", "--type"):
             env.type = optarg
         elif opt in ("-v", "--verbose"):
@@ -707,7 +738,7 @@ def main(argv):
 
     if args[0] == "create-shelf":
         try:
-            Shelf(shelfLocation, create=True)
+            Shelf(shelfLocation, CODESET, create=True)
         except FailedWritingError, filename:
             printErrorAndExit(
                 "Could not create shelf file %s (already exists?).\n" %
@@ -721,7 +752,7 @@ def main(argv):
             args[0])
 
     try:
-        shelf = Shelf(shelfLocation)
+        shelf = Shelf(shelfLocation, CODESET)
     except ShelfNotFoundError, x:
         printErrorAndExit(
             "Could not open shelf \"%s\".\n" % shelfLocation +
@@ -733,6 +764,8 @@ def main(argv):
             "Another process is locking it.\n")
     shelf.begin()
     try:
+        env.codeset = CODESET
+        env.gencharenc = genCharEnc
         env.out = printOutput
         env.err = printError
         env.errexit = printErrorAndExit
