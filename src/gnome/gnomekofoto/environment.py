@@ -3,6 +3,7 @@ import os
 import gtk
 import getopt
 import locale
+import re
 
 # Find libraries if installed in ../lib (like in the source tree).
 if os.path.islink(sys.argv[0]):
@@ -19,10 +20,7 @@ from kofoto.shelf import *
 from kofoto.config import *
 
 class Environment:
-     # TODO: read from configuration file?
-    defaultTableViewColumns = [u"title", u"description", u"captured"]
-    defaultThumbnailViewColumns = [u"captured"]
-    defaultSortColumn = u"captured"
+    pass
 
 env = Environment()
 locale.setlocale(locale.LC_ALL, "")
@@ -37,6 +35,11 @@ if not os.path.exists(dataDir):
 
 env.imageCacheLocation = genconf["imagecache_location"]
 env.imageSizes = genconf["image_sizes"]
+env.thumbnailSize = conf.get("gnome client", "thumbnail_size")
+env.defaultTableViewColumns = re.findall(
+    "\w+",
+    conf.get("gnome client", "default_table_columns"))
+env.defaultSortColumn = conf.get("gnome client", "default_sort_column")
 env.iconDir = os.path.join(dataDir, "icons")
 env.gladeFile = os.path.join(dataDir, "glade", "gkofoto.glade")
 env.shelf = Shelf(genconf["shelf_location"], env.codeset)

@@ -137,6 +137,16 @@ other_image_sizes = 400 1024
 ## Configuration for the GNOME client "gkofoto".
 [gnome client]
 
+# Size of thumbnails. Use the same size as in the album generation
+# section above to share cached thumbnails.
+thumbnail_size = 128
+
+# The columns that should be shown in the table view by default.
+default_table_columns = captured description title
+
+# The column to sort on by default.
+default_sort_column = captured
+
 ######################################################################
 ## Configuration for the default output module "woolly".
 [woolly]

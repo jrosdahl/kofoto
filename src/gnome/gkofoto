@@ -34,7 +34,6 @@ class WidgetsWrapper:
 
 class Controller:
     def __init__(self):
-        self.wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
         self._clipboard = None
 
     def start(self):
@@ -100,7 +99,7 @@ class Controller:
         self._selectedObjects.clear()
         self._currentView.freeze()
         self._loadedObjects.loadObjectList(objectList)
-        self._loadedObjects.loadThumbnails(self.wantedThumbnailSize)
+        self._loadedObjects.loadThumbnails()
         self._currentView.thaw()
 
     def newObjectModelLoaded(self):

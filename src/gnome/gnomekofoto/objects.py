@@ -50,7 +50,6 @@ class Objects:
         columnsType = self._MANDATORY_COLUMNS_TYPE
         allAttributeNames = Set(env.shelf.getAllAttributeNames())
         allAttributeNames = allAttributeNames | Set(env.defaultTableViewColumns)
-        allAttributeNames = allAttributeNames | Set(env.defaultThumbnailViewColumns)
         allAttributeNames = allAttributeNames | Set([env.defaultSortColumn])
         for attributeName in allAttributeNames:
             self.attributeNamesMap[attributeName] = len(columnsType)
@@ -62,7 +61,6 @@ class Objects:
         self.albumsInList = gtk.FALSE
         self._unsortedModel.clear()
         gc.collect()
-        self._thumbnailSize = 0
         for object in objectList:
             if object.isAlbum():
                 self.albumsInList = gtk.TRUE
@@ -79,24 +77,20 @@ class Objects:
                 self._unsortedModel.set_value(iter, self.attributeNamesMap[attribute], value)
                 # TODO: update COLUMN_VALID_LOCATION
 
-    def loadThumbnails(self, wantedThumbnailSize):
+    def loadThumbnails(self):
         iter = self._unsortedModel.get_iter_first()
         while iter:
-            self._loadThumbnail(wantedThumbnailSize, iter)
+            self._loadThumbnail(iter)
             iter = self._unsortedModel.iter_next(iter)
-        self._thumbnailSize = wantedThumbnailSize
 
-    def _loadThumbnail(self, wantedThumbnailSize, iter, reload=gtk.FALSE):
-        # Reload was used when thumbnail has been invalid and can not be reused.
-        # It is probably better to remove the "reload" parameter and instead
-        # remove thumbnails from the not-yet-existing-cache when needed.
+    def _loadThumbnail(self, iter, reload=gtk.FALSE):
         try:
             objectId = self._unsortedModel.get_value(iter, self.COLUMN_OBJECT_ID)
             object = env.shelf.getObject(objectId)
             if object.isAlbum():
                 pixbuf = env.albumIconPixbuf
             else:
-                thumbnailLocation = self._imageCache.get(object, wantedThumbnailSize)
+                thumbnailLocation = self._imageCache.get(object, env.thumbnailSize)
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
             self._unsortedModel.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
         except IOError:
