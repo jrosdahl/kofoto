@@ -2,6 +2,7 @@
 
 if [ $# -ne 2 ]; then
     echo "Usage: kofoto-upload source host:dest"
+    exit 1
 fi
 
 rsync -avz --copy-unsafe-links "$1" "$2"
