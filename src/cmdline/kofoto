@@ -385,14 +385,18 @@ def printGraphHelper(env, object, position, level, visited):
             env.out("%s[...]\n" % ((level + 1) * indentspaces))
         else:
             pos = 0
-            for child in object.getChildren():
+            if env.verbose:
+                children = object.getChildren()
+            else:
+                children = object.getAlbumChildren()
+            for child in children:
                 printGraphHelper(env,
                                  child,
                                  pos,
                                  level + 1,
                                  visited + [tag])
                 pos += 1
-    elif env.verbose:
+    else:
         env.out(imgtmpl % {"indent": level * indentspaces,
                            "name": _from_uc(object.getLocation()),
                            "position": position,

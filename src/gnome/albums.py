@@ -30,18 +30,17 @@ class Albums:
         self._buildModel(None, env.shelf.getRootAlbum(), [])
 
     def _buildModel(self, parent, object, visited):
-        for child in object.getChildren():
-            if child.isAlbum():
-                albumId = child.getId()
-                iter = self._model.insert_before(parent, None)
-                self._model.set_value(iter, self._COLUMN_ALBUM_ID, albumId)
-                self._model.set_value(iter, self._COLUMN_TYPE, child.getType())
-                if albumId not in visited:
-                    self._model.set_value(iter, self._COLUMN_TAG, child.getTag())
-                    self._buildModel(iter, child, visited + [albumId])
-                else:
-                    # TODO: Use "set_select_funtion" and add [...] as a child instead
-                    self._model.set_value(iter, self._COLUMN_TAG, child.getTag() + "  [...]")
+        for child in object.getAlbumChildren():
+            albumId = child.getId()
+            iter = self._model.insert_before(parent, None)
+            self._model.set_value(iter, self._COLUMN_ALBUM_ID, albumId)
+            self._model.set_value(iter, self._COLUMN_TYPE, child.getType())
+            if albumId not in visited:
+                self._model.set_value(iter, self._COLUMN_TAG, child.getTag())
+                self._buildModel(iter, child, visited + [albumId])
+            else:
+                # TODO: Use "set_select_funtion" and add [...] as a child instead
+                self._model.set_value(iter, self._COLUMN_TAG, child.getTag() + "  [...]")
 
     def _albumSelectionHandler(self, selection):
         albumModel, iter = selection.get_selected()

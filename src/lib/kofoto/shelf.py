@@ -1305,6 +1305,10 @@ class Album(_Object):
         raise UnimplementedError
 
 
+    def getAlbumChildren(self):
+        raise UnimplementedError
+
+
     def setChildren(self, children):
         raise UnimplementedError
 
@@ -1340,6 +1344,23 @@ class PlainAlbum(Album):
             " select position, objectid"
             " from   member"
             " where  albumid = %s"
+            " order by position",
+            self.getId())
+        for position, objid in cursor:
+            yield self.shelf.getObject(objid)
+
+
+    def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterator returning Album instances.
+        """
+        cursor = self.shelf.connection.cursor()
+        cursor.execute(
+            " select member.position, member.objectid"
+            " from   member, album"
+            " where  member.albumid = %s and"
+            "        member.objectid = album.albumid"
             " order by position",
             self.getId())
         for position, objid in cursor:
@@ -1542,6 +1563,14 @@ class AllAlbumsAlbum(MagicAlbum):
             yield self.shelf.getAlbum(albumid)
 
 
+    def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterator returning the albums.
+        """
+        return self.getChildren()
+
+
 class AllImagesAlbum(MagicAlbum):
     """An album with all images, sorted by capture timestamp."""
 
@@ -1564,6 +1593,14 @@ class AllImagesAlbum(MagicAlbum):
             yield self.shelf.getImage(imageid)
 
 
+    def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterable returning the images.
+        """
+        return []
+
+
 class OrphansAlbum(MagicAlbum):
     """An album with all albums and images that are orphans."""
 
@@ -1573,8 +1610,23 @@ class OrphansAlbum(MagicAlbum):
     def getChildren(self):
         """Get the album's children.
 
-        Returns an iterator returning the images.
+        Returns an iterator returning the orphans.
         """
+        return self._getChildren(True)
+
+
+    def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterator returning the orphans.
+        """
+        return self._getChildren(False)
+
+
+    ##############################
+    # Internal methods.
+
+    def _getChildren(self, includeimages):
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " select   albumid"
@@ -1585,15 +1637,16 @@ class OrphansAlbum(MagicAlbum):
             _ROOT_ALBUM_ID)
         for (albumid,) in cursor:
             yield self.shelf.getAlbum(albumid)
-        cursor.execute(
-            " select   imageid"
-            " from     image left join attribute"
-            " on       imageid = objectid"
-            " where    imageid not in (select objectid from member) and"
-            "          name = 'captured'"
-            " order by lcvalue, location")
-        for (imageid,) in cursor:
-            yield self.shelf.getImage(imageid)
+        if includeimages:
+            cursor.execute(
+                " select   imageid"
+                " from     image left join attribute"
+                " on       imageid = objectid"
+                " where    imageid not in (select objectid from member) and"
+                "          name = 'captured'"
+                " order by lcvalue, location")
+            for (imageid,) in cursor:
+                yield self.shelf.getImage(imageid)
 
 
 ######################################################################
