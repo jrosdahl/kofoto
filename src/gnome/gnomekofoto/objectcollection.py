@@ -50,16 +50,19 @@ class ObjectCollection(object):
         return False
 
     def getCutLabel(self):
-        return "Cut"
+        return "Cut reference"
 
     def getCopyLabel(self):
-        return "Copy"
+        return "Copy reference"
 
     def getPasteLabel(self):
-        return "Paste"
+        return "Paste reference"
 
     def getDeleteLabel(self):
-        return "Delete"
+        return "Delete reference"
+
+    def getDestroyLabel(self):
+        return "Destroy..."
     
     def getActions(self):
         return None
@@ -118,7 +121,9 @@ class ObjectCollection(object):
 
     def delete(self, *foo):
         raise "Error. Not allowed to delete objects from objectCollection." # TODO        
-                
+
+    def destroy(self, *foo):
+        raise "Destroy not implemented." #TODO
 
     COLUMN_VALID_LOCATION = 0
     COLUMN_VALID_CHECKSUM = 1

@@ -61,12 +61,12 @@ class Categories:
         self._pasteItem.connect("activate", self._pasteCategory, None)
         self._contextMenu.append(self._pasteItem)
 
-        self._deleteItem = gtk.MenuItem("Delete")
+        self._deleteItem = gtk.MenuItem("Destroy")
         self._deleteItem.show()
         self._deleteItem.connect("activate", self._deleteCategories, None)
         self._contextMenu.append(self._deleteItem)
 
-        self._disconnectItem = gtk.MenuItem("Disconnect")
+        self._disconnectItem = gtk.MenuItem("Disconnect from parent")
         self._disconnectItem.show()
         self._disconnectItem.connect("activate", self._disconnectCategory, None)
         self._contextMenu.append(self._disconnectItem)

@@ -25,18 +25,6 @@ class AlbumMembers(ObjectCollection):
     def getContainer(self):
         return self.__album
 
-    def getCutLabel(self):
-        return "Cut from album"
-
-    def getCopyLabel(self):
-        return "Copy from album"
-
-    def getPasteLabel(self):
-        return "Paste into album"
-
-    def getDeleteLabel(self):
-        return "Delete from album"
-
     def cut(self, *foo):
         self.copy()
         self.delete()    

@@ -99,6 +99,7 @@ class ObjectCollectionView:
 
     def _updateContextMenu(self, *foo):
         env.debug("Updating context menu")
+        self.__clipboardMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
         mutable = self._objectCollection.isMutable()
         if env.clipboard.hasObjects():
             self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
@@ -167,6 +168,8 @@ class ObjectCollectionView:
         menuGroup.addMenuItem(oc.getCopyLabel(), oc.copy)
         menuGroup.addMenuItem(oc.getPasteLabel(), oc.paste)
         menuGroup.addMenuItem(oc.getDeleteLabel(), oc.delete)
+        menuGroup.addSeparator()
+        menuGroup.addMenuItem(oc.getDestroyLabel(), oc.destroy)
         menuGroup.addSeparator()
         return menuGroup
 
