@@ -372,7 +372,7 @@ class OutputGenerator(OutputEngine):
             for path in paths:
                 els = []
                 for node in path:
-                    title = node.getAttribute(u"title") or u""
+                    title = node.getAttribute(u"title") or node.getTag()
                     els.append('''<a href="%(htmlref)s">%(title)s</a>''' % {
                         "htmlref": "%s-%s.html" % (
                             node.getTag().encode(self.charEnc),
@@ -402,7 +402,8 @@ class OutputGenerator(OutputEngine):
                         thumbwidth = self.env.thumbnailsize
                         thumbheight = 3 * self.env.thumbnailsize / 4
 
-                    title = subalbum.getAttribute(u"title") or u""
+                    title = (subalbum.getAttribute(u"title") or
+                             subalbum.getTag())
                     subalbumtextElements.append(subalbum_entry_template % {
                         "iconsdir": self.iconsdir,
                         "htmlref": "%s-%d.html" % (
@@ -445,9 +446,9 @@ class OutputGenerator(OutputEngine):
             # Album overview.
             desc = (album.getAttribute(u"description") or
                     album.getAttribute(u"title") or
-                    u"")
+                    album.getTag())
             desc = desc.encode(self.charEnc)
-            title = album.getAttribute(u"title") or u""
+            title = album.getAttribute(u"title") or album.getTag()
             title = title.encode(self.charEnc)
 
             self.writeFile(
@@ -511,7 +512,7 @@ class OutputGenerator(OutputEngine):
         # ------------------------------------------------------------
 
         for size in self.env.imagesizes:
-            title = album.getAttribute(u"title") or u""
+            title = album.getAttribute(u"title") or album.getTag()
             self.writeFile(
                 os.path.join(str(album.getId()),
                              "%s-%s-frame.html" % (number, size)),
@@ -538,7 +539,7 @@ class OutputGenerator(OutputEngine):
             for path in paths:
                 els = []
                 for node in path:
-                    title = node.getAttribute(u"title") or u""
+                    title = node.getAttribute(u"title") or node.getTag()
                     els.append('''<a href="../%(htmlref)s" target="_top">%(title)s</a>''' % {
                         "htmlref": "%s-%s.html" % (
                             node.getTag().encode(self.charEnc),
