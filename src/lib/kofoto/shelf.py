@@ -1794,8 +1794,7 @@ class AllImagesAlbum(MagicAlbum):
         cursor.execute(
             " select   imageid"
             " from     image left join attribute"
-            " on       imageid = objectid"
-            " where    name = 'captured'"
+            " on       imageid = objectid and name = 'captured'"
             " order by lcvalue, directory, filename")
         for (imageid,) in cursor:
             yield self.shelf.getImage(imageid)
@@ -1849,9 +1848,8 @@ class OrphansAlbum(MagicAlbum):
             cursor.execute(
                 " select   imageid"
                 " from     image left join attribute"
-                " on       imageid = objectid"
-                " where    imageid not in (select objectid from member) and"
-                "          name = 'captured'"
+                " on       imageid = objectid and name = 'captured'"
+                " where    imageid not in (select objectid from member)"
                 " order by lcvalue, directory, filename")
             for (imageid,) in cursor:
                 yield self.shelf.getImage(imageid)
