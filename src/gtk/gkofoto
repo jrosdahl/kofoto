@@ -73,13 +73,14 @@ class Controller:
     def albumSelectionHandler(self, selection):
         self._shelf.begin()
         albumModel, iter = selection.get_selected()
-        album = albumModel.get_value(iter, albumModel.COLUMN_OBJECT)
-        selectedImages = []
-        for child in album.getChildren():
-            if not child.isAlbum():
-                selectedImages.append(child)
-        self._shelf.rollback()
-        self._imageListModel.loadImageList("Album", selectedImages)
+        if iter:
+            album = albumModel.get_value(iter, albumModel.COLUMN_OBJECT)
+            selectedImages = []
+            for child in album.getChildren():
+                if not child.isAlbum():
+                    selectedImages.append(child)
+            self._shelf.rollback()
+            self._imageListModel.loadImageList("Album", selectedImages)
 
     def imageSelectionHandler(self, selection):
         imageListModel, iter = selection.get_selected()
