@@ -297,6 +297,7 @@ class TestShelfMethods(TestShelfFixture):
         s = self.shelf.getStatistics()
         assert s["nalbums"] == 6
         assert s["nimages"] == 11
+        assert s["nimageversions"] == 11
 
     def test_createdObjects(self):
         root = self.shelf.getRootAlbum()
