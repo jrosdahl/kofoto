@@ -159,6 +159,7 @@ class TableView(ObjectCollectionView):
                 ("menubarSelectAll", lambda x: widget.get_selection().select_all()),
                 ("menubarCreateAlbumChild", oc.createAlbumChild),
                 ("menubarRegisterAndAddImages", oc.registerAndAddImages),
+                ("menubarGenerateHtml", oc.generateHtml),
                 ("menubarProperties", oc.albumProperties),
                 ]:
             w = env.widgets[widgetName]
@@ -186,6 +187,7 @@ class TableView(ObjectCollectionView):
                 "menubarSelectAll",
                 "menubarCreateAlbumChild",
                 "menubarRegisterAndAddImages",
+                "menubarGenerateHtml",
                 "menubarProperties",
                 ]:
             env.widgets[widgetName].set_sensitive(False)

@@ -75,6 +75,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 "menubarProperties",
                 "menubarCreateAlbumChild",
                 "menubarRegisterAndAddImages",
+                "menubarGenerateHtml",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 

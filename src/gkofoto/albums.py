@@ -13,6 +13,7 @@ class Albums:
 
     __createAlbumLabel = "Create child album..."
     __registerImagesLabel = "Register and add images..."
+    __generateHtmlLabel = "Generate HTML..."
     __destroyAlbumLabel = "Destroy album..."
     __editAlbumLabel = "Album properties..."
 
@@ -69,6 +70,7 @@ class Albums:
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
         createMenuItem = self.__menuGroup[self.__createAlbumLabel]
         registerMenuItem = self.__menuGroup[self.__registerImagesLabel]
+        generateHtmlMenuItem = self.__menuGroup[self.__generateHtmlLabel]
         destroyMenuItem = self.__menuGroup[self.__destroyAlbumLabel]
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iterator:
@@ -81,6 +83,8 @@ class Albums:
             env.widgets["menubarCreateAlbumChild"].set_sensitive(album.isMutable())
             registerMenuItem.set_sensitive(album.isMutable())
             env.widgets["menubarRegisterAndAddImages"].set_sensitive(album.isMutable())
+            generateHtmlMenuItem.set_sensitive(True)
+            env.widgets["menubarGenerateHtml"].set_sensitive(True)
             destroyMenuItem.set_sensitive(album != env.shelf.getRootAlbum())
             env.widgets["menubarDestroy"].set_sensitive(album != env.shelf.getRootAlbum())
             editMenuItem.set_sensitive(True)
@@ -88,10 +92,12 @@ class Albums:
         else:
             createMenuItem.set_sensitive(False)
             registerMenuItem.set_sensitive(False)
+            generateHtmlMenuItem.set_sensitive(False)
             destroyMenuItem.set_sensitive(False)
             editMenuItem.set_sensitive(False)
             env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
             env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+            env.widgets["menubarGenerateHtml"].set_sensitive(False)
             env.widgets["menubarDestroy"].set_sensitive(False)
             env.widgets["menubarProperties"].set_sensitive(False)
 
@@ -104,9 +110,15 @@ class Albums:
         selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
         selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
         dialog = RegisterImagesDialog(selectedAlbum)
-        dialog.run()
+        if dialog.run() == gtk.RESPONSE_OK:
+            self.__mainWindow.reload() # TODO: don't reload everything.
         dialog.destroy()
-        self.__mainWindow.reload() # TODO: don't reload everything.
+
+    def _generateHtml(self, *dummies):
+        albumModel, iterator =  self.__albumView.get_selection().get_selected()
+        selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
+        selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
+        self.__mainWindow.generateHtml(selectedAlbum)
 
     def _createAlbumHelper(self, tag, desc):
         newAlbum = env.shelf.createAlbum(tag)
@@ -170,6 +182,7 @@ class Albums:
         for widgetName, function in [
                 ("menubarCreateAlbumChild", self._createChildAlbum),
                 ("menubarRegisterAndAddImages", self._registerImages),
+                ("menubarGenerateHtml", self._generateHtml),
                 ("menubarProperties", self._editAlbum),
                 ("menubarDestroy", self._destroyAlbum),
                 ]:
@@ -184,6 +197,7 @@ class Albums:
         for widgetName in [
                 "menubarCreateAlbumChild",
                 "menubarRegisterAndAddImages",
+                "menubarGenerateHtml",
                 "menubarProperties",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
@@ -225,6 +239,8 @@ class Albums:
             self.__createAlbumLabel, self._createChildAlbum)
         self.__menuGroup.addMenuItem(
             self.__registerImagesLabel, self._registerImages)
+        self.__menuGroup.addMenuItem(
+            self.__generateHtmlLabel, self._generateHtml)
         self.__menuGroup.addMenuItem(
             self.__destroyAlbumLabel, self._destroyAlbum)
         self.__menuGroup.addStockImageMenuItem(

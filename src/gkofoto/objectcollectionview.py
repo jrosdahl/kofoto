@@ -182,17 +182,20 @@ class ObjectCollectionView:
                     self.__albumMenuGroup.enable()
                     env.widgets["menubarCreateAlbumChild"].set_sensitive(True)
                     env.widgets["menubarRegisterAndAddImages"].set_sensitive(True)
+                    env.widgets["menubarGenerateHtml"].set_sensitive(True)
                     env.widgets["menubarProperties"].set_sensitive(True)
                 else:
                     self.__albumMenuGroup.disable()
                     self.__albumMenuGroup[self._objectCollection.getAlbumPropertiesLabel()].set_sensitive(True)
                     env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
                     env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+                    env.widgets["menubarGenerateHtml"].set_sensitive(True)
                     env.widgets["menubarProperties"].set_sensitive(True)
             else:
                 self.__albumMenuGroup.disable()
                 env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
                 env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+                env.widgets["menubarGenerateHtml"].set_sensitive(False)
                 env.widgets["menubarProperties"].set_sensitive(False)
             if albumsSelected == 0 and imagesSelected > 0:
                 self.__imageMenuGroup.enable()
@@ -216,6 +219,7 @@ class ObjectCollectionView:
             self.__albumMenuGroup.disable()
             env.widgets["menubarCreateAlbumChild"].set_sensitive(False)
             env.widgets["menubarRegisterAndAddImages"].set_sensitive(False)
+            env.widgets["menubarGenerateHtml"].set_sensitive(False)
             env.widgets["menubarProperties"].set_sensitive(False)
 
             self.__imageMenuGroup.disable()
@@ -299,6 +303,8 @@ class ObjectCollectionView:
             oc.getCreateAlbumChildLabel(), oc.createAlbumChild)
         menuGroup.addMenuItem(
             oc.getRegisterImagesLabel(), oc.registerAndAddImages)
+        menuGroup.addMenuItem(
+            oc.getGenerateHtmlLabel(), oc.generateHtml)
         menuGroup.addStockImageMenuItem(
             oc.getAlbumPropertiesLabel(),
             gtk.STOCK_PROPERTIES,

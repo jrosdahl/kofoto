@@ -72,6 +72,9 @@ class ObjectCollection(object):
     def getRegisterImagesLabel(self):
         return "Register and add images..."
 
+    def getGenerateHtmlLabel(self):
+        return "Generate HTML..."
+
     def getAlbumPropertiesLabel(self):
         return "Album properties..."
 
@@ -337,12 +340,20 @@ class ObjectCollection(object):
         selectedAlbum.setChildren(children)
         env.mainwindow.reloadAlbumTree()
 
-    def registerAndAddImages(self, widget, data):
+    def registerAndAddImages(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1 and selectedObjects[0].isAlbum()
         selectedAlbum = selectedObjects[0]
         dialog = RegisterImagesDialog(selectedAlbum)
-        dialog.run()
+        if dialog.run() == gtk.RESPONSE_OK:
+            env.mainwindow.reload() # TODO: Don't reload everything.
+        dialog.destroy()
+
+    def generateHtml(self, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1 and selectedObjects[0].isAlbum()
+        selectedAlbum = selectedObjects[0]
+        env.mainwindow.generateHtml(selectedAlbum)
 
     def albumProperties(self, widget, data):
         selectedObjects = self.__objectSelection.getSelectedObjects()
