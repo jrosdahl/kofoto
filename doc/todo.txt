@@ -111,15 +111,6 @@
 
 * Create a home page for Kofoto. Maybe a Wiki?
 
-* Mention related projects:
-
-      http://www.gnome.org/projects/f-spot/
-      http://liw.iki.fi/linw/lodju/
-      http://imgseek.sourceforge.net/
-      http://gthumb.sourceforge.net/
-      http://ktown.kde.org/kimdaba/
-      http://www.photools.com/
-
 * Write documentation.
 
 * Store a log of changes to the shelf and add possibility of backing

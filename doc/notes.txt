@@ -138,3 +138,8 @@ Interesting links/projects/products:
     * http://www.adobe.com/products/photoshopalbum/
     * http://www.photools.com/
     * http://www.pixvue.com/
+    * http://www.gnome.org/projects/f-spot/
+    * http://liw.iki.fi/linw/lodju/
+    * http://imgseek.sourceforge.net/
+    * http://gthumb.sourceforge.net/
+    * http://ktown.kde.org/kimdaba/
