@@ -36,7 +36,6 @@ img.icon {
 
 a.toc {
     display: block;
-    align: center;
 }
 
 td.arrow {
@@ -74,7 +73,7 @@ a:visited {
 
 h1 {
     font-size : 15pt;
-    margin-bottom: 10
+    margin-bottom: 10px;
 }
 
 h2 {
