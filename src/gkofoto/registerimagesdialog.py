@@ -35,7 +35,11 @@ class RegisterImagesDialog(gtk.FileSelection):
         images = []
         for filepath in walk_files(self.get_selections()):
             try:
-                image = env.shelf.createImage(filepath.decode("utf-8"))
+                try:
+                    filepath = filepath.decode("utf-8")
+                except UnicodeDecodeError:
+                    filepath = filepath.decode("latin1")
+                image = env.shelf.createImage(filepath)
                 images.append(image)
                 newImages += 1
                 newImagesCount.set_text(str(newImages))
