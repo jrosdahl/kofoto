@@ -560,11 +560,11 @@ class OutputGenerator(OutputEngine):
             else:
                 largertext = '<img class="icon" src="images/nolarger.png" />'
 
-            desc = (album.getAttribute(u"description") or
-                    album.getAttribute(u"title") or
+            desc = (image.getAttribute(u"description") or
+                    image.getAttribute(u"title") or
                     u"")
             desc = desc.encode(self.charEnc)
-            title = album.getAttribute(u"title") or u""
+            title = image.getAttribute(u"title") or u""
             title = title.encode(self.charEnc)
 
             self.writeFile(
