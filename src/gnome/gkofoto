@@ -7,20 +7,20 @@ import gobject
 import gtk.glade
 import gnome
 import gnome.ui
-from environment import env
+from gnomekofoto.environment import env
 
 from kofoto.imagecache import *
 
-from imageselection import *
-from imagecontextmenu import *
-from albums import *
-from images import *
-from mainwindow import *
-from tableview import *
-from thumbnailview import *
-from singleimageview import *
-from categories import *
-from source import *
+from gnomekofoto.imageselection import *
+from gnomekofoto.imagecontextmenu import *
+from gnomekofoto.albums import *
+from gnomekofoto.images import *
+from gnomekofoto.mainwindow import *
+from gnomekofoto.tableview import *
+from gnomekofoto.thumbnailview import *
+from gnomekofoto.singleimageview import *
+from gnomekofoto.categories import *
+from gnomekofoto.source import *
 
 ######################################################################
 ### Classes

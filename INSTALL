@@ -15,3 +15,17 @@ Dependencies:
   * PySQLite. Found at:
 
         http://pysqlite.sourceforge.net
+
+Installation:
+
+    Unix/Windows:
+
+        Run "python setup.py install". See "python setup.py --help"
+        for more information. For example: To install to a different
+        location than the default (say, c:\kofoto or /usr/local), run
+        "python setup.py --prefix=<otherlocation>".
+
+    Unix (alternative):
+
+        Run "make install" (installs into /usr/local) or "make install
+        PREFIX=<prefix>".

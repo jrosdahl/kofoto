@@ -1,5 +1,6 @@
 import gtk
 import gtk.gdk
+import os
 
 from environment import env
 
@@ -23,7 +24,7 @@ class MainWindow(gtk.Window):
         env.widgets["preferences"].set_sensitive(gtk.FALSE)
         
     def getIconImage(self, name):
-        pixbuf = gtk.gdk.pixbuf_new_from_file(env.iconDir + name)
+        pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
         image = gtk.Image()
         image.set_from_pixbuf(pixbuf)
         image.show()
