@@ -1066,7 +1066,7 @@ class _Object:
             " where  objectid = %s",
             self.getId())
         map = {}
-        for key, value in self.shelf.cursor.fetchall():
+        for key, value in self.shelf.cursor:
             map[key] = value
         return map
 
@@ -1527,3 +1527,6 @@ class _UnicodeCursorDecorator:
             return self._unicodifyRow(self.cursor.next())
         except StopIteration:
             return None
+
+    def fetchall(self):
+        return list(self.cursor)
