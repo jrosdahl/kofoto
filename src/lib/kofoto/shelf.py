@@ -324,10 +324,9 @@ class Shelf:
         """Constructor.
 
         Location is where the database is located. Codeset is the
-        character encoding to use when constructing filenames and
-        writing text to standard output and standard error. (Thus, the
-        codeset parameter does not specify how data is stored in the
-        database.)"""
+        character encoding to use when encoding filenames stored in
+        the database. (Thus, the codeset parameter does not specify
+        how data is stored in the database.)"""
         self.location = location
         self.codeset = codeset
         self.connection = _UnicodeConnectionDecorator(
