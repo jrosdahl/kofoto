@@ -597,6 +597,15 @@ class TestObject(TestShelfFixture):
         orphans.removeCategory(cat_a)
         assert list(orphans.getCategories()) == []
 
+    def test_deleteCategoryInvalidatesCategoryCache(self):
+        orphans = self.shelf.getAlbum(u"orphans")
+        assert list(orphans.getCategories()) == []
+        cat_a = self.shelf.getCategory(u"a")
+        orphans.addCategory(cat_a)
+        assert list(orphans.getCategories()) == [cat_a]
+        self.shelf.deleteCategory(cat_a.getId())
+        assert list(orphans.getCategories()) == []
+
 class TestAlbum(TestShelfFixture):
     def test_getType(self):
         alpha = self.shelf.getAlbum(u"alpha")

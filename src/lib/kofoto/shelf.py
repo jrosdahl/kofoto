@@ -1050,6 +1050,13 @@ class Shelf:
             " where  child = %s",
             catid)
         cursor.execute(
+            " select objectid from object_category"
+            " where  categoryid = %s",
+            catid)
+        for (objectid,) in cursor:
+            if objectid in self.objectcache:
+                self.objectcache[objectid]._categoriesDirty()
+        cursor.execute(
             " delete from object_category"
             " where  categoryid = %s",
             catid)
@@ -1436,14 +1443,8 @@ class Category:
 
 
 class _Object:
-    def __init__(self, shelf, objid):
-        self.shelf = shelf
-        self.objid = objid
-        self.attributes = {}
-        self.allAttributesFetched = False
-        self.categories = Set()
-        self.allCategoriesFetched = False
-
+    ##############################
+    # Public methods.
 
     def getId(self):
         return self.objid
@@ -1603,6 +1604,21 @@ class _Object:
             allcategories = self.categories
         for catid in allcategories:
             yield self.shelf.getCategory(catid)
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, objid):
+        self.shelf = shelf
+        self.objid = objid
+        self.attributes = {}
+        self.allAttributesFetched = False
+        self.categories = Set()
+        self.allCategoriesFetched = False
+
+    def _categoriesDirty(self):
+        self.allCategoriesFetched = False
 
 
 class Album(_Object):
