@@ -36,6 +36,14 @@ class TableView(ObjectCollectionView):
             selection.unselect_all()
             for rowNr in objectSelection:
                 selection.select_path(rowNr)
+            rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
+            if rowNr is None:
+                if len(self._objectCollection.getModel()) > 0:
+                    # Scroll to first object in view
+                    self._viewWidget.scroll_to_cell((0,), None, False, 0, 0)
+            else:
+                # Scroll to first selected object in view
+                self._viewWidget.scroll_to_cell(rowNr, None, False, 0, 0)
             self.__selectionLocked = False
         self._updateContextMenu()
 
@@ -58,12 +66,8 @@ class TableView(ObjectCollectionView):
         env.enter("TableView.showHelper()")
         env.widgets["tableViewScroll"].show()
         self._viewWidget.grab_focus()
-        # Scroll to the first selected image
-        rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
-        if rowNr is not None:
-            self._viewWidget.scroll_to_cell(rowNr, None, True, 0, 0)
         env.exit("TableView.showHelper()")
-            
+
     def _hideHelper(self):
         env.enter("TableView.hideHelper()")        
         env.widgets["tableViewScroll"].hide()
