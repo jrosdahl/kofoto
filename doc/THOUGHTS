@@ -71,7 +71,7 @@ Design requirements and goals:
     * It should be very hard to lose any information.
 
       - Original image files (downloaded from the camera) are never
-        changed.
+        changed (by Kofoto).
       - Meta information can be exported to a future-safe format.
       - Original image files can be renamed/moved without loss of meta
         information.
@@ -80,9 +80,9 @@ Design requirements and goals:
 
       - A checksum of (parts of) an image is used as identifier.
 
-    * It should be possible to uniquely identify album.
+    * It should be possible to uniquely identify albums.
 
-      - Each album have a unique human-recognizable tag.
+      - Each album has a unique human-recognizable tag.
 
     * Albums should contain an ordered list of albums and images.
 
@@ -101,8 +101,8 @@ Design requirements and goals:
 
     * It should be possible to view the album from read-only media.
 
-      - A set of static HTML pages and images are generated manually
-        (not on demand).
+      - A set of static HTML pages and images are pregenerated (i.e.
+        not per view).
 
     * It should be possible to add meta information and new kinds of
       meta information.
