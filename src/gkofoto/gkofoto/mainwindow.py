@@ -219,6 +219,10 @@ class MainWindow(gtk.Window):
     def _shelfModificationChangedCallback(self, modified):
         env.widgets["menubarRevert"].set_sensitive(modified)
         env.widgets["menubarSave"].set_sensitive(modified)
+        if modified:
+            env.widgets["statusbarModified"].push(1, "Modified")
+        else:
+            env.widgets["statusbarModified"].pop(1)
 
     def __setObjectCollection(self, objectCollection):
         if self.__currentObjectCollection != objectCollection:

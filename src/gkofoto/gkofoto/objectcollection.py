@@ -273,6 +273,7 @@ class ObjectCollection(object):
             self.signalRowInserted()
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
+            self.__updateObjectCount(True)
             yield True
 
         self._handleNrOfObjectsUpdate()
@@ -286,6 +287,15 @@ class ObjectCollection(object):
 
     def __insertionWorkerFinished(self):
         self.__insertionWorkerTag = None
+        self.__updateObjectCount(False)
+
+    def __updateObjectCount(self, loadingInProgress):
+        env.widgets["statusbarLoadedObjects"].pop(1)
+        if loadingInProgress:
+            text = "%d objects (and counting...)" % len(self.__treeModel)
+        else:
+            text = "%d objects" % len(self.__treeModel)
+        env.widgets["statusbarLoadedObjects"].push(1, text)
 
     def _handleNrOfObjectsUpdate(self):
         updatedDisabledFields = Set()

@@ -15,6 +15,8 @@ class ObjectSelection:
         # of the same image or album.
         self.__changedCallbacks = Set()
         self.__objectCollection = objectCollection
+        self.addChangedCallback(self._nrOfSelectedObjectsChanged)
+        
     def addChangedCallback(self, callback):
         self.__changedCallbacks.add(callback)
 
@@ -78,6 +80,11 @@ class ObjectSelection:
         env.debug("filenames to preload: %s" % str(filenames))
         return filenames
 
+    def _nrOfSelectedObjectsChanged(self, objectSelection):
+        env.widgets["statusbarSelectedObjects"].pop(1)
+        env.widgets["statusbarSelectedObjects"].push(
+            1, "%d selected" % len(objectSelection))
+    
     def __contains__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         return unsortedRowNr in self.__selectedObjects.keys()
