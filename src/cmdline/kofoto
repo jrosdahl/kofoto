@@ -537,7 +537,10 @@ def cmdUpdateLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
     for dir in args:
-        os.path.walk(os.path.abspath(dir),
+        dir = os.path.abspath(dir)
+        if type(dir) == type(""):
+            dir = _to_uc(dir)
+        os.path.walk(dir,
                      updateLocationsHelper,
                      env)
 
