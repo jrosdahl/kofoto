@@ -456,9 +456,7 @@ class OutputGenerator(OutputEngine):
                 imagetext = ""
 
             # Album overview.
-            desc = (album.getAttribute(u"description") or
-                    album.getAttribute(u"title") or
-                    album.getTag())
+            desc = album.getAttribute(u"description") or u""
             desc = desc.encode(self.charEnc)
             title = album.getAttribute(u"title") or album.getTag()
             title = title.encode(self.charEnc)
