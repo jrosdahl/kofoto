@@ -339,6 +339,7 @@ def olympus_special_mode(v):
         2: 'Right to left',
         3: 'Bottom to top',
         4: 'Top to bottom'}
+    # handle broken Olympus MakerNote
     try:
         return '%s - sequence %d - %s' % (a[v[0]], v[1], b[v[2]])
     except KeyError:
@@ -697,18 +698,18 @@ class EXIF_header:
         self.file.seek(self.offset+offset)
         slice=self.file.read(length)
         if self.endian == 'I':
-            endian_sign = '<'
+            endian_sign='<'
         else:
-            endian_sign = '>'
+            endian_sign='>'
         if length == 1:
-            val=struct.unpack(endian_sign + 'b', slice)[0]
+            size_char='b'
         elif length == 2:
-            val=struct.unpack(endian_sign + 'h', slice)[0]
+            size_char='h'
         elif length == 4:
-            val=struct.unpack(endian_sign + 'i', slice)[0]
+            size_char='i'
         else:
             raise ValueError, ('bad slice length: %s' % length)
-        return val
+        return struct.unpack(endian_sign + size_char, slice)[0]
 
     # convert offset to string
     def n2s(self, offset, length):
