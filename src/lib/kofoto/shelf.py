@@ -1467,7 +1467,7 @@ class OrphansAlbum(MagicAlbum):
 
 
 ######################################################################
-### Internal helper functions.
+### Internal helper functions and classes.
 
 class _UnicodeConnectionDecorator:
     def __init__(self, connection, encoding):
@@ -1529,4 +1529,4 @@ class _UnicodeCursorDecorator:
             return None
 
     def fetchall(self):
-        return list(self.cursor)
+        return list(self)
