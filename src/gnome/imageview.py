@@ -4,6 +4,7 @@ import math
 import gobject
 import gc
 from gtk import TRUE, FALSE
+from environment import env
 
 class ImageView(gtk.ScrolledWindow):
     # TODO: Read from configuration file?
