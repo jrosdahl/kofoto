@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
-import sys
 import os
+import sys
 
 if sys.platform.startswith("win"):
     import _winreg
@@ -15,19 +13,9 @@ if sys.platform.startswith("win"):
         sys.exit(1)
     else:
         gtkdir = _winreg.QueryValueEx(k, "Path")
-        import os
         os.environ["PATH"] += ";%s/lib;%s/bin" % (gtkdir[0], gtkdir[0])
 
-# Find libraries if installed in ../lib (like in the source tree).
-if os.path.islink(sys.argv[0]):
-    link = os.readlink(sys.argv[0])
-    absloc = os.path.normpath(
-        os.path.join(os.path.dirname(sys.argv[0]), link))
-    bindir = os.path.dirname(absloc)
-else:
-    bindir = os.path.dirname(sys.argv[0])
-sys.path.insert(0, os.path.join(bindir, "..", "lib"))
-sys.path.insert(0, os.path.join(bindir, ".."))
+bindir = os.path.dirname(sys.argv[0])
 
 from gkofoto.main import main
 main(bindir, sys.argv)

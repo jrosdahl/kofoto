@@ -2,4 +2,4 @@
 # the source directory by double-clicking on it. No console window is
 # created.
 
-execfile("start")
+execfile("start-in-windows-source.py")

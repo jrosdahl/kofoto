@@ -27,14 +27,14 @@ data_files = [
     ]
 
 if windows_mode:
-    shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto-start.pyw")
+    shutil.copy("src/gkofoto/start-on-windows.py", "src/gkofoto/gkofoto-start.pyw")
     scripts = [
         "src/cmdline/kofoto",
         "src/gkofoto/gkofoto-start.pyw",
         "src/gkofoto/scripts/gkofoto-windows-postinstall.py",
         ]
 else:
-    shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto")
+    shutil.copy("src/gkofoto/start-on-unix.py", "src/gkofoto/gkofoto")
     scripts = [
         "src/cmdline/kofoto",
         "src/gkofoto/gkofoto",
