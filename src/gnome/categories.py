@@ -96,7 +96,7 @@ class Categories:
         categorySelection = categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
-        categorySelection.connect("changed", self.updateContextMenu)
+        categorySelection.connect("changed", self._selectionUpdated)
 
         # Connect events
         categoryView.connect("button_press_event", self._button_pressed)
@@ -104,7 +104,7 @@ class Categories:
         categoryView.connect("row-activated", self._rowActivated)
                                             
         # Connect search button
-        env.widgets["categorySearchButton"].connect('clicked', self._queryUpdated)
+        env.widgets["categorySearchButton"].connect('clicked', self._executeQuery)
         
         # Load data into model
         self.reload()
@@ -125,14 +125,31 @@ class Categories:
         for child in category.getChildren():
             self._populateModel(iter, child)
 
-    def _queryUpdated(self, garbage):
-        selection = env.widgets["categoryView"].get_selection()
-        self._selectedCategories = {}
-        query = self._buildQuery(self._model, None, selection, "")
+    def _executeQuery(self, *foo):
+        query = self._buildQuery()
         if query:
             self._source.set("query://" + query)
-
-    def _buildQuery(self, categoryList, parent, selection, query):
+            
+    def _buildQuery(self):
+        if env.widgets["categoriesOr"].get_active():
+            operator = " or "
+        else:
+            operator = " and "
+        query = ""
+        for categoryId in self._selectedCategories:
+            if query:
+                query += operator
+            category = env.shelf.getCategory(categoryId)
+            query += category.getTag()
+        return query
+        
+    def _selectionUpdated(self, selection):
+        self._selectedCategories = {}
+        self._parseCategoryTree(self._model, None, selection)
+        self.updateContextMenu()
+        print self._selectedCategories
+            
+    def _parseCategoryTree(self, categoryList, parent, selection):
         for row in categoryList:
             categoryId = row[self._COLUMN_CATEGORY_ID]
             if selection.iter_is_selected(row.iter):
@@ -140,30 +157,10 @@ class Categories:
                     self._selectedCategories[categoryId].append(parent)
                 else:
                     self._selectedCategories[categoryId] = [parent]
-                    query = self._addToQuery(query, row[self._COLUMN_TAG])
-            childQuery = self._buildQuery(row.iterchildren(), categoryId, selection, "")
-            query = self._addToQuery(query, childQuery)
-        return query
-
-    def _addToQuery(self, query, addition):
-        if addition == "":
-            return query
-        elif query == "":
-            return addition
-        else:
-            if env.widgets["categoriesOr"].get_active():
-                operator = "or"
-            else:
-                operator = "and"
-            return query + " " + operator + " " + addition
-
-    def updateContextMenu(self, *foo):
-        categorySelection = env.widgets["categoryView"].get_selection()
-        nrOfSelectedCategories = [0]
-        def inc(*garbage):
-            nrOfSelectedCategories[0] += 1
-        categorySelection.selected_foreach(inc, None)
-        if nrOfSelectedCategories[0] == 0:
+            self._parseCategoryTree(row.iterchildren(), categoryId, selection)
+            
+    def updateContextMenu(self):
+        if len(self._selectedCategories) == 0:
             self._deleteItem.set_sensitive(gtk.FALSE)
             self._createChildItem.set_sensitive(gtk.FALSE)
             self._copyItem.set_sensitive(gtk.FALSE)
@@ -180,7 +177,7 @@ class Categories:
             else:
                 self._pasteItem.set_sensitive(gtk.FALSE)
             self._disconnectItem.set_sensitive(gtk.TRUE)
-        if nrOfSelectedCategories[0] == 1:
+        if len(self._selectedCategories) == 1:
             self._propertiesItem.set_sensitive(gtk.TRUE)
         else:
             self._propertiesItem.set_sensitive(gtk.FALSE)
