@@ -1,6 +1,7 @@
 include COPYING.txt
-include doc/overview.txt
+include README.txt
+include doc/gkofoto.1
+include doc/kofoto.1
 include src/gkofoto/glade/*.glade
 include src/gkofoto/icons/*.png
-include src/gkofoto/start
 prune src/web
