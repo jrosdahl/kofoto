@@ -1312,7 +1312,11 @@ class Album(_Object):
     def isAlbum(self):
         return True
 
+    
+    def __unicode__(self):
+        return "album: " + self.getTag()
 
+    
     ##############################
     # Internal methods.
 
@@ -1429,7 +1433,11 @@ class Image(_Object):
     def isAlbum(self):
         return False
 
+    
+    def __unicode__(self):
+        return self.getLocation()
 
+    
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
         import EXIF

@@ -499,9 +499,9 @@ def cmdSearch(env, args):
         raise ArgumentError
     parser = Parser(env.shelf)
     objects = env.shelf.search(parser.parse(args[0]))
-    strids = [str(x.getId()) for x in objects]
+    strids = [unicode(x).encode(CODESET) for x in objects]
     if strids:
-        env.out(" ".join(strids) + "\n")
+        env.out("\n".join(strids) + "\n")
 
 
 def cmdSetAttribute(env, args):
