@@ -21,7 +21,11 @@ scripts = [
     ]
 data_files = [
     ("share/gnomekofoto/glade", ["src/gnome/glade/gkofoto.glade"]),
-    ("share/gnomekofoto/icons", ["src/gnome/icons/fullscreen-24.png"])
+    ("share/gnomekofoto/icons", ["src/gnome/icons/album.png",
+                                 "src/gnome/icons/fullscreen-24.png",
+                                 "src/gnome/icons/objectview.png",
+                                 "src/gnome/icons/tableview.png",
+                                 "src/gnome/icons/thumbnailsview.png"])
     ]
 if os.name == "posix":
     if os.system("cd src/web && make") != 0:

@@ -897,7 +897,6 @@
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">objectViewToggleButton</property>
 		      <property name="use_underline">True</property>
-		      <property name="stock_pixmap">gtk-bold</property>
 		      <property name="active">False</property>
 		      <property name="inconsistent">False</property>
 		    </widget>
@@ -908,7 +907,6 @@
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">Thumbnails</property>
 		      <property name="use_underline">True</property>
-		      <property name="stock_pixmap">gtk-justify-fill</property>
 		      <property name="active">True</property>
 		      <property name="inconsistent">False</property>
 		    </widget>
