@@ -92,7 +92,7 @@ def displayHelp():
         "    create-shelf                     Create an empty shelf.\n"
         "    print-graph [ALBUM]              Print the album graph for ALBUM (default:\n"
         "                                     root). If -v/--verbose is given, also print\n"
-        "                                     images and image attributes.\n"
+        "                                     images and attributes.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
         "    update-checksums                 Traverse all images in the shelf and\n"
         "                                     remember their new checksums.\n"
