@@ -573,18 +573,6 @@ class _Object:
         return self.objid
 
 
-    def getAttributeNames(self):
-        """Returns a sorted list of available attributes."""
-        objid = self.objid
-        self.shelf.cursor.execute(
-            " select name"
-            " from   attribute"
-            " where  objectid = %(objid)s"
-            " order by name",
-            locals())
-        return [x[0] for x in self.shelf.cursor.fetchall()]
-
-
     def getAttribute(self, name):
         """Get the value of an attribute.
 
@@ -602,6 +590,32 @@ class _Object:
             return self.shelf.cursor.fetchone()[0]
         else:
             return None
+
+
+    def getAttributeMap(self):
+        """Returns a map of available attributes."""
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " select name, value"
+            " from   attribute"
+            " where  objectid = %(objid)s",
+            locals())
+        map = {}
+        for key, value in self.shelf.cursor.fetchall():
+            map[key] = value
+        return map
+
+
+    def getAttributeNames(self):
+        """Returns a sorted list of available attributes."""
+        objid = self.objid
+        self.shelf.cursor.execute(
+            " select name"
+            " from   attribute"
+            " where  objectid = %(objid)s"
+            " order by name",
+            locals())
+        return [x[0] for x in self.shelf.cursor.fetchall()]
 
 
     def setAttribute(self, name, value):
@@ -850,9 +864,6 @@ class Image(_Object):
                 self.setAttribute("orientation", m[str(value)])
             except KeyError:
                 pass
-        value = tags.get("")
-        if value:
-            self.setAttribute("up", str(value))
 
 
     ##############################

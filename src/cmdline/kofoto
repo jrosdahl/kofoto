@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(sys.argv[0]), "..", "lib"))
 try:
     from kofoto.common import *
     from kofoto.shelf import *
+    from kofoto.imagecache import *
 except ImportError:
     sys.stderr.write("Could not find the kofoto libraries. " +
                      "Please install kofoto properly.\n")
@@ -48,6 +49,8 @@ def displayHelp():
         "        --shelf SHELF                Use the shelf SHELF instead of the default\n"
         "                                     (specified in the configuration file).\n"
         "    -v, --verbose                    Be verbose.\n"
+        "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
+        "                                     or output type TYPE when generating output.\n"
         "    -V, --version                    Print version out standard output.\n"
         "\n"
         "Commands:\n"
@@ -56,8 +59,9 @@ def displayHelp():
         "    ==========\n"
         "    check                            Find missing images and print some\n"
         "                                     statistics.\n"
-        "    create-album TAG [TYPE]          Create an empty, unlinked album with tag\n"
-        "                                     TAG and type TYPE (default: plain).\n"
+        "    create-album TAG                 Create an empty, unlinked album with tag\n"
+        "                                     TAG. If a type argument is not given, an\n"
+        "                                     album of type \"plain\" will be created.\n"
         "    create-shelf                     Create an empty shelf.\n"
         "    print-graph [ALBUM]              Print the album graph for ALBUM (default:\n"
         "                                     root).\n"
@@ -85,6 +89,7 @@ def displayHelp():
         "    add DEST OBJ1 [OBJ2 ...]         Add objects (albums and images)\n"
         "                                     to the album DEST. (The objects are placed\n"
         "                                     last.)\n"
+        "    generate ALBUM DESTINATION       Generate output for ALBUM in DESTINATION.\n"
         "    import DEST PATH1 [PATH2 ...]    Import objects (i.e. directories and\n"
         "                                     images) to the album DEST. (The objects\n"
         "                                     are placed last.) Directories are\n"
@@ -93,6 +98,8 @@ def displayHelp():
         "\n"
         "    Miscellaneous\n"
         "    =============\n"
+        "    clean-cache                      Clean up the image cache (remove\n"
+        "                                     left-over generated images).\n"
         "    create-configfile                Create a template configuration file.\n"
         "\n"
         "Album types:\n"
@@ -166,11 +173,17 @@ def cmdCheck(env, args):
         env.out(" none\n")
 
 
-def cmdCreateAlbum(env, args):
-    if len(args) < 1:
+def cmdCleanCache(env, args):
+    if len(args) != 0:
         raise ArgumentError
-    if len(args) > 1:
-        atype = args[1]
+    env.imagecache.cleanup(env.shelf.getAllImages(), env.imagesizes)
+
+
+def cmdCreateAlbum(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    if env.type:
+        atype = env.type
     else:
         atype = "plain"
     env.shelf.createAlbum(args[0], atype)
@@ -181,6 +194,50 @@ def cmdDeleteAttribute(env, args):
         raise ArgumentError
     object = env.shelf.getObject(args[0])
     object.deleteAttribute(args[1])
+
+
+def cmdGenerate(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    if env.type:
+        otype = env.type
+    else:
+        otype = "crude"
+    try:
+        m = getattr(__import__("kofoto.output.%s" % otype).output, otype)
+        root = env.shelf.getAlbum(args[0])
+        og = m.OutputGenerator(env, root, args[1])
+        albummap = {}
+        imagemap = {}
+        generateHelper(root, [], albummap, imagemap)
+        while 1:
+            if len(albummap) == 0:
+                break
+            tag, paths = albummap.popitem()
+            og.generateAlbum(env.shelf.getAlbum(tag), paths)
+        while 1:
+            if len(imagemap) == 0:
+                break
+            hash, junk = imagemap.popitem()
+            og.generateImage(env.shelf.getImage(hash))
+    except ImportError:
+        env.errexit("No such output module: %s\n" % otype)
+
+
+def generateHelper(album, path, albummap, imagemap):
+    if album.getTag() in [x.getTag() for x in path]:
+        # Already visited album, so break recursion here.
+        return
+    path = path[:] + [album]
+    tag = album.getTag()
+    if not albummap.has_key(tag):
+        albummap[tag] = []
+    albummap[tag].append(path)
+    for child in album.getChildren():
+        if child.isAlbum():
+            generateHelper(child, path, albummap, imagemap)
+        else:
+            imagemap[child.getHash()] = 1
 
 
 def cmdGetAttribute(env, args):
@@ -384,8 +441,10 @@ def updateLocationsHelper(env, dir, files):
 commandTable = {
     "add": cmdAdd,
     "check": cmdCheck,
+    "clean-cache": cmdCleanCache,
     "create-album": cmdCreateAlbum,
     "delete-attribute": cmdDeleteAttribute,
+    "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
     "import": cmdImport,
@@ -399,17 +458,56 @@ commandTable = {
 }
 
 ######################################################################
+### Help functions.
+
+def readConfig(configFilename):
+    globals = {}
+    conf = {}
+    try:
+        execfile(configFilename, globals, conf)
+    except SyntaxError, x:
+        printErrorAndExit(
+            "Could not parse %s: %s\n" % (configFilename, str(x)) +
+            "It must executable Python code.\n")
+    except IOError, x:
+        printErrorAndExit(
+            "Error while reading %s: %s.\n" % (configFilename, repr(x[1])))
+
+    checkConfigurationItem(
+        conf, "shelf_location", lambda x: type(x) == type(""))
+    checkConfigurationItem(
+        conf, "imagecache_location", lambda x: type(x) == type(""))
+    checkConfigurationItem(
+        conf, "thumbnail_image_size", lambda x: type(x) == type(1))
+    checkConfigurationItem(
+        conf, "default_image_size", lambda x: type(x) == type(1))
+    checkConfigurationItem(
+        conf,
+        "other_image_sizes",
+        lambda x: (type(x) == type([]) and
+                   len([y for y in x if type(y) != type(1)]) == 0))
+    return conf
+
+def checkConfigurationItem(conf, key, function):
+    if not conf.has_key(key):
+        printErrorAndExit("Missing configuration item: %s.\n" % key)
+    if not function(conf[key]):
+        printErrorAndExit("Configuration item has bad value: %s.\n" % key)
+
+
+######################################################################
 ### Main
 
 def main(argv):
     try:
         optlist, args = getopt.getopt(
             argv[1:],
-            "hl:vV",
+            "hl:t:vV",
             ["configfile=",
              "help",
              "location=",
              "shelf=",
+             "type=",
              "verbose",
              "version"])
     except getopt.GetoptError:
@@ -420,8 +518,9 @@ def main(argv):
     env = CommandEnvironment()
     env.location = -1
     env.verbose = 0
+    env.type = None
 
-    shelfFilename = None
+    shelfLocation = None
     configFilename = DEFAULT_CONFIGFILE
     for opt, optarg in optlist:
         if opt == "--configfile":
@@ -438,7 +537,9 @@ def main(argv):
                 except ValueError:
                     printErrorAndExit("Invalid location: \"%s\"\n" % optarg)
         elif opt == "--shelf":
-            shelfFilename = optarg
+            shelfLocation = optarg
+        elif opt in ("-t", "--type"):
+            env.type = optarg
         elif opt in ("-v", "--verbose"):
             env.verbose = 1
         elif opt in ("-V", "--version"):
@@ -462,34 +563,40 @@ def main(argv):
             file.write(
                 "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
                 "\n"
-                "shelf = \"~/.kofoto/shelf\"\n")
+                "# Default location of the shelf. This is where information about\n"
+                "# albums and images is stored.\n"
+                "shelf_location = \"~/.kofoto/shelf\"\n"
+                "\n"
+                "# Default location of the image cache. This is where generated images\n"
+                "# images are stored.\n"
+                "imagecache_location = \"~/.kofoto/imagecache\"\n"
+                "\n"
+                "# Size of thumbnails.\n"
+                "thumbnail_image_size = 128\n"
+                "\n"
+                "# The image size that will be used when first entering an album.\n"
+                "default_image_size = 640\n"
+                "\n"
+                "# A list of image sizes (other than thumbnail_image_size and\n"
+                "# default_image_size) to include in albums.\n"
+                "other_image_sizes = [400, 1024]\n")
             file.close()
             sys.stdout.write("Created configuration file \"%s\".\n" %
                              configFilename)
             sys.exit(0)
 
     if os.access(configFilename, os.R_OK):
-        globals = {}
-        conf = {}
-        try:
-            execfile(configFilename, globals, conf)
-        except SyntaxError, x:
-            printErrorAndExit(
-                "Could not parse %s: %s\n" % (configFilename, str(x)) +
-                "It must executable Python code.\n")
-        except IOError, x:
-            printErrorAndExit(
-                "Error while reading %s: %s.\n" % (configFilename, repr(x[1])))
-        if not shelfFilename and conf.has_key("shelf"):
-            shelfFilename = conf["shelf"]
+        conf = readConfig(configFilename)
     else:
         printErrorAndExit(
             ("Configuration file \"%s\" not found.\n" +
              "You can create a new one by running " +
              "\"kofoto create-configfile\"\n") % configFilename)
 
-    if shelfFilename:
-        shelfFilename = os.path.expanduser(shelfFilename)
+    if not shelfLocation and conf.has_key("shelf_location"):
+        shelfLocation = conf["shelf_location"]
+    if shelfLocation:
+        shelfLocation = os.path.expanduser(shelfLocation)
     else:
         if args[0] != "create-configfile":
             printErrorAndExit(
@@ -498,7 +605,7 @@ def main(argv):
 
     if args[0] == "create-shelf":
         try:
-            Shelf(shelfFilename, create=1)
+            Shelf(shelfLocation, create=1)
         except FailedWritingError, filename:
             printErrorAndExit(
                 "Could not create shelf file %s (already exists?).\n" %
@@ -511,22 +618,33 @@ def main(argv):
             args[0])
 
     try:
-        shelf = Shelf(shelfFilename)
+        shelf = Shelf(shelfLocation)
     except ShelfNotFoundError, x:
         printErrorAndExit(
-            "Could not open shelf \"%s\".\n" % shelfFilename +
+            "Could not open shelf \"%s\".\n" % shelfLocation +
             "You can create a new one by running " +
             "\"kofoto create-shelf\"\n")
     except ShelfLockedError, x:
         printErrorAndExit(
-            "Could not open shelf \"%s\".\n" % shelfFilename +
+            "Could not open shelf \"%s\".\n" % shelfLocation +
             "Another process is locking it.\n")
     shelf.begin()
     try:
-        env.shelf = shelf
         env.out = printOutput
         env.err = printError
         env.errexit = printErrorAndExit
+        env.shelf = shelf
+        env.imagecache = ImageCache(
+            os.path.expanduser(conf["imagecache_location"]))
+        env.thumbnailsize = conf["thumbnail_image_size"]
+        env.defaultsize = conf["default_image_size"]
+        sizes = []
+        sizes.append(conf["thumbnail_image_size"])
+        sizes.append(conf["default_image_size"])
+        sizes.extend(conf["other_image_sizes"])
+        sizes.sort()
+        env.imagesizes = sizes
+
         commandTable[args[0]](env, args[1:])
         shelf.commit()
         sys.exit(0)
