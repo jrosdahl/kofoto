@@ -1424,12 +1424,12 @@ class Image(_Object):
         import EXIF
         tags = EXIF.process_file(
             file(self.getLocation().encode(self.shelf.codeset), "rb"))
-
+        
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",
                     "EXIF DateTimeDigitized"]:
             value = tags.get(tag)
-            if value and not cmp(value, "0000:00:00 00:00:00"):
+            if value and value.printable != "0000:00:00 00:00:00":
                 a = str(value).split(":")
                 if len(a) == 5:
                     value = u"-".join(a[0:2] + [":".join(a[2:5])])
