@@ -134,12 +134,19 @@ B. Windows
 VERSION HISTORY
 ===============
 
-0.2.2 (2004-10-01)
+0.2.2 (2004-10-02)
+
+    Enhancements:
+
+      * Explicitly set width and height of images in generated HTML
+        output.
 
     Corrections:
 
       * Fixed a bug that made the image preloader leak lots of memory
         (ticket #68).
+      * Fixed incorrect logic for the modification field in the status
+        bar.
 
 0.2.1 (2004-09-19)
 
