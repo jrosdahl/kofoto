@@ -104,7 +104,7 @@ class Controller:
     def selectionUpdated(self):
         self.thumbnailView.loadNewSelection()
         self.tableView.loadNewSelection()
-        self._categories.update()
+        self._categories.updateView()
 
     def clipboardSet(self, object):
         self._clipboard = object
