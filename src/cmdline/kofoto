@@ -75,29 +75,32 @@ def displayHelp():
         "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
         "    update-checksums                 Traverse all images in the shelf and\n"
         "                                     remember their new checksums.\n"
-        "    update-locations DIR [DIR2 ...]  Traverse the given directories\n"
+        "    update-locations DIR [DIR ...]   Traverse the given directories\n"
         "                                     recursively and remember the new\n"
         "                                     locations of images.\n"
         "\n"
         "    For albums and images\n"
         "    =====================\n"
         "\n"
-        "    delete-attribute OBJ NAME        Delete attribute NAME for object OBJ.\n"
-        "    get-attribute OBJ NAME           Get attribute NAME for object OBJ.\n"
+        "    delete-attribute NAME OBJ [OBJ ...]\n"
+        "                                     Delete attribute NAME for the given\n"
+        "                                     objects.\n"
+        "    get-attribute NAME OBJ           Get attribute NAME for object OBJ.\n"
         "    get-attributes OBJ               Get attributes for object OBJ.\n"
-        "    obliterate OBJ [OBJ2 ...]        Delete object(s) permanently. All\n"
+        "    obliterate OBJ [OBJ ...]         Delete the given objects permanently. All\n"
         "                                     metadata is also deleted.\n"
-        "    remove ALBUM POS [POS2 ...]      Remove object(s) from ALBUM.\n"
-        "    set-attribute OBJ NAME VALUE     Set attribute NAME to VALUE for object\n"
-        "                                     OBJ.\n"
+        "    remove ALBUM POS [POS ...]       Remove the given objects from ALBUM.\n"
+        "    set-attribute NAME VALUE OBJ [OBJ ...]\n"
+        "                                     Set attribute NAME to VALUE for the given\n"
+        "                                     objects.\n"
         "\n"
         "    For albums\n"
         "    ==========\n"
-        "    add DEST OBJ1 [OBJ2 ...]         Add objects (albums and images)\n"
+        "    add DEST OBJ [OBJ ...]           Add the given objects (albums and images)\n"
         "                                     to the album DEST. (The objects are placed\n"
         "                                     last.)\n"
         "    generate ALBUM DESTINATION       Generate output for ALBUM in DESTINATION.\n"
-        "    register DEST PATH1 [PATH2 ...]  Register objects (i.e. directories and\n"
+        "    register DEST PATH [PATH ...]    Register objects (i.e. directories and\n"
         "                                     images) and add them to the album DEST.\n"
         "                                     (The objects are placed last.)\n"
         "                                     Directories are recursively scanned for\n"
@@ -198,10 +201,11 @@ def cmdCreateAlbum(env, args):
 
 
 def cmdDeleteAttribute(env, args):
-    if len(args) != 2:
+    if len(args) < 2:
         raise ArgumentError
-    object = env.shelf.getObject(args[0])
-    object.deleteAttribute(args[1])
+    attr = args[0]
+    for arg in args[1:]:
+        env.shelf.getObject(arg).deleteAttribute(attr)
 
 
 def cmdGenerate(env, args):
@@ -388,10 +392,12 @@ def cmdRenameTag(env, args):
 
 
 def cmdSetAttribute(env, args):
-    if len(args) != 3:
+    if len(args) < 3:
         raise ArgumentError
-    object = env.shelf.getObject(args[0])
-    object.setAttribute(args[1], args[2])
+    attr = args[0]
+    value = args[1]
+    for arg in args[2:]:
+        env.shelf.getObject(arg).setAttribute(attr, value)
 
 
 def cmdUpdateChecksums(env, args):
