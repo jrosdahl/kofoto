@@ -2,9 +2,9 @@ Attributes:
 
     For both albums and images:
 
-    * longdesc: Image/album text, 0 to many rows, not suitable for
+    * description: Image/album text, 0 to many rows, not suitable for
       link text.
-    * shortdesc: Short description, suitable for link text.
+    * title: Short description, suitable for link text.
 
     For images only:
 
