@@ -89,12 +89,6 @@ class Config(ConfigParser):
             value = self.get(section, key)
             if function and not function(value):
                 raise BadConfigurationValueError, (section, key, value)
-        def isInt(arg):
-            try:
-                int(arg)
-                return True
-            except ValueError:
-                return False
 
         checkConfigurationItem("shelf", "location", None)
         checkConfigurationItem("image cache", "location", None)
