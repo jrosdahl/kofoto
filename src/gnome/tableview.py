@@ -75,11 +75,12 @@ class TableView:
         oldValue = self._model.get_value(iter, column)
         if not oldValue:
             oldValue = u""
+        value = unicode(value, "utf-8")
         if oldValue != value:
             # TODO Show dialog and ask for confirmation?
             imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
             image = env.shelf.getImage(imageId)
-            image.setAttribute(attributeName, unicode(value, env.codeset))
+            image.setAttribute(attributeName, value)
             self._model.set_value(iter, column, value)
             
     def freeze(self):
