@@ -346,7 +346,7 @@ class Categories:
         else:
             self._propertiesItem.set_sensitive(False)
         
-    def __updateToggleColumn(self):        
+    def __updateToggleColumn(self):
         # find out which categories are connected, not connected or
         # partitionally connected to selected objects
         nrSelectedObjectsInCategory = {}
@@ -390,26 +390,30 @@ class Categories:
             self.__forEachCategoryRow(function, data, categoryRow.iterchildren())
         
     def __expandAndCollapseRows(self, autoExpand, autoCollapse, categoryRows=None):
-        if not categoryRows:
+        if categoryRows is None:
             categoryRows=self.__categoryModel
+        someRowsExpanded = False
         for categoryRow in categoryRows:
             expandThisRow = False
             # Expand all rows that are selected or has expanded childs
-            if self.__expandAndCollapseRows(autoExpand, autoCollapse, categoryRow.iterchildren()) \
-                   or self.__categoryView.get_selection().path_is_selected(categoryRow.path):
+            childRowsExpanded = self.__expandAndCollapseRows(autoExpand,
+                                                            autoCollapse,
+                                                            categoryRow.iterchildren())
+            if (childRowsExpanded
+                or self.__categoryView.get_selection().path_is_selected(categoryRow.path)):
                 expandThisRow = True
             # Auto expand all rows that has a checked toggle
             if autoExpand:
-                if categoryRow[self.__COLUMN_CONNECTED] \
-                       or categoryRow[self.__COLUMN_INCONSISTENT]:
+                if (categoryRow[self.__COLUMN_CONNECTED]
+                    or categoryRow[self.__COLUMN_INCONSISTENT]):
                     expandThisRow = True
             if expandThisRow:
                 self.__categoryView.expand_row(categoryRow.path, False)
-                return True
+                someRowsExpanded = True
             # Auto collapse?
             elif autoCollapse:
                 self.__categoryView.collapse_row(categoryRow.path)
-            return False
+        return someRowsExpanded
                 
     def __connectChildToCategory(self, childId, parentId):
         try:
