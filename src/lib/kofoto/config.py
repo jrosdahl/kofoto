@@ -1,6 +1,16 @@
 """Configuration module for Kofoto."""
 
+__all__ = [
+    "BadConfigurationValueError",
+    "Config",
+    "ConfigError",
+    "DEFAULT_CONFIGFILE",
+    "MissingConfigurationKeyError",
+    "MissingSectionHeaderError",
+    "createConfigTemplate",
+]
 from ConfigParser import *
+ConfigParserMissingSectionHeaderError = MissingSectionHeaderError
 import os
 import re
 from kofoto.common import KofotoError
@@ -8,6 +18,9 @@ from kofoto.common import KofotoError
 DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
 
 class ConfigError(KofotoError):
+    pass
+
+class MissingSectionHeaderError(KofotoError):
     pass
 
 class MissingConfigurationKeyError(KofotoError):
@@ -23,7 +36,10 @@ class Config(ConfigParser):
         self.encoding = encoding
 
     def read(self):
-        ConfigParser.read(self, self.filename)
+        try:
+            ConfigParser.read(self, self.filename)
+        except ConfigParserMissingSectionHeaderError:
+            raise MissingConfigurationKeyError
 
     def get(self, *args, **kwargs):
         return unicode(ConfigParser.get(self, *args, **kwargs), self.encoding)
@@ -38,16 +54,17 @@ class Config(ConfigParser):
               local character encoding).
             * imagecache_location: Location of the image cache
               (encoded in the local character encoding).
-            * thumbnail_image_size: Thumbnail size.
+            * thumbnail_size: Thumbnail size.
             * default_image_size: Default image size.
             * image_sizes: Image sizes as a sorted list of unique
               integers.
         """
-        def checkConfigurationItem(key, function):
-            if not self.has_option("general", key):
-                raise MissingConfigurationKeyError, key
-            if function and not function(self.get("general", key)):
-                raise BadConfigurationValueError, (key, value)
+        def checkConfigurationItem(section, key, function):
+            if not self.has_option(section, key):
+                raise MissingConfigurationKeyError, (section, key)
+            value = self.get(section, key)
+            if function and not function(value):
+                raise BadConfigurationValueError, (section, key, value)
         def isInt(arg):
             try:
                 int(arg)
@@ -55,19 +72,24 @@ class Config(ConfigParser):
             except ValueError:
                 return False
 
-        checkConfigurationItem("shelf_location", None)
-        checkConfigurationItem("imagecache_location", None)
-        checkConfigurationItem("thumbnail_image_size", isInt)
-        checkConfigurationItem("default_image_size", isInt)
-        checkConfigurationItem("other_image_sizes", None)
+        checkConfigurationItem("shelf", "location", None)
+        checkConfigurationItem("image cache", "location", None)
+        checkConfigurationItem(
+            "album generation", "thumbnail_size", isInt)
+        checkConfigurationItem(
+            "album generation", "default_image_size", isInt)
+        checkConfigurationItem(
+            "album generation", "other_image_sizes", None)
         result = {}
-        for key in ["shelf_location", "imagecache_location"]:
+        for key, section, option in [
+            ("shelf_location", "shelf", "location"),
+            ("imagecache_location", "image cache",  "location")]:
             result[key] = os.path.expanduser(
-                self.get("general", key).encode(self.encoding))
-        for key in ["thumbnail_image_size", "default_image_size"]:
-            result[key] = self.getint("general", key)
+                self.get(section, option).encode(self.encoding))
+        for key in ["thumbnail_size", "default_image_size"]:
+            result[key] = self.getint("album generation", key)
 
-        imgsizesval = self.get("general", "other_image_sizes")
+        imgsizesval = self.get("album generation", "other_image_sizes")
         # TODO: Use sets module when Python 2.3 or higher is required.
         imgsizesdict = dict([(int(x), True)
                              for x in re.findall("\d+", imgsizesval)])
@@ -81,19 +103,28 @@ def createConfigTemplate(filename):
     file(filename, "w").write(
         """### Configuration file for Kofoto.
 
+######################################################################
 ## General configuration
-[general]
+[shelf]
 
 # Default location of the shelf. This is where information about
 # albums, images, categories, etc., is stored.
-shelf_location = ~/.kofoto/shelf
+location = ~/.kofoto/shelf
+
+######################################################################
+## Configuration of the image cache.
+[image cache]
 
 # Location of the image cache. This is where generated images are
 # stored.
-imagecache_location = ~/.kofoto/imagecache
+location = ~/.kofoto/imagecache
+
+######################################################################
+## Configuration for album generation in general.
+[album generation]
 
 # Size of thumbnails.
-thumbnail_image_size = 128
+thumbnail_size = 128
 
 # The image size that will be used when first entering an album.
 default_image_size = 640
@@ -102,9 +133,11 @@ default_image_size = 640
 # albums.
 other_image_sizes = 400 1024
 
+######################################################################
 ## Configuration for the GNOME client "gkofoto".
-[gnome]
+[gnome client]
 
+######################################################################
 ## Configuration for the default output module "woolly".
 [woolly]
 

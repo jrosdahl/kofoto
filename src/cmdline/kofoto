@@ -675,9 +675,13 @@ def main(argv):
     except MissingSectionHeaderError, x:
         printErrorAndExit(
             "Bad configuration (missing section headers).\n" % x)
-    except MissingConfigurationKeyError, x:
+    except MissingConfigurationKeyError, (section, key):
         printErrorAndExit(
-            "Missing configuration key in general section: %s.\n" % x)
+            "Missing configuration key in %s section: %s.\n" % (section, key))
+    except BadConfigurationValueError, (section, key, value):
+        printErrorAndExit(
+            "Bad configuration value for %s in %s section: %s.\n" % (
+                key, section, value))
 
     if not shelfLocation and genconf.has_key("shelf_location"):
         shelfLocation = genconf["shelf_location"]
@@ -723,7 +727,7 @@ def main(argv):
         env.errexit = printErrorAndExit
         env.shelf = shelf
         env.imagecache = ImageCache(genconf["imagecache_location"])
-        env.thumbnailsize = genconf["thumbnail_image_size"]
+        env.thumbnailsize = genconf["thumbnail_size"]
         env.defaultsize = genconf["default_image_size"]
         env.imagesizes = genconf["image_sizes"]
         env.config = conf
