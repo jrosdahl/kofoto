@@ -1,0 +1,17 @@
+Dependencies:
+
+  * Python 2.1 or newer. Found at:
+
+        http://www.python.org
+
+  * Python Imaging Library. Found at:
+
+        http://www.pythonware.com/products/pil/
+
+  * SQLite. Found at:
+
+        http://www.sqlite.org
+
+  * PySQLite. Found at:
+
+        http://pysqlite.sourceforge.net
