@@ -37,6 +37,7 @@ __all__ = [
 ######################################################################
 ### Libraries.
 
+import os
 import re
 import threading
 import time
@@ -119,15 +120,19 @@ schema = """
         -- identifies the image uniquely. Currently an MD5 checksum
         -- (in hex format) of all image data.
         hash        CHAR(32) NOT NULL,
-        -- Last known location (local pathname) of the image.
-        location    VARCHAR(256) NOT NULL,
+        -- Directory part of the last known location (local pathname)
+        -- of the image.
+        directory   VARCHAR(256) NOT NULL,
+        -- Filename part of the last known location (local pathname)
+        -- of the image.
+        filename    VARCHAR(256) NOT NULL,
 
         UNIQUE      (hash),
         FOREIGN KEY (imageid) REFERENCES object,
         PRIMARY KEY (imageid)
     );
 
-    CREATE INDEX image_location_index ON image (location);
+    CREATE INDEX image_location_index ON image (directory, filename);
 
     -- Members in an album.
     CREATE TABLE member (
@@ -206,6 +211,7 @@ schema = """
 
 _ROOT_ALBUM_ID = 0
 _ROOT_ALBUM_DEFAULT_TAG = u"root"
+_SHELF_FORMAT_VERSION = 1
 
 ######################################################################
 ### Exceptions.
@@ -412,9 +418,12 @@ class Shelf:
             cursor.execute(
                 " select version"
                 " from   dbinfo")
-            if cursor.fetchone()[0] != 0:
-                raise UnsupportedShelfError, location
+            version = cursor.fetchone()[0]
             self.connection.rollback()
+            if version > _SHELF_FORMAT_VERSION:
+                raise UnsupportedShelfError, location
+            if version < _SHELF_FORMAT_VERSION:
+                self._upgradeShelf(version)
             if create:
                 raise FailedWritingError, location
         except sql.OperationalError:
@@ -424,7 +433,8 @@ class Shelf:
                 cursor.execute(schema)
                 cursor.execute(
                     " insert into dbinfo (version)"
-                    " values (0)")
+                    " values (%s)",
+                    _SHELF_FORMAT_VERSION)
                 cursor.execute(
                     " insert into object (objectid)"
                     " values (%s)",
@@ -609,9 +619,26 @@ class Shelf:
         Returns an iterator returning the images."""
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image")
-        for imageid, hash, location in cursor:
+        for imageid, hash, directory, filename in cursor:
+            location = os.path.join(directory, filename)
+            yield Image(self, imageid, hash, location)
+
+
+    def getImagesInDirectory(self, directory):
+        """Get all images that are expected to be in a given directory
+        (unsorted).
+
+        Returns an iterable returning the images."""
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " select imageid, hash, directory, filename"
+            " from   image"
+            " where  directory = %s",
+            directory)
+        for imageid, hash, directory, filename in cursor:
+            location = os.path.join(directory, filename)
             yield Image(self, imageid, hash, location)
 
 
@@ -683,11 +710,12 @@ class Shelf:
                 " values (null)")
             imageid = cursor.lastrowid
             cursor.execute(
-                " insert into image (imageid, hash, location)"
+                " insert into image (imageid, hash, directory, filename)"
                 " values (%s, %s, %s)",
                 imageid,
                 hash,
-                location)
+                os.path.dirname(location),
+                os.path.basename(location))
             width, height = pilimg.size
             cursor.execute(
                 " insert into attribute (objectid, name, value, lcvalue)"
@@ -729,11 +757,11 @@ class Shelf:
             return self.objectcache[ref]
         cursor = self.connection.cursor()
         cursor.execute(
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image"
             " where  imageid = %s"
             " union"
-            " select imageid, hash, location"
+            " select imageid, hash, directory, filename"
             " from   image"
             " where  hash = %s",
             ref,
@@ -743,14 +771,15 @@ class Shelf:
             import os
             if os.path.isfile(ref.encode(self.codeset)):
                 cursor.execute(
-                    " select imageid, hash, location"
+                    " select imageid, hash, directory, filename"
                     " from   image"
                     " where  hash = %s",
                     computeImageHash(ref.encode(self.codeset)))
                 row = cursor.fetchone()
             if not row:
                 raise ImageDoesNotExistError, ref
-        imageid, hash, location = row
+        imageid, hash, directory, filename = row
+        location = os.path.join(directory, filename)
         image = Image(self, imageid, hash, location)
         self.objectcache[imageid] = image
         self.objectcache[unicode(imageid)] = image
@@ -1031,6 +1060,67 @@ class Shelf:
         self.modified = False
         for fn in self.modificationCallbacks:
             fn(False)
+
+
+    def _upgradeShelf(self, version):
+        if version < 1:
+            #
+            # Split image location field into directory and filename.
+            #
+            cursor = self.connection.cursor()
+            cursor2 = self.connection.cursor()
+            cursor.execute(
+                " create temporary table tmp_image ("
+                "     imageid   integer not null,"
+                "     hash      char(32) not null,"
+                "     directory varchar(256) not null,"
+                "     filename  varchar(256) not null"
+                " )")
+            cursor.execute(
+                "select imageid, hash, location from image")
+            for imageid, hash, location in cursor:
+                cursor2.execute(
+                    "insert into tmp_image values (%s, %s, %s, %s)",
+                    imageid,
+                    hash,
+                    os.path.dirname(location),
+                    os.path.basename(location))
+            cursor.execute(
+                "drop table image")
+            cursor.execute(
+                """
+    CREATE TABLE image (
+        -- Internal identifier of the image. Shared primary key with
+        -- object.
+        imageid     INTEGER NOT NULL,
+        -- Identifier string which is derived from the image data and
+        -- identifies the image uniquely. Currently an MD5 checksum
+        -- (in hex format) of all image data.
+        hash        CHAR(32) NOT NULL,
+        -- Directory part of the last known location (local pathname)
+        -- of the image.
+        directory   VARCHAR(256) NOT NULL,
+        -- Filename part of the last known location (local pathname)
+        -- of the image.
+        filename    VARCHAR(256) NOT NULL,
+
+        UNIQUE      (hash),
+        FOREIGN KEY (imageid) REFERENCES object,
+        PRIMARY KEY (imageid)
+    )""")
+            cursor.execute(
+                "CREATE INDEX image_location_index ON image (directory, filename)")
+            cursor.execute(
+                " insert into image (imageid, hash, directory, filename)"
+                " select imageid, hash, directory, filename from tmp_image")
+            cursor.execute("drop table tmp_image")
+
+        cursor = self.connection.cursor()
+        cursor.execute(
+            " update dbinfo"
+            " set    version = %s",
+            _SHELF_FORMAT_VERSION)
+        self.connection.commit()
 
 
 class Category:
@@ -1534,9 +1624,10 @@ class Image(_Object):
         cursor = self.shelf.connection.cursor()
         cursor.execute(
             " update image"
-            " set    location = %s"
+            " set    directory = %s, filename = %s"
             " where  imageid = %s",
-            location,
+            os.path.dirname(location),
+            os.path.basename(location),
             self.getId())
         self.location = location
         self.shelf._setModified()
@@ -1701,7 +1792,7 @@ class AllImagesAlbum(MagicAlbum):
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    name = 'captured'"
-            " order by lcvalue, location")
+            " order by lcvalue, directory, filename")
         for (imageid,) in cursor:
             yield self.shelf.getImage(imageid)
 
@@ -1757,7 +1848,7 @@ class OrphansAlbum(MagicAlbum):
                 " on       imageid = objectid"
                 " where    imageid not in (select objectid from member) and"
                 "          name = 'captured'"
-                " order by lcvalue, location")
+                " order by lcvalue, directory, filename")
             for (imageid,) in cursor:
                 yield self.shelf.getImage(imageid)
 
