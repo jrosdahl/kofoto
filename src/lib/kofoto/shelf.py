@@ -56,9 +56,12 @@ schema = """
     );
 
     CREATE TABLE image (
-        -- Identifier of the image. Shared primary key with object.
+        -- Internal identifier of the image. Shared primary key with
+        -- object.
         imageid     INTEGER NOT NULL,
-        -- MD5 sum in hex format of the first 2^16 bytes of the image.
+        -- Identifier string which is derived from the image data and
+        -- identifies the image uniquely. Currently an MD5 checksum
+        -- (in hex format) of all image data.
         hash        CHAR(32) NOT NULL,
         -- Last known location (local pathname) of the image.
         location    VARCHAR(256) NOT NULL,
@@ -186,7 +189,11 @@ def computeImageHash(filename):
     import md5
     m = md5.new()
     f = open(filename)
-    m.update(f.read(2**16))
+    while 1:
+        data = f.read(2**16)
+        if not data:
+            break
+        m.update(data)
     return m.hexdigest()
 
 
