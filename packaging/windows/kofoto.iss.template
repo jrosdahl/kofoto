@@ -1,0 +1,30 @@
+[Setup]
+AppName=Kofoto
+AppVerName=Kofoto %version%
+AppPublisher=Joel Rosdahl & Ulrik Svensson
+AppPublisherURL=http://kofoto.rosdahl.net
+AppSupportURL=http://kofoto.rosdahl.net
+AppUpdatesURL=http://kofoto.rosdahl.net
+DefaultDirName={pf}\Kofoto
+DefaultGroupName=Kofoto
+AllowNoIcons=yes
+LicenseFile=%licensefile%
+OutputBaseFilename=setup
+Compression=lzma
+SolidCompression=yes
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[Files]
+Source: "%distdir%\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+
+[Icons]
+Name: "{group}\Kofoto"; Filename: "{app}\kofoto.exe"
+Name: "{userdesktop}\Kofoto"; Filename: "{app}\kofoto.exe"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Kofoto"; Filename: "{app}\kofoto.exe"; Tasks: quicklaunchicon
+
+[Run]
+Filename: "{app}\kofoto.exe"; Description: "{cm:LaunchProgram,Kofoto}"; Flags: nowait postinstall skipifsilent
+
