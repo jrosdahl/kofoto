@@ -253,6 +253,7 @@ class ObjectCollection(object):
 
     def __insertionWorker(self, objectList, location):
         for obj in objectList:
+            self._freezeViews()
             iterator = self.__treeModel.insert(location)
             self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
             if obj.isAlbum():
@@ -271,6 +272,7 @@ class ObjectCollection(object):
                     column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
                     self.__treeModel.set_value(iterator, column, value)
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
+            self._thawViews()
             self.signalRowInserted()
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1

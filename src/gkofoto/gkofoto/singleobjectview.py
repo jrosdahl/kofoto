@@ -145,11 +145,13 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _rowChanged(self, model, path, iter, arg, *unused):
         if path[0] == self.__selectedRowNr:
             env.debug("selected object in SingleObjectView changed")
-            objectSelection = self._objectCollection.getObjectSelection()
-            obj = objectSelection[path[0]]
+            oc = self._objectCollection
+            model = oc.getUnsortedModel()
+            objid = model.get_value(model.get_iter(path), oc.COLUMN_OBJECT_ID)
+            obj = env.shelf.getObject(objid)
             if not obj.isAlbum():
                 self.loadFile(obj.getLocation(), True)
-        
+
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])
