@@ -1,0 +1,104 @@
+ _  __      __       _
+| |/ /___  / _| ___ | |_ ___
+| ' // _ \| |_ / _ \| __/ _ \
+| . \ (_) |  _| (_) | || (_) |
+|_|\_\___/|_|  \___/ \__\___/
+
+
+INSTALLATION
+============
+
+A. Unix
+-------
+
+   Prerequisites
+   -------------
+
+   Kofoto depends on the following third-party softwares:
+
+     * Python 2.3 or newer. Found at:
+
+           http://www.python.org
+
+     * GTK+ 2.4 or newer. Found at:
+
+           http://www.gtk.org
+
+     * Glade 2.6. Found at:
+
+           http://glade.gnome.org
+
+     * PyGTK for GTK+ 2.4 or newer (including Glade bindings). Found
+       at:
+
+           http://www.pygtk.org
+
+     * Python Imaging Library. Found at:
+
+           http://www.pythonware.com/products/pil/
+
+     * PySQLite for SQLite 2.8. Found at:
+
+           http://pysqlite.sourceforge.net
+
+   On a Debian GNU/Linux machine, installing the packages
+   python-glade2, python-gtk2, python-imaging and python-sqlite should
+   do.
+
+
+   Installing and running Kofoto
+   -----------------------------
+
+   1. Install the prerequisites, if necessary.
+   2. Unpack the kofoto-*.tar.gz archive.
+   3. Run "python setup.py install" in the created directory to
+      install Kofoto at the default location. See
+      http://www.python.org/doc/current/inst/inst.html for more
+      information.
+   4. Run gkofoto or "kofoto --help".
+
+
+B. Windows standalone
+---------------------
+
+   1. Run kofoto-x.y-win32-standalone.exe and complete the wizard.
+   2. Double-click the Kofoto shortcut at the desktop or in the start
+      menu.
+
+C. Windows with separately installed dependencies
+-------------------------------------------------
+
+   Prerequisites
+   -------------
+
+   Kofoto depends on the following third-party softwares:
+
+     * Python 2.3 or newer. Found at:
+
+           http://www.python.org
+
+     * GTK+ 2.4 or newer (including Glade) for Windows. Found at:
+
+            http://gladewin32.sourceforge.net
+
+     * PyGTK for GTK+ 2.4 (including Glade bindings) for Windows. Found at:
+
+            http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
+
+     * Python Imaging Library. Found at:
+
+           http://www.pythonware.com/products/pil/
+
+     * PySQLite. Found at:
+
+           http://pysqlite.sourceforge.net
+
+
+   Installing and running Kofoto
+   -----------------------------
+
+   1. Install the prerequisites, if necessary.
+   2. Run the kofoto-*.win32.exe Windows installer and complete the
+      wizard.
+   3. Double-click the Kofoto shortcut at the desktop or in the start
+      menu.

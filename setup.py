@@ -35,7 +35,7 @@ common_setup_options = {
     "url": "http://kofoto.rosdahl.net",
     "license": "BSD",
     "group": "Applications/Graphics",
-    "requires": "python >= 2.3, gtk+ >= 2.2, glade >= 2.0, pygtk, sqlite >= 2.8, pysqlite, PIL",
+    "requires": "python >= 2.3, gtk+ >= 2.4, glade >= 2.6, pygtk, sqlite >= 2.8, pysqlite, PIL",
 }
 
 def run(**setup_options):
