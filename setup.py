@@ -14,6 +14,6 @@ setup(
     data_files=[
         ("share/gnomekofoto/glade", ["src/gnome/glade/gkofoto.glade"]),
         ("share/gnomekofoto/icons", ["src/gnome/icons/fullscreen-24.png"])],
-    author="Joel Rosdahl",
-    author_email="joel@rosdahl.net",
+    author="Kofoto developers",
+    author_email="10711@lyskom.lysator.liu.se",
     url="http://svn.rosdahl.net/kofoto/kofoto/")
