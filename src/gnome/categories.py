@@ -147,7 +147,6 @@ class Categories:
         self._selectedCategories = {}
         self._parseCategoryTree(self._model, None, selection)
         self.updateContextMenu()
-        print self._selectedCategories
             
     def _parseCategoryTree(self, categoryList, parent, selection):
         for row in categoryList:
