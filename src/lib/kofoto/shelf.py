@@ -188,7 +188,7 @@ def computeImageHash(filename):
     """Compute the canonical image ID for an image file."""
     import md5
     m = md5.new()
-    f = open(filename)
+    f = open(filename, "rb")
     while 1:
         data = f.read(2**16)
         if not data:
@@ -826,7 +826,7 @@ class Image(_Object):
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
         import EXIF
-        tags = EXIF.process_file(open(self.getLocation()))
+        tags = EXIF.process_file(open(self.getLocation(), "rb"))
 
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",

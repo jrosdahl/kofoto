@@ -224,13 +224,8 @@ class OutputGenerator(OutputEngine):
         symlinkOrCopyFile(
             "%s.html" % root.getTag(),
             os.path.join(self.dest, "index.html"))
-        cssfile = open(os.path.join(self.dest, "woolly.css"), "w")
-        cssfile.write(css)
-        cssfile.close()
-        unitfile = open(
-            os.path.join(self.dest, self.imagesdest, "1x1.png"), "w")
-        unitfile.write(png1x1)
-        unitfile.close()
+        self.writeFile("woolly.css", css)
+        self.writeFile(os.path.join(self.imagesdest, "1x1.png"), png1x1, 1)
 
 
     def generateAlbum(self, album, subalbums, images, paths):
