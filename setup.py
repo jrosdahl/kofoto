@@ -54,7 +54,12 @@ setup(
     data_files=data_files,
     author="Joel Rosdahl and Ulrik Svensson",
     author_email="kofoto@rosdahl.net",
+    maintainer="Joel Rosdahl and Ulrik Svensson",
+    maintainer_email="kofoto@rosdahl.net",
     url="http://kofoto.rosdahl.net",
+    license="BSD",
+    group="Applications/Graphics",
+    requires="python >= 2.3, gtk+ >= 2.2, glade >= 2.0, pygtk, sqlite >= 2.8, pysqlite, PIL",
     )
 
 if windows_mode:
