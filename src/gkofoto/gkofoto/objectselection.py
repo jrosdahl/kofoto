@@ -48,7 +48,10 @@ class ObjectSelection:
             self.__invokeChangedCallbacks()
 
     def getSelectedObjects(self):
-        return self.__selectedObjects.values()
+        conv = self.__objectCollection.convertFromUnsortedRowNr
+        items = self.__selectedObjects.items()
+        items.sort(lambda x, y: cmp(conv(x[0]), conv(y[0])))
+        return [x[1] for x in items]
 
     def getLowestSelectedRowNr(self):
         rowNrs = list(self)
