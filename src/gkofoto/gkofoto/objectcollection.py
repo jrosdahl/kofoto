@@ -453,6 +453,12 @@ class ObjectCollection(object):
                     dialog.run()
                     dialog.destroy()
 
+    def rotateImageLeft(self, widget, data):
+        self.rotateImage(widget, 270)
+
+    def rotateImageRight(self, widget, data):
+        self.rotateImage(widget, 90)
+
     def openImage(self, widget, data):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
