@@ -6,35 +6,62 @@ from images import *
 
 class ThumbnailView:
     _maxWidth = 0
-    _thumbnailList = None
-    _selectSignalHandler = None
-    _unselectSignalHandler = None
-    _model = None
+    _modelConnections = []
+    _blockedConnections = []
+    _freezed = gtk.FALSE
     
-    def __init__(self):
+    def __init__(self, loadedImages, selectedImages, contextMenu):
+        self._locked = gtk.FALSE
+        self._contextMenu = contextMenu
+        self._selectedImages = selectedImages
         widget = env.widgets["thumbnailList"]
-        self._selectSignalHandler = widget.connect("select_icon", self._iconSelected)
-        self._unSelectSignalHandler = widget.connect("unselect_icon", self._iconUnselected)
-    
-    def setModel(self, model):
-        self._thumbnailList = env.widgets["thumbnailList"]
-        self._thumbnailList.clear()
-        model.connect("row_inserted", self.on_row_inserted)
-        model.connect("row_changed", self.on_row_changed)
-        model.connect("row_deleted", self.on_row_deleted)
-        iter = model.get_iter_first()
-        self._model = model
-        for pos in range(model.iter_n_children(iter)):
-            self._thumbnailList.updateThumbnail(model, iter, pos)
-            model.iter_next(iter)
+        self._thumbnailList = env.widgets["thumbnailList"]        
+        widget.connect("select_icon", self._widgetIconSelected)
+        widget.connect("unselect_icon", self._widgetIconUnselected)
+        widget.connect("button_press_event", self._button_pressed)
+        self._emptyPixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, gtk.FALSE, 8, 10, 10)
+        self.setModel(loadedImages)
+        
+    def setModel(self, loadedImages):
+        for c in self._modelConnections:
+            self._model.disconnect(c)
+        del self._modelConnections[:]
+        del self._blockedConnections[:]
+        self._model = loadedImages.model
+        self._initFromModel()
+        c = self._model.connect("row_inserted", self.on_row_inserted)
+        self._modelConnections.append(c)
+        c = self._model.connect("row_changed", self.on_row_changed)
+        self._modelConnections.append(c)
+        c = self._model.connect("row_deleted", self.on_row_deleted)
+        self._modelConnections.append(c)
 
-    def _updateThumbnail(self, model, iter, pos):
+    def _initFromModel(self):
+        self._thumbnailList.clear()
+        iter = self._model.get_iter_first()
+        for pos in range(self._model.iter_n_children(None)):
+            self._loadThumbnail(self._model, iter, pos)
+            iter = self._model.iter_next(iter)
+        
+    def _blockModel(self):
+        for c in self._modelConnections:
+            self._model.handler_block(c)
+            self._blockedConnections.append(c)
+
+    def _unblockModel(self):
+        self._initFromModel()
+        for c in self._blockedConnections:
+            self._model.handler_unblock(c)
+        del self._blockedConnections[:]
+
+    def _loadThumbnail(self, model, iter, pos):
         pixbuf = model.get_value(iter, Images.COLUMN_THUMBNAIL)
+        if not pixbuf:
+            pixbuf = self._emptyPixbuf
         imageId = model.get_value(iter, Images.COLUMN_IMAGE_ID)
-        if pixbuf:
-            self._maxWidth = max(self._maxWidth, pixbuf.get_width())
-            self._thumbnailList.set_icon_width(self._maxWidth)
-            self._thumbnailList.insert_pixbuf(pos, pixbuf, "filnamn", str(imageId))
+        self._maxWidth = max(self._maxWidth, pixbuf.get_width())
+        self._thumbnailList.set_icon_width(self._maxWidth)
+        self._thumbnailList.insert_pixbuf(pos, pixbuf, "filnamn", str(imageId))
 
     def freeze(self):
         self._thumbnailList.freeze()
@@ -43,53 +70,65 @@ class ThumbnailView:
         self._thumbnailList.thaw()
 
     def show(self):
+        self._locked = gtk.TRUE
+        self._thumbnailList.unselect_all()
+        self._locked = gtk.FALSE
         env.widgets["thumbnailView"].show()
         env.widgets["thumbnailList"].grab_focus()
+        self._unblockModel()
 
     def hide(self):
         env.widgets["thumbnailView"].hide()
+        self._blockModel()
         
-    def setAttributes(self, attributeNamesMap):
-        pass
-
     def on_row_changed(self, model, path, iter):
-        self._updateThumbnail(model, iter, path[0])
+        self._locked = gtk.TRUE
+        self._thumbnailList.remove(path[0])
+        self._loadThumbnail(model, iter, path[0])
+        self._locked = gtk.FALSE
+        self.selectionUpdated()
 
     def on_row_inserted(self, model, path, iter):
-        self._updateThumbnail(model, iter, path[0])
+        self._loadThumbnail(model, iter, path[0])
 
-    def on_row_has_child_toggled(self, path, iter):
-        pass
-    
     def on_row_deleted(self, model, path):
         self._thumbnailList.remove(path[0])
         
     def on_rows_reordered(self, path, iter, new_order):
-        pass
+        # TODO: Implement when sorting is introduced
+        print "on_rows_reordered not yet implemented"
 
-    def _iconSelected(self, widget, index, event):
-        iter = self._model.get_iter(index)
-        imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-        env.controller.selection.add(imageId)
-        env.controller.selectionUpdated()
+    def _widgetIconSelected(self, widget, index, event):
+        if not self._locked:
+            self._locked = gtk.TRUE
+            iter = self._model.get_iter(index)
+            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+            self._selectedImages.add(imageId)
+            self._locked = gtk.FALSE
 
-    def _iconUnselected(self, widget, index, event):
-        iter = self._model.get_iter(index)
-        imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-        try:
-            env.controller.selection.remove(imageId)
-            env.controller.selectionUpdated()
-        except(KeyError):
-            pass
+    def _widgetIconUnselected(self, widget, index, event):
+        if not self._locked:
+            self._locked = gtk.TRUE        
+            iter = self._model.get_iter(index)
+            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+            try:
+                self._selectedImages.remove(imageId)
+            except(KeyError):
+                pass
+            self._locked = gtk.FALSE
 
-    def loadNewSelection(self):
-        self._thumbnailList.handler_block(self._selectSignalHandler)
-        self._thumbnailList.handler_block(self._unSelectSignalHandler)
-        self._thumbnailList.unselect_all()
-        indices = xrange(sys.maxint)
-        for image, index in zip(self._model, indices):
-            if image[Images.COLUMN_IMAGE_ID] in env.controller.selection:
-                self._thumbnailList.select_icon(index)
-        self._thumbnailList.handler_unblock(self._selectSignalHandler)
-        self._thumbnailList.handler_unblock(self._unSelectSignalHandler)
+    def selectionUpdated(self):
+        if not self._locked:
+            self._locked = gtk.TRUE        
+            self._thumbnailList.unselect_all()
+            indices = xrange(sys.maxint)
+            for image, index in zip(self._model, indices):
+                if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
+                    self._thumbnailList.select_icon(index)
+            self._locked = gtk.FALSE            
 
+    def _button_pressed(self, widget, event):
+        if event.button == 3:
+            if self._contextMenu:
+                self._contextMenu.popup(None,None,None,event.button,event.time)
+            return gtk.FALSE

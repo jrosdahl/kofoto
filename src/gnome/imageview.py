@@ -86,7 +86,7 @@ class ImageView(gtk.ScrolledWindow):
                 self.fitToWindow()
         return FALSE
         
-    def fitToWindow(self, foo=None):
+    def fitToWindow(self, *foo):
         self._fitToWindowMode = TRUE
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
         y, x, widgetWidth, widgetHeight = self.get_allocation()
@@ -103,21 +103,21 @@ class ImageView(gtk.ScrolledWindow):
     def _log(self, base, value):
         return math.log(value) / math.log(base)
 
-    def zoomIn(self, foo=None):
+    def zoomIn(self, *foo):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self._fitToWindowMode = FALSE
         if self._wantedZoom <= self._MAX_ZOOM:
             self._wantedZoom = math.floor(self._wantedZoom + 1)
             self.renderImage()
                 
-    def zoomOut(self, foo=None):
+    def zoomOut(self, *foo):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self._fitToWindowMode = FALSE
         if self._wantedZoom >= self._MIN_ZOOM:
             self._wantedZoom = math.ceil(self._wantedZoom - 1)
             self.renderImage()
 
-    def zoom100(self, foo=None):
+    def zoom100(self, *foo):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self._fitToWindowMode = FALSE
         self._wantedZoom = 0

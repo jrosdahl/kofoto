@@ -48,10 +48,9 @@ class Albums:
             albumId = albumModel.get_value(iter, self._COLUMN_ALBUM_ID)
             albumTag =  albumModel.get_value(iter, self._COLUMN_TAG)
             album = env.shelf.getAlbum(albumId)
-            selectedImages = []
+            imageList = []
             for child in album.getChildren():
                 if not child.isAlbum():
-                    selectedImages.append(child)
-            env.widgets["categoryView"].get_selection().unselect_all()
-            env.controller.loadImages(selectedImages, "album://" + albumTag)
+                    imageList.append(child)
+            env.controller.loadImages(imageList, "album://" + albumTag)
             

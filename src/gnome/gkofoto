@@ -10,8 +10,9 @@ import gnome.ui
 from environment import env
 
 from kofoto.imagecache import *
-from kofoto.sets import *
 
+from imageselection import *
+from imagecontextmenu import *
 from albums import *
 from images import *
 from mainwindow import *
@@ -30,32 +31,28 @@ class WidgetsWrapper:
         self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
     def __getitem__(self, key):
         return self.widgets.get_widget(key)
-    def signal_autoconnect(self, dic):
-        self.widgets.signal_autoconnect(dic)
 
 class Controller:
-    loadedImages = None
-    _loadedImagesTitel = ""
-    _wantedThumbnailSize = None
-    _tableView = None
-    _thumbnailView = None
-    _singleImageView = None
-    _categories = None
-    selection = Set()
-    _currentImageView = None
-    _hiddenImageViews = []
-    _clipboard = None
-
     def __init__(self):
-        self._wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
+        self.wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
+        self._clipboard = None
         
     def start(self):
-        albums = Albums()
-        self._categories = Categories()
-        self._thumbnailView = ThumbnailView()
-        self._tableView = TableView()
-        self._singleImageView = SingleImageView()
-        self.newDataModel()
+        self._selectedImages = ImageSelection(self._imageSelectionChanged)
+        self._loadedImages = Images(self._selectedImages)
+        self._imageContextMenu = ImageContextMenu(self._loadedImages, self._selectedImages)
+        self._albums = Albums()
+        self._categories = Categories(self._loadedImages,
+                                      self._selectedImages)
+        self._thumbnailView = ThumbnailView(self._loadedImages,
+                                            self._selectedImages,
+                                            self._imageContextMenu)
+        self._tableView = TableView(self._loadedImages,
+                                    self._selectedImages,
+                                    self._imageContextMenu)
+        self._singleImageView = SingleImageView(self._loadedImages,
+                                                self._selectedImages,
+                                                self._imageContextMenu)
         self.showThumbnailView()
         MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
@@ -91,31 +88,28 @@ class Controller:
         print "commit"
         env.shelf.begin()
         
-    def newDataModel(self):
-        self.loadedImages = Images()
-        self._tableView.setModel(self.loadedImages.sortedModel)
-        self._tableView.setAttributes(self.loadedImages.attributeNamesMap)
-        self._thumbnailView.setModel(self.loadedImages.sortedModel)
-        self._singleImageView.setModel(self.loadedImages.sortedModel)
-        
     def loadImages(self, imageList, source):
         env.widgets["sourceEntry"].set_text(source)
-        self.selection.clear()
+        self._selectedImages.clear()
         self._currentView.freeze()
-        self.loadedImages.loadImageList(imageList)
-        self.loadedImages.loadThumbnails(self._wantedThumbnailSize)
+        self._loadedImages.loadImageList(imageList)
+        self._loadedImages.loadThumbnails(self.wantedThumbnailSize)
         self._currentView.thaw()
-        self._currentView.loadNewSelection()
+
+    def newImageModelLoaded(self):
+        print "newImageModelLoaded not yet implemented"
         
-    def selectionUpdated(self):
-        self._currentView.loadNewSelection()
-        self._categories.updateView()
+    def _imageSelectionChanged(self):
+        self._currentView.selectionUpdated()
+        self._imageContextMenu.updateContextMenu()
+        if len(self._selectedImages) > 0:
+            self._categories.updateView()
 
     def _viewChanged(self):
-        self._currentView.loadNewSelection()
         self._currentView.show()
         for hiddenView in self._hiddenViews:
             hiddenView.hide()
+        self._currentView.selectionUpdated()
         
     def showTableView(self):
         self._currentView = self._tableView

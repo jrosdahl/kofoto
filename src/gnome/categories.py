@@ -20,14 +20,16 @@ class Categories:
     _ignoreSelectEvent = gtk.FALSE
     _selectedCategories = {}
     
-    def __init__(self):
+    def __init__(self, loadedImages, selectedImages):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                     gobject.TYPE_PYOBJECT, # TAG
                                     gobject.TYPE_STRING,   # DESCRIPTION
                                     gobject.TYPE_BOOLEAN,  # CONNECTED
                                     gobject.TYPE_BOOLEAN)  # INCONSISTENT
         categoryView = env.widgets["categoryView"]
-        categoryView.realize()        
+        categoryView.realize()
+        self._loadedImages = loadedImages
+        self._selectedImages = selectedImages
         categoryView.set_model(self._model)
 
         # Create columns
@@ -186,9 +188,9 @@ class Categories:
         nrSelectedImages = 0
         # find out which categories are connected, not connected or
         # partitionally connected to selected images
-        for image in env.controller.loadedImages.model:
+        for image in self._loadedImages.model:
             imageId = image[Images.COLUMN_IMAGE_ID]
-            if imageId in env.controller.selection:
+            if imageId in self._selectedImages:
                 nrSelectedImages += 1
                 image = env.shelf.getImage(imageId)
                 for category in image.getCategories():
@@ -236,7 +238,7 @@ class Categories:
                 # None of the selected images are connected to the category
                 categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
                 categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
-            if (not expandThis) and not doNotAutoCollapse and env.widgets["autoCollapse"].get_active():
+            if (not expandThis) and (not doNotAutoCollapse) and env.widgets["autoCollapse"].get_active():
                 env.widgets["categoryView"].collapse_row(categoryRow.path)
         return pathsToExpand, expandParent
                 
@@ -244,7 +246,7 @@ class Categories:
         categoryRow = self._model[path]
         category = env.shelf.getCategory(categoryRow[self._COLUMN_CATEGORY_ID])
         if categoryRow[self._COLUMN_INCONSISTENT]:
-            for imageId in env.controller.selection:
+            for imageId in self._selectedImages:
                 try:
                     env.shelf.getObject(imageId).addCategory(category)
                 except(CategoryPresentError):
@@ -252,11 +254,11 @@ class Categories:
             categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
             categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
         elif categoryRow[self._COLUMN_CONNECTED]:
-            for imageId in env.controller.selection:
+            for imageId in self._selectedImages:
                 env.shelf.getObject(imageId).removeCategory(category)
             categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
         else:
-            for imageId in env.controller.selection:
+            for imageId in self._selectedImages:
                 env.shelf.getObject(imageId).addCategory(category)
                 categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
 
