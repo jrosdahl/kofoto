@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import EXIF
+from kofoto import EXIF
 import os
 import sys
 import time

@@ -1913,7 +1913,7 @@ class Image(_Object):
 
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
-        import EXIF
+        from kofoto import EXIF
         tags = EXIF.process_file(
             file(self.getLocation().encode(self.shelf.codeset), "rb"))
 

@@ -4,7 +4,6 @@ from distutils.core import setup
 import os
 
 package_dir = {
-    "": "src/lib",
     "kofoto": "src/lib/kofoto",
     "gkofoto": "src/gkofoto",
     }
@@ -51,7 +50,6 @@ setup(
     version="0.0.0",
     package_dir=package_dir,
     packages=packages,
-    py_modules=["EXIF"],
     scripts=scripts,
     data_files=data_files,
     author="Kofoto developers",
