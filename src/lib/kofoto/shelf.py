@@ -35,28 +35,17 @@ __all__ = [
 ]
 
 ######################################################################
-### Pragmas.
-
-# Be compatible with Python 2.2.
-from __future__ import generators
-
-######################################################################
 ### Libraries.
 
 import re
 import threading
 import time
 import sqlite as sql
+from sets import Set
 from types import *
 from kofoto.common import KofotoError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
-
-# TODO: Remove when Python 2.3 or higher is required.
-try:
-    from sets import Set
-except ImportError:
-    from kofoto.sets import Set
 
 import warnings
 warnings.filterwarnings("ignore", "DB-API extension")

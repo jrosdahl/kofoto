@@ -14,6 +14,7 @@ from ConfigParser import *
 ConfigParserMissingSectionHeaderError = MissingSectionHeaderError
 import os
 import re
+from sets import Set
 from kofoto.common import KofotoError
 
 DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
@@ -91,11 +92,9 @@ class Config(ConfigParser):
             result[key] = self.getint("album generation", key)
 
         imgsizesval = self.get("album generation", "other_image_sizes")
-        # TODO: Use sets module when Python 2.3 or higher is required.
-        imgsizesdict = dict([(int(x), True)
-                             for x in re.findall("\d+", imgsizesval)])
-        imgsizesdict[result["default_image_size"]] = True
-        imgsizes = imgsizesdict.keys()
+        imgsizesset = Set([int(x) for x in re.findall("\d+", imgsizesval)])
+        imgsizesset.add(result["default_image_size"])
+        imgsizes = list(imgsizesset)
         imgsizes.sort()
         result["image_sizes"] = imgsizes
         return result

@@ -1,8 +1,5 @@
-# Be compatible with Python 2.2.
-
 __all__ = ["CacheDir"]
 
-from __future__ import generators
 from os import listdir, mkdir, rmdir
 from os.path import exists, join
 

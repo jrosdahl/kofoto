@@ -49,8 +49,6 @@
   registers images in given directories, generates an album and
   removes the shelf?
 
-* Remove compatibility code for Python versions older than 2.3.
-
 Think more about:
 
     * Which auxilliary attributes should be set on import? Specify

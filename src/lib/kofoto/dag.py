@@ -2,13 +2,7 @@
 
 __all__ = ["DAG", "LoopError"]
 
-from __future__ import generators
-
-# TODO: Remove when Python 2.3 or higher is required.
-try:
-    from sets import Set
-except ImportError:
-    from kofoto.sets import Set
+from sets import Set
 from kofoto.common import KofotoError
 
 class LoopError(KofotoError):
