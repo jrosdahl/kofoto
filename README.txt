@@ -10,31 +10,17 @@ OVERVIEW
 
 Kofoto is a tool for viewing and organizing images.
 
-Actually, Kofoto is a framework with a backend and (currently) two
-frontends:
+With kofoto, you can:
 
   * A graphical GTK+-based client (gkofoto).
   * A command-line utility (kofoto).
-
-With the clients you can:
-
   * Organize images in an album tree.
   * Organize images by use of categories.
   * Associate images with attributes.
   * Search for images matching a search expression.
-
-With the graphical client you can also:
-
   * View images.
-  * Rotate images (by use of an external command-line program, e.g.
-    jpegtran).
-  * Open images in an external program (e.g. The GIMP).
-
-With the command-line client you can also:
-
+  * Rotate images.
   * Generate HTML pages of an album subtree.
-
-See also the file overview.txt in the doc subdirectory.
 
 LICENSE
 =======
@@ -48,7 +34,6 @@ CONTACT
 
 Email: kofoto@rosdahl.net
 Web page: http://kofoto.rosdahl.net
-Source repository: http://svn.rosdahl.net/kofoto/kofoto
 
 
 INSTALLATION
@@ -72,7 +57,7 @@ A. Unix
 
      * PyGTK for GTK+ 2.2. Found at:
 
-           http://www.pygtk.org
+           http://www.gtk.org
 
      * Python Imaging Library. Found at:
 
