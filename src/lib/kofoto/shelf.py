@@ -407,55 +407,29 @@ class Shelf:
             logfile = file("sql.log", "a")
         else:
             logfile = None
-        self.connection = _UnicodeConnectionDecorator(
-            sql.connect(location,
-                        client_encoding="UTF-8",
-                        command_logfile=logfile),
-            "UTF-8")
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute(
-                " select version"
-                " from   dbinfo")
-            version = cursor.fetchone()[0]
-            self.connection.rollback()
-            if version > _SHELF_FORMAT_VERSION:
-                raise UnsupportedShelfError, location
-            if version < _SHELF_FORMAT_VERSION:
-                self._upgradeShelf(version)
+
+        if os.path.exists(location):
             if create:
                 raise FailedWritingError, location
-        except sql.OperationalError:
-            raise ShelfLockedError, location
+        else:
+            if not create:
+                raise ShelfNotFoundError, location
+        try:
+            self.connection = _UnicodeConnectionDecorator(
+                sql.connect(location,
+                            client_encoding="UTF-8",
+                            command_logfile=logfile),
+                "UTF-8")
         except sql.DatabaseError:
             if create:
-                cursor.execute(schema)
-                cursor.execute(
-                    " insert into dbinfo (version)"
-                    " values (%s)",
-                    _SHELF_FORMAT_VERSION)
-                cursor.execute(
-                    " insert into object (objectid)"
-                    " values (%s)",
-                    _ROOT_ALBUM_ID)
-                cursor.execute(
-                    " insert into album (albumid, tag, deletable, type)"
-                    " values (%s, %s, 0, 'plain')",
-                    _ROOT_ALBUM_ID,
-                    _ROOT_ALBUM_DEFAULT_TAG)
-                self.connection.commit()
-
-                self.begin()
-                orphansalbum = self.createAlbum(u"orphans", u"orphans")
-                orphansalbum.setAttribute(u"title", u"Orphans")
-                orphansalbum.setAttribute(
-                    u"description",
-                    u"This album contains albums and images that are not" +
-                    u" linked from any album.")
-                self.getRootAlbum().setChildren([orphansalbum])
-                self.commit()
+                raise FailedWritingError, location
             else:
                 raise ShelfNotFoundError, location
+
+        if create:
+            self._createShelf(logfile)
+        else:
+            self._openShelf(logfile)
 
 
     def begin(self):
@@ -988,6 +962,53 @@ class Shelf:
 
     ##############################
     # Internal methods.
+
+    def _createShelf(self, logfile):
+        cursor = self.connection.cursor()
+        cursor.execute(schema)
+        cursor.execute(
+            " insert into dbinfo (version)"
+            " values (%s)",
+            _SHELF_FORMAT_VERSION)
+        cursor.execute(
+            " insert into object (objectid)"
+            " values (%s)",
+            _ROOT_ALBUM_ID)
+        cursor.execute(
+            " insert into album (albumid, tag, deletable, type)"
+            " values (%s, %s, 0, 'plain')",
+            _ROOT_ALBUM_ID,
+            _ROOT_ALBUM_DEFAULT_TAG)
+        self.connection.commit()
+
+        self.begin()
+        orphansalbum = self.createAlbum(u"orphans", u"orphans")
+        orphansalbum.setAttribute(u"title", u"Orphans")
+        orphansalbum.setAttribute(
+            u"description",
+            u"This album contains albums and images that are not" +
+            u" linked from any album.")
+        self.getRootAlbum().setChildren([orphansalbum])
+        self.commit()
+
+
+    def _openShelf(self, logfile):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                " select version"
+                " from   dbinfo")
+        except sql.DatabaseError:
+            raise UnsupportedShelfError, self.location
+        version = cursor.fetchone()[0]
+        self.connection.rollback()
+        if version > _SHELF_FORMAT_VERSION:
+            raise UnsupportedShelfError, location
+        if version < _SHELF_FORMAT_VERSION:
+            import kofoto.shelfupgrade
+            kofoto.shelfupgrade.upgradeShelf(
+                self.connection, version, _SHELF_FORMAT_VERSION)
+
 
     def _albumFactory(self, albumid, tag, albumtype):
         albumtypemap = {
