@@ -164,13 +164,6 @@ class Albums:
                 ("menubarCreateAlbumChild", self._createChildAlbum),
                 ("menubarRegisterAndAddImages", self._registerImages),
                 ("menubarProperties", self._editAlbum),
-                ]:
-            oid = env.widgets[widgetName].connect("activate", function, None)
-            self._connectedOids.append((env.widgets[widgetName], oid))
-        for widgetName, function in [
-                ("menubarCreateAlbumChild", self._createChildAlbum),
-                ("menubarRegisterAndAddImages", self._registerImages),
-                ("menubarProperties", self._editAlbum),
                 ("menubarDestroy", self._destroyAlbum),
                 ]:
             w = env.widgets[widgetName]
