@@ -116,6 +116,24 @@ Design requirements and goals:
 
       - Stored as image attributes.
 
+Magic albums that would be nice to have:
+
+    * Hierarchy of locations.
+
+      Images can have the attribute "location" set to a list of
+      locations that represent increasingly specific physical places.
+      Example: Image1 with location set to "Sweden:Linköping:Lambohov"
+      and Image2 set to with location set to "Sweden:Linköping:Ryd"
+      would render an album graph like this:
+
+          [A] Locations
+              [A] Sweden
+                  [A] Linköping
+                      [A] Lambohov
+                          [I] Image1
+                      [A] Ryd
+                          [I] Image2
+
 ======================================================================
 
 originalbildfiler ändras aldrig
