@@ -122,7 +122,7 @@ class Categories:
     def _buildQuery(self, categoryList, selection, query):
         for row in categoryList:
             if selection.iter_is_selected(row.iter):
-                self._selectedCategories.append(row)
+                self._selectedCategories.append(row[self._COLUMN_CATEGORY_ID])
                 query = self._addToQuery(query, row[self._COLUMN_TAG])
             childQuery = self._buildQuery(row.iterchildren(), selection, "")
             query = self._addToQuery(query, childQuery)
@@ -164,44 +164,46 @@ class Categories:
                         nrSelectedImagesInCategory[categoryId] += 1
                     except(KeyError):
                         nrSelectedImagesInCategory[categoryId] = 1
-        for categoryRow in self._model:
-            self._updateCategoryModel(categoryRow, nrSelectedImagesInCategory, nrSelectedImages)
-
-    def _updateCategoryModel(self, categoryRow, nrSelectedImagesInCategory, nrSelectedImages):
-        # Expand/collapse categories
-        expand = gtk.FALSE
-        collapse = gtk.FALSE
-        for child in categoryRow.iterchildren():
-            if self._updateCategoryModel(child, nrSelectedImagesInCategory, nrSelectedImages):
-                expand = gtk.TRUE
-                collapse = gtk.FALSE
-            elif not expand:
-                collapse = gtk.TRUE
-        if expand:
-            if env.widgets["autoExpand"].get_active():
-                env.widgets["categoryView"].expand_row(categoryRow.path, gtk.FALSE)
-        elif collapse:
-            if env.widgets["autoCollapse"].get_active() and nrSelectedImages > 0 and categoryRow[self._COLUMN_CATEGORY_ID] not in nrSelectedImagesInCategory:
-                env.widgets["categoryView"].collapse_row(categoryRow.path)
-        # Update the checkbox indicating if the selected images are connected
-        # to the category or not. 
-        categoryId = categoryRow[self._COLUMN_CATEGORY_ID]
-        try:
-            if nrSelectedImagesInCategory[categoryId] < nrSelectedImages:
-                # Some of the selected images are connected to the category
-                categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
-                categoryRow[self._COLUMN_INCONSISTENT] = gtk.TRUE
-                return 1
+        pathsToExpand = self._updateCategoryModel(self._model,
+                                                  nrSelectedImagesInCategory,
+                                                  nrSelectedImages)[0]
+        if env.widgets["autoExpand"].get_active():
+            pathsToExpand.reverse()
+            for path in pathsToExpand:
+                env.widgets["categoryView"].expand_row(path, gtk.FALSE)  
+            
+    def _updateCategoryModel(self, categories, nrSelectedImagesInCategory, nrSelectedImages):
+        pathsToExpand = []
+        expandParent = gtk.FALSE
+        for categoryRow in categories:
+            childPathsToExpand, expandThis = self._updateCategoryModel(categoryRow.iterchildren(),
+                                                                       nrSelectedImagesInCategory,
+                                                                       nrSelectedImages)
+            pathsToExpand.extend(childPathsToExpand)
+            if expandThis:
+                pathsToExpand.append(categoryRow.path)
+                expandParent = gtk.TRUE
+            if categoryRow[self._COLUMN_CATEGORY_ID] in self._selectedCategories:
+                # Dont auto collapse selected categories
+                expandParent = gtk.TRUE
+            categoryId = categoryRow[self._COLUMN_CATEGORY_ID]
+            if categoryId in nrSelectedImagesInCategory:
+                expandParent = gtk.TRUE
+                if nrSelectedImagesInCategory[categoryId] < nrSelectedImages:
+                    # Some of the selected images are connected to the category
+                    categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
+                    categoryRow[self._COLUMN_INCONSISTENT] = gtk.TRUE
+                else:
+                    # All of the selected images are connected to the category
+                    categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
+                    categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
             else:
-                # All of the selected images are connected to the category
-                categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
+                # None of the selected images are connected to the category
+                categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
                 categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
-                return 1
-        except(KeyError):
-            # None of the selected images are connected to the category
-            categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
-            categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
-            return 0
+            if (not expandThis) and env.widgets["autoCollapse"].get_active():
+                env.widgets["categoryView"].collapse_row(categoryRow.path)
+        return pathsToExpand, expandParent
                 
     def _connectionToggled(self, renderer, path):
         categoryRow = self._model[path]
