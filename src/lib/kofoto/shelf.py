@@ -395,6 +395,7 @@ class Shelf:
         self.objectcache = {}
         self.categorycache = {}
         self.modified = False
+        self.modificationCallbacks = []
 
         if _DEBUG:
             logfile = file("sql.log", "a")
@@ -464,7 +465,7 @@ class Shelf:
             self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
-            self.modified = False
+            self._unsetModified()
 
 
     def rollback(self):
@@ -477,12 +478,29 @@ class Shelf:
             self.transactionLock.release()
             self.flushCategoryCache()
             self.flushObjectCache()
-            self.modified = False
+            self._unsetModified()
 
 
     def isModified(self):
         """Check whether the shelf has uncommited changes."""
         return self.modified
+
+
+    def registerModificationCallback(self, callback):
+        """Register a function that will be called when the
+        modification status changes.
+
+        The function will receive a single argument: True if the shelf
+        has been modified, otherwise False. """
+        self.modificationCallbacks.append(callback)
+
+
+    def unregisterModificationCallback(self, callback):
+        """Unregister a modification callback function."""
+        try:
+            self.modificationCallbacks.remove(callback)
+        except ValueError:
+            pass
 
 
     def flushCategoryCache(self):
@@ -1004,6 +1022,14 @@ class Shelf:
 
     def _setModified(self):
         self.modified = True
+        for fn in self.modificationCallbacks:
+            fn(True)
+
+
+    def _unsetModified(self):
+        self.modified = False
+        for fn in self.modificationCallbacks:
+            fn(False)
 
 
 class Category:
