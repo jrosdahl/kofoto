@@ -4,13 +4,14 @@ import math
 import gobject
 import gc
 from environment import env
+from kofoto.common import calculateDownscaledDimensions
 
 class ImageView(gtk.ScrolledWindow):
     # TODO: Read from configuration file?
     _INTERPOLATION_TYPE = gtk.gdk.INTERP_BILINEAR
     # gtk.gdk.INTERP_HYPER is slower but gives better quality.
     _MAX_IMAGE_SIZE = 2000
-    _MIN_IMAGE_SIZE = 1
+    _MIN_IMAGE_SIZE = 10 # Work-around for bug in GTK. (pixbuf.scale_iter(1, 1) crashes.)
     _MIN_ZOOM = -100
     _MAX_ZOOM = 1
     _ZOOMFACTOR = 1.2
@@ -33,14 +34,12 @@ class ImageView(gtk.ScrolledWindow):
         self.connect("scroll_event", self.scrollEventHandler)
 
     def loadFile(self, fileName, reload=True):
-        fileName = fileName.encode(env.codeset)
         if (not reload) and self.__loadedFileName == fileName:
             return
-        # TODO: Loading file should be asyncronous to avoid freezing the gtk-main loop
         try:
             self.clear()
             env.debug("ImageView is loading image from file: " + fileName)
-            self.__pixBuf = gtk.gdk.pixbuf_new_from_file(fileName)
+            self.__pixBuf = env.mainwindow.getImagePreloader().getPixbuf(fileName)
             self.__loadedFileName = fileName
         except gobject.GError, e:
             dialog = gtk.MessageDialog(
@@ -74,18 +73,29 @@ class ImageView(gtk.ScrolledWindow):
         if self.__wantedZoom == 0:
             pixBufResized = self.__pixBuf
         else:
-            zoomMultiplicator = pow(self._ZOOMFACTOR, self.__wantedZoom)
-            wantedWidth = int(self.__pixBuf.get_width() * zoomMultiplicator)
-            wantedHeight = int(self.__pixBuf.get_height() * zoomMultiplicator)
+            if self.__fitToWindowMode:
+                maxWidth, maxHeight = tuple(self.get_allocation())[2:4]
+                wantedWidth, wantedHeight = calculateDownscaledDimensions(
+                    self.__pixBuf.get_width(),
+                    self.__pixBuf.get_height(),
+                    maxWidth,
+                    maxHeight)
+            else:
+                zoomMultiplicator = pow(self._ZOOMFACTOR, self.__wantedZoom)
+                wantedWidth = int(self.__pixBuf.get_width() * zoomMultiplicator)
+                wantedHeight = int(self.__pixBuf.get_height() * zoomMultiplicator)
             if min(wantedWidth, wantedHeight) < self._MIN_IMAGE_SIZE:
                 # Too small image size
                 return
             if max(wantedWidth, wantedHeight) > self._MAX_IMAGE_SIZE:
                 # Too large image size
                 return
-            pixBufResized = self.__pixBuf.scale_simple(wantedWidth,
-                                                      wantedHeight,
-                                                      self._INTERPOLATION_TYPE)
+            pixBufResized = env.mainwindow.getImagePreloader().getPixbuf(
+                self.__loadedFileName,
+                wantedWidth,
+                wantedHeight)
+            if not pixBufResized:
+                pixBufResized = env.unknownImageIconPixbuf
         pixMap, mask = pixBufResized.render_pixmap_and_mask()
         self._image.set_from_pixmap(pixMap, mask)
         self._newImageLoaded = False
@@ -112,6 +122,9 @@ class ImageView(gtk.ScrolledWindow):
             self.__wantedZoom = min(self.__wantedZoom, 0)
             self.__wantedZoom = max(self.__wantedZoom, self._MIN_ZOOM)
             self.renderImage()
+
+    def getAvailableSpace(self):
+        return tuple(self.get_allocation())[2:4]
 
     def _log(self, base, value):
         return math.log(value) / math.log(base)

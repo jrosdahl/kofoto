@@ -14,6 +14,7 @@ from gkofoto.registerimagesdialog import RegisterImagesDialog
 from gkofoto.handleimagesdialog import HandleImagesDialog
 from gkofoto.generatehtmldialog import GenerateHTMLDialog
 from gkofoto.persistentstate import PersistentState
+from gkofoto.imagepreloader import ImagePreloader
 
 class MainWindow(gtk.Window):
     def __init__(self):
@@ -22,6 +23,7 @@ class MainWindow(gtk.Window):
         self.__currentObjectCollection = None
         self._currentView = None
         self.__persistentState = PersistentState()
+        self.__imagePreloader = ImagePreloader(env.codeset, env.debug)
         self.__sourceEntry = env.widgets["sourceEntry"]
         self.__filterEntry = env.widgets["filterEntry"]
         self.__filterEntry.set_text(self.__persistentState.filterText)
@@ -145,6 +147,9 @@ class MainWindow(gtk.Window):
         image.set_from_pixbuf(pixbuf)
         image.show()
         return image
+
+    def getImagePreloader(self):
+        return self.__imagePreloader
 
     def _viewChanged(self):
         for hiddenView in self._hiddenViews:

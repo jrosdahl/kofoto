@@ -43,13 +43,14 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 if len(objectSelection) == 0:
                     # No objects is selected -> select first object
                     self.__selectedRowNr = 0
+                    objectSelection.setSelection([self.__selectedRowNr])
                 elif len(objectSelection) > 1:
                     # More than one object selected -> select first object
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
+                    objectSelection.setSelection([self.__selectedRowNr])
                 else:
                     # Exactly one object selected
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
-                objectSelection.setSelection([self.__selectedRowNr])
                 selectedObject = objectSelection[self.__selectedRowNr]
                 if selectedObject.isAlbum():
                     self.loadFile(env.albumIconFileName, False)
@@ -62,6 +63,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                                 self.__selectedRowNr < len(model) - 1)
             env.widgets["nextButton"].set_sensitive(enableNextButton)
             env.widgets["menubarNextImage"].set_sensitive(enableNextButton)
+            self._preloadImages()
             self.__selectionLocked = False
         self._updateContextMenu()
 
@@ -150,3 +152,15 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                 "menubarSelectAll",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
+
+    def _preloadImages(self):
+        objectSelection = self._objectCollection.getObjectSelection()
+        filenames = objectSelection.getImageFilenamesToPreload()
+        maxWidth, maxHeight = self.getAvailableSpace()
+
+        # Work-around for bug in GTK. (pixbuf.scale_iter(1, 1) crashes.)
+        if maxWidth < 10 and maxHeight < 10:
+            return
+
+        env.mainwindow.getImagePreloader().preloadImages(
+            filenames, maxWidth, maxHeight)

@@ -2,7 +2,7 @@ __all__ = ["ImageCache"]
 
 import os
 import Image as PILImage
-from kofoto.common import symlinkOrCopyFile
+from kofoto.common import calculateDownscaledDimensions, symlinkOrCopyFile
 
 class ImageCache:
     def __init__(self, cacheLocation, useOrientation=False):
@@ -89,8 +89,10 @@ class ImageCache:
     def _get(self, location, mtime, width, height, widthlimit,
              heightlimit, orientation):
         # Scale image to fit within limits.
-        w, h = self._calcImageSize(
-            width, height, widthlimit, heightlimit, orientation)
+        w, h = calculateDownscaledDimensions(
+            width, height, widthlimit, heightlimit)
+        if orientation in ["left", "right"]:
+            w, h = h, w
 
         # Check whether a cached version already exists.
         path = self._getCachedImagePath(location, mtime, w, h, orientation)
@@ -120,21 +122,6 @@ class ImageCache:
                 pilimg = pilimg.rotate(270)
         pilimg.save(path, "JPEG")
         return path, w, h
-
-
-    def _calcImageSize(self, width, height, widthlimit, heightlimit,
-                       orientation):
-        if orientation in ("left", "right"):
-            width, height = height, width
-        w = width
-        h = height
-        if w > widthlimit:
-            h = widthlimit * h // w
-            w = widthlimit
-        if h > heightlimit:
-            w = heightlimit * w // h
-            h = heightlimit
-        return w, h
 
 
     def _getCachedImagePath(self, location, mtime, width, height,

@@ -59,6 +59,23 @@ class ObjectSelection:
     def getMap(self):
         return self.__selectedObjects
 
+    def getImageFilenamesToPreload(self):
+        oc = self.__objectCollection
+        model = oc.getModel()
+        if len(self) == 0:
+            rowNr = 0
+        else:
+            rowNumbers = list(self)
+            rowNumbers.sort()
+            rowNr = rowNumbers[0]
+        filenames = []
+        for x in [rowNr, rowNr + 1, rowNr - 1, rowNr + 2]: # TODO: Make configurable.
+            if 0 <= x < len(model):
+                ux = oc.convertToUnsortedRowNr(x)
+                filenames.append(self.__getObject(ux).getLocation())
+        env.debug("filenames to preload: %s" % str(filenames))
+        return filenames
+
     def __contains__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
         return unsortedRowNr in self.__selectedObjects.keys()

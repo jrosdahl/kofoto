@@ -3,7 +3,11 @@
 ######################################################################
 ### Public names.
 
-__all__ = ["KofotoError", "symlinkOrCopyFile"]
+__all__ = [
+    "KofotoError",
+    "calculateDownscaledDimensions",
+    "symlinkOrCopyFile",
+    ]
 
 ######################################################################
 ### Imports.
@@ -19,6 +23,17 @@ class KofotoError(Exception):
 
 ######################################################################
 ### Functions.
+
+def calculateDownscaledDimensions(width, height, widthlimit, heightlimit):
+    w = width
+    h = height
+    if w > widthlimit:
+        h = widthlimit * h // w
+        w = widthlimit
+    if h > heightlimit:
+        w = heightlimit * w // h
+        h = heightlimit
+    return w, h
 
 def symlinkOrCopyFile(source, destination):
     try:
