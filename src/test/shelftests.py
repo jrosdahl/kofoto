@@ -452,7 +452,12 @@ class TestShelfMethods(TestShelfFixture):
     def test_getRootCategories(self):
         categories = list(self.shelf.getRootCategories())
         cat_a = self.shelf.getCategory(u"a")
-        assert categories == [cat_a]
+        cat_events = self.shelf.getCategory(u"events")
+        cat_locations = self.shelf.getCategory(u"locations")
+        cat_people = self.shelf.getCategory(u"people")
+        categories.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
+        assert categories == [cat_a, cat_events, cat_locations, cat_people], \
+               categories
 
 class TestCategory(TestShelfFixture):
     def test_categoryMethods(self):
