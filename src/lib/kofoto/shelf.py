@@ -43,7 +43,6 @@ import threading
 import time
 import sqlite as sql
 from sets import Set
-from types import *
 from kofoto.common import KofotoError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
@@ -1896,19 +1895,19 @@ class _UnicodeCursorDecorator:
     def _unicodifyRow(self, row):
         result = []
         for col in row:
-            if isinstance(col, StringType):
+            if isinstance(col, str):
                 result.append(unicode(col, self.encoding))
             else:
                 result.append(col)
         return result
 
     def _assertUnicode(self, obj):
-        if isinstance(obj, StringType):
+        if isinstance(obj, str):
             raise AssertionError, ("non-Unicode string", obj)
-        elif isinstance(obj, ListType) or isinstance(obj, TupleType):
+        elif isinstance(obj, (list, tuple)):
             for elem in obj:
                 self._assertUnicode(elem)
-        elif isinstance(obj, DictType):
+        elif isinstance(obj, dict):
             for val in obj.itervalues():
                 self._assertUnicode(val)
 
