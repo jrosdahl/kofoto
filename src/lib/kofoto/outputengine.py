@@ -55,6 +55,7 @@ class OutputEngine:
         self.imagesdest = CacheDir(os.path.join(self.dest, "@images"))
         self.imgref = {}
 
+        self.env.out("Calculating album paths...\n")
         albummap = _findAlbumPaths(root)
 
         albumsToGenerate = Set()
@@ -66,8 +67,20 @@ class OutputEngine:
             albumsToGenerate |= Set(albummap.keys())
 
         self.preGeneration(root)
+        i = 1
         for album, paths in albummap.items():
             if album in albumsToGenerate:
+                nchildren = len(list(album.getChildren()))
+                if nchildren == 1:
+                    childrentext = "1 child"
+                else:
+                    childrentext = "%d children" % nchildren
+                self.env.out("Creating album %s (%d of %d) with %s...\n" % (
+                    album.getTag().encode(self.env.codeset),
+                    i,
+                    len(albumsToGenerate),
+                    childrentext))
+                i += 1
                 self._generateAlbumHelper(album, paths)
         self.postGeneration(root)
 
