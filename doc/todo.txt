@@ -1,14 +1,3 @@
-* Implement searching.
-
-    Possibly via a search string in boolean algebra style? Example:
-    "Linköping and Ulrik and (Björn or not Ryd)".
-
-    Should it be possible to search for attribute values too?
-
-    Ability to apply a search filter to exclude (or include) some
-    pictures matching the filter when generating an album would also
-    be nice.
-
 * Ability to set JPEG quality (and progression?).
 
 * Implement more magic albums.

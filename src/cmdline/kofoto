@@ -18,9 +18,10 @@ else:
 sys.path.insert(0, os.path.join(bindir, "..", "lib"))
 
 from kofoto.common import *
-from kofoto.shelf import *
-from kofoto.imagecache import *
 from kofoto.config import *
+from kofoto.imagecache import *
+from kofoto.search import *
+from kofoto.shelf import *
 
 ######################################################################
 ### Locale.
@@ -491,7 +492,8 @@ def cmdRenameTag(env, args):
 def cmdSearch(env, args):
     if len(args) != 1:
         raise ArgumentError
-    objects = env.shelf.search(args[0])
+    parser = Parser(env.shelf)
+    objects = env.shelf.search(parser.parse(args[0]))
     strids = [str(x.getId()) for x in objects]
     if strids:
         env.out(" ".join(strids) + "\n")
@@ -777,8 +779,14 @@ def main(argv):
     except CategoryLoopError, x:
         printError("Connecting %s to %s would make a loop in the categories.\n" % (
             _from_uc(x.args[0]), _from_uc(x.args[1])))
-    except SearchExpressionParseError, x:
-        printError("Error while parsing search expression: %s.\n" % _from_uc(x.args[0]))
+    except ParseError, x:
+        printError("While parsing search expression: %s.\n" % _from_uc(x.args[0]))
+    except UnterminatedStringError, x:
+        printError("While scanning search expression: unterminated string starting at character %d.\n" % (
+            _from_uc(x.args[0])))
+    except BadTokenError, x:
+        printError("While scanning search expression: bad token starting at character %d.\n" % (
+            _from_uc(x.args[0])))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     shelf.rollback()

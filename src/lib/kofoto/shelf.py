@@ -846,39 +846,17 @@ class Shelf:
             yield self.getCategory(catid)
 
 
-    def getObjectsForCategory(self, category, recursive=False):
-        """Get all objects for a category.
+    def search(self, searchtree):
+        """Search for objects matching a search node tree.
 
-        Returns an iterator returning Album/Image instances."""
-        catid = category.getId()
-        if recursive:
-            categories = Set(self.categorydag.get().getDescendants(catid))
-        else:
-            categories = [catid]
-
-        cursor = self.connection.cursor()
-        cursor.execute(
-            " select objectid"
-            " from   object_category"
-            " where  categoryid in (%s)" % (
-                ",".join([unicode(x) for x in categories])))
-        for (objid,) in cursor:
-            yield self.getObject(objid)
-
-
-    def search(self, expr):
-        """Search for objects matching an expression.
-
-        Currently, you can only search for objects matching a single
-        category tag.
+        Use kofoto.search.Parser to construct a search node tree from
+        a string.
 
         Returns an iterator returning the objects."""
-        try:
-            category = self.getCategory(expr)
-            return self.getObjectsForCategory(category, True)
-        except CategoryDoesNotExistError:
-            raise SearchExpressionParseError, "unknown category: %s" % expr
-
+        cursor = self.connection.cursor()
+        cursor.execute(searchtree.getQuery())
+        for (objid,) in cursor:
+            yield self.getObject(objid)
 
     ##############################
     # Internal methods.
