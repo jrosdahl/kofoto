@@ -620,7 +620,7 @@ def cmdUpdateContents(env, args):
                 env.out("Unregistered image/file: %s\n" % env.to_l(filepath))
         except MultipleImagesAtOneLocationError:
             env.errexit(
-                "Multiple known images at this location: %s\n",
+                "Multiple known images at this location: %s\n" %
                 env.to_l(filepath))
 
 
