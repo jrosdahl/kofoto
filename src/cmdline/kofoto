@@ -26,12 +26,7 @@ from kofoto.shelf import *
 ######################################################################
 ### Locale.
 
-locale.setlocale(locale.LC_ALL, "")
-try:
-    CODESET = locale.nl_langinfo(locale.CODESET)
-except AttributeError:
-    # Assume Windows.
-    CODESET = "cp1252"
+CODESET = locale.getpreferredencoding()
 
 ######################################################################
 ### Constants.

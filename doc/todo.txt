@@ -118,5 +118,3 @@
 
 * Store a log of changes to the shelf and add possibility of backing
   out changes.
-
-* Use sys.getfilesystemencoding().

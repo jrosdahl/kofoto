@@ -35,8 +35,7 @@ class Environment:
         
 env = Environment()
 
-locale.setlocale(locale.LC_ALL, "")
-env.codeset = locale.nl_langinfo(locale.CODESET)
+env.codeset = locale.getpreferredencoding()
 # TODO Make it possible for the user to specify configuration file on the command line.
 conf = Config(DEFAULT_CONFIGFILE, env.codeset)
 conf.read()
