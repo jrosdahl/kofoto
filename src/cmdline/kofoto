@@ -1131,8 +1131,8 @@ def main(argv):
         printError("Image does not exist: \"%s\".\n" % env.to_l(x.args[0]))
     except AlbumDoesNotExistError, x:
         printError("Album does not exist: \"%s\".\n" % env.to_l(x.args[0]))
-#    except ObjectDoesNotExistError, x:
-#        printError("Object does not exist: \"%s\".\n" % env.to_l(x.args[0]))
+    except ObjectDoesNotExistError, x:
+        printError("Object does not exist: \"%s\".\n" % env.to_l(x.args[0]))
     except UnknownAlbumTypeError, x:
         printError("Unknown album type: \"%s\".\n" % env.to_l(x.args[0]))
     except UnsettableChildrenError, x:
