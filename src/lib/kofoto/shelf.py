@@ -567,6 +567,7 @@ class Shelf:
                 albumtype)
             self._setModified()
             self.allAlbumsCache = None
+            self.orphanAlbumsCache = None
             return self.getAlbum(lastrowid)
         except sql.IntegrityError:
             cursor.execute(
@@ -734,6 +735,7 @@ class Shelf:
                 del self.objectcache[x]
         self._setModified()
         self.allAlbumsCache = None
+        self.orphanAlbumsCache = None
 
 
     def createImage(self, path):
@@ -787,6 +789,7 @@ class Shelf:
         image.importExifTags()
         self._setModified()
         self.allImagesCache = None
+        self.orphanImagesCache = None
         return image
 
 
@@ -953,6 +956,7 @@ class Shelf:
                 del self.objectcache[x]
         self._setModified()
         self.allImagesCache = None
+        self.orphanImagesCache = None
 
 
     def getObject(self, objid):
@@ -1780,8 +1784,8 @@ class PlainAlbum(Album):
             albumid,
             newchcnt)
         self.shelf._setModified()
-        self.shelf._setOrphanAlbumsCache([])
-        self.shelf._setOrphanImagesCache([])
+        self.shelf._setOrphanAlbumsCache(None)
+        self.shelf._setOrphanImagesCache(None)
         self.children = children[:]
 
     ##############################
@@ -1990,7 +1994,7 @@ class AllAlbumsAlbum(MagicAlbum):
                 album = self.shelf.getAlbum(albumid)
                 albums.append(album)
                 yield album
-            self.shelf._setOrphanAlbumsCache(albums)
+            self.shelf._setAllAlbumsCache(albums)
 
 
     def getAlbumChildren(self):
@@ -2031,7 +2035,7 @@ class AllImagesAlbum(MagicAlbum):
                     imageid, hash, location, mtime, width, height)
                 images.append(image)
                 yield image
-            self.shelf._setOrphanImagesCache(images)
+            self.shelf._setAllImagesCache(images)
 
 
     def getAlbumChildren(self):
