@@ -161,7 +161,6 @@ class Categories:
 
     def loadCategoryTree(self):
         self.__categoryModel.clear()
-        self.__categoryList = []
         env.shelf.flushCategoryCache()
         for category in self.__sortCategories(env.shelf.getRootCategories()):
             self.__loadCategorySubTree(None, category)
