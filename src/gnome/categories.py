@@ -1,6 +1,7 @@
 import gtk
 import gobject
 import gtk
+import string
 
 from environment import env
 from images import Images
@@ -55,17 +56,17 @@ class Categories:
         self._pastItem.set_sensitive(gtk.FALSE)
         self._contextMenu.append(self._pastItem)
 
-        self._createChildItem = gtk.MenuItem("Create child")
+        self._createChildItem = gtk.MenuItem("Create child category")
         self._createChildItem.show()
         self._createChildItem.connect("activate", self._createChildCategory, None)
         self._contextMenu.append(self._createChildItem)
         
-        self._createItem = gtk.MenuItem("Create")
-        self._createItem.show()
-        self._createItem.connect("activate", self._createCategory, None)
-        self._contextMenu.append(self._createItem)
+        self._createRootItem = gtk.MenuItem("Create root category")
+        self._createRootItem.show()
+        self._createRootItem.connect("activate", self._createRootCategory, None)
+        self._contextMenu.append(self._createRootItem)
         
-        self._removeItem = gtk.MenuItem("Remove selected")
+        self._removeItem = gtk.MenuItem("Remove selected categories")
         self._removeItem.show()
         self._removeItem.connect("activate", self._removeCategory, None)
         self._contextMenu.append(self._removeItem)
@@ -94,9 +95,10 @@ class Categories:
     
     def reload(self):
         self._model.clear()
-        self._buildModel(None, env.shelf.getRootCategories())
+        env.shelf.flushCategoryCache()
+        self._populateModel(None, env.shelf.getRootCategories())
 
-    def _buildModel(self, parent, categories):
+    def _populateModel(self, parent, categories):
         for c in categories:
             iter = self._model.insert_before(parent, None)
             self._model.set_value(iter, self._COLUMN_CATEGORY_ID, c.getId())
@@ -104,7 +106,7 @@ class Categories:
             self._model.set_value(iter, self._COLUMN_DESCRIPTION, c.getDescription())
             self._model.set_value(iter, self._COLUMN_CONNECTED, gtk.FALSE)
             self._model.set_value(iter, self._COLUMN_INCONSISTENT, gtk.FALSE)
-            self._buildModel(iter, c.getChildren())
+            self._populateModel(iter, c.getChildren())
 
     def _queryUpdated(self, garbage):
         selection = env.widgets["categoryView"].get_selection()
@@ -241,18 +243,51 @@ class Categories:
     def _rowActivated(self, a, b, c):
         print "not yet implemented!"
             
-    def _createCategory(self, item, data):
-        print "create category not yet imlemented!"
+    def _createRootCategory(self, item, data):
+        widgets = gtk.glade.XML(env.gladeFile, "categoryProperties")
+        dialog = widgets.get_widget("categoryProperties")
+        tag = widgets.get_widget("tag")
+        description = widgets.get_widget("description")
+        description.connect("changed", self._descriptionChanged, tag)
+        tag.connect("changed", self._tagChanged, widgets.get_widget("okbutton"))
+        result = dialog.run()
+        if result == gtk.RESPONSE_OK:
+            tagString = tag.get_text().decode("utf-8")
+            descriptionString = description.get_text().decode("utf-8")
+            dialog.destroy()
+            env.shelf.createCategory(tagString, descriptionString)
+            self.reload()
+        else:
+            dialog.destroy()
+
+    def _descriptionChanged(self, description, tag):
+        # Remove all whitespaces in description and then use it as tag
+        tag.set_text(string.translate(description.get_text(),
+                                      string.maketrans("", ""),
+                                      string.whitespace))
+
+    def _tagChanged(self, tag, button):
+        tagString = tag.get_text().decode("utf-8")
+        try:
+           # Check that the tag name is valid
+           verifyValidCategoryTag(tagString)
+        except(BadCategoryTagError):
+            button.set_sensitive(gtk.FALSE)
+            return
+        try:
+            # Make sure that the tag name is not already taken
+            env.shelf.getCategory(tagString)
+            button.set_sensitive(gtk.FALSE)
+        except(CategoryDoesNotExistError):
+            button.set_sensitive(gtk.TRUE)
 
     def _createChildCategory(self, item, data):
         print "create child category not yet imlemented"
 
     def _removeCategory(self, item, data):
-        print "remove category not yet imlemented"
-        #for categoryRow in self._selectedCategories:
-        #    env.shelf.deleteCategory(categoryRow[self._COLUMN_CATEGORY_ID])
-        #    del self._model[categoryRow.path]
-        #self.reload()
+        for categoryId in self._selectedCategories:
+            env.shelf.deleteCategory(categoryId)
+        self.reload()
         
     def _selectionFunction(self, path, b):
         if self._ignoreSelectEvent:
