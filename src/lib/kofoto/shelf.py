@@ -90,11 +90,13 @@ schema = """
 """
 
 _ALLIMAGES_ALBUM_ID = -2
-_ALLIMAGES_ALBUM_TAG = "_allimages"
 _ALLALBUMS_ALBUM_ID = -1
-_ALLALBUMS_ALBUM_TAG = "_allalbums"
 _ROOT_ALBUM_ID = 0
-_ROOT_ALBUM_DEFAULT_TAG = "root"
+_magic_albums = {
+    _ALLIMAGES_ALBUM_ID: "_allimages",
+    _ALLALBUMS_ALBUM_ID: "_allalbums",
+    _ROOT_ALBUM_ID: "root", # Just the default.
+}
 
 ######################################################################
 ### Exceptions.
@@ -106,6 +108,11 @@ class FailedWritingError(KofotoError):
 
 class ShelfNotFoundError(KofotoError):
     """Kofoto shelf not found."""
+    pass
+
+
+class ShelfLockedError(KofotoError):
+    """The shelf is locked by another process."""
     pass
 
 
@@ -139,8 +146,8 @@ class ImageDoesNotExist(KofotoError):
     pass
 
 
-class ReservedAlbumTagError(KofotoError):
-    """The album ID is reserved for other internal purposes."""
+class ReservedAlbumError(KofotoError):
+    """The album (tag/ID) is reserved for other internal purposes."""
     pass
 
 
@@ -164,6 +171,17 @@ def computeImageHash(filename):
     return m.hexdigest()
 
 
+def verifyValidAlbumTag(tag, allowid):
+    if not tag or not type(tag) == type("") or tag[0] == "_" or "\0" in tag:
+        raise ReservedAlbumError, tag
+    if not allowid:
+        try:
+            int(tag)
+        except ValueError:
+            pass
+        else:
+            raise ReservedAlbumError, tag
+
 ######################################################################
 ### Public classes.
 
@@ -186,24 +204,16 @@ class Shelf:
             self.connection.rollback()
             if create:
                 raise FailedWritingError, location
+        except sql.OperationalError:
+            raise ShelfLockedError, location
         except sql.DatabaseError:
             if create:
                 cursor.execute(schema)
-                cursor.execute(
-                    " insert into album"
-                    " values (%s, %s, 0)",
-                    _ALLIMAGES_ALBUM_ID,
-                    _ALLIMAGES_ALBUM_TAG)
-                cursor.execute(
-                    " insert into album"
-                    " values (%s, %s, 0)",
-                    _ALLALBUMS_ALBUM_ID,
-                    _ALLALBUMS_ALBUM_TAG)
-                cursor.execute(
-                    " insert into album"
-                    " values (%s, %s, 0)",
-                    _ROOT_ALBUM_ID,
-                    _ROOT_ALBUM_DEFAULT_TAG)
+                for id, tag in _magic_albums.items():
+                    cursor.execute(
+                        " insert into album"
+                        " values (%(id)s, %(tag)s, 0)",
+                        locals())
                 cursor.execute(
                     " insert into member"
                     " values (%s, 0, %s)",
@@ -242,7 +252,7 @@ class Shelf:
 
     def createAlbum(self, tag):
         """Create an empty, unlinked album."""
-        self.verifyAlbumTag(tag)
+        verifyValidAlbumTag(tag, allowid=0)
         try:
             self.cursor.execute(
                 " insert into object"
@@ -257,25 +267,27 @@ class Shelf:
 
 
     def getAlbum(self, tag):
-        """Get the album for a given album tag.
+        """Get the album for a given album tag/ID.
 
         Returns an Album instance.
         """
-        if tag == _ALLALBUMS_ALBUM_TAG:
+        if tag == _magic_albums[_ALLALBUMS_ALBUM_ID]:
             return self.getAllAlbumsAlbum()
-        elif tag == _ALLIMAGES_ALBUM_TAG:
+        elif tag == _magic_albums[_ALLIMAGES_ALBUM_ID]:
             return self.getAllImagesAlbum()
-
-        self.cursor.execute(
-            " select albumid"
-            " from album"
-            " where tag = %(tag)s",
-            locals())
-        row = self.cursor.fetchone()
-        if row:
-            return Album(self, row[0])
-        else:
-            raise AlbumDoesNotExist, tag
+        try:
+            albumid = int(tag)
+        except ValueError:
+            self.cursor.execute(
+                " select albumid"
+                " from album"
+                " where tag = %(tag)s",
+                locals())
+            if self.cursor.rowcount > 0:
+                albumid = self.cursor.fetchone()[0]
+            else:
+                raise AlbumDoesNotExist, tag
+        return Album(self, albumid)
 
 
     def getRootAlbum(self):
@@ -297,23 +309,26 @@ class Shelf:
 
 
     def deleteAlbum(self, tag):
-        self.verifyAlbumTag(tag)
-        self.cursor.execute(
-            " select albumid"
-            " from album"
-            " where tag = %(tag)s",
-            locals())
-        row = self.cursor.fetchone()
-        if not row:
-            raise AlbumDoesNotExist, tag
-        if id == _ROOT_ALBUM_ID:
+        verifyValidAlbumTag(tag, allowid=1)
+        try:
+            albumid = int(tag)
+        except ValueError:
+            self.cursor.execute(
+                " select albumid"
+                " from album"
+                " where tag = %(tag)s",
+                locals())
+            row = self.cursor.fetchone()
+            if not row:
+                raise AlbumDoesNotExist, tag
+            albumid = row[0]
+        if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
-            raise ReservedAlbumTagError, tag
-        delid = row[0] # The album to delete.
+            raise ReservedAlbumError, tag
         self.cursor.execute(
             " select albumid"
             " from member"
-            " where objectid = %(delid)s",
+            " where objectid = %(albumid)s",
             locals())
         parents = [x[0] for x in self.cursor.fetchall()]
         for parentid in parents:
@@ -364,28 +379,27 @@ class Shelf:
 
 
     def getImage(self, hash):
-        """Get the image for a given image ID.
+        """Get the image for a given image hash/ID.
 
         Returns an Image object.
         """
-        self.cursor.execute(
-            " select imageid"
-            " from   image"
-            " where  hash = %(hash)s",
-            locals())
-        if self.cursor.rowcount > 0:
-            return Image(self, self.cursor.fetchone()[0])
-        else:
-            raise ImageDoesNotExist, hash
+        try:
+            imageid = int(hash)
+        except ValueError:
+            self.cursor.execute(
+                " select imageid"
+                " from   image"
+                " where  hash = %(hash)s",
+                locals())
+            if self.cursor.rowcount > 0:
+                imageid = self.cursor.fetchone()[0]
+            else:
+                raise ImageDoesNotExist, hash
+        return Image(self, imageid)
 
 
     ##############################
     # Internal methods.
-
-    def verifyAlbumTag(self, tag):
-        if not tag or tag[0] == "_" or "\0" in tag:
-            raise ReservedAlbumTagError, tag
-
 
 class _Object:
     def __init__(self, shelf, objid):
@@ -539,7 +553,7 @@ class Album(_Object):
 
 
     def setTag(self, newtag):
-        self.shelf.verifyAlbumTag(newtag)
+        verifyAlbumTag(newtag, allowid=0)
         albumid = self.getId()
         self.shelf.cursor.execute(
             " update album"
@@ -639,11 +653,11 @@ class AllAlbumsAlbum:
 
 
     def getTag(self):
-        return _ALLALBUMS_ALBUM_TAG
+        return _magic_albums[_ALLALBUMS_ALBUM_ID]
 
 
     def setTag(self, tag):
-        raise ReservedAlbumTagError, _ALLALBUMS_ALBUM_TAG
+        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
 
 
     ##############################
@@ -682,11 +696,11 @@ class AllImagesAlbum:
 
 
     def getTag(self):
-        return _ALLIMAGES_ALBUM_TAG
+        return _magic_albums[_ALLIMAGES_ALBUM_ID]
 
 
     def setTag(self, tag):
-        raise ReservedAlbumTagError, _ALLIMAGES_ALBUM_TAG
+        raise ReservedAlbumError, _magic_albums[_ALLIMAGES_ALBUM_ID]
 
 
     ##############################

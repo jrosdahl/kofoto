@@ -43,6 +43,12 @@ VERBATIM_EXIF_HEADERS = (
 PRINT_TREE_INDENT = 4
 
 ######################################################################
+### Exceptions.
+
+class ArgumentError:
+    pass
+
+######################################################################
 ### Helper functions.
 
 def displayHelp():
@@ -53,9 +59,9 @@ def displayHelp():
         "Flags:\n"
         "\n"
         "    -h, --help                       Display this help.\n"
-        "        --configfile=X               Use configuration file X instead of the\n"
+        "        --configfile=FILE            Use configuration file FILE instead of the\n"
         "                                     default (%s).\n"
-        "        --shelf=X                    Use the shelf X instead of the default\n"
+        "        --shelf=SHELF                Use the shelf SHELF instead of the default\n"
         "                                     (specified in the configuration file).\n"
         "    -V, --version                    Print version out standard output.\n"
         "\n"
@@ -67,7 +73,8 @@ def displayHelp():
         "    check                            Find missing images and print some\n"
         "                                     statistics.\n"
         "    create-shelf                     Create an empty shelf.\n"
-        "    create-album TAG                 Create an empty, unlinked album.\n"
+        "    create-album TAG                 Create an empty, unlinked album with tag\n"
+        "                                     TAG.\n"
         "    print-tree                       Print the album tree.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album ID.\n"
         "    update-locations DIR1 [DIR2 ...] Traverse the given directories\n"
@@ -75,10 +82,14 @@ def displayHelp():
         "                                     locations of images.\n"
 #        "    shell                            Enter the interactive album editor.\n"
        "\n"
-#        "    For albums\n"
-#        "    ==========\n"
-#        "\n"
-#        "    add ALBUMID IMGID1 [IMGID2 ...]  Add new images (to an album).\n"
+        "    For albums\n"
+        "    ==========\n"
+        "\n"
+        "    add DEST OBJ1 [OBJ2 ...]         Add objects (i.e. directories and images)\n"
+        "                                     to the album DEST. (The objects are placed\n"
+        "                                     last.) Directories are recursively scanned\n"
+        "                                     for other directories and images, which\n"
+        "                                     also will be added.\n"
 #        "    link-album ALBUMID1 ALBUMID2 [POS]\n"
 #        "                                     Add ALBUMID2 to ALBUMID1. If POS is\n"
 #        "                                     given, place the album at that position.\n"
@@ -96,7 +107,7 @@ def displayHelp():
 #        "\n"
 #        "    set-attr X NAME VALUE            Set attribute NAME to VALUE for the album\n"
 #        "                                     or image given by ID.\n"
-#        "\n"
+        "\n"
         "    Miscellaneous\n"
         "    =============\n"
         "    create-configfile                Create a template configuration file.\n"
@@ -114,6 +125,10 @@ def printErrorAndExit(errorString):
 
 ######################################################################
 ### Commands.
+
+def cmdAdd(shelf, args):
+    pass
+
 
 def cmdCheck(shelf, args):
     f = sys.stdout
@@ -145,12 +160,14 @@ def cmdCheck(shelf, args):
 
 
 def cmdCreateAlbum(shelf, args):
+    if len(args) < 1:
+        raise ArgumentError
     shelf.createAlbum(args[0])
 
 
 def cmdPrintTree(shelf, args):
     root = shelf.getRootAlbum()
-    cmdPrintTreeInternal(root, sys.stdout, 1, [])
+    cmdPrintTreeInternal(root, sys.stdout, 0, [])
 
 
 def cmdPrintTreeInternal(object, file, level, visited):
@@ -174,10 +191,14 @@ def cmdPrintTreeInternal(object, file, level, visited):
 
 
 def cmdRenameTag(shelf, args):
+    if len(args) < 2:
+        raise ArgumentError
     shelf.getAlbum(args[0]).setTag(args[1])
 
 
 def cmdUpdateLocations(shelf, args):
+    if len(args) < 1:
+        raise ArgumentError
     for dir in args:
         os.path.walk(os.path.abspath(dir),
                      cmdUpdateLocationsInternal,
@@ -205,6 +226,7 @@ def cmdUpdateLocationsInternal(shelf, dir, files):
 
 
 commandTable = {
+    "add": cmdAdd,
     "check": cmdCheck,
     "create-album": cmdCreateAlbum,
     "print-tree": cmdPrintTree,
@@ -313,12 +335,19 @@ def main(argv):
             "Could not open shelf \"%s\".\n" % shelfFilename +
             "You can create a new one by running " +
             "\"kofoto create-shelf\"")
+    except ShelfLockedError, x:
+        printErrorAndExit(
+            "Could not open shelf \"%s\".\n" % shelfFilename +
+            "Another process is locking it.")
     shelf.begin()
     try:
         commandTable[args[0]](shelf, args[1:])
         shelf.commit()
         sys.exit(0)
-    except ReservedAlbumTagError, x:
+    except ArgumentError:
+        printErrorAndExit(
+            "Bad arguments to command. See \"kofoto --help\" for help.")
+    except ReservedAlbumError, x:
         printError("Reserved album tag: %s." % x)
     except AlbumExistsError, x:
         printError("Album already exists: %s." % x)
