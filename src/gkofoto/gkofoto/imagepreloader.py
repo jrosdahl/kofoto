@@ -10,7 +10,7 @@ class _PreloadState:
         self.loadFinished = False # Whether loading of fullsizePixbuf is ready.
         self.scaledPixbuf = None
         try:
-            self.fp = open(filename.encode(fileSystemCodeset))
+            self.fp = open(filename.encode(fileSystemCodeset), "rb")
         except OSError:
             self.loadFinished = True
 
