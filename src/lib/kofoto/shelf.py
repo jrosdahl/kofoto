@@ -4,8 +4,12 @@
 ### Libraries
 
 import md5
+import os
 import sqlite as sql
 from kofoto.common import KofotoError
+
+import warnings
+warnings.filterwarnings("ignore", "DB-API extension")
 
 schema = """
     -- EER diagram without attributes:
@@ -258,10 +262,12 @@ class Shelf:
                 " insert into object"
                 " values (null)",
                 locals())
+            lastrowid = self.cursor.lastrowid
             self.cursor.execute(
                 " insert into album"
-                " values (last_insert_rowid(), %(tag)s, 1)",
+                " values (%(lastrowid)s, %(tag)s, 1)",
                 locals())
+            return Album(self, lastrowid)
         except sql.IntegrityError:
             raise AlbumExistsError, tag
 
@@ -360,22 +366,25 @@ class Shelf:
             locals())
 
 
-    def createImage(self, filename):
+    def createImage(self, path):
         """Add a new, unlinked image to the shelf.
 
         The ID of the image is returned."""
-        imageid = computeImageHash(filename)
+        location = os.path.abspath(path)
+        imageid = computeImageHash(location)
         try:
             self.cursor.execute(
                 " insert into object"
                 " values (null)",
                 locals())
+            lastrowid = self.cursor.lastrowid
             self.cursor.execute(
                 " insert into image"
-                " values (last_insert_rowid(), %(imageid)s, %(location)s)",
+                " values (%(lastrowid)s, %(imageid)s, %(location)s)",
                 locals())
+            return Image(self, lastrowid)
         except sql.IntegrityError:
-            raise ImageExistsError, tag
+            raise ImageExistsError, path
 
 
     def getImage(self, hash):
@@ -514,15 +523,16 @@ class Album(_Object):
         self.shelf.cursor.execute(
             "-- types int")
         self.shelf.cursor.execute(
-            " select max(position)"
+            " select count(position)"
             " from   member"
             " where  albumid = %(albumid)s",
             locals())
-        oldchcnt = self.shelf.fetchone()[0]
+        oldchcnt = self.shelf.cursor.fetchone()[0]
         newchcnt = len(children)
         for ix in range(newchcnt):
             childid = children[ix].getId()
             if ix < oldchcnt:
+                print "updating"
                 self.shelf.cursor.execute(
                     " update member"
                     " set    objectid = %(childid)s"
@@ -530,9 +540,10 @@ class Album(_Object):
                     "        position = %(ix)s",
                     locals())
             else:
+                print "inserting"
                 self.shelf.cursor.execute(
                     " insert into member"
-                    " values (%(albumid)s, %(position)s, %(childid)s",
+                    " values (%(albumid)s, %(ix)s, %(childid)s)",
                     locals())
         self.shelf.cursor.execute(
             " delete from member"
@@ -553,7 +564,7 @@ class Album(_Object):
 
 
     def setTag(self, newtag):
-        verifyAlbumTag(newtag, allowid=0)
+        verifyValidAlbumTag(newtag, allowid=0)
         albumid = self.getId()
         self.shelf.cursor.execute(
             " update album"
@@ -621,14 +632,31 @@ class Image(_Object):
         self.children = []
 
 
-# Magic albums have the following public methods:
-#
-# getChildren()
-# getId()
-# getTag()
+class MagicAlbum(Album):
+    """Base class of magic albums."""
 
-class AllAlbumsAlbum:
-    """A magic \"all albums\" album."""
+    ##############################
+    # Public methods.
+
+    def setChildren(self, children):
+        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
+
+
+    def setTag(self, tag):
+        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, shelf, albumid):
+        assert _magic_albums.has_key(albumid)
+        Album.__init__(self, shelf, albumid)
+        self.shelf = shelf
+
+
+class AllAlbumsAlbum(MagicAlbum):
+    """An album with all albums, sorted by tag."""
 
     ##############################
     # Public methods.
@@ -648,28 +676,17 @@ class AllAlbumsAlbum:
         return objects
 
 
-    def getId(self):
-        return _ALLALBUMS_ALBUM_ID
-
-
-    def getTag(self):
-        return _magic_albums[_ALLALBUMS_ALBUM_ID]
-
-
-    def setTag(self, tag):
-        raise ReservedAlbumError, _magic_albums[_ALLALBUMS_ALBUM_ID]
-
-
     ##############################
     # Internal methods.
 
     def __init__(self, shelf, albumid):
         assert albumid == _ALLALBUMS_ALBUM_ID
+        MagicAlbum.__init__(self, shelf, albumid)
         self.shelf = shelf
 
 
-class AllImagesAlbum:
-    """A magic \"all images\" album."""
+class AllImagesAlbum(MagicAlbum):
+    """An album with all images, sorted by timestamp."""
 
     ##############################
     # Public methods.
@@ -685,22 +702,10 @@ class AllImagesAlbum:
             " from     image left join attribute"
             " on       imageid = objectid"
             " where    name = 'timestamp'"
-            " order by value")
+            " order by value, location")
         for (objid,) in self.shelf.cursor.fetchall():
             objects.append(Image(self.shelf, objid))
         return objects
-
-
-    def getId(self):
-        return _ALLIMAGES_ALBUM_ID
-
-
-    def getTag(self):
-        return _magic_albums[_ALLIMAGES_ALBUM_ID]
-
-
-    def setTag(self, tag):
-        raise ReservedAlbumError, _magic_albums[_ALLIMAGES_ALBUM_ID]
 
 
     ##############################
@@ -708,7 +713,9 @@ class AllImagesAlbum:
 
     def __init__(self, shelf, albumid):
         assert albumid == _ALLIMAGES_ALBUM_ID
+        MagicAlbum.__init__(self, shelf, albumid)
         self.shelf = shelf
+
 
 ######################################################################
 # Internal functions.
