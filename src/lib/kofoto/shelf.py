@@ -1312,7 +1312,7 @@ class Album(_Object):
     def isAlbum(self):
         return True
 
-    
+
     ##############################
     # Internal methods.
 
@@ -1429,7 +1429,7 @@ class Image(_Object):
     def isAlbum(self):
         return False
 
-    
+
     def importExifTags(self):
         """Read known EXIF tags and add them as attributes."""
         import EXIF

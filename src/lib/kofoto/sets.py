@@ -77,7 +77,7 @@ class Set:
 
     def clear(self):
         self._elements = {}
-        
+
     def copy(self):
         new = Set()
         new._elements = self._elements.copy()
