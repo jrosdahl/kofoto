@@ -86,5 +86,9 @@ class DAG:
     def remove(self, element):
         self.roots.discard(element)
         self.elements.remove(element)
+        for parent in self.parents[element]:
+            self.children[parent].remove(element)
+        for child in self.children[element]:
+            self.parents[child].remove(element)
         del self.parents[element]
         del self.children[element]
