@@ -31,11 +31,7 @@ class ImageCache:
         pilimg = PILImage.open(origpath)
         savepath = genpath
         if limit < largest:
-            if width > height:
-                size = limit, (limit * height) / width
-            else:
-                size = (limit * width) / height, limit
-            pilimg = pilimg.resize(size)
+            pilimg.thumbnail((limit, limit), PILImage.ANTIALIAS)
         elif limit > largest:
             savepath = largestpath
 
