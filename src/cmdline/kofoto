@@ -214,9 +214,9 @@ def cmdCheck(env, args):
     badchecksums = []
     missingfiles = []
     for image in env.shelf.getAllImages():
-        location = image.getLocation()
+        location = _from_uc(image.getLocation())
         if env.verbose:
-            env.out("Checking %s ...\n" % _from_uc(location))
+            env.out("Checking %s ...\n" % location)
         try:
             realId = computeImageHash(location)
             storedId = image.getHash()
@@ -228,9 +228,9 @@ def cmdCheck(env, args):
     env.out("Missing images:")
     if badchecksums or missingfiles:
         for path in badchecksums:
-            env.out("\n    (bad checksum) %s" % _from_uc(path))
+            env.out("\n    (bad checksum) %s" % path)
         for path in missingfiles:
-            env.out("\n    (missing) %s" % _from_uc(path))
+            env.out("\n    (missing) %s" % path)
         env.out("\n")
     else:
         env.out(" none\n")
@@ -515,29 +515,29 @@ def cmdSetCategoryDescription(env, args):
 
 def cmdUpdateChecksums(env, args):
     for image in env.shelf.getAllImages():
-        location = image.getLocation()
+        location = _from_uc(image.getLocation())
         if os.path.isfile(location):
             try:
                 hash = computeImageHash(location)
                 oldhash = image.getHash()
                 if oldhash != hash:
                     image.setHash(hash)
-                    env.out("New checksum for %s\n" % _from_uc(location))
+                    env.out("New checksum for %s\n" % location)
                 else:
                     if env.verbose:
                         env.out("Same checksum as before for %s\n" %
-                                _from_uc(location))
+                                location)
             except IOError, x:
-                env.err("Failed to read: %s\n" % _from_uc(location))
+                env.err("Failed to read: %s\n" % location)
         else:
-            env.err("Image does not exist: %s\n" % _from_uc(location))
+            env.err("Image does not exist: %s\n" % location)
 
 
 def cmdUpdateLocations(env, args):
     if len(args) < 1:
         raise ArgumentError
     for dir in args:
-        os.path.walk(_to_uc(os.path.abspath(_from_uc(dir))),
+        os.path.walk(os.path.abspath(_from_uc(dir)),
                      updateLocationsHelper,
                      env)
 
@@ -555,22 +555,22 @@ def updateLocationsHelper(env, dir, files):
             try:
                 hash = computeImageHash(location)
                 image = env.shelf.getImage(hash)
-                oldlocation = image.getLocation()
+                oldlocation = _from_uc(image.getLocation())
                 if oldlocation != location:
-                    image.setLocation(location)
+                    image.setLocation(_to_uc(location))
                     env.out("New location: %s --> %s\n" % (
-                        _from_uc(oldlocation),
-                        _from_uc(location)))
+                        oldlocation,
+                        location))
                 else:
                     if env.verbose:
                         env.out("Same location as before: %s\n" %
-                                _from_uc(location))
+                                location)
             except IOError, x:
                 if env.verbose:
-                    env.out("Failed to read: %s\n" % _from_uc(location))
+                    env.out("Failed to read: %s\n" % location)
             except ImageDoesNotExistError, x:
                 if env.verbose:
-                    env.out("Image does not exist: %s\n" % _from_uc(location))
+                    env.out("Image does not exist: %s\n" % location)
 
 
 commandTable = {
