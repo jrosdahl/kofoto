@@ -193,11 +193,11 @@ class TestShelfTransactions(unittest.TestCase):
         s.create()
         s.begin()
         s.createAlbum(u"foo")
-        assert s.getAlbum(u"foo")
+        assert s.getAlbumById(u"foo")
         s.commit()
         s = Shelf(db, codeset)
         s.begin()
-        assert s.getAlbum(u"foo")
+        assert s.getAlbumById(u"foo")
         s.rollback()
 
     def test_rollback(self):
@@ -208,7 +208,7 @@ class TestShelfTransactions(unittest.TestCase):
         s.rollback()
         s.begin()
         try:
-            s.getAlbum(u"foo")
+            s.getAlbumById(u"foo")
         except AlbumDoesNotExistError:
             pass
         else:
@@ -259,17 +259,20 @@ class TestShelfFixture(unittest.TestCase):
             loc = os.path.join(PICDIR, x)
             if not os.path.isfile(loc):
                 continue
-            children.append(self.shelf.createImage(loc))
+            image = self.shelf.createImage()
+            imageversion = self.shelf.createImageVersion(
+                image, loc, ImageVersionType.Original)
+            children.append(imageversion)
         del children[-1] # The last image becomes orphaned.
         alpha.setChildren(children)
         beta.setChildren(list(beta.getChildren()) + [children[-1]])
         root.setChildren(list(root.getChildren()) + [
             alpha,
             beta,
-            self.shelf.createAlbum(u"gamma", u"allalbums"),
-            self.shelf.createAlbum(u"delta", u"allimages")])
-        self.shelf.createAlbum(u"epsilon", u"plain") # Orphaned album.
-        zeta = self.shelf.createAlbum(u"zeta", u"search")
+            self.shelf.createAlbum(u"gamma", AlbumType.AllAlbums),
+            self.shelf.createAlbum(u"delta", AlbumType.AllImages)])
+        self.shelf.createAlbum(u"epsilon", AlbumType.Plain) # Orphaned album.
+        zeta = self.shelf.createAlbum(u"zeta", AlbumType.Search)
         zeta.setAttribute(u"query", u"a")
         root.setChildren(list(root.getChildren()) + [zeta])
 
@@ -304,16 +307,17 @@ class TestShelfMethods(TestShelfFixture):
         children = list(root.getChildren())
         assert len(children) == 6
         orphans, alpha, beta, gamma, delta, zeta = children
-        assert self.shelf.getObject(u"alpha") == alpha
-        assert self.shelf.getAlbum(u"beta") == beta
+        assert self.shelf.getAlbum(alpha.getId()) == alpha
+        assert self.shelf.getAlbumByTag(u"beta") == beta
         assert len(list(alpha.getChildren())) == 11
         assert len(list(beta.getChildren())) == 1
         assert len(list(gamma.getChildren())) == 8
         assert len(list(delta.getChildren())) == 11
 
     def test_createdAttributes(self):
-        image = self.shelf.getImage(
+        imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
+        image = imageversion.getImage()
         assert image.getAttribute(u"captured") == "2002-02-02 22:20:51"
         assert image.getAttribute(u"cameramake") == "Canon"
         assert image.getAttribute(u"cameramodel") == "Canon DIGITAL IXUS"
@@ -327,13 +331,24 @@ class TestShelfMethods(TestShelfFixture):
             assert False
 
     def test_getAlbum(self):
-        album = self.shelf.getAlbum(u"alpha")
-        album = self.shelf.getAlbum(album.getTag())
-        album = self.shelf.getAlbum(album.getId())
+        album = self.shelf.getAlbum(0)
+        assert album == self.shelf.getRootAlbum()
 
     def test_negativeGetAlbum(self):
         try:
-            self.shelf.getAlbum(u"nonexisting")
+            self.shelf.getAlbum(12345678)
+        except AlbumDoesNotExistError:
+            pass
+        else:
+            assert False
+
+    def test_getAlbumByTag(self):
+        album = self.shelf.getAlbumByTag(u"root")
+        assert album == self.shelf.getRootAlbum()
+
+    def test_negativeGetAlbumByTag(self):
+        try:
+            self.shelf.getAlbum(u"12345678")
         except AlbumDoesNotExistError:
             pass
         else:
@@ -341,28 +356,31 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getRootAlbum(self):
         root = self.shelf.getRootAlbum()
-        assert root == self.shelf.getAlbum(u"root")
+        assert root.getId() == 0
+        assert root == self.shelf.getAlbumByTag(u"root")
 
     def test_getAllAlbums(self):
         albums = list(self.shelf.getAllAlbums())
         assert len(albums) == 8
 
-    def test_getAllImages(self):
-        images = list(self.shelf.getAllImages())
-        assert len(images) == 11
+    def test_getAllImageVersions(self):
+        imageversions = list(self.shelf.getAllImageVersions())
+        assert len(imageversions) == 11
 
-    def test_getImagesInDirectory(self):
-        images = list(self.shelf.getImagesInDirectory(u"."))
-        assert len(images) == 0
-        images = list(self.shelf.getImagesInDirectory(PICDIR))
-        assert len(images) == 11
+    def test_getImageVersionsInDirectory(self):
+        imageversions = list(self.shelf.getImageVersionsInDirectory(u"."))
+        assert len(imageversions) == 0
+        imageversions = list(self.shelf.getImageVersionsInDirectory(PICDIR))
+        assert len(imageversions) == 11
 
     def test_deleteAlbum(self):
-        self.shelf.deleteAlbum(u"beta")
+        album = self.shelf.getAlbumByTag(u"beta")
+        self.shelf.deleteAlbum(album.getId())
 
     def test_negativeRootAlbumDeletion(self):
+        root = self.shelf.getRootAlbum()
         try:
-            self.shelf.deleteAlbum(u"root")
+            self.shelf.deleteAlbum(root.getId())
         except UndeletableAlbumError:
             pass
         else:
@@ -370,7 +388,7 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_negativeAlbumDeletion(self):
         try:
-            self.shelf.deleteAlbum(u"nonexisting")
+            self.shelf.deleteAlbum(12345678)
         except AlbumDoesNotExistError:
             pass
         else:
@@ -378,47 +396,127 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_negativeImageCreation(self):
         try:
-            self.shelf.createImage(os.path.join(PICDIR, "arlaharen.png"))
-        except ImageExistsError:
+            image = self.shelf.createImage()
+            self.shelf.createImageVersion(
+                image,
+                os.path.join(PICDIR, "arlaharen.png"),
+                ImageVersionType.Original)
+        except ImageVersionExistsError:
             pass
         else:
             assert False
 
     def test_getImage(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        image = self.shelf.getImage(image.getHash())
-        image = self.shelf.getImage(image.getId())
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        image = imageversion.getImage()
+        assert self.shelf.getImage(image.getId()) == image
 
     def test_negativeGetImage(self):
         try:
-            self.shelf.getImage(u"nonexisting")
+            self.shelf.getImage(12345678)
         except ImageDoesNotExistError:
+            pass
+        else:
+            assert False
+
+    def test_getImageVersion(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert self.shelf.getImageVersion(imageversion.getId()) == imageversion
+
+    def test_negativeGetImageVersion(self):
+        try:
+            self.shelf.getImageVersion(12345678)
+        except ImageVersionDoesNotExistError:
+            pass
+        else:
+            assert False
+
+    def test_getImageVersionByHash(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert self.shelf.getImageVersionByHash(
+            imageversion.getHash()) == imageversion
+
+    def test_negativeGetImageVersionByHash(self):
+        try:
+            self.shelf.getImageVersion(u"badhash")
+        except ImageVersionDoesNotExistError:
+            pass
+        else:
+            assert False
+
+    def test_getImageVersionByLocation(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+
+    def test_negativeGetImageVersionByHash(self):
+        try:
+            self.shelf.getImageVersionByLocation("/bad/location")
+        except ImageVersionDoesNotExistError:
             pass
         else:
             assert False
 
     def test_deleteImage(self):
-        self.shelf.deleteImage(os.path.join(PICDIR, "arlaharen.png"))
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        imageid = imageversion.getImage().getId()
+        self.shelf.deleteImage(imageid)
+        try:
+            self.shelf.getImageVersionByLocation(
+                os.path.join(PICDIR, "arlaharen.png"))
+        except ImageVersionDoesNotExistError:
+            pass
+        else:
+            assert False
 
     def test_negativeImageDeletion(self):
         try:
-            self.shelf.deleteImage(u"nonexisting")
+            self.shelf.deleteImage(12345678)
         except ImageDoesNotExistError:
             pass
         else:
             assert False
 
+    def test_deleteImageVersion(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        self.shelf.deleteImageVersion(imageversion.getId())
+
+    def test_negativeImageVersionDeletion(self):
+        try:
+            self.shelf.deleteImageVersion(12345678)
+        except ImageVersionDoesNotExistError:
+            pass
+        else:
+            assert False
+
     def test_getObject(self):
-        album = self.shelf.getObject(u"alpha")
-        album = self.shelf.getObject(album.getTag())
-        album = self.shelf.getObject(album.getId())
-        image = self.shelf.getObject(os.path.join(PICDIR, "arlaharen.png"))
-        image = self.shelf.getObject(image.getHash())
-        image = self.shelf.getObject(image.getId())
+        rootalbum = self.shelf.getRootAlbum()
+        album = self.shelf.getObject(rootalbum.getId())
+        assert album == rootalbum
 
     def test_deleteObject(self):
-        self.shelf.deleteObject(u"beta")
-        self.shelf.deleteObject(os.path.join(PICDIR, "arlaharen.png"))
+        albumid = self.shelf.getAlbumByTag(u"beta").getId()
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        imageid = imageversion.getImage().getId()
+        self.shelf.deleteObject(albumid)
+        self.shelf.deleteObject(imageid)
+        try:
+            self.shelf.getAlbum(albumid)
+        except AlbumDoesNotExistError:
+            pass
+        else:
+            assert False
+        try:
+            self.shelf.getImage(imageid)
+        except ImageDoesNotExistError:
+            pass
+        else:
+            assert False
 
     def test_getAllAttributeNames(self):
         attrnames = list(self.shelf.getAllAttributeNames())
@@ -430,6 +528,14 @@ class TestShelfMethods(TestShelfFixture):
             "title"
             ], attrnames
 
+    def test_getCategory(self):
+        category = self.shelf.getCategory(1)
+        assert category.getId() == 1
+
+    def test_getCategoryByTag(self):
+        category = self.shelf.getCategory(u"a")
+        assert category.getTag() == u"a"
+
     def test_negativeCreateCategory(self):
         try:
             self.shelf.createCategory(u"a", u"Foo")
@@ -439,11 +545,12 @@ class TestShelfMethods(TestShelfFixture):
             assert False
 
     def test_deleteCategory(self):
-        self.shelf.deleteCategory(u"a")
+        category = self.shelf.getCategoryByTag(u"a")
+        self.shelf.deleteCategory(category.getId())
 
     def test_negativeDeleteCategory(self):
         try:
-            self.shelf.deleteCategory(u"nonexisting")
+            self.shelf.deleteCategory(12345678)
         except CategoryDoesNotExistError:
             pass
         else:
@@ -451,25 +558,24 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_getRootCategories(self):
         categories = list(self.shelf.getRootCategories())
-        cat_a = self.shelf.getCategory(u"a")
-        cat_events = self.shelf.getCategory(u"events")
-        cat_locations = self.shelf.getCategory(u"locations")
-        cat_people = self.shelf.getCategory(u"people")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_events = self.shelf.getCategoryByTag(u"events")
+        cat_locations = self.shelf.getCategoryByTag(u"locations")
+        cat_people = self.shelf.getCategoryByTag(u"people")
         categories.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
         assert categories == [cat_a, cat_events, cat_locations, cat_people], \
                categories
 
 class TestCategory(TestShelfFixture):
     def test_categoryMethods(self):
-        cat_a = self.shelf.getCategory(u"a")
-        cat_b = self.shelf.getCategory(u"b")
-        cat_c = self.shelf.getCategory(u"c")
-        cat_d = self.shelf.getCategory(u"d")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
+        cat_c = self.shelf.getCategoryByTag(u"c")
+        cat_d = self.shelf.getCategoryByTag(u"d")
 
-        assert self.shelf.getCategory(cat_a.getTag()) == cat_a
         assert self.shelf.getCategory(cat_a.getId()) == cat_a
         cat_a.setTag(u"foo")
-        assert self.shelf.getCategory(u"foo") == cat_a
+        assert self.shelf.getCategoryByTag(u"foo") == cat_a
 
         assert cat_a.getDescription() == "A"
         cat_a.setDescription(u"foo")
@@ -510,8 +616,8 @@ class TestCategory(TestShelfFixture):
         assert cat_a.isParentOf(cat_d, recursive=True)
 
     def test_negativeCategoryConnectChild(self):
-        cat_a = self.shelf.getCategory(u"a")
-        cat_b = self.shelf.getCategory(u"b")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
         try:
             cat_a.connectChild(cat_b)
         except CategoriesAlreadyConnectedError:
@@ -526,45 +632,45 @@ class TestCategory(TestShelfFixture):
             assert False
 
     def test_categoryDisconnectChild(self):
-        cat_a = self.shelf.getCategory(u"a")
-        cat_b = self.shelf.getCategory(u"b")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
         cat_a.disconnectChild(cat_b)
         assert not cat_a.isParentOf(cat_b)
 
     def test_negativeCategoryDisconnectChild(self):
-        cat_a = self.shelf.getCategory(u"a")
-        cat_d = self.shelf.getCategory(u"d")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_d = self.shelf.getCategoryByTag(u"d")
         cat_a.disconnectChild(cat_d) # No exception.
 
 class TestObject(TestShelfFixture):
     def test_getParents(self):
         root = self.shelf.getRootAlbum()
-        alpha = self.shelf.getAlbum(u"alpha")
-        beta = self.shelf.getAlbum(u"beta")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
+        beta = self.shelf.getAlbumByTag(u"beta")
         parents = list(beta.getParents())
         parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
         assert parents == [alpha, root]
 
     def test_getAttribute(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert orphans.getAttribute(u"title")
         assert orphans.getAttribute(u"description")
         assert not orphans.getAttribute(u"nonexisting")
 
     def test_getAttributeMap(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         map = orphans.getAttributeMap()
         assert "description" in map
         assert "title" in map
 
     def test_getAttributeNames(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         names = list(orphans.getAttributeNames())
         names.sort()
         assert names == ["description", "title"]
 
     def test_setAttribute(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         orphans.setAttribute(u"foo", u"fie") # New.
         assert orphans.getAttribute(u"foo") == u"fie"
         assert u"foo" in orphans.getAttributeMap()
@@ -576,15 +682,15 @@ class TestObject(TestShelfFixture):
         assert u"foo" in orphans.getAttributeNames()
 
     def test_deleteAttribute(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         orphans.deleteAttribute(u"nonexisting") # No exception.
         assert orphans.getAttribute(u"title")
         orphans.deleteAttribute(u"title")
         assert not orphans.getAttribute(u"title")
 
     def test_addCategory(self):
-        orphans = self.shelf.getAlbum(u"orphans")
-        cat_a = self.shelf.getCategory(u"a")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
+        cat_a = self.shelf.getCategoryByTag(u"a")
         assert list(orphans.getCategories()) == []
         orphans.addCategory(cat_a)
         assert list(orphans.getCategories()) == [cat_a]
@@ -597,18 +703,18 @@ class TestObject(TestShelfFixture):
         assert list(orphans.getCategories()) == [cat_a]
 
     def test_removeCategory(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert list(orphans.getCategories()) == []
-        cat_a = self.shelf.getCategory(u"a")
+        cat_a = self.shelf.getCategoryByTag(u"a")
         orphans.addCategory(cat_a)
         assert list(orphans.getCategories()) == [cat_a]
         orphans.removeCategory(cat_a)
         assert list(orphans.getCategories()) == []
 
     def test_deleteCategoryInvalidatesCategoryCache(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert list(orphans.getCategories()) == []
-        cat_a = self.shelf.getCategory(u"a")
+        cat_a = self.shelf.getCategoryByTag(u"a")
         orphans.addCategory(cat_a)
         assert list(orphans.getCategories()) == [cat_a]
         self.shelf.deleteCategory(cat_a.getId())
@@ -616,25 +722,25 @@ class TestObject(TestShelfFixture):
 
 class TestAlbum(TestShelfFixture):
     def test_getType(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         assert alpha.getType() == "plain"
 
     def test_isMutable(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         assert alpha.isMutable()
 
     def test_getTag(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         assert alpha.getTag() == u"alpha"
 
     def test_setTag(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         alpha.setTag(u"alfa")
         assert alpha.getTag() == u"alfa"
 
     def test_getAlbumParents(self):
         root = self.shelf.getRootAlbum()
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         parents = list(alpha.getAlbumParents())
         parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
         assert parents == [root]
@@ -644,32 +750,32 @@ class TestAlbum(TestShelfFixture):
 
 class TestPlainAlbum(TestShelfFixture):
     def test_getType(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         assert alpha.getType() == "plain"
 
     def test_isMutable(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         assert alpha.isMutable()
 
     def test_getChildren(self):
-        epsilon = self.shelf.getAlbum(u"epsilon")
-        alpha = self.shelf.getAlbum(u"alpha")
-        beta = self.shelf.getAlbum(u"beta")
+        epsilon = self.shelf.getAlbumByTag(u"epsilon")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
+        beta = self.shelf.getAlbumByTag(u"beta")
         assert list(epsilon.getChildren()) == []
         alphaChildren = list(alpha.getChildren())
         assert list(beta.getChildren()) == [alphaChildren[-1]]
 
     def test_getAlbumChildren(self):
-        alpha = self.shelf.getAlbum(u"alpha")
-        beta = self.shelf.getAlbum(u"beta")
-        epsilon = self.shelf.getAlbum(u"epsilon")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
+        beta = self.shelf.getAlbumByTag(u"beta")
+        epsilon = self.shelf.getAlbumByTag(u"epsilon")
         alphaAlbumChildren = list(alpha.getAlbumChildren())
         assert alphaAlbumChildren == [beta]
         assert list(epsilon.getAlbumChildren()) == []
 
     def test_setChildren(self):
         root = self.shelf.getRootAlbum()
-        beta = self.shelf.getAlbum(u"beta")
+        beta = self.shelf.getAlbumByTag(u"beta")
         assert list(beta.getChildren()) != []
         beta.setChildren([beta, root])
         assert list(beta.getChildren()) == [beta, root]
@@ -677,40 +783,89 @@ class TestPlainAlbum(TestShelfFixture):
         assert list(beta.getChildren()) == []
 
 class TestImage(TestShelfFixture):
+    def test_getImageVersions(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        image = imageversion.getImage()
+        assert list(image.getImageVersions()) == [imageversion]
+        imageversion2 = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
+        imageversion2.setImage(image)
+        imageversions = list(image.getImageVersions())
+        imageversions.sort(lambda x, y: return cmp(x.getHash(), y.getHash()))
+        assert list(image.getImageVersions()) == [imageversion, imageversion2]
+        self.shelf.deleteImageVersion(imageversion.getId())
+        self.shelf.deleteImageVersion(imageversion2.getId())
+        assert list(image.getImageVersions()) == []
+
+    def test_getPrimaryversion(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        image = imageversion.getImage()
+        assert image.getPrimaryVersion() == imageversion
+        imageversion2 = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
+        imageversion2.setImage(image)
+        assert image.getPrimaryVersion() == imageversion
+        imageversion2.makePrimary()
+        assert image.getPrimaryVersion() == imageversion2
+
+class TestImageVersion(TestShelfFixture):
+    def test_getType(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert imageversion.getType() == ImageVersionType.Other
+        imageversion.setType(ImageVersionType.Important)
+        assert imageversion.getType() == ImageVersionType.Important
+        imageversion.setType(ImageVersionType.Original)
+        assert imageversion.getType() == ImageVersionType.Original
+        imageversion.setType(ImageVersionType.Other)
+        assert imageversion.getType() == ImageVersionType.Other
+
+    # ImageVersion.makePrimary tested in TestImage.test_getPrimaryversion.
+    # ImageVersion.setImage tested in TestImage.test_getPrimaryversion.
+    # ImageVersion.setType tested in TestImageVersion.test_getType.
+
     def test_getHash(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        assert image.getHash() == "39a1266d2689f53d48b09a5e0ca0af1f"
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert imageversion.getHash() == "39a1266d2689f53d48b09a5e0ca0af1f"
 
     def test_getLocation(self):
         location = os.path.join(PICDIR, "arlaharen.png")
-        image = self.shelf.getImage(location)
-        assert image.getLocation() == os.path.realpath(location)
+        imageversion = self.shelf.getImageVersionByLocation(location)
+        assert imageversion.getLocation() == os.path.realpath(location)
 
     def test_getModificationTime(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        t = image.getModificationTime()
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        t = imageversion.getModificationTime()
         assert isinstance(t, int)
         assert t > 0
 
     def test_getSize(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        assert image.getSize() == (304, 540)
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert imageversion.getSize() == (304, 540)
 
     def test_contentChanged(self):
         path = os.path.join(PICDIR, "arlaharen.png")
-        self.shelf.deleteImage(path)
+        imageversion = self.shelf.getImageVersionByLocation(path)
+        self.shelf.deleteImageVersion(imageversion1.getId())
         newpath = u"tmp.png"
         try:
             shutil.copy2(path, newpath)
-            image = self.shelf.createImage(newpath)
-            oldmtime = image.getModificationTime()
+            newimage = self.shelf.createImage(newpath)
+            newimageversion = self.shelf.createImageVersion(
+                newimage, newpath, ImageVersionType.Original)
+            oldmtime = imageversion.getModificationTime()
             pilimg = PILImage.open(newpath)
             pilimg.thumbnail((100, 100))
             pilimg.save(newpath, "PNG")
-            image.contentChanged()
-            assert image.getHash() == "d55a9cc74371c09d484b163c71497cab"
-            assert image.getSize() == (56, 100)
-            assert image.getModificationTime() > oldmtime
+            newimageversion.contentChanged()
+            assert newimageversion.getHash() == "d55a9cc74371c09d484b163c71497cab"
+            assert newimageversion.getSize() == (56, 100)
+            assert newimageversion.getModificationTime() > oldmtime
         finally:
             try:
                 os.unlink(newpath)
@@ -719,37 +874,39 @@ class TestImage(TestShelfFixture):
 
     def test_locationChanged(self):
         location = os.path.join(PICDIR, "arlaharen.png")
-        image = self.shelf.getImage(location)
-        image.locationChanged(u"/foo/../bar")
-        assert image.getLocation() == "/bar"
+        imageversion = self.shelf.getImageVersionByLocation(location)
+        imageversion.locationChanged(u"/foo/../bar")
+        assert imageversion.getLocation() == "/bar"
 
     def test_isAlbum(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        assert not image.isAlbum()
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert not imageversion.isAlbum()
 
     def test_importExifTags(self):
-        image = self.shelf.getImage(os.path.join(PICDIR, "arlaharen.png"))
-        image.importExifTags() # TODO: Test more.
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        imageversion.importExifTags() # TODO: Test more.
 
 class TestAllAlbumsAlbum(TestShelfFixture):
     def test_getType(self):
-        alpha = self.shelf.getAlbum(u"gamma")
+        alpha = self.shelf.getAlbumByTag(u"gamma")
         assert alpha.getType() == "allalbums"
 
     def test_isMutable(self):
-        alpha = self.shelf.getAlbum(u"gamma")
+        alpha = self.shelf.getAlbumByTag(u"gamma")
         assert not alpha.isMutable()
 
     def test_getChildren(self):
-        gamma = self.shelf.getAlbum(u"gamma")
+        gamma = self.shelf.getAlbumByTag(u"gamma")
         assert len(list(gamma.getChildren())) == 8
 
     def test_getAlbumChildren(self):
-        gamma = self.shelf.getAlbum(u"gamma")
+        gamma = self.shelf.getAlbumByTag(u"gamma")
         assert list(gamma.getAlbumChildren()) == list(gamma.getChildren())
 
     def test_setChildren(self):
-        gamma = self.shelf.getAlbum(u"gamma")
+        gamma = self.shelf.getAlbumByTag(u"gamma")
         try:
             gamma.setChildren([])
         except UnsettableChildrenError:
@@ -758,27 +915,27 @@ class TestAllAlbumsAlbum(TestShelfFixture):
             assert False
 
     def test_isAlbum(self):
-        assert self.shelf.getAlbum(u"gamma").isAlbum()
+        assert self.shelf.getAlbumByTag(u"gamma").isAlbum()
 
 class TestAllImagesAlbum(TestShelfFixture):
     def test_getType(self):
-        alpha = self.shelf.getAlbum(u"delta")
+        alpha = self.shelf.getAlbumByTag(u"delta")
         assert alpha.getType() == "allimages"
 
     def test_isMutable(self):
-        alpha = self.shelf.getAlbum(u"delta")
+        alpha = self.shelf.getAlbumByTag(u"delta")
         assert not alpha.isMutable()
 
     def test_getChildren(self):
-        delta = self.shelf.getAlbum(u"delta")
+        delta = self.shelf.getAlbumByTag(u"delta")
         assert len(list(delta.getChildren())) == 11
 
     def test_getAlbumChildren(self):
-        delta = self.shelf.getAlbum(u"delta")
+        delta = self.shelf.getAlbumByTag(u"delta")
         assert list(delta.getAlbumChildren()) == []
 
     def test_setChildren(self):
-        delta = self.shelf.getAlbum(u"delta")
+        delta = self.shelf.getAlbumByTag(u"delta")
         try:
             delta.setChildren([])
         except UnsettableChildrenError:
@@ -787,28 +944,28 @@ class TestAllImagesAlbum(TestShelfFixture):
             assert False
 
     def test_isAlbum(self):
-        assert self.shelf.getAlbum(u"delta").isAlbum()
+        assert self.shelf.getAlbumByTag(u"delta").isAlbum()
 
 class TestOrphansAlbum(TestShelfFixture):
     def test_getType(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert orphans.getType() == "orphans"
 
     def test_isMutable(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert not orphans.isMutable()
 
     def test_getChildren(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         assert len(list(orphans.getChildren())) == 2
 
     def test_getAlbumChildren(self):
-        orphans = self.shelf.getAlbum(u"orphans")
-        epsilon = self.shelf.getAlbum(u"epsilon")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
+        epsilon = self.shelf.getAlbumByTag(u"epsilon")
         assert list(orphans.getAlbumChildren()) == [epsilon]
 
     def test_setChildren(self):
-        orphans = self.shelf.getAlbum(u"orphans")
+        orphans = self.shelf.getAlbumByTag(u"orphans")
         try:
             orphans.setChildren([])
         except UnsettableChildrenError:
@@ -817,38 +974,38 @@ class TestOrphansAlbum(TestShelfFixture):
             assert False
 
     def test_isAlbum(self):
-        assert self.shelf.getAlbum(u"orphans").isAlbum()
+        assert self.shelf.getAlbumByTag(u"orphans").isAlbum()
 
 class TestSearchAlbum(TestShelfFixture):
     def test_getType(self):
-        zeta = self.shelf.getAlbum(u"zeta")
+        zeta = self.shelf.getAlbumByTag(u"zeta")
         assert zeta.getType() == "search"
 
     def test_isMutable(self):
-        zeta = self.shelf.getAlbum(u"zeta")
+        zeta = self.shelf.getAlbumByTag(u"zeta")
         assert not zeta.isMutable()
 
     def test_getChildren(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         image1, image2 = list(alpha.getChildren())[0:2]
-        cat_a = self.shelf.getCategory(u"a")
-        cat_b = self.shelf.getCategory(u"b")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
         image1.addCategory(cat_a)
         image2.addCategory(cat_b)
-        zeta = self.shelf.getAlbum(u"zeta")
+        zeta = self.shelf.getAlbumByTag(u"zeta")
         assert zeta
         zeta.setAttribute(u"query", u"b")
         children = zeta.getChildren()
         assert list(children) == [image2]
 
     def test_getAlbumChildren(self):
-        alpha = self.shelf.getAlbum(u"alpha")
+        alpha = self.shelf.getAlbumByTag(u"alpha")
         image1, image2 = list(alpha.getChildren())[0:2]
-        cat_a = self.shelf.getCategory(u"a")
-        cat_b = self.shelf.getCategory(u"b")
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
         image1.addCategory(cat_a)
         image2.addCategory(cat_b)
-        zeta = self.shelf.getAlbum(u"zeta")
+        zeta = self.shelf.getAlbumByTag(u"zeta")
         assert zeta
         zeta.setAttribute(u"query", u"b")
         children = zeta.getAlbumChildren()
@@ -856,7 +1013,7 @@ class TestSearchAlbum(TestShelfFixture):
         assert list(children) == []
 
     def test_setChildren(self):
-        zeta = self.shelf.getAlbum(u"zeta")
+        zeta = self.shelf.getAlbumByTag(u"zeta")
         try:
             zeta.setChildren([])
         except UnsettableChildrenError:
@@ -865,7 +1022,7 @@ class TestSearchAlbum(TestShelfFixture):
             assert False
 
     def test_isAlbum(self):
-        assert self.shelf.getAlbum(u"zeta").isAlbum()
+        assert self.shelf.getAlbumByTag(u"zeta").isAlbum()
 
 ######################################################################
 
