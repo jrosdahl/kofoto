@@ -602,7 +602,10 @@ class Shelf:
             " select albumid, tag, type"
             " from   album")
         for albumid, tag, albumtype in cursor:
-            yield self._albumFactory(albumid, tag, albumtype)
+            if albumid in self.objectcache:
+                yield self.objectcache[albumid]
+            else:
+                yield self._albumFactory(albumid, tag, albumtype)
 
 
     def getAllImages(self):
@@ -1289,13 +1292,13 @@ class _Object:
         parent album."""
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
-            " select distinct album.albumid, album.tag, album.type"
+            " select distinct album.albumid"
             " from   member, album"
             " where  member.objectid = %s and"
             "        member.albumid = album.albumid",
             self.getId())
-        for albumid, albumtag, albumtype in cursor:
-            yield self.shelf._albumFactory(albumid, albumtag, albumtype)
+        for (albumid,) in cursor:
+            yield self.shelf.getAlbum(albumid)
 
 
     def getAttribute(self, name):
