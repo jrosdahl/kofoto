@@ -1,5 +1,6 @@
 import gtk
 import string
+import re
 from environment import env
 from kofoto.shelf import *
 
@@ -40,10 +41,9 @@ class CategoryDialog:
             return None
     
     def _descriptionChanged(self, description, tag):
-        # Remove all whitespaces in description and then use it as tag
-        tag.set_text(string.translate(description.get_text(),
-                                      string.maketrans("", ""),
-                                      string.whitespace))
+        # Use alphanumeric and underscore characters from
+        # the category description as category tag.
+        tag.set_text(re.sub("\W", "", description.get_text()))
 
     def _tagChanged(self, tag, button):
         tagString = tag.get_text().decode("utf-8")
