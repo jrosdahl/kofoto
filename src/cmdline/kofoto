@@ -168,7 +168,7 @@ def cmdAdd(env, args):
 
 
 def addHelper(env, destalbum, objects):
-    oldchildren = destalbum.getChildren()
+    oldchildren = list(destalbum.getChildren())
     if env.location == -1:
         loc = len(oldchildren)
     else:
