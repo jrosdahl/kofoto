@@ -16,14 +16,9 @@ else:
     bindir = os.path.dirname(sys.argv[0])
 sys.path.insert(0, os.path.join(bindir, "..", "lib"))
 
-try:
-    from kofoto.common import *
-    from kofoto.shelf import *
-    from kofoto.imagecache import *
-except ImportError:
-    sys.stderr.write("Could not find the kofoto libraries. " +
-                     "Please install kofoto properly.\n")
-    sys.exit(1)
+from kofoto.common import *
+from kofoto.shelf import *
+from kofoto.imagecache import *
 
 ######################################################################
 ### Constants.
