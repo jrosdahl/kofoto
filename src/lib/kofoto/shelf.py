@@ -1523,9 +1523,10 @@ class _UnicodeCursorDecorator:
         return self.cursor.execute(sql, *parameters)
 
     def fetchone(self):
-        try:
-            return self._unicodifyRow(self.cursor.fetchone())
-        except StopIteration:
+        row = self.cursor.fetchone()
+        if row:
+            return self._unicodifyRow(row)
+        else:
             return None
 
     def fetchall(self):
