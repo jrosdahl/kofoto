@@ -1,9 +1,7 @@
 __all__ = ["ImageCache"]
 
-import md5
 import os
 import Image as PILImage
-import sets
 from kofoto.common import symlinkOrCopyFile
 
 class ImageCache:

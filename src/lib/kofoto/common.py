@@ -21,7 +21,6 @@ class KofotoError(Exception):
 ### Functions.
 
 def symlinkOrCopyFile(source, destination):
-    import os
     try:
         os.unlink(destination)
     except OSError:
