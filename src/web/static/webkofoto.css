@@ -2,6 +2,7 @@ html {
     color: #000;
     background: #ddd;
     font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+    font-size: 0.75em;
 }
 
 a {
@@ -20,7 +21,7 @@ a:hover {
     color: #22f;
 }
 
-ul {
+ul.tree {
     list-style-type: none;
     margin-left: 0.4em;
     margin-top: 0.1em;
@@ -31,7 +32,7 @@ ul {
     border-width: 1px;
 }
 
-ul li {
+ul.tree li {
     padding-top: 0.2em;
     padding-bottom: 0.2em;
     padding-left: 0.2em;
@@ -40,10 +41,18 @@ ul li {
     border-color: #fff #c4c4d5 #c4c4d5 #fff;
 }
 
-li.odd {
+li.treeodd {
     background-color: #d2d2d2;
 }
 
-li.even {
+li.treeeven {
     background-color: #dddddd;
+}
+
+.kpopmenulink {
+    cursor: pointer;
+}
+
+.kpopmenulink:hover {
+    color: #22f;
 }
