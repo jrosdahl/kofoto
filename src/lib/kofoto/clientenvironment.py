@@ -71,9 +71,11 @@ class ClientEnvironment(object):
 
         if configFileLocation == None:
             if sys.platform.startswith("win"):
-                configFileLocation = os.path.expanduser("~/KofotoData/config.ini")
+                configFileLocation = os.path.expanduser(
+                    os.path.join("~", "KofotoData", "config.ini"))
             else:
-                configFileLocation = os.path.expanduser("~/.kofoto/config")
+                configFileLocation = os.path.expanduser(
+                    os.path.join("~", ".kofoto", "config"))
 
         if not os.path.exists(configFileLocation):
             confdir = os.path.dirname(configFileLocation)

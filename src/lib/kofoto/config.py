@@ -4,7 +4,9 @@ __all__ = [
     "BadConfigurationValueError",
     "Config",
     "ConfigError",
-    "DEFAULT_CONFIGFILE",
+    "DEFAULT_CONFIGFILE_LOCATION",
+    "DEFAULT_IMAGECACHE_LOCATION",
+    "DEFAULT_SHELF_LOCATION",
     "MissingConfigurationKeyError",
     "MissingSectionHeaderError",
     "createConfigTemplate",
@@ -17,7 +19,20 @@ import re
 import sys
 from kofoto.common import KofotoError
 
-DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
+if sys.platform.startswith("win"):
+    DEFAULT_CONFIGFILE_LOCATION = os.path.join(
+        "~", "KofotoData", "config.ini")
+    DEFAULT_SHELF_LOCATION = os.path.join(
+        "~", "KofotoData", "shelf.db")
+    DEFAULT_IMAGECACHE_LOCATION = os.path.join(
+        "~", "KofotoData", "ImageCache")
+else:
+    DEFAULT_CONFIGFILE_LOCATION = os.path.join(
+        "~", ".kofoto", "config")
+    DEFAULT_SHELF_LOCATION = os.path.join(
+        "~", ".kofoto", "shelf")
+    DEFAULT_IMAGECACHE_LOCATION = os.path.join(
+        "~", ".kofoto", "imagecache")
 
 class ConfigError(KofotoError):
     pass
@@ -90,12 +105,6 @@ class Config(ConfigParser):
 
 
 def createConfigTemplate(filename):
-    if sys.platform.startswith("win"):
-        defaultShelfLocation = "~/KofotoData/shelf.db"
-        defaultImageCacheLocation = "~/KofotoData/imagecache"
-    else:
-        defaultShelfLocation = "~/.kofoto/shelf"
-        defaultImageCacheLocation = "~/.kofoto/imagecache"
     file(filename, "w").write(
         """### Configuration file for Kofoto.
 
@@ -169,4 +178,4 @@ enable_auto_descriptions = no
 # image has several matching subcategories, they are delimited with
 # commas.
 auto_descriptions_template = <depicted> (<location>)
-""" % (defaultShelfLocation, defaultImageCacheLocation))
+""" % (DEFAULT_SHELF_LOCATION, DEFAULT_IMAGECACHE_LOCATION))
