@@ -1,19 +1,18 @@
 import os
 import Image as PILImage
+from kofoto.cachedir import CacheDir
 from kofoto.common import symlinkOrCopyFile
 
 class ImageCache:
     def __init__(self, cachelocation):
-        self.cachelocation = cachelocation
-        if not os.path.isdir(cachelocation):
-            os.mkdir(cachelocation)
+        self.cachedir = CacheDir(cachelocation)
 
 
     def get(self, image, limit):
         origpath = image.getLocation()
         orientation = image.getAttribute(u"orientation")
         genname = self._getCacheImageName(image, limit)
-        genpath = os.path.join(self.cachelocation, genname)
+        genpath = self.cachedir.getFilepath(genname)
 
         if os.path.exists(genpath):
             return genpath
@@ -22,8 +21,7 @@ class ImageCache:
         width = int(image.getAttribute(u"width"))
         largest = max(height, width)
         if limit > largest:
-            largestpath = os.path.join(
-                self.cachelocation,
+            largestpath = self.cachedir.getFilepath(
                 self._getCacheImageName(image, largest))
             if os.path.isfile(largestpath):
                 return largestpath
@@ -57,9 +55,10 @@ class ImageCache:
                           int(image.getAttribute(u"width")))
             for size in sizes + [maxsize]:
                 keep[self._getCacheImageName(image, size)] = True
-        for file in os.listdir(self.cachelocation):
-            if not keep.has_key(file):
-                os.unlink(os.path.join(self.cachelocation, file))
+        for filename in self.cachedir.getAllFilenames():
+            if not keep.has_key(os.path.basename(filename)):
+                os.unlink(filename)
+        self.cachedir.cleanup()
 
 
     def _getCacheImageName(self, image, limit):

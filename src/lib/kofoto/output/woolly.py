@@ -170,7 +170,7 @@ thumbnails_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
-<link rel="stylesheet" href="woolly.css" type="text/css" />
+<link rel="stylesheet" href="../woolly.css" type="text/css" />
 </head>
 <body>
 %(entries)s
@@ -191,21 +191,21 @@ subalbum_entry_template = '''<td align="center" valign="top">
 <p>%(title)s</p>
 <table border="0" cellspacing="0" cellpadding="0">
 <tr>
-<td><img src="images/frame-topleft.png" /></td>
-<td><img src="images/frame-top.png" width="6" height="6" /></td>
-<td><img src="images/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" /></td>
-<td><img src="images/frame-toprightupper.png" /></td>
+<td><img src="%(iconsdir)s/frame-topleft.png" /></td>
+<td><img src="%(iconsdir)s/frame-top.png" width="6" height="6" /></td>
+<td><img src="%(iconsdir)s/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" /></td>
+<td><img src="%(iconsdir)s/frame-toprightupper.png" /></td>
 </tr>
 <tr>
-<td rowspan="2"><img src="images/frame-left.png" width="6" height="%(thumbheight)s" /></td>
+<td rowspan="2"><img src="%(iconsdir)s/frame-left.png" width="6" height="%(thumbheight)s" /></td>
 <td rowspan="2" colspan="2"><a href="%(htmlref)s"><img src="%(thumbimgref)s" width="%(thumbwidth)s" height="%(thumbheight)s"/></a></td>
-<td><img src="images/frame-toprightlower.png" /></td>
+<td><img src="%(iconsdir)s/frame-toprightlower.png" /></td>
 </tr>
-<tr><td><img src="images/frame-right.png" width="17" height="%(thumbheight_minus_6)s" /></td></tr>
+<tr><td><img src="%(iconsdir)s/frame-right.png" width="17" height="%(thumbheight_minus_6)s" /></td></tr>
 <tr>
-<td colspan="2"><img src="images/frame-bottomleft.png" /></td>
-<td><img src="images/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" /></td>
-<td><img src="images/frame-bottomright.png" /></td>
+<td colspan="2"><img src="%(iconsdir)s/frame-bottomleft.png" /></td>
+<td><img src="%(iconsdir)s/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" /></td>
+<td><img src="%(iconsdir)s/frame-bottomright.png" /></td>
 </tr>
 </table>
 </td>
@@ -225,7 +225,7 @@ image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
-<link rel="stylesheet" href="woolly.css" type="text/css" />
+<link rel="stylesheet" href="../woolly.css" type="text/css" />
 <title>%(albumtitle)s</title>
 </head>
 <frameset cols="100%%, %(thumbnailsframesize)s">
@@ -245,7 +245,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
-<link href="woolly.css" type="text/css" rel="stylesheet" />
+<link href="../woolly.css" type="text/css" rel="stylesheet" />
 <title>%(title)s</title>
 </head>
 <body>
@@ -262,7 +262,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <tr>
 <td>%(previous)s</td>
 <td>%(next)s</td>
-<td><img src="images/1x1.png" height="1" width="20"></td>
+<td><img src="%(iconsdir)s/1x1.png" height="1" width="20"></td>
 <td>%(smaller)s</td>
 <td>%(larger)s</td>
 </tr>
@@ -272,7 +272,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 <tr>
 <td></td>
-<td><img src="images/1x1.png" height="1" width="%(imgmaxwidth)s" /></td>
+<td><img src="%(iconsdir)s/1x1.png" height="1" width="%(imgmaxwidth)s" /></td>
 <td></td>
 </tr>
 <tr>
@@ -326,6 +326,8 @@ class OutputGenerator(OutputEngine):
 
 
     def generateIndex(self, root):
+        self.iconsdir = "@icons"
+        os.mkdir(os.path.join(self.dest, self.iconsdir))
         self.symlinkFile(
             "%s.html" % root.getTag().encode(self.charEnc),
             "index.html")
@@ -350,7 +352,7 @@ class OutputGenerator(OutputEngine):
                 (frame_toprightlower_png, "frame-toprightlower.png"),
                 (frame_toprightupper_png, "frame-toprightupper.png")]:
             self.writeFile(
-                os.path.join(self.imagesdest, filename), data, 1)
+                os.path.join(self.iconsdir, filename), data, 1)
 
 
     def generateAlbum(self, album, subalbums, images, paths):
@@ -358,6 +360,7 @@ class OutputGenerator(OutputEngine):
         # Create album symlink to default size.
         # ------------------------------------------------------------
 
+        self.makeDirectory(str(album.getId()))
         self.symlinkFile(
             "%s-%s.html" % (album.getTag().encode(self.charEnc),
                             self.env.defaultsize),
@@ -400,12 +403,13 @@ class OutputGenerator(OutputEngine):
                         thumbwidth, thumbheight = self.getLimitedSize(
                             frontimage, self.env.thumbnailsize)
                     else:
-                        thumbimgref = os.path.join(self.imagesdest, "1x1.png")
+                        thumbimgref = "%s/%s" % (self.iconsdir, "1x1.png")
                         thumbwidth = self.env.thumbnailsize
                         thumbheight = 3 * self.env.thumbnailsize / 4
 
                     title = subalbum.getAttribute(u"title") or u""
                     subalbumtextElements.append(subalbum_entry_template % {
+                        "iconsdir": self.iconsdir,
                         "htmlref": "%s-%d.html" % (
                             subalbum.getTag().encode(self.charEnc),
                             size),
@@ -430,7 +434,7 @@ class OutputGenerator(OutputEngine):
                     if number % 3 == 0:
                         imagetextElements.append("</tr>\n<tr>\n")
                     imagetextElements.append(image_entry_template % {
-                        "frameref": "%s-%s-%s-frame.html" % (album.getId(),
+                        "frameref": "%s/%s-%s-frame.html" % (album.getId(),
                                                              number,
                                                              size),
                         "thumbimgref": self.getImageReference(
@@ -475,12 +479,11 @@ class OutputGenerator(OutputEngine):
             for image in images:
                 thumbnailsframeElements.append(
                     thumbnails_frame_entry_template % {
-                        "htmlref": "%s-%s-%s.html" % (
-                            album.getId(),
+                        "htmlref": "%s-%s.html" % (
                             number,
                             size),
                         "number": number,
-                        "thumbimgref": self.getImageReference(
+                        "thumbimgref": "../" + self.getImageReference(
                             image,
                             self.env.thumbnailsize),
                         })
@@ -489,14 +492,12 @@ class OutputGenerator(OutputEngine):
 
             # Image thumbnails frame.
             self.writeFile(
-                "%s-%s-thumbnails.html" % (
-                    album.getTag().encode(self.charEnc),
-                    size),
+                os.path.join(str(album.getId()), "thumbnails-%s.html" % size),
                 thumbnails_frame_template % {
                     "charenc": self.charEnc,
                     "entries": thumbnailstext})
             self._maybeMakeUTF8Symlink(
-                "%s-%s-thumbnails.html" % (album.getTag(), size))
+                os.path.join(str(album.getId()), "thumbnails-%s.html" % size))
 
 
     def generateImage(self, album, image, images, number, paths):
@@ -507,21 +508,16 @@ class OutputGenerator(OutputEngine):
         for size in self.env.imagesizes:
             title = album.getAttribute(u"title") or u""
             self.writeFile(
-                "%s-%s-%s-frame.html" % (
-                    album.getId(),
-                    number,
-                    size),
+                os.path.join(str(album.getId()),
+                             "%s-%s-frame.html" % (number, size)),
                 image_frameset_template % {
                     "albumtitle": title.encode(self.charEnc),
                     "charenc": self.charEnc,
-                    "imageframeref": "%s-%s-%s.html" % (
-                        album.getId(),
+                    "imageframeref": "%s-%s.html" % (
                         number,
                         size),
                     "imagenumber": number,
-                    "thumbnailsframeref": "%s-%s-thumbnails.html" % (
-                        album.getTag().encode(self.charEnc),
-                        size),
+                    "thumbnailsframeref": "thumbnails-%s.html" % size,
                     "thumbnailsframesize": self.env.thumbnailsize + 70,
                     })
 
@@ -549,40 +545,35 @@ class OutputGenerator(OutputEngine):
             pathtext = "<br />\n".join(pathtextElements)
 
             if number > 0:
-                previoustext = '<a href="%(htmlref)s"><img class="icon" src="images/previous.png" /></a>' % {
-                    "htmlref": "%s-%s-%s.html" % (
-                        album.getId(),
-                        number - 1,
-                        size)}
+                previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" /></a>' % (
+                    "%s-%s.html" % (number - 1, size),
+                    self.iconsdir)
             else:
-                previoustext = '<img class="icon" src="images/noprevious.png" />'
+                previoustext = '<img class="icon" src="../%s/noprevious.png" />' % self.iconsdir
 
             if number < len(images) - 1:
-                nexttext = '<a href="%(htmlref)s"><img class="icon" src="images/next.png" /></a>' % {
-                    "htmlref": "%s-%s-%s.html" % (
-                        album.getId(),
-                        number + 1,
-                        size)}
+                nexttext = '<a href="%s"><img class="icon" src="../%s/next.png" /></a>' % (
+                    "%s-%s.html" % (number + 1, size),
+                    self.iconsdir)
             else:
-                nexttext = '<img class="icon" src="images/nonext.png" />'
+                nexttext = '<img class="icon" src="../%s/nonext.png" />' % self.iconsdir
 
             if sizenumber > 0:
-                smallertext = '<a href="%(htmlref)s" target="_top"><img class="icon" src="images/smaller.png" /></a>' % {
-                    "htmlref": "%s-%s-%s-frame.html" % (
-                        album.getId(),
-                        number,
-                        self.env.imagesizes[sizenumber - 1])}
+                smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" /></a>' % (
+                    "%s-%s-frame.html" % (
+                        number, self.env.imagesizes[sizenumber - 1]),
+                    self.iconsdir)
+
             else:
-                smallertext = '<img class="icon" src="images/nosmaller.png" />'
+                smallertext = '<img class="icon" src="../%s/nosmaller.png" />' % self.iconsdir
 
             if sizenumber < len(self.env.imagesizes) - 1:
-                largertext = '<a href="%(htmlref)s" target="_top"><img class="icon" src="images/larger.png" /></a>' % {
-                    "htmlref": "%s-%s-%s-frame.html" % (
-                        album.getId(),
-                        number,
-                        self.env.imagesizes[sizenumber + 1])}
+                largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" /></a>' % (
+                    "%s-%s-frame.html" % (
+                        number, self.env.imagesizes[sizenumber + 1]),
+                    self.iconsdir)
             else:
-                largertext = '<img class="icon" src="images/nolarger.png" />'
+                largertext = '<img class="icon" src="../%s/nolarger.png" />' % self.iconsdir
 
             desc = (image.getAttribute(u"description") or
                     image.getAttribute(u"title") or
@@ -636,16 +627,15 @@ class OutputGenerator(OutputEngine):
             infotext = "".join(infotextElements)
 
             self.writeFile(
-                "%s-%s-%s.html" % (
-                    album.getId(),
-                    number,
-                    size),
+                os.path.join(str(album.getId()),
+                             "%s-%s.html" % (number, size)),
                 image_frame_template % {
                     "blurb": self.blurb,
                     "charenc": self.charEnc,
+                    "iconsdir": "../" + self.iconsdir,
                     "imgid": image.getId(),
                     "imgmaxwidth": size,
-                    "imgref": self.getImageReference(image, size),
+                    "imgref": "../" + self.getImageReference(image, size),
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
@@ -687,5 +677,6 @@ class OutputGenerator(OutputEngine):
             filename.encode("ascii")
         except UnicodeError:
             if filename.encode(self.charEnc) != filename.encode("utf-8"):
-                self.symlinkFile(filename.encode(self.charEnc),
-                                 filename.encode("utf-8"))
+                self.symlinkFile(
+                    os.path.basename(filename.encode(self.charEnc)),
+                    filename.encode("utf-8"))

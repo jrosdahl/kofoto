@@ -1,5 +1,7 @@
 """Common code for Kofoto libraries."""
 
+import os
+
 ######################################################################
 ### Exceptions.
 
@@ -21,3 +23,12 @@ def symlinkOrCopyFile(source, destination):
     except AttributeError:
         import shutil
         shutil.copy(source, destination)
+
+def pathSplit(path):
+    result = []
+    while True:
+        if not path:
+            break
+        path, tail = os.path.split(path)
+        result.insert(0, tail)
+    return result
