@@ -32,14 +32,19 @@ class SingleImageView(ImageView):
             self._model.disconnect(c)
         del self._modelConnections[:]
         self._model = loadedImages.model
-        c = self._model.connect("row_inserted", self.selectionUpdated)
+        c = self._model.connect("row_inserted", self._modelRowsChanged)
         self._modelConnections.append(c)
         c = self._model.connect("row_changed", self.selectionUpdated)
         self._modelConnections.append(c)
-        c = self._model.connect("row_deleted", self.selectionUpdated)
+        c = self._model.connect("row_deleted", self._modelRowsChanged)
         self._modelConnections.append(c)
-        self.selectionUpdated()
+        self._modelRowsChanged()
 
+    def _modelRowsChanged(self, *foo):
+        if len(self._selectedImages) != 0:
+            self._selectedImages.clear()
+        self.selectionUpdated()
+        
     def selectionUpdated(self, *foo):
         if not self._freezed and not self._locked:
             self._locked = gtk.TRUE
@@ -49,7 +54,7 @@ class SingleImageView(ImageView):
                     self._selectedImages.set([imageId])
                 else:
                     imageId = list(self._selectedImages)[0]
-                    self._selectedImages.set([imageId])                    
+                    self._selectedImages.set([imageId])
                 self._imageId = imageId
                 self._updateButtons(self._getRow())
                 self._loadImage()
@@ -73,7 +78,7 @@ class SingleImageView(ImageView):
         for image in self._model:
             if image[Images.COLUMN_IMAGE_ID] == self._imageId:
                 return image.path[0]
-        return None
+        raise IndexError
 
     def _updateButtons(self, row):
         if row <= 0:
@@ -94,6 +99,7 @@ class SingleImageView(ImageView):
 
     def thaw(self):
         self._freezed = gtk.FALSE
+        self.selectionUpdated()
 
     def show(self):
         self.thaw()
