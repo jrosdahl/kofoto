@@ -1459,6 +1459,10 @@ class Category:
         return not obj == self
 
 
+    def __hash__(self):
+        return self.getId()
+
+
 class _Object:
     ##############################
     # Public methods.
@@ -1644,6 +1648,10 @@ class _Object:
 
     def __ne__(self, obj):
         return not obj == self
+
+
+    def __hash__(self):
+        return self.getId()
 
 
 class Album(_Object):
