@@ -5,13 +5,13 @@ from imagelistmodel import *
 class ImageListView(gtk.TreeView):
     def __init__(self, imageListModel):
         gtk.TreeView.__init__(self, imageListModel)
-        # self.createThumbnailColumn()
+        self.createThumbnailColumn()
         self.createIdColumn()
         self.createLocationColumn()
         self.createAttributeColumns(imageListModel)
         
     def createThumbnailColumn(self):
-        renderer = gtk.CellRenderePixbuf()
+        renderer = gtk.CellRendererPixbuf()
         column = gtk.TreeViewColumn("Thumbnail", renderer, pixbuf=ImageListModel.COLUMN_THUMBNAIL)
         self.append_column(column)
 

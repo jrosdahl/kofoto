@@ -1,5 +1,6 @@
 import gtk
 import math
+import gobject
 from gtk import TRUE, FALSE
 
 class ImageView(gtk.ScrolledWindow):
@@ -30,14 +31,20 @@ class ImageView(gtk.ScrolledWindow):
 
     def loadFile(self, filename):
         # TODO: Loading file should be asyncronous to avoid freezing the gtk-main loop
-        self._pixBuf = gtk.gdk.pixbuf_new_from_file(filename)
-        self._newImageLoaded = TRUE
-        self.fitToWindow()
+        try:
+            self._pixBuf = gtk.gdk.pixbuf_new_from_file(filename)
+            self._image.show()
+            self._newImageLoaded = TRUE
+            self.fitToWindow()
+        except gobject.GError:
+            self._pixBuf = None
+            self._image.hide()
 
     def renderImage(self):
         # TODO: Scaling should be asyncronous to avoid freezing the gtk-main loop
         if self._pixBuf == None:
             # No image loaded
+            self._image.hide()
             return
         if self._currentZoom == self._wantedZoom and self._newImageLoaded == FALSE:
             return
@@ -58,7 +65,7 @@ class ImageView(gtk.ScrolledWindow):
                                                       self._INTERPOLATION_TYPE)
         pixMap, mask = pixBufResized.render_pixmap_and_mask()
         self._image.set_from_pixmap(pixMap, mask)
-        self._newImageLoaded == TRUE
+        self._newImageLoaded = FALSE
         self._currentZoom = self._wantedZoom
 
     def resizeEventHandler(self, widget, gdkEvent):
