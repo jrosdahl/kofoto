@@ -224,7 +224,7 @@ image_frameset_template = '''<!DOCTYPE html
 <link rel="stylesheet" href="woolly.css" type="text/css" />
 <title>%(albumtitle)s</title>
 </head>
-<frameset cols="100%%, 200">
+<frameset cols="100%%, %(thumbnailsframesize)s">
 <frame name="main" src="%(imageframeref)s" />
 <frame name="toc" src="%(thumbnailsframeref)s#%(imagenumber)s" marginheight="20" />
 <noframes>
@@ -468,6 +468,7 @@ class OutputGenerator(OutputEngine):
                     "thumbnailsframeref": "%s-%s-thumbnails.html" % (
                         album.getTag(),
                         size),
+                    "thumbnailsframesize": self.env.thumbnailsize + 70,
                     })
 
         # ------------------------------------------------------------
