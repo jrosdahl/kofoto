@@ -77,7 +77,7 @@ def displayHelp():
         "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
         "                                     or output type TYPE when generating output.\n"
         "    -v, --verbose                    Be verbose.\n"
-        "    -V, --version                    Print version out standard output.\n"
+        "    -V, --version                    Print version to standard output.\n"
         "\n"
         "Commands:\n"
         "\n"
