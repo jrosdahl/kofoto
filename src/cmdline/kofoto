@@ -1,0 +1,274 @@
+#! /usr/bin/env python
+
+import os
+import sys
+import getopt
+import time
+
+######################################################################
+
+# Find libraries when run from the source tree.
+sys.path[0:0] = [os.path.join("src", "lib"),
+                 "lib",
+                 os.path.join("..", "lib")]
+
+try:
+    from kofoto.common import *
+    from kofoto.shelf import *
+except ImportError:
+    sys.stderr.write("Could not find the kofoto libraries.  " +
+                     "Please install kofoto properly.\n")
+    sys.exit(1)
+
+try:
+    import exif
+except ImportError:
+    sys.stderr.write("Could not find the exif library.  " +
+                     "Please install pyexif properly.\n")
+    sys.exit(1)
+
+######################################################################
+### Constants.
+
+RCFILE = "~/.kofotorc"
+VERBATIM_EXIF_HEADERS = (
+    "Make",
+    "Model",
+    "ExposureTime",
+    "FNumber",
+    "Flash",
+    "ExifImageWidth",
+    "ExifImageHeight",
+)
+
+
+######################################################################
+### Helper functions.
+
+def displayHelp():
+    sys.stdout.write(
+#                                                                 79 characters here:  |
+        "Usage: kofoto [flags] command [parameters]\n"
+        "\n"
+        "Flags:\n"
+        "\n"
+        "    -h, --help                       Display this help.\n"
+        "        --shelf=X                    Use the shelf X instead of the default.\n"
+        "    -v, --version                    Print version out standard output.\n"
+        "\n"
+        "Commands:\n"
+        "\n"
+        "    Shelf\n"
+        "    =====\n"
+        "\n"
+        "    check                            Find missing images and print some\n"
+        "                                     statistics.\n"
+        "    create-shelf                     Create an empty shelf.\n"
+        "    create-album ALBUMID             Create an empty, unlinked album.\n"
+        "    print-tree                       Print the album tree.\n"
+        "    rename-albumid OLDID NEWID       Rename an album ID.\n"
+        "\n"
+        "    Albums\n"
+        "    ======\n"
+        "\n"
+        "    add ALBUM IMAGE1 [IMAGE2 ...]    Add new images (to an album).\n"
+        "    link-album ALBUM1 ALBUM2 NAME    Add a link with name NAME to ALBUMID2\n"
+        "                                     (last) in album ALBUMID1.\n"
+        "    link-image ALBUM IMAGE NAME      Describe me.\n"
+        "\n"
+        "    Images\n"
+        "    ======\n"
+        "\n")
+
+
+def printErrorAndExit(errorString):
+    sys.stderr.write("Error: " + errorString)
+    sys.exit(1)
+
+
+######################################################################
+### Commands.
+
+def cmdAdd(shelf, args):
+    album = shelf.getAlbum(args[0])
+    if not album:
+        printErrorAndExit("No such album ID: %s\n" % args[0])
+    for filename in args[1:]:
+        sys.stdout.write("Adding %s to %s..." % (filename, args[0]))
+        sys.stdout.flush()
+        imageId = shelf.createImage(filename)
+        image = shelf.getImage(imageId)
+        image.setAttributes("cached-location", [os.path.abspath(filename)])
+        album.addChild(imageId, image)
+        tags = exif.parse(filename)
+        if tags:
+            for key in VERBATIM_EXIF_HEADERS:
+                if tags.has_key(key):
+                    image.setAttributes(key, [tags[key].replace("\000", "")])
+            if tags.has_key("DateTime"):
+                t = int(time.mktime(time.strptime(tags["DateTime"],
+                                                  "%Y:%m:%d %H:%M:%S")))
+                image.setAttributes("timestamp", [t])
+            sys.stdout.write("done\n")
+        else:
+            sys.stdout.write("no EXIF header found, but added anyway\n")
+
+
+def cmdCheck(shelf, args):
+    f = sys.stdout
+    albums = shelf.getAllAlbums()
+    images = shelf.getAllImages()
+    f.write("Number of albums: %d\n" % len(albums))
+    f.write("Number of images: %d\n" % len(images))
+    f.write("Missing images:")
+    checksums = []
+    missing = []
+    for image in images:
+        location = image.getAttributes("cached-location")[0]
+        try:
+            realId = computeImageId(location)
+            storedId = image.getId()
+            if realId != storedId:
+                checksums += location
+        except IOError:
+            missing += location
+
+    if checksums or missing:
+        for path in checksums:
+            f.write("\n    (bad checksum) %s" % path)
+        for path in missing:
+            f.write("\n    (missing) %s" % path)
+    else:
+        f.write(" none\n")
+
+
+def cmdCreateAlbum(shelf, args):
+    shelf.createAlbum(args[0])
+
+
+def cmdLinkAlbum(shelf, args):
+    album = shelf.getAlbum(args[0])
+    album.addChild(args[2], shelf.getAlbum(args[1]))
+
+
+def cmdLinkImage(shelf, args):
+    album = shelf.getAlbum(args[0])
+    album.addChild(args[2], shelf.getImage(args[1]))
+
+
+def cmdPrintTree(shelf, args):
+    sys.stdout.write("[A] root\n")
+    cmdPrintTreeInternal(shelf.getRootAlbum(), sys.stdout, 1, ["root"])
+
+
+def cmdPrintTreeInternal(album, file, level, visited):
+    for childName, child in album.getChildren():
+        if isinstance(child, Image):
+            file.write("%s[I] %s (%s)\n" % (4 * level * " ",
+                                            childName,
+                                            child.getId()))
+        else:
+            file.write("%s[A] %s (%s)\n" % (4 * level * " ",
+                                            childName,
+                                            child.getId()))
+            if child.getId() in visited:
+                file.write("%s[...]\n" % (4 * (level + 1) * " "))
+            else:
+                cmdPrintTreeInternal(child,
+                                     file,
+                                     level + 1,
+                                     visited + [child.getId()])
+
+def cmdRenameAlbumId(shelf, args):
+    shelf.renameAlbumId(args[0], args[1])
+
+
+commandTable = {
+    "add": cmdAdd,
+    "check": cmdCheck,
+    "create-album": cmdCreateAlbum,
+    "link-album": cmdLinkAlbum,
+    "link-image": cmdLinkImage,
+    "print-tree": cmdPrintTree,
+    "rename-albumid": cmdRenameAlbumId,
+}
+
+######################################################################
+### Main
+
+def main(argv):
+    rcFilename = os.path.expanduser(RCFILE)
+    shelfFilename = None
+    if os.access(rcFilename, os.R_OK):
+        globals = {}
+        conf = {}
+        try:
+            execfile(os.path.expanduser(RCFILE), globals, conf)
+        except SyntaxError, x:
+            printErrorAndExit(
+                "Error while reading %s: %s\n" % (RCFILE, repr(x)) +
+                "It must be parsable Python code.\n")
+        except IOError, x:
+            printErrorAndExit(
+                "Error while reading %s: %s\n" % (RCFILE, repr(x[1])))
+
+        if conf.has_key("default_shelf"):
+            shelfFilename = conf["default_shelf"]
+
+    try:
+        optlist, args = getopt.getopt(
+            argv[1:],
+            "hv",
+            ["help",
+             "shelf=",
+             "version"])
+    except getopt.GetoptError:
+        printErrorAndExit("Unknown flag.  See \"kofoto --help\" for help.\n")
+
+    for opt, optarg in optlist:
+        if opt in ("-h", "--help"):
+            displayHelp()
+            sys.exit(0)
+        elif opt == "--shelf":
+            shelfFilename = optarg
+        elif opt in ("-v", "--version"):
+            sys.stdout.write("0.0.0 (the twisted crowbar release)\n")
+            sys.exit(0)
+
+    if not shelfFilename:
+        printErrorAndExit(
+            ("Don't know which shelf to use; none defined in %s and no\n" +
+             "--shelf parameter given.\n") % RCFILE)
+
+    shelfFilename = os.path.expanduser(shelfFilename)
+
+    if len(args) == 0:
+        printErrorAndExit(
+            "No command given.  See \"kofoto --help\" for help.\n")
+
+    if args[0] == "create-shelf":
+        try:
+            createNewShelfFile(shelfFilename)
+        except FailedWritingError, filename:
+            printErrorAndExit(
+                "Could not create shelf file \"%s\" (already exists?).\n" %
+                filename)
+    elif not commandTable.has_key(args[0]):
+        printErrorAndExit(
+            "Unknown command \"%s\".  See \"kofoto --help\" for help.\n" %
+            args[0])
+    else:
+        shelf = Shelf(shelfFilename)
+        shelf.beginFiddling()
+        commandTable[args[0]](shelf, args[1:])
+        try:
+            shelf.endFiddling()
+        except FailedWritingError, filename:
+            printErrorAndExit("Error writing to %s.\n" % filename)
+
+
+######################################################################
+### Main.
+
+if __name__ == "__main__":
+    main(sys.argv)

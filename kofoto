@@ -1,0 +1,26 @@
+import kofotolib
+
+Filer:
+
+/usr/local/bin/kofoto
+
+~/.kofotorc
+
+    default_root = "~/foton"
+    default_artist = "John Doe"
+
+~/foton/kofotoshelf.xml
+
+    lista med bilder och deras metadata
+    lista med album och deras ingående bildposter
+
+~/foton/originalbilder1/foo1.jpg
+~/foton/originalbilder1/foo2.jpg
+~/foton/originalbilder1/foo3.jpg
+~/foton/originalbilder2/foo1.jpg
+
+Kommandon:
+
+inject
+create-album
+make-static

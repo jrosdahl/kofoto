@@ -1,0 +1,70 @@
+originalbildfiler ändras aldrig
+
+albumtexter
+
+bildtexter
+
+exportera brännbara statiska album
+
+angivande av orientering
+
+översiktsvy med tumnaglar
+
+lätt att göra metadata beständigt
+
+unika IDn
+
+album som innehåller en ordnad sekvens av bilder
+
+nyckelordsmärkning
+
+sökning på nyckelord och annat
+
+viss dynamik när man tittar på webbsidor: lägga till kommentarer
+
+åtkomstkontroll
+
+album kan innehålla album och bilder
+
+en bild kan ingå i ett godtyckligt antal album
+
+ett album kan ingå i ett godtyckligt antal album
+
+hantera andra filtyper, t ex videosnuttar och ljud
+
+
+designbeslut:
+
+Bild-ID bestäms av originalbildens MD5-summa.
+
+Album-ID är en alfaumerisk sträng av godtycklig längd som inte får
+innehålla "/". Tills vidare används ett automatiskt löpnummer.
+
+En specificerad uppsättning bildattribut finns. Vissa av dessa kan
+hämtas ur bildens EXIF-information, och kofoto ska veta vilka taggar
+som ska lagras i vilka attribut.
+
+För import av "nya" EXIF-data ska EXIF-taggen specificeras så att
+kofoto-attribut inte av misstag skrivs över.
+
+Såväl bilder som bildreferenser kan ha attribut, och dessa kommer ur
+samma mängd.
+
+Då en bild (eller ett album) länkas till ett nytt ställe kan "länk-"
+eller "kortnamn" anges. Görs inte detta får länken inget namn, och
+källans "kortnamn" används vid visuell representation.
+
+Originalbilder kan (om)organiseras godtyckligt i filsystemet.
+
+Metainformation lagras i enn XML-fil, "databasen".
+
+Album genereras statiskt.
+
+Annoteringar och kommentarer via webbgränssnittet lagras i en speciell
+fil.  Denna information kan sammanfogas med databasen när så önskas.
+
+Ha ett välspecat gränssnitt mellan fram- och bakända?
+
+Importera EXIF-informationen till databasen.  Läs alltså aldrig
+metainformation från originalbilden (förutom vid importering, Björn
+anm.).
