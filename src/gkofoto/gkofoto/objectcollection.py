@@ -38,6 +38,7 @@ class ObjectCollection(object):
         for name in env.shelf.getAllAttributeNames():
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
+        self.__frozen = False
 
     # Return true if the objects has a defined order and may
     # be reordered. An object that is reorderable is not
@@ -313,12 +314,18 @@ class ObjectCollection(object):
         return self.__treeModel
 
     def _freezeViews(self):
+        if self.__frozen:
+            return
         for view in self.__registeredViews:
             view.freeze()
+        self.__frozen = True
 
     def _thawViews(self):
+        if not self.__frozen:
+            return
         for view in self.__registeredViews:
             view.thaw()
+        self.__frozen = False
 
 
 ###############################################################################
