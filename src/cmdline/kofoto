@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(bindir, "..", "lib"))
 from kofoto.common import *
 from kofoto.shelf import *
 from kofoto.imagecache import *
+from kofoto.config import *
 
 ######################################################################
 ### Locale.
@@ -30,7 +31,6 @@ CODESET = locale.nl_langinfo(locale.CODESET)
 ######################################################################
 ### Constants.
 
-DEFAULT_CONFIGFILE = os.path.expanduser("~/.kofoto/config")
 PRINT_GRAPH_INDENT = 4
 _DIRECTORIES_TO_IGNORE = [".svn"]
 
@@ -596,44 +596,6 @@ commandTable = {
 }
 
 ######################################################################
-### Help functions.
-
-def readConfig(configFilename):
-    globals = {}
-    conf = {}
-    try:
-        execfile(configFilename, globals, conf)
-    except SyntaxError, x:
-        printErrorAndExit(
-            "Could not parse %s: %s\n" % (configFilename, str(x)) +
-            "It must executable Python code.\n")
-    except IOError, x:
-        printErrorAndExit(
-            "Error while reading %s: %s.\n" % (configFilename, repr(x[1])))
-
-    checkConfigurationItem(
-        conf, "shelf_location", lambda x: type(x) == type(""))
-    checkConfigurationItem(
-        conf, "imagecache_location", lambda x: type(x) == type(""))
-    checkConfigurationItem(
-        conf, "thumbnail_image_size", lambda x: type(x) == type(1))
-    checkConfigurationItem(
-        conf, "default_image_size", lambda x: type(x) == type(1))
-    checkConfigurationItem(
-        conf,
-        "other_image_sizes",
-        lambda x: (type(x) == type([]) and
-                   len([y for y in x if type(y) != type(1)]) == 0))
-    return conf
-
-def checkConfigurationItem(conf, key, function):
-    if not conf.has_key(key):
-        printErrorAndExit("Missing configuration item: %s.\n" % key)
-    if not function(conf[key]):
-        printErrorAndExit("Configuration item has bad value: %s.\n" % key)
-
-
-######################################################################
 ### Main
 
 def main(argv):
@@ -666,7 +628,7 @@ def main(argv):
     genCharEnc = CODESET
     for opt, optarg in optlist:
         if opt == "--configfile":
-            configFilename = _from_uc(optarg)
+            configFilename = os.path.expanduser(_from_uc(optarg))
         elif opt == "--gencharenc":
             genCharEnc = str(optarg)
         elif opt in ("-h", "--help"):
@@ -700,35 +662,22 @@ def main(argv):
         if confdir and not os.path.exists(confdir):
             os.mkdir(confdir)
             sys.stdout.write("Created directory \"%s\".\n" % confdir)
-        conffile = file(configFilename, "w")
-        conffile.write(
-            "# Configuration file for Kofoto. (This is -*- Python -*- code.)\n"
-            "\n"
-            "# Default location of the shelf. This is where information about\n"
-            "# albums and images is stored.\n"
-            "shelf_location = \"~/.kofoto/shelf\"\n"
-            "\n"
-            "# Default location of the image cache. This is where generated images\n"
-            "# images are stored.\n"
-            "imagecache_location = \"~/.kofoto/imagecache\"\n"
-            "\n"
-            "# Size of thumbnails.\n"
-            "thumbnail_image_size = 128\n"
-            "\n"
-            "# The image size that will be used when first entering an album.\n"
-            "default_image_size = 640\n"
-            "\n"
-            "# A list of image sizes (other than default_image_size) to include in\n"
-            "# album.\n"
-            "other_image_sizes = [400, 1024]\n")
-        conffile.close()
+        createConfigTemplate(configFilename)
         sys.stdout.write("Created configuration file \"%s\".\n" %
                          configFilename)
+    try:
+        conf = Config(configFilename)
+        conf.read()
+        genconf = conf.getGeneralConfig()
+    except MissingSectionHeaderError, x:
+        printErrorAndExit(
+            "Bad configuration (missing section headers).\n" % x)
+    except MissingConfigurationKeyError, x:
+        printErrorAndExit(
+            "Missing configuration key in general section: %s.\n" % x)
 
-    conf = readConfig(configFilename)
-
-    if not shelfLocation and conf.has_key("shelf_location"):
-        shelfLocation = conf["shelf_location"]
+    if not shelfLocation and genconf.has_key("shelf_location"):
+        shelfLocation = genconf["shelf_location"]
     if shelfLocation:
         shelfLocation = os.path.expanduser(shelfLocation)
     else:
@@ -770,13 +719,10 @@ def main(argv):
         env.err = printError
         env.errexit = printErrorAndExit
         env.shelf = shelf
-        env.imagecache = ImageCache(
-            os.path.expanduser(conf["imagecache_location"]))
-        env.thumbnailsize = conf["thumbnail_image_size"]
-        env.defaultsize = conf["default_image_size"]
-        sizes = [conf["default_image_size"]] + conf["other_image_sizes"]
-        sizes.sort()
-        env.imagesizes = sizes
+        env.imagecache = ImageCache(genconf["imagecache_location"])
+        env.thumbnailsize = genconf["thumbnail_image_size"]
+        env.defaultsize = genconf["default_image_size"]
+        env.imagesizes = genconf["image_sizes"]
 
         commandTable[args[0]](env, args[1:])
         shelf.commit()

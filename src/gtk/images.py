@@ -61,8 +61,13 @@ class Images:
                 image = self._model.get_value(iter, self.COLUMN_IMAGE_OBJECT)
                 if wantedThumbnailSize > self._thumbnailSize:
                     # Load a new thumbnail from image cache.
-                    thumbnailLocation = self._imageCache.get(image,
-                                                             env.largestThumbnailSize)
+                    largeEnoughSizes = [x for x in env.imageSizes
+                                          if x >= wantedThumbnailSize]
+                    if largeEnoughSizes:
+                        sizeToUse = largeEnoughSizes[0]
+                    else:
+                        sizeToUse = wantedThumbnailSize
+                    thumbnailLocation = self._imageCache.get(image, sizeToUse)
                     pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
                 else:
                     # Reuse current thumbnail

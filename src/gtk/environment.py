@@ -13,18 +13,22 @@ else:
     bindir = os.path.dirname(sys.argv[0])
 sys.path.insert(0, os.path.join(bindir, "..", "lib"))
 
-class Environment:
-    imageCacheLocation = os.path.expanduser("~/.kofoto/imagecache") # TODO: Read from configuration file
-    iconDir = bindir + "/icons/"
-    largestThumbnailSize = 400 # TODO: Read from configuration file
-
 from kofoto.common import *
 from kofoto.shelf import *
+from kofoto.config import *
 
 locale.setlocale(locale.LC_ALL, "")
 CODESET = locale.nl_langinfo(locale.CODESET)
 
+conf = Config(DEFAULT_CONFIGFILE)
+conf.read()
+genconf = conf.getGeneralConfig()
+
+class Environment:
+    pass
 env = Environment()
+env.imageCacheLocation = genconf["imagecache_location"]
+env.imageSizes = genconf["image_sizes"]
 env.baseDir = bindir
 env.iconDir = bindir + "/icons/"
-env.shelf = Shelf(os.path.expanduser("~/.kofoto/shelf"), CODESET) # TODO: Read from configuration file
+env.shelf = Shelf(genconf["shelf_location"], CODESET)
