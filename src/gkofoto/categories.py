@@ -342,7 +342,12 @@ class Categories:
 
     def __loadCategorySubTree(self, parent, category):
         # TODO Do we have to use iterators here or can we use pygtks simplified syntax?
-        iterator = self.__categoryModel.append(parent)
+        iterator = self.__categoryModel.iter_children(parent)
+        while (iterator != None and
+               self.__categoryModel.get_value(iterator, self.__COLUMN_DESCRIPTION) <
+                   category.getDescription()):
+            iterator = self.__categoryModel.iter_next(iterator)
+        iterator = self.__categoryModel.insert_before(parent, iterator)
         self.__categoryModel.set_value(iterator, self.__COLUMN_CATEGORY_ID, category.getId())
         self.__categoryModel.set_value(iterator, self.__COLUMN_DESCRIPTION, category.getDescription())
         self.__categoryModel.set_value(iterator, self.__COLUMN_CONNECTED, False)
