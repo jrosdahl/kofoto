@@ -9,7 +9,6 @@ class TagAndDescriptionDialog:
         env.assertUnicode(tagText)
         env.assertUnicode(descText)
         widgets = gtk.glade.XML(env.gladeFile, "tagAndDescriptionDialog")
-        self._originalTagText = tagText
         self._dialog = widgets.get_widget("tagAndDescriptionDialog")
         self._dialog.set_title(title)
         self._tagWidget = widgets.get_widget("tag")
@@ -17,8 +16,10 @@ class TagAndDescriptionDialog:
         self._descWidget = widgets.get_widget("description")
         self._descWidget.set_text(descText)
         self._descWidget.connect("changed", self._descriptionChanged, self._tagWidget)
-        self._tagWidget.connect("changed", self._tagChanged, widgets.get_widget("okbutton"))
+        okbutton = widgets.get_widget("okbutton")
+        self._tagWidget.connect("changed", self._tagChanged, okbutton)
         self.__descText = descText
+        okbutton.set_sensitive(self._isTagOkay(tagText))
 
     def run(self, ok=None, data=None):
         result = self._dialog.run()
@@ -67,5 +68,4 @@ class TagAndDescriptionDialog:
 
     def _tagChanged(self, tag, button):
         tagString = tag.get_text().decode("utf-8")
-        button.set_sensitive(tagString == self._originalTagText or
-                             self._isTagValid(tagString))
+        button.set_sensitive(self._isTagOkay(tagString))
