@@ -77,11 +77,6 @@
 * Make sure the stored Unicode text strings are normalized in the
   shelf.
 
-* Split the location field in the image table into directory and
-  filename. Add Shelf method for finding all images in a given
-  directory. This method could be used by a client that wants to list
-  missing images in a directory.
-
 * Some kind of multiple image versions feature would be nice. An image
   that, for example, have been cropped or have had some color
   adjustments done probably should share most categories and
