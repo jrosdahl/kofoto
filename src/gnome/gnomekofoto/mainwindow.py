@@ -14,13 +14,18 @@ class MainWindow(gtk.Window):
         env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
         env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
         env.widgets["save"].connect("activate", env.controller.save)
+        env.widgets["revert"].connect("activate", env.controller.revert)
         env.widgets["quit"].connect("activate", env.controller.quit)
+
+        env.widgets["save"].set_sensitive(gtk.FALSE)
+        env.widgets["revert"].set_sensitive(gtk.FALSE)
 
         # Gray out not yet implemented stuff...
         env.widgets["new"].set_sensitive(gtk.FALSE)
         env.widgets["open"].set_sensitive(gtk.FALSE)
         env.widgets["save_as"].set_sensitive(gtk.FALSE)
-        env.widgets["revert"].set_sensitive(gtk.FALSE)
+
+        env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
@@ -61,3 +66,7 @@ class MainWindow(gtk.Window):
             env.widgets["objectViewToggleButton"].set_active(gtk.FALSE)
             env.controller.showTableView()
             self._toggleLock = gtk.FALSE
+
+    def _shelfModificationChangedCallback(self, modified):
+        env.widgets["revert"].set_sensitive(modified)
+        env.widgets["save"].set_sensitive(modified)

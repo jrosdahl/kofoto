@@ -36,7 +36,7 @@ class Controller:
     def __init__(self):
         self.wantedThumbnailSize = 100 # TODO: Calculate from dropdown menu in the GUI
         self._clipboard = None
-        
+
     def start(self):
         self._source = Source()
         self._selectedObjects = ObjectSelection(self._objectSelectionChanged)
@@ -89,7 +89,13 @@ class Controller:
         env.shelf.commit()
         print "commit"
         env.shelf.begin()
-        
+
+    def revert(self, gnomeApp):
+        env.shelf.rollback()
+        print "rollback"
+        env.shelf.begin()
+        print "TODO: reload application information here"
+
     def loadObjects(self, objectList):
         self._selectedObjects.clear()
         self._currentView.freeze()
@@ -99,7 +105,7 @@ class Controller:
 
     def newObjectModelLoaded(self):
         print "newObjectModelLoaded not yet implemented"
-        
+
     def _objectSelectionChanged(self):
         self._currentView.selectionUpdated()
         self._objectContextMenu.updateContextMenu()
@@ -110,12 +116,12 @@ class Controller:
         for hiddenView in self._hiddenViews:
             hiddenView.hide()
         self._currentView.selectionUpdated()
-        
+
     def showTableView(self):
         self._currentView = self._tableView
         self._hiddenViews = [self._thumbnailView, self._singleImageView]
         self._viewChanged()
-        
+
     def showThumbnailView(self):
         self._currentView = self._thumbnailView
         self._hiddenViews = [self._tableView, self._singleImageView]
@@ -125,7 +131,7 @@ class Controller:
         self._currentView = self._singleImageView
         self._hiddenViews = [self._tableView, self._thumbnailView]
         self._viewChanged()
-        
+
     def clipboardSet(self, object):
         self._clipboard = object
         self._categories.updateContextMenu()
@@ -139,20 +145,16 @@ class Controller:
         self._clipboard = None
         self._categories.updateContextMenu()
         return popedItem
-        
+
     def clipboardHasCategory(self):
         if isinstance(self._clipboard, ClipboardCategories):
             return gtk.TRUE
         else:
             return gtk.FALSE
-        
+
 ######################################################################
 ### Start
 
 env.widgets = WidgetsWrapper()
 env.controller = Controller()
 env.controller.start()
-
-        
-
-
