@@ -60,11 +60,9 @@ class Controller:
                 widgets.get_widget("cancel").set_sensitive(False)
             result = quitDialog.run()
             if result == 0:
-                print "commit"
                 env.shelf.commit()
                 gtk.main_quit()
             elif result == 1:
-                print "rollback"
                 env.shelf.rollback()
                 gtk.main_quit()
             else:
