@@ -3,16 +3,32 @@ import gtk
 from kofoto.timer import Timer
 from kofoto.common import calculateDownscaledDimensions
 
+class _MyPixbufLoader(gtk.gdk.PixbufLoader):
+    def __init__(self, *args, **kwargs):
+        gtk.gdk.PixbufLoader.__init__(self, *args, **kwargs)
+        self.__closed = False
+
+    def close(self):
+        if not self.__closed:
+            gtk.gdk.PixbufLoader.close(self)
+            self.__closed = True
+
+    def __del__(self):
+        if not self.__closed:
+            gtk.gdk.PixbufLoader.close(self)
+        gtk.gdk.PixbufLoader.__del__(self)
+
 class _PreloadState:
     def __init__(self, filename, fileSystemCodeset):
         self.fullsizePixbuf = None
-        self.pixbufLoader = gtk.gdk.PixbufLoader()
+        self.pixbufLoader = _MyPixbufLoader()
         self.loadFinished = False # Whether loading of fullsizePixbuf is ready.
         self.scaledPixbuf = None
         try:
             self.fp = open(filename.encode(fileSystemCodeset), "rb")
-        except OSError:
+        except (IOError, OSError):
             self.loadFinished = True
+            self.pixbufLoader = None
 
 class ImagePreloader(object):
     def __init__(self, fileSystemCodeset, debugPrintFunction=None):
@@ -56,7 +72,6 @@ class ImagePreloader(object):
     def clearCache(self):
         for ps in self.__preloadStates.values():
             if ps.pixbufLoader:
-                ps.pixbufLoader.close()
                 # Set loadFinished to avoid an extra
                 # pixbufLoader.close() by the loop in
                 # _preloadImagesWorker.
@@ -84,7 +99,6 @@ class ImagePreloader(object):
                 ps.pixbufLoader.close()
                 ps.fullsizePixbuf = ps.pixbufLoader.get_pixbuf()
             except (gobject.GError, OSError):
-                ps.pixbufLoader.close()
                 ps.fullsizePixbuf = None
             ps.pixbufLoader = None
             ps.loadFinished = True
@@ -119,8 +133,6 @@ class ImagePreloader(object):
         for filename in self.__preloadStates.keys():
             if not filename in filenames:
                 pixbufLoader = self.__preloadStates[filename].pixbufLoader
-                if pixbufLoader:
-                    pixbufLoader.close()
                 del self.__preloadStates[filename]
 
         # Preload the new images.
@@ -143,7 +155,7 @@ class ImagePreloader(object):
                 self._debugPrint("Preload of %s took %.2f seconds" % (
                     filename, timer.get()))
             except (gobject.GError, OSError):
-                ps.pixbufLoader.close()
+                pass
             ps.pixbufLoader = None
             ps.loadFinished = True
 
