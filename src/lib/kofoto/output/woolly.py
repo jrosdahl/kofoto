@@ -280,7 +280,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 <tr>
 <td width="50%%"></td>
-<td align="center"><img class="thinborder" src="%(imgref)s" align="center" alt="The image" /></td>
+<td align="center"><img class="thinborder" src="%(imgref)s" width="%(imgwidth)s" height="%(imgheight)s" align="center" alt="The image" /></td>
 <td width="50%%"></td>
 </tr>
 <tr><td></td><td class="info">%(info)s</td><td></td></tr>
@@ -656,6 +656,8 @@ class OutputGenerator(OutputEngine):
                     "uplink": uplink,
                     })
 
+            imgref, imgwidth, imgheight = self.getImageReference(
+                image, wlim, hlim)
             self.writeFile(
                 os.path.join(str(album.getId()),
                              "%s-%dx%d.html" % (number, wlim, hlim)),
@@ -665,10 +667,11 @@ class OutputGenerator(OutputEngine):
                     "cache_next_image": cni_text,
                     "charenc": self.charEnc,
                     "iconsdir": "../" + self.iconsdir,
+                    "imgheight": imgheight,
                     "imgid": image.getId(),
                     "imgmaxwidth": wlim,
-                    "imgref": "../" + self.getImageReference(
-                                          image, wlim, hlim)[0],
+                    "imgref": "../" + imgref,
+                    "imgwidth": imgwidth,
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
