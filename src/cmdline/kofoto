@@ -44,7 +44,10 @@ class ArgumentError:
 ### Helper functions.
 
 def _from_uc(s):
-    return s.encode(CODESET)
+    if type(s) == type(u""):
+        return s.encode(CODESET)
+    else:
+        return s
 
 def _to_uc(s):
     return unicode(s, CODESET)
