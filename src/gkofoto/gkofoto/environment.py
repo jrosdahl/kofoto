@@ -5,7 +5,8 @@ import locale
 import re
 
 import pygtk
-pygtk.require('2.0')
+if sys.platform != "win32":
+    pygtk.require('2.0')
 import gtk
 import gobject
 import gtk.gdk
@@ -52,9 +53,14 @@ class Environment(ClientEnvironment):
         self.rotateLeftCommand = self.config.get(
             "gkofoto", "rotate_left_command", True)
 
+        # Case 1: Running from normal UNIX or Windows non-py2exe installation.
         dataDir = os.path.join(bindir, "..", "share", "gkofoto")
-        if not os.path.exists(dataDir):
-            dataDir = bindir
+        if not os.path.isdir(dataDir):
+            # Case 2: Running from Windows py2exe installation.
+            dataDir = os.path.join(bindir, "share", "gkofoto")
+            if not os.path.isdir(dataDir):
+                # Case 3: Running from source code.
+                dataDir = bindir
         self.iconDir = os.path.join(dataDir, "icons")
         self.gladeFile = os.path.join(dataDir, "glade", "gkofoto.glade")
         self.albumIconFileName = os.path.join(self.iconDir, "album.png")

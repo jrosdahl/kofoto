@@ -1,0 +1,115 @@
+ _  __      __       _
+| |/ /___  / _| ___ | |_ ___
+| ' // _ \| |_ / _ \| __/ _ \
+| . \ (_) |  _| (_) | || (_) |
+|_|\_\___/|_|  \___/ \__\___/
+
+
+VERSION HISTORY
+===============
+
+0.3 (2005-02-12)
+
+    New features:
+
+      * Category "quick select" feature.
+      * Improved the image directory structure for generated HTML
+        albums (ticket #7).
+      * Recognize EXIF timestamps on the format "YYYY/MM/DD HH:MM:SS"
+        and "YYYY-MM-DD HH:MM:SS" in addition to the EXIF standard
+        format ("YYYY:MM:DD HH:MM:SS") (ticket #70).
+      * Migrated to GTK+/PyGTK 2.4 (ticket #73).
+      * Improved directory chooser dialog.
+      * A couple of default root categories are now created when
+        creating a new database (ticket #85).
+      * Renamed obliterate/obliterate-category commands to
+        destroy/destroy-category in the command-line client to match
+        the menu choices in GKofoto (ticket #87).
+      * Created Windows standalone package with all dependencies
+        included (ticket #80).
+
+    Fixed bugs:
+
+      * Fixed bug which made GKofoto segfault when another instance
+        was locking the database (ticket #36). Patch from Darryl
+        Shpak.
+      * Make GKofoto run properly under Windows 98 (ticket #79). Patch
+        by Chris M Clark.
+      * Added work-around for EXIF fields unparsable by our current
+        EXIF library (ticket #71).
+      * Corrected album children cache logic (ticket #77).
+      * Fixed bug triggering tracebacks when performing a new search
+        in the single image view (ticket #69).
+      * Update clipboard when image/album is destroyed (ticket #83).
+      * Fixed some problems related to image destroying (ticket #84).
+      * Corrected code handling missing images in the single image
+        view.
+      * Handle home directories with non-ASCII characters correctly
+        (ticket #72).
+
+0.2.2 (2004-10-02)
+
+    New Features:
+
+      * Explicitly set width and height of images in generated HTML
+        output.
+
+    Fixed Bugs:
+
+      * Fixed a bug that made the image preloader leak lots of memory
+        (ticket #68).
+      * Fixed incorrect logic for the modification field in the status
+        bar.
+
+0.2.1 (2004-09-19)
+
+    Fixed Bugs:
+
+      * Handle missing image files gracefully in the image preloader
+        (ticket #67).
+
+0.2 (2004-09-19)
+
+    New Features:
+
+      * Preloading of images (ticket #28).
+      * Load table view asynchronously (ticket #26).
+      * Added search filter field (ticket #32).
+      * Added status bar (ticket #58).
+      * Added accelerators for next/previous image (ticket #60).
+
+    Fixed Bugs:
+
+      * Quote file arguments to the rotation commands correctly in the
+        default configuration file.
+      * Made woolly output valid XHTML Transitional (ticket #52).
+        Patch from Erik Forsberg. Thanks!
+      * Don't register identified MPEG files or images that PIL can't
+        convert to RGB mode.
+      * Made delete in the edit menu work (ticket #66).
+      * Made destroy in the edit unselectable when the album tree
+        loses focus.
+      * Update the toggle column in the category tree after paste
+        (ticket #45).
+      * Make the "registered" attribute equal for all images when
+        registering (ticket #41).
+      * Fixed error when choosing "Properties..." for a selected album
+        in the table view (ticket #49).
+      * Ignore shift-related warnings from PIL (ticket #50).
+      * Catch errors from buggy PIL plugins.
+      * Fixed a bug that made the EXIF module unable to read some EXIF
+        fields (ticket #64).
+      * Implemented work-around for a problem with repeated view
+        freezes (ticket #48).
+      * Reload album tree when an album has been cut or pasted (ticket
+        #65).
+      * Added dependency on python-glade2 in the Debian package. Noted
+        by Erik Forsberg.
+      * Added dependency on libjpeg-progs in the Debian package
+        (ticket #63). Noted by Ola Leifler.
+      * Improved RPM packaging (thanks to Kjell Enblom).
+      * Various other minor fixes.
+
+0.1 (2004-08-08)
+
+    First public version.

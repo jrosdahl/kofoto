@@ -15,8 +15,8 @@ class HandleImagesDialog(gtk.FileChooserDialog):
             title="Handle images",
             action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
             buttons=(
-                gtk.STOCK_OK, gtk.RESPONSE_OK,
-                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                gtk.STOCK_OK, gtk.RESPONSE_OK))
         self.connect("response", self._response)
 
     def _response(self, widget, responseId):

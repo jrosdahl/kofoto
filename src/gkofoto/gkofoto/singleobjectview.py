@@ -27,6 +27,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         env.widgets["menubarZoomIn"].connect("activate", self.zoomIn)
         env.widgets["zoomOut"].connect("clicked", self.zoomOut)
         env.widgets["menubarZoomOut"].connect("activate", self.zoomOut)
+        env.widgets["mainWindow"].connect("key_press_event", self._key_pressed)
         self.connect("button_press_event", self._mouse_button_pressed)
         self.__selectionLocked = False
 
@@ -175,3 +176,14 @@ class SingleObjectView(ObjectCollectionView, ImageView):
 
         env.mainwindow.getImagePreloader().preloadImages(
             filenames, maxWidth, maxHeight)
+
+    def _key_pressed(self, widget, event):
+        # TODO use UiManager instead of this...
+        if event.state & gtk.gdk.CONTROL_MASK:
+            if (event.keyval == gtk.gdk.keyval_from_name("space") and 
+                env.widgets["nextButton"].flags() & gtk.SENSITIVE):
+                self._goto(None, 1)
+            elif (event.keyval == gtk.gdk.keyval_from_name("BackSpace") and
+                  env.widgets["previousButton"].flags() & gtk.SENSITIVE):
+                self._goto(None, -1)
+        return False
