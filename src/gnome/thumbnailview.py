@@ -117,10 +117,11 @@ class ThumbnailView:
         if not self._locked:
             self._locked = gtk.TRUE        
             self._thumbnailList.unselect_all()
-            indices = xrange(sys.maxint)
-            for image, index in zip(self._model, indices):
-                if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
-                    self._thumbnailList.select_icon(index)
+            if len(self._model) > 0:
+                indices = xrange(sys.maxint)                
+                for image, index in zip(self._model, indices):
+                    if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
+                        self._thumbnailList.select_icon(index)
             self._locked = gtk.FALSE            
 
     def _button_pressed(self, widget, event):
