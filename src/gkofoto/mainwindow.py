@@ -11,6 +11,7 @@ from gkofoto.singleobjectview import *
 from gkofoto.objectcollectionfactory import *
 from gkofoto.objectcollection import *
 from gkofoto.registerimagesdialog import RegisterImagesDialog
+from gkofoto.handleimagesdialog import HandleImagesDialog
 
 class MainWindow(gtk.Window):
     def __init__(self):
@@ -50,6 +51,8 @@ class MainWindow(gtk.Window):
         env.widgets["menubarZoom"].set_sensitive(False)
 
         env.widgets["menubarRegisterImages"].connect("activate", self.registerImages, None)
+        env.widgets["menubarHandleModifiedOrRenamedImages"].connect(
+            "activate", self.handleModifiedOrRenamedImages, None)
 
         env.widgets["menubarRotateLeft"].get_children()[1].set_from_pixbuf(
             gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
@@ -94,6 +97,11 @@ class MainWindow(gtk.Window):
 
     def registerImages(self, widget, data):
         dialog = RegisterImagesDialog()
+        dialog.run()
+        dialog.destroy()
+
+    def handleModifiedOrRenamedImages(self, widget, data):
+        dialog = HandleImagesDialog()
         dialog.run()
         dialog.destroy()
 
