@@ -49,14 +49,14 @@ def tryUpgrade(location, toVersion):
                 tablename, tablename))
         cursor.execute(
             " insert into image (id, primary_version)"
-            " select id, id"
+            " select imageid, imageid"
             " from   old.image")
         cursor.execute(
             " insert into image_version"
             "     (id, image, type, hash, directory, filename, mtime,"
             "      width, height)"
-            " select id, id, 'original', hash, directory, filename, mtime,"
-            "        width, height"
+            " select imageid, imageid, 'original', hash, directory, filename,"
+            "        mtime, width, height"
             " from   old.image")
         cursor.execute(
             " update dbinfo"
