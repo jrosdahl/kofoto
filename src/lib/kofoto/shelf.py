@@ -449,7 +449,7 @@ class Shelf:
 
         Returns an Album object.
         """
-        return self.getAlbum("0")
+        return self.getAlbum(_ROOT_ALBUM_ID)
 
 
     def getAllAlbums(self):
