@@ -12,7 +12,7 @@ class MainWindow(gtk.Window):
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
         env.widgets["attributeToggleButton"].connect("toggled", self._toggleAttributesView)
         env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
-        env.widgets["imageViewToggleButton"].connect("clicked", self._toggleImageView)
+        env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
         env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
         env.widgets["save"].connect("activate", env.controller.save)
         env.widgets["quit"].connect("activate", env.controller.quit)
@@ -46,12 +46,12 @@ class MainWindow(gtk.Window):
         if not self._toggleLock:
             self._toggleLock = gtk.TRUE
             button.set_active(gtk.TRUE)
-            env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["objectViewToggleButton"].set_active(gtk.FALSE)
             env.widgets["tableViewToggleButton"].set_active(gtk.FALSE)
             env.controller.showThumbnailView()
             self._toggleLock = gtk.FALSE
 
-    def _toggleImageView(self, button):
+    def _toggleObjectView(self, button):
         if not self._toggleLock:
             self._toggleLock = gtk.TRUE
             button.set_active(gtk.TRUE)
@@ -65,6 +65,6 @@ class MainWindow(gtk.Window):
             self._toggleLock = gtk.TRUE
             button.set_active(gtk.TRUE)
             env.widgets["thumbnailsViewToggleButton"].set_active(gtk.FALSE)
-            env.widgets["imageViewToggleButton"].set_active(gtk.FALSE)
+            env.widgets["objectViewToggleButton"].set_active(gtk.FALSE)
             env.controller.showTableView()
             self._toggleLock = gtk.FALSE

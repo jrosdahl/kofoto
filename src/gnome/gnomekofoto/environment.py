@@ -1,5 +1,6 @@
 import sys
 import os
+import gtk
 import getopt
 import locale
 
@@ -39,3 +40,5 @@ env.imageSizes = genconf["image_sizes"]
 env.iconDir = os.path.join(dataDir, "icons")
 env.gladeFile = os.path.join(dataDir, "glade", "gkofoto.glade")
 env.shelf = Shelf(genconf["shelf_location"], env.codeset)
+env.albumIconFileName = os.path.join(env.iconDir, "album.png")
+env.albumIconPixbuf = gtk.gdk.pixbuf_new_from_file(env.albumIconFileName)

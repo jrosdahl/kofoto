@@ -11,10 +11,10 @@ from gnomekofoto.environment import env
 
 from kofoto.imagecache import *
 
-from gnomekofoto.imageselection import *
-from gnomekofoto.imagecontextmenu import *
+from gnomekofoto.objectselection import *
+from gnomekofoto.objectcontextmenu import *
 from gnomekofoto.albums import *
-from gnomekofoto.images import *
+from gnomekofoto.objects import *
 from gnomekofoto.mainwindow import *
 from gnomekofoto.tableview import *
 from gnomekofoto.thumbnailview import *
@@ -39,22 +39,22 @@ class Controller:
         
     def start(self):
         self._source = Source()
-        self._selectedImages = ImageSelection(self._imageSelectionChanged)
-        self._loadedImages = Images(self._selectedImages)
-        self._imageContextMenu = ImageContextMenu(self._loadedImages, self._selectedImages)
+        self._selectedObjects = ObjectSelection(self._objectSelectionChanged)
+        self._loadedObjects = Objects(self._selectedObjects)
+        self._objectContextMenu = ObjectContextMenu(self._loadedObjects, self._selectedObjects)
         self._albums = Albums(self._source)
-        self._categories = Categories(self._loadedImages,
-                                      self._selectedImages,
+        self._categories = Categories(self._loadedObjects,
+                                      self._selectedObjects,
                                       self._source)
-        self._thumbnailView = ThumbnailView(self._loadedImages,
-                                            self._selectedImages,
-                                            self._imageContextMenu)
-        self._tableView = TableView(self._loadedImages,
-                                    self._selectedImages,
-                                    self._imageContextMenu)
-        self._singleImageView = SingleImageView(self._loadedImages,
-                                                self._selectedImages,
-                                                self._imageContextMenu)
+        self._thumbnailView = ThumbnailView(self._loadedObjects,
+                                            self._selectedObjects,
+                                            self._objectContextMenu)
+        self._tableView = TableView(self._loadedObjects,
+                                    self._selectedObjects,
+                                    self._objectContextMenu)
+        self._singleImageView = SingleImageView(self._loadedObjects,
+                                                self._selectedObjects,
+                                                self._objectContextMenu)
         self.showThumbnailView()
         MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, gtk.FALSE)
@@ -90,19 +90,19 @@ class Controller:
         print "commit"
         env.shelf.begin()
         
-    def loadImages(self, imageList):
-        self._selectedImages.clear()
+    def loadObjects(self, objectList):
+        self._selectedObjects.clear()
         self._currentView.freeze()
-        self._loadedImages.loadImageList(imageList)
-        self._loadedImages.loadThumbnails(self.wantedThumbnailSize)
+        self._loadedObjects.loadObjectList(objectList)
+        self._loadedObjects.loadThumbnails(self.wantedThumbnailSize)
         self._currentView.thaw()
 
-    def newImageModelLoaded(self):
-        print "newImageModelLoaded not yet implemented"
+    def newObjectModelLoaded(self):
+        print "newObjectModelLoaded not yet implemented"
         
-    def _imageSelectionChanged(self):
+    def _objectSelectionChanged(self):
         self._currentView.selectionUpdated()
-        self._imageContextMenu.updateContextMenu()
+        self._objectContextMenu.updateContextMenu()
         self._categories.updateView()
 
     def _viewChanged(self):

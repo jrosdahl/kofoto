@@ -4,7 +4,7 @@ import gtk
 import string
 
 from environment import env
-from images import Images
+from objects import Objects
 from categorydialog import CategoryDialog
 from kofoto.search import *
 from kofoto.shelf import *
@@ -20,7 +20,7 @@ class Categories:
     _ignoreSelectEvent = gtk.FALSE
     _selectedCategories = {}
     
-    def __init__(self, loadedImages, selectedImages, source):
+    def __init__(self, loadedObjects, selectedObjects, source):
         self._model = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                     gobject.TYPE_PYOBJECT, # TAG
                                     gobject.TYPE_STRING,   # DESCRIPTION
@@ -29,8 +29,8 @@ class Categories:
         categoryView = env.widgets["categoryView"]
         categoryView.realize()
         self._source = source
-        self._loadedImages = loadedImages
-        self._selectedImages = selectedImages
+        self._loadedObjects = loadedObjects
+        self._selectedObjects = selectedObjects
         categoryView.set_model(self._model)
 
         # Create columns
@@ -50,41 +50,41 @@ class Categories:
         # Create context menu
         self._contextMenu = gtk.Menu()
 
-        self._copyItem = gtk.MenuItem("Copy")
-        self._copyItem.show()
-        self._copyItem.connect("activate", self._copyCategory, None)
-        self._contextMenu.append(self._copyItem)
-
         self._cutItem = gtk.MenuItem("Cut")
         self._cutItem.show()
         self._cutItem.connect("activate", self._cutCategory, None)
         self._contextMenu.append(self._cutItem)
         
+        self._copyItem = gtk.MenuItem("Copy")
+        self._copyItem.show()
+        self._copyItem.connect("activate", self._copyCategory, None)
+        self._contextMenu.append(self._copyItem)
+
         self._pasteItem = gtk.MenuItem("Paste")
         self._pasteItem.show()
         self._pasteItem.connect("activate", self._pasteCategory, None)
         self._contextMenu.append(self._pasteItem)
 
-        self._createChildItem = gtk.MenuItem("Create child category")
-        self._createChildItem.show()
-        self._createChildItem.connect("activate", self._createChildCategory, None)
-        self._contextMenu.append(self._createChildItem)
-        
-        self._createRootItem = gtk.MenuItem("Create root category")
-        self._createRootItem.show()
-        self._createRootItem.connect("activate", self._createRootCategory, None)
-        self._contextMenu.append(self._createRootItem)
-        
-        self._deleteItem = gtk.MenuItem("Delete selected categories")
+        self._deleteItem = gtk.MenuItem("Delete")
         self._deleteItem.show()
         self._deleteItem.connect("activate", self._deleteCategory, None)
         self._contextMenu.append(self._deleteItem)
 
-        self._disconnectItem = gtk.MenuItem("Disconnect selected categories")
+        self._disconnectItem = gtk.MenuItem("Disconnect")
         self._disconnectItem.show()
         self._disconnectItem.connect("activate", self._disconnectCategory, None)
         self._contextMenu.append(self._disconnectItem)
 
+        self._createChildItem = gtk.MenuItem("Create child")
+        self._createChildItem.show()
+        self._createChildItem.connect("activate", self._createChildCategory, None)
+        self._contextMenu.append(self._createChildItem)
+        
+        self._createRootItem = gtk.MenuItem("Create root")
+        self._createRootItem.show()
+        self._createRootItem.connect("activate", self._createRootCategory, None)
+        self._contextMenu.append(self._createRootItem)
+        
         self._propertiesItem = gtk.MenuItem("Properties")
         self._propertiesItem.show()
         self._propertiesItem.connect("activate", self._editProperties, None)
@@ -182,37 +182,37 @@ class Categories:
             self._propertiesItem.set_sensitive(gtk.FALSE)
             
     def updateView(self, doNotAutoCollapse=gtk.FALSE):
-        nrSelectedImagesInCategory = {}
-        nrSelectedImages = 0
+        nrSelectedObjectsInCategory = {}
+        nrSelectedObjects = 0
         # find out which categories are connected, not connected or
-        # partitionally connected to selected images
-        for image in self._loadedImages.model:
-            imageId = image[Images.COLUMN_IMAGE_ID]
-            if imageId in self._selectedImages:
-                nrSelectedImages += 1
-                image = env.shelf.getImage(imageId)
-                for category in image.getCategories():
+        # partitionally connected to selected objects
+        for object in self._loadedObjects.model:
+            objectId = object[Objects.COLUMN_OBJECT_ID]
+            if objectId in self._selectedObjects:
+                nrSelectedObjects += 1
+                object = env.shelf.getObject(objectId)
+                for category in object.getCategories():
                     categoryId = category.getId()
                     try:
-                        nrSelectedImagesInCategory[categoryId] += 1
+                        nrSelectedObjectsInCategory[categoryId] += 1
                     except(KeyError):
-                        nrSelectedImagesInCategory[categoryId] = 1
+                        nrSelectedObjectsInCategory[categoryId] = 1
         pathsToExpand = self._updateViewHelper(self._model,
-                                           nrSelectedImagesInCategory,
-                                           nrSelectedImages,
+                                           nrSelectedObjectsInCategory,
+                                           nrSelectedObjects,
                                            doNotAutoCollapse)[0]
         if env.widgets["autoExpand"].get_active():
             pathsToExpand.reverse()
             for path in pathsToExpand:
                 env.widgets["categoryView"].expand_row(path, gtk.FALSE)  
             
-    def _updateViewHelper(self, categories, nrSelectedImagesInCategory, nrSelectedImages, doNotAutoCollapse):
+    def _updateViewHelper(self, categories, nrSelectedObjectsInCategory, nrSelectedObjects, doNotAutoCollapse):
         pathsToExpand = []
         expandParent = gtk.FALSE
         for categoryRow in categories:
             childPathsToExpand, expandThis = self._updateViewHelper(categoryRow.iterchildren(),
-                                                                nrSelectedImagesInCategory,
-                                                                nrSelectedImages,
+                                                                nrSelectedObjectsInCategory,
+                                                                nrSelectedObjects,
                                                                 doNotAutoCollapse)
             pathsToExpand.extend(childPathsToExpand)
             if expandThis:
@@ -222,18 +222,18 @@ class Categories:
                 # Dont auto collapse selected categories
                 expandParent = gtk.TRUE
             categoryId = categoryRow[self._COLUMN_CATEGORY_ID]
-            if categoryId in nrSelectedImagesInCategory:
+            if categoryId in nrSelectedObjectsInCategory:
                 expandParent = gtk.TRUE
-                if nrSelectedImagesInCategory[categoryId] < nrSelectedImages:
-                    # Some of the selected images are connected to the category
+                if nrSelectedObjectsInCategory[categoryId] < nrSelectedObjects:
+                    # Some of the selected objects are connected to the category
                     categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
                     categoryRow[self._COLUMN_INCONSISTENT] = gtk.TRUE
                 else:
-                    # All of the selected images are connected to the category
+                    # All of the selected objects are connected to the category
                     categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
                     categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
             else:
-                # None of the selected images are connected to the category
+                # None of the selected objects are connected to the category
                 categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
                 categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
             if (not expandThis) and (not doNotAutoCollapse) and env.widgets["autoCollapse"].get_active():
@@ -244,20 +244,20 @@ class Categories:
         categoryRow = self._model[path]
         category = env.shelf.getCategory(categoryRow[self._COLUMN_CATEGORY_ID])
         if categoryRow[self._COLUMN_INCONSISTENT]:
-            for imageId in self._selectedImages:
+            for objectId in self._selectedObjects:
                 try:
-                    env.shelf.getObject(imageId).addCategory(category)
+                    env.shelf.getObject(objectId).addCategory(category)
                 except(CategoryPresentError):
                     pass
             categoryRow[self._COLUMN_INCONSISTENT] = gtk.FALSE
             categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
         elif categoryRow[self._COLUMN_CONNECTED]:
-            for imageId in self._selectedImages:
-                env.shelf.getObject(imageId).removeCategory(category)
+            for objectId in self._selectedObjects:
+                env.shelf.getObject(objectId).removeCategory(category)
             categoryRow[self._COLUMN_CONNECTED] = gtk.FALSE
         else:
-            for imageId in self._selectedImages:
-                env.shelf.getObject(imageId).addCategory(category)
+            for objectId in self._selectedObjects:
+                env.shelf.getObject(objectId).addCategory(category)
                 categoryRow[self._COLUMN_CONNECTED] = gtk.TRUE
 
     def _button_pressed(self, treeView, event):

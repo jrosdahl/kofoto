@@ -4,7 +4,7 @@ import gtk
 import sys
 
 from environment import env
-from images import *
+from objects import *
 from imageview import *
 
 # TODO: Prenumerera på model changes för att veta när tex en bild roterats
@@ -12,13 +12,13 @@ from imageview import *
 class SingleImageView(ImageView):
     _modelConnections = []
     
-    def __init__(self, loadedImages, selectedImages, contextMenu):
+    def __init__(self, loadedObjects, selectedObjects, contextMenu):
         ImageView.__init__(self)
         self._locked = gtk.FALSE
         self._freezed = gtk.FALSE
-        env.widgets["imageView"].add(self)
+        env.widgets["objectView"].add(self)
         self.show_all()
-        self._selectedImages = selectedImages
+        self._selectedObjects = selectedObjects
         self._contextMenu = contextMenu
         env.widgets["nextButton"].connect("clicked", self._goto, 1)
         env.widgets["previousButton"].connect("clicked", self._goto, -1)
@@ -27,13 +27,13 @@ class SingleImageView(ImageView):
         env.widgets["zoomIn"].connect("clicked", self.zoomIn)
         env.widgets["zoomOut"].connect("clicked", self.zoomOut)
         self.connect("button_press_event", self._button_pressed)
-        self.setModel(loadedImages)
+        self.setModel(loadedObjects)
     
-    def setModel(self, loadedImages):
+    def setModel(self, loadedObjects):
         for c in self._modelConnections:
             self._model.disconnect(c)
         del self._modelConnections[:]
-        self._model = loadedImages.model
+        self._model = loadedObjects.model
         c = self._model.connect("row_inserted", self._modelRowsChanged)
         self._modelConnections.append(c)
         c = self._model.connect("row_changed", self.selectionUpdated)
@@ -43,23 +43,23 @@ class SingleImageView(ImageView):
         self._modelRowsChanged()
 
     def _modelRowsChanged(self, *foo):
-        if len(self._selectedImages) != 0:
-            self._selectedImages.clear()
+        if len(self._selectedObjects) != 0:
+            self._selectedObjects.clear()
         self.selectionUpdated()
         
     def selectionUpdated(self, *foo):
         if not self._freezed and not self._locked:
             self._locked = gtk.TRUE
             try:
-                if len(self._selectedImages) == 0:
-                    imageId = self._model[0][Images.COLUMN_IMAGE_ID]
-                    self._selectedImages.set([imageId])
+                if len(self._selectedObjects) == 0:
+                    objectId = self._model[0][Objects.COLUMN_OBJECT_ID]
+                    self._selectedObjects.set([objectId])
                 else:
-                    imageId = list(self._selectedImages)[0]
-                    self._selectedImages.set([imageId])
-                self._imageId = imageId
+                    objectId = list(self._selectedObjects)[0]
+                    self._selectedObjects.set([objectId])
+                self._objectId = objectId
                 self._updateButtons(self._getRow())
-                self._loadImage()
+                self._loadObject()
             except(IndexError):
                 self.clear()
                 env.widgets["previousButton"].set_sensitive(gtk.FALSE)
@@ -71,15 +71,15 @@ class SingleImageView(ImageView):
             self._locked = gtk.TRUE        
             row = self._getRow() + direction
             self._updateButtons(row)
-            self._imageId = self._model[row][Images.COLUMN_IMAGE_ID]
-            self._loadImage()
-            self._selectedImages.set([self._imageId])
+            self._objectId = self._model[row][Objects.COLUMN_OBJECT_ID]
+            self._loadObject()
+            self._selectedObjects.set([self._objectId])
             self._locked = gtk.FALSE
 
     def _getRow(self):
-        for image in self._model:
-            if image[Images.COLUMN_IMAGE_ID] == self._imageId:
-                return image.path[0]
+        for object in self._model:
+            if object[Objects.COLUMN_OBJECT_ID] == self._objectId:
+                return object.path[0]
         raise IndexError
 
     def _updateButtons(self, row):
@@ -92,9 +92,12 @@ class SingleImageView(ImageView):
         else:
             env.widgets["nextButton"].set_sensitive(gtk.TRUE)
             
-    def _loadImage(self):
-        image = env.shelf.getImage(self._imageId)
-        self.loadFile(image.getLocation())
+    def _loadObject(self):
+        object = env.shelf.getObject(self._objectId)
+        if object.isAlbum():
+            self.loadFile(env.albumIconFileName)
+        else:
+            self.loadFile(object.getLocation())
         
     def freeze(self):
         self._freezed = gtk.TRUE
@@ -105,8 +108,8 @@ class SingleImageView(ImageView):
 
     def show(self):
         self.thaw()
-        env.widgets["imageView"].show()
-        env.widgets["imageView"].grab_focus()
+        env.widgets["objectView"].show()
+        env.widgets["objectView"].grab_focus()
         env.widgets["zoom100"].set_sensitive(gtk.TRUE)
         env.widgets["zoomToFit"].set_sensitive(gtk.TRUE)
         env.widgets["zoomIn"].set_sensitive(gtk.TRUE)
@@ -116,7 +119,7 @@ class SingleImageView(ImageView):
     def hide(self):
         self.freeze()
         self.clear()
-        env.widgets["imageView"].hide()
+        env.widgets["objectView"].hide()
         env.widgets["previousButton"].set_sensitive(gtk.FALSE)
         env.widgets["nextButton"].set_sensitive(gtk.FALSE)
         env.widgets["zoom100"].set_sensitive(gtk.FALSE)

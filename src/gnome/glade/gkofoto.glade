@@ -509,7 +509,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="toggle" id="imageViewToggleButton">
+			    <widget class="toggle" id="objectViewToggleButton">
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes">Table</property>
 			      <property name="use_underline">True</property>
@@ -655,7 +655,7 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkEventBox" id="imageView">
+			    <widget class="GtkEventBox" id="objectView">
 
 			      <child>
 				<placeholder/>

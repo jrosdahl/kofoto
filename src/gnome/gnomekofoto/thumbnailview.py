@@ -2,7 +2,7 @@ import gtk
 import sys
 
 from environment import env
-from images import *
+from objects import *
 
 class ThumbnailView:
     _maxWidth = 0
@@ -10,23 +10,23 @@ class ThumbnailView:
     _blockedConnections = []
     _freezed = gtk.FALSE
     
-    def __init__(self, loadedImages, selectedImages, contextMenu):
+    def __init__(self, loadedObjects, selectedObjects, contextMenu):
         self._locked = gtk.FALSE
         self._contextMenu = contextMenu
-        self._selectedImages = selectedImages
+        self._selectedObjects = selectedObjects
         widget = env.widgets["thumbnailList"]
         self._thumbnailList = env.widgets["thumbnailList"]        
         widget.connect("select_icon", self._widgetIconSelected)
         widget.connect("unselect_icon", self._widgetIconUnselected)
         widget.connect("button_press_event", self._button_pressed)
-        self.setModel(loadedImages)
+        self.setModel(loadedObjects)
         
-    def setModel(self, loadedImages):
+    def setModel(self, loadedObjects):
         for c in self._modelConnections:
             self._model.disconnect(c)
         del self._modelConnections[:]
         del self._blockedConnections[:]
-        self._model = loadedImages.model
+        self._model = loadedObjects.model
         self._initFromModel()
         c = self._model.connect("row_inserted", self._initFromModel)
         self._modelConnections.append(c)
@@ -57,11 +57,17 @@ class ThumbnailView:
         del self._blockedConnections[:]
 
     def _loadThumbnail(self, model, iter, pos):
-        pixbuf = model.get_value(iter, Images.COLUMN_THUMBNAIL)
-        imageId = model.get_value(iter, Images.COLUMN_IMAGE_ID)
+        isAlbum = model.get_value(iter, Objects.COLUMN_IS_ALBUM)
+        if isAlbum:
+            text = model.get_value(iter, Objects.COLUMN_ALBUM_TAG)
+        else:
+            text = model.get_value(iter, Objects.COLUMN_OBJECT_ID)
+        pixbuf = model.get_value(iter, Objects.COLUMN_THUMBNAIL)
+        self._thumbnailList.insert_pixbuf(pos, pixbuf, "", str(text))
         self._maxWidth = max(self._maxWidth, pixbuf.get_width())
         self._thumbnailList.set_icon_width(self._maxWidth)
-        self._thumbnailList.insert_pixbuf(pos, pixbuf, "filnamn", str(imageId))
+
+        
 
     def freeze(self):
         self._thumbnailList.freeze()
@@ -78,9 +84,9 @@ class ThumbnailView:
         env.widgets["thumbnailView"].show()
         env.widgets["thumbnailList"].grab_focus()
         self._unblockModel()
-        for image in self._model:
-            if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
-                env.widgets["thumbnailList"].moveto(image.path[0], 0.0)
+        for object in self._model:
+            if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
+                env.widgets["thumbnailList"].moveto(object.path[0], 0.0)
                 break
 
     def hide(self):
@@ -98,17 +104,17 @@ class ThumbnailView:
         if not self._locked:
             self._locked = gtk.TRUE
             iter = self._model.get_iter(index)
-            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-            self._selectedImages.add(imageId)
+            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
+            self._selectedObjects.add(objectId)
             self._locked = gtk.FALSE
 
     def _widgetIconUnselected(self, widget, index, event):
         if not self._locked:
             self._locked = gtk.TRUE        
             iter = self._model.get_iter(index)
-            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
+            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
             try:
-                self._selectedImages.remove(imageId)
+                self._selectedObjects.remove(objectId)
             except(KeyError):
                 pass
             self._locked = gtk.FALSE
@@ -119,8 +125,8 @@ class ThumbnailView:
             self._thumbnailList.unselect_all()
             if len(self._model) > 0:
                 indices = xrange(sys.maxint)                
-                for image, index in zip(self._model, indices):
-                    if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
+                for object, index in zip(self._model, indices):
+                    if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
                         self._thumbnailList.select_icon(index)
             self._locked = gtk.FALSE            
 

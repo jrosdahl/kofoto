@@ -1,7 +1,7 @@
 from environment import env
 from sets import Set
 
-class ImageSelection:
+class ObjectSelection:
     def __init__(self, changedCallback):
         self._set = Set()
         self._changedCallback = changedCallback
@@ -10,22 +10,22 @@ class ImageSelection:
         self._set.clear()
         self._changedCallback()
 
-    def set(self, imageIdList):
+    def set(self, objectIdList):
         self._set.clear()
-        for imageId in imageIdList:
-            self._set.add(imageId)
+        for objectId in objectIdList:
+            self._set.add(objectId)
         self._changedCallback()
 
-    def add(self, imageId):
-        self._set.add(imageId)
+    def add(self, objectId):
+        self._set.add(objectId)
         self._changedCallback()
 
-    def remove(self, imageId):
-        self._set.remove(imageId)
+    def remove(self, objectId):
+        self._set.remove(objectId)
         self._changedCallback()
 
-    def __contains__(self, imageId):
-        return imageId in self._set
+    def __contains__(self, objectId):
+        return objectId in self._set
 
     def __len__(self):
         return len(self._set)

@@ -1,55 +1,77 @@
 import gtk
 
 from environment import env
-from images import *
+from objects import *
 from sets import Set
 
 class TableView:
+    _ALBUM_TAG_COLUMN_NAME = u"Album tag"
+    _modelConnections = []
 
-    def __init__(self, loadedImages, selectedImages, contextMenu):
+    def __init__(self, loadedObjects, selectedObjects, contextMenu):
         self._locked = gtk.FALSE
         self._tableView = env.widgets["tableView"]
         selection = self._tableView.get_selection()
         selection.set_mode(gtk.SELECTION_MULTIPLE)
         self._contextMenu = contextMenu
-        self._selectedImages = selectedImages
+        self._selectedObjects = selectedObjects
         self._tableView.connect("button_press_event", self._button_pressed)
         selection.connect('changed', self._widgetSelectionUpdated)
-        self.setModel(loadedImages)
+        self.setModel(loadedObjects)
+        self._loadedObjects = loadedObjects
 
-    def setModel(self, loadedImages):
-        self._model = loadedImages.model
+    def setModel(self, loadedObjects):
+        self._model = loadedObjects.model
         self._tableView.set_model(self._model)
         for column in self._tableView.get_columns():
             self._tableView.remove_column(column)
         self._createThumbnailColumn()
         self._createIdColumn()
         self._createLocationColumn()
-        self._createAttributeColumns(loadedImages.attributeNamesMap)
+        self._createAlbumTagColumn()
+        self._createAttributeColumns(loadedObjects.attributeNamesMap)
+        for c in self._modelConnections:
+            self._model.disconnect(c)
+        del self._modelConnections[:]
+        self._model = loadedObjects.model
+        c = self._model.connect("row_inserted", self._updateAlbumTagColumn)
+        self._modelConnections.append(c)
+        c = self._model.connect("row_deleted", self._updateAlbumTagColumn)
+        self._modelConnections.append(c)
+        
 
     def _createThumbnailColumn(self):
         renderer = gtk.CellRendererPixbuf()
-        column = gtk.TreeViewColumn("Thumbnail", renderer, pixbuf=Images.COLUMN_THUMBNAIL)
+        column = gtk.TreeViewColumn("", renderer, pixbuf=Objects.COLUMN_THUMBNAIL)
         column.set_reorderable(gtk.TRUE)
+        self._tableView.append_column(column)
+
+    def _createAlbumTagColumn(self):
+        renderer = gtk.CellRendererText()
+        columnName = self._ALBUM_TAG_COLUMN_NAME
+        column = gtk.TreeViewColumn(columnName, renderer, text=Objects.COLUMN_ALBUM_TAG)
+        column.set_reorderable(gtk.TRUE)
+        column.set_resizable(gtk.TRUE)
+        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_ALBUM_TAG, column)
         self._tableView.append_column(column)
 
     def _createIdColumn(self):
         renderer = gtk.CellRendererText()
-        columnName = u"ImageId"
-        column = gtk.TreeViewColumn(columnName, renderer, text=Images.COLUMN_IMAGE_ID)
+        columnName = u"ObjectId"
+        column = gtk.TreeViewColumn(columnName, renderer, text=Objects.COLUMN_OBJECT_ID)
         column.set_resizable(gtk.TRUE)
         column.set_reorderable(gtk.TRUE)
-        self._contextMenu.addTableViewColumn(columnName, Images.COLUMN_IMAGE_ID, column)
+        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_OBJECT_ID, column)
         self._tableView.append_column(column)
 
     def _createLocationColumn(self):
         renderer = gtk.CellRendererText()
         columnName = u"Location"
         column = gtk.TreeViewColumn(columnName, renderer,
-                                    text=Images.COLUMN_LOCATION)
+                                    text=Objects.COLUMN_LOCATION)
         column.set_resizable(gtk.TRUE)
         column.set_reorderable(gtk.TRUE)
-        self._contextMenu.addTableViewColumn(columnName, Images.COLUMN_LOCATION, column)
+        self._contextMenu.addTableViewColumn(columnName, Objects.COLUMN_LOCATION, column)
         self._tableView.append_column(column)        
 
     def _createAttributeColumns(self, attributeNamesMap):
@@ -61,7 +83,7 @@ class TableView:
             column = gtk.TreeViewColumn(attributeName,
                                         renderer,
                                         text=columnNumber,
-                                        editable=Images.COLUMN_ROW_EDITABLE)
+                                        editable=Objects.COLUMN_ROW_EDITABLE)
             column.set_resizable(gtk.TRUE)
             column.set_reorderable(gtk.TRUE)
             renderer.connect("edited", self._attribute_editing_done,
@@ -78,9 +100,9 @@ class TableView:
         value = unicode(value, "utf-8")
         if oldValue != value:
             # TODO Show dialog and ask for confirmation?
-            imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-            image = env.shelf.getImage(imageId)
-            image.setAttribute(attributeName, value)
+            objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
+            object = env.shelf.getObject(objectId)
+            object.setAttribute(attributeName, value)
             self._model.set_value(iter, column, value)
             
     def freeze(self):
@@ -93,11 +115,19 @@ class TableView:
         env.widgets["tableViewScroll"].show()
         self._contextMenu.tableViewViewItem.show()
         self._tableView.grab_focus()
-        for image in self._model:
-            if image[Images.COLUMN_IMAGE_ID] in self._selectedImages:
-                self._tableView.scroll_to_cell(image.path, None, gtk.TRUE, 0, 0)
+        for object in self._model:
+            if object[Objects.COLUMN_OBJECT_ID] in self._selectedObjects:
+                self._tableView.scroll_to_cell(object.path, None, gtk.TRUE, 0, 0)
                 break
+        self._updateAlbumTagColumn()
 
+    def _updateAlbumTagColumn(self, *foo):
+        viewItem = self._contextMenu.viewMenuItems[self._ALBUM_TAG_COLUMN_NAME]
+        if self._loadedObjects.albumsInList:
+            viewItem.set_active(gtk.TRUE)
+        else:
+            viewItem.set_active(gtk.FALSE)
+            
     def hide(self):
         env.widgets["tableViewScroll"].hide()
         self._contextMenu.tableViewViewItem.hide()
@@ -110,8 +140,8 @@ class TableView:
             iter = self._model.get_iter_first()
             index = 0
             while iter:
-                imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-                if imageId in self._selectedImages:
+                objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
+                if objectId in self._selectedObjects:
                     selection.select_path(index)
                 index = index + 1
                 iter =  self._model.iter_next(iter)
@@ -121,13 +151,13 @@ class TableView:
         if not self._locked:
             self._locked = gtk.TRUE
             iter = self._model.get_iter_first()
-            imageIdList = []
+            objectIdList = []
             while iter:
                 if selection.iter_is_selected(iter):
-                    imageId = self._model.get_value(iter, Images.COLUMN_IMAGE_ID)
-                    imageIdList.append(imageId)
+                    objectId = self._model.get_value(iter, Objects.COLUMN_OBJECT_ID)
+                    objectIdList.append(objectId)
                 iter = self._model.iter_next(iter)
-            self._selectedImages.set(imageIdList)
+            self._selectedObjects.set(objectIdList)
             self._locked = gtk.FALSE
         
     def _button_pressed(self, widget, event):
