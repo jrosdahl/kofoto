@@ -28,7 +28,9 @@ class OutputEngine:
 
 
     def makeDirectory(self, dir):
-        os.mkdir(os.path.join(self.dest, dir))
+        absdir = os.path.join(self.dest, dir)
+        if not os.path.isdir(absdir):
+            os.mkdir(absdir)
 
 
     def generate(self, root, dest):

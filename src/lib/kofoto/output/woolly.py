@@ -327,8 +327,8 @@ class OutputGenerator(OutputEngine):
 
     def preGeneration(self, root):
         self.iconsdir = "@icons"
-        os.mkdir(os.path.join(self.dest, self.iconsdir))
-        
+        self.makeDirectory(self.iconsdir)
+
 
     def postGeneration(self, root):
         if self.env.verbose:
