@@ -1433,7 +1433,7 @@ class Image(_Object):
         import EXIF
         tags = EXIF.process_file(
             file(self.getLocation().encode(self.shelf.codeset), "rb"))
-        
+
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",
                     "EXIF DateTimeDigitized"]:
@@ -1443,7 +1443,7 @@ class Image(_Object):
                 if len(a) == 5:
                     value = u"-".join(a[0:2] + [":".join(a[2:5])])
                     self.setAttribute(u"captured", value)
-                    
+
         value = tags.get("EXIF ExposureTime")
         if value:
             self.setAttribute(u"exposuretime", unicode(value))
@@ -1482,7 +1482,7 @@ class Image(_Object):
             self.setAttribute(u"exposureprogram", unicode(value))
         value = tags.get("EXIF ISOSpeedRatings")
         if value:
-            self.setAttribute(u"iso", unicode(value))            
+            self.setAttribute(u"iso", unicode(value))
         value = tags.get("EXIF ExposureBiasValue")
         if value:
             self.setAttribute(u"exposurebias", unicode(value))
@@ -1497,7 +1497,7 @@ class Image(_Object):
             self.setAttribute(u"macro", unicode(value))
         value = tags.get("MakerNote DigitalZoom")
         if value:
-            self.setAttribute(u"digitalzoom", unicode(value))            
+            self.setAttribute(u"digitalzoom", unicode(value))
 
     ##############################
     # Internal methods.
