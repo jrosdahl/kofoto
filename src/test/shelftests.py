@@ -312,8 +312,6 @@ class TestShelfMethods(TestShelfFixture):
         assert len(list(delta.getChildren())) == 11
 
     def test_createdAttributes(self):
-        for image in self.shelf.getAllImages():
-            assert image.getAttribute(u"registered")
         image = self.shelf.getImage(
             os.path.join(PICDIR, "Canon_Digital_IXUS.jpg"))
         assert image.getAttribute(u"captured") == "2002-02-02 22:20:51"
@@ -427,8 +425,10 @@ class TestShelfMethods(TestShelfFixture):
         attrnames.sort()
         assert attrnames == [
             "cameramake", "cameramodel", "captured", "description",
-            "orientation", "query", "registered", "title"
-            ]
+            "digitalzoom", "exposurebias", "exposureprogram", "exposuretime",
+            "flash", "fnumber", "focallength", "iso", "orientation", "query",
+            "title"
+            ], attrnames
 
     def test_negativeCreateCategory(self):
         try:
