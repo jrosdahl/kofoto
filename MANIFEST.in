@@ -1,0 +1,6 @@
+include COPYING.txt
+include doc/overview.txt
+include src/gkofoto/glade/*.glade
+include src/gkofoto/icons/*.png
+include src/gkofoto/start
+prune src/web
