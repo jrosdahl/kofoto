@@ -48,7 +48,7 @@
   imagecache (copies on Windows). A third mode that makes image copies
   regardless of platform could also be useful.
 
-* Write test suites for modules that miss one.
+* Write test suites for modules that lack one.
 
 * When generating an album, store images in per-month directories
   instead of the current two-level hash-based directory structure.
@@ -120,9 +120,11 @@
   10994865.
 
 * Define a transport format (XML-based?) for metadata. Add import and
-  export commands.
+  export commands. How should conflicts be handled?
 
 * Create a home page for Kofoto. Maybe a Wiki?
+
+* Write documentation.
 
 * Store a log of changes to the shelf and add possibility of backing
   out changes.
