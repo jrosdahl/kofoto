@@ -426,6 +426,19 @@ class Shelf:
                     " values (%s, %s, 0, 'plain')",
                     _ROOT_ALBUM_ID,
                     _ROOT_ALBUM_DEFAULT_TAG)
+                cursor.execute(
+                    " insert into object (objectid)"
+                    " values (null)")
+                orphansid = cursor.lastrowid
+                cursor.execute(
+                    " insert into album (albumid, tag, deletable, type)"
+                    " values (%s, 'orphans', 1, 'orphans')",
+                    orphansid)
+                cursor.execute(
+                    " insert into member (albumid, position, objectid)"
+                    " values (%s, 0, %s)",
+                    _ROOT_ALBUM_ID,
+                    orphansid)
                 self.connection.commit()
             else:
                 raise ShelfNotFoundError, location
