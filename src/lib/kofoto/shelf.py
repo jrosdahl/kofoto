@@ -425,53 +425,21 @@ class Shelf:
             raise ImageExistsError, path
 
 
-    def getImage(self, hash):
-        """Get the image for a given image hash/ID.
+    def getImage(self, ref):
+        """Get the image for a given image hash/ID/path.
 
         Returns an Image object.
         """
-        try:
-            imageid = int(hash)
-            self.cursor.execute(
-                " select imageid"
-                " from image"
-                " where imageid = %(imageid)s",
-                locals())
-            if self.cursor.rowcount == 0:
-                raise ImageDoesNotExistError, hash
-        except ValueError:
-            self.cursor.execute(
-                " select imageid"
-                " from   image"
-                " where  hash = %(hash)s",
-                locals())
-            if self.cursor.rowcount > 0:
-                imageid = self.cursor.fetchone()[0]
-            else:
-                raise ImageDoesNotExistError, hash
-        return Image(self, imageid)
+        return Image(self, self._interpretImageReference(ref))
 
 
-    def deleteImage(self, hash):
+    def deleteImage(self, ref):
         """Delete the image for a given image hash/ID."""
-        try:
-            imageid = int(hash)
-        except ValueError:
-            self.cursor.execute(
-                " select imageid"
-                " from image"
-                " where hash = %(hash)s",
-                locals())
-            row = self.cursor.fetchone()
-            if not row:
-                raise ImageDoesNotExistError, hash
-            imageid = row[0]
+        imageid = self._interpretImageReference(ref)
         self.cursor.execute(
             " delete from image"
             " where  imageid = %(imageid)s",
             locals())
-        if self.cursor.rowcount == 0:
-            raise ImageDoesNotExistError, hash
         self._deleteObjectFromParents(imageid)
         self.cursor.execute(
             " delete from object"
@@ -486,11 +454,11 @@ class Shelf:
     def getObject(self, objid):
         """Get the object for a given object tag/ID."""
         try:
-            return self.getImage(objid)
-        except ImageDoesNotExistError:
+            return self.getAlbum(objid)
+        except AlbumDoesNotExistError:
             try:
-                return self.getAlbum(objid)
-            except AlbumDoesNotExistError:
+                return self.getImage(objid)
+            except ImageDoesNotExistError:
                 raise ObjectDoesNotExistError, objid
 
 
@@ -549,6 +517,47 @@ class Shelf:
                     " where  albumid = %(parentid)s and"
                     "        position > %(position)s",
                     locals())
+
+
+    def _interpretImageReference(self, ref):
+        """Get the image ID for a given image hash/ID/path."""
+        # Check if it's an integer and if so whether it's a valid
+        # image ID.
+        try:
+            imageid = int(ref)
+            self.cursor.execute(
+                " select imageid"
+                " from image"
+                " where imageid = %(imageid)s",
+                locals())
+            if self.cursor.rowcount > 0:
+                return int(self.cursor.fetchone()[0])
+        except ValueError:
+            pass
+
+        # Next, check for a valid hash.
+        self.cursor.execute(
+            " select imageid"
+            " from   image"
+            " where  hash = %(ref)s",
+            locals())
+        if self.cursor.rowcount > 0:
+            return int(self.cursor.fetchone()[0])
+
+        # Finally, check whether it's a path to a known file.
+        import os
+        if os.path.isfile(ref):
+            hash = computeImageHash(ref)
+            self.cursor.execute(
+                " select imageid"
+                " from   image"
+                " where  hash = %(hash)s",
+                locals())
+            if self.cursor.rowcount > 0:
+                return int(self.cursor.fetchone()[0])
+
+        # Oh well.
+        raise ImageDoesNotExistError, ref
 
 
 class _Object:

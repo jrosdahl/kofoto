@@ -3,7 +3,6 @@
 import os
 import sys
 import getopt
-import time
 
 ######################################################################
 
@@ -16,13 +15,6 @@ try:
 except ImportError:
     sys.stderr.write("Could not find the kofoto libraries. " +
                      "Please install kofoto properly.\n")
-    sys.exit(1)
-
-try:
-    import exif
-except ImportError:
-    sys.stderr.write("Could not find the exif library. " +
-                     "Please install pyexif properly.\n")
     sys.exit(1)
 
 ######################################################################
@@ -294,7 +286,7 @@ def printGraphHelper(env, object, level, visited):
                                  level + 1,
                                  visited + [tag])
     if env.verbose:
-        attrtmpl = "%(indent)s%(key)s: \"%(value)s\"\n"
+        attrtmpl = "%(indent)s%(key)s: %(value)s\n"
         names = object.getAttributeNames()
         for name in names:
             env.out(attrtmpl % {"indent": (level + 1) * indentspaces,
