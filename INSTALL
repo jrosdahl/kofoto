@@ -8,7 +8,8 @@ Dependencies:
 
         http://www.pythonware.com/products/pil/
 
-  * SQLite. Found at:
+  * SQLite (not needed for Windows since it's included in
+    the PySQLite installer). Found at:
 
         http://www.sqlite.org
 
