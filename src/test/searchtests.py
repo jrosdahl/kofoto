@@ -31,11 +31,11 @@ from shelftests import TestShelfFixture
 class TestSearch(TestShelfFixture):
     def setUp(self):
         TestShelfFixture.setUp(self)
-        self.images = list(self.shelf.getAllImageVersions())
-        cat_a = self.shelf.getCategoryById(u"a")
-        cat_b = self.shelf.getCategoryById(u"b")
-        cat_c = self.shelf.getCategoryById(u"c")
-        cat_d = self.shelf.getCategoryById(u"d")
+        self.images = list(self.shelf.getAllImages())
+        cat_a = self.shelf.getCategoryByTag(u"a")
+        cat_b = self.shelf.getCategoryByTag(u"b")
+        cat_c = self.shelf.getCategoryByTag(u"c")
+        cat_d = self.shelf.getCategoryByTag(u"d")
         self.images[0].addCategory(cat_a)
         self.images[0].addCategory(cat_b)
         self.images[1].addCategory(cat_c)

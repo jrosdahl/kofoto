@@ -262,13 +262,13 @@ class TestShelfFixture(unittest.TestCase):
             image = self.shelf.createImage()
             imageversion = self.shelf.createImageVersion(
                 image, loc, ImageVersionType.Original)
-            children.append(imageversion)
+            children.append(image)
         del children[-1] # The last image becomes orphaned.
         alpha.setChildren(children)
         beta.setChildren(list(beta.getChildren()) + [children[-1]])
         root.setChildren(list(root.getChildren()) + [alpha, beta])
-        self.shelf.createAlbum(u"epsilon", u"plain") # Orphaned album.
-        zeta = self.shelf.createAlbum(u"zeta", u"search")
+        self.shelf.createAlbum(u"epsilon", AlbumType.Plain) # Orphaned album.
+        zeta = self.shelf.createAlbum(u"zeta", AlbumType.Search)
         zeta.setAttribute(u"query", u"a")
         root.setChildren(list(root.getChildren()) + [zeta])
 
@@ -447,7 +447,7 @@ class TestShelfMethods(TestShelfFixture):
 
     def test_negativeGetImageVersionByHash(self):
         try:
-            self.shelf.getImageVersionByLocation("/bad/location")
+            self.shelf.getImageVersionByLocation(u"/bad/location")
         except ImageVersionDoesNotExistError:
             pass
         else:
@@ -527,7 +527,7 @@ class TestShelfMethods(TestShelfFixture):
         assert category.getId() == 1
 
     def test_getCategoryByTag(self):
-        category = self.shelf.getCategory(u"a")
+        category = self.shelf.getCategoryByTag(u"a")
         assert category.getTag() == u"a"
 
     def test_negativeCreateCategory(self):
@@ -717,7 +717,7 @@ class TestObject(TestShelfFixture):
 class TestAlbum(TestShelfFixture):
     def test_getType(self):
         alpha = self.shelf.getAlbumByTag(u"alpha")
-        assert alpha.getType() == "plain"
+        assert alpha.getType() == AlbumType.Plain
 
     def test_isMutable(self):
         alpha = self.shelf.getAlbumByTag(u"alpha")
@@ -745,7 +745,7 @@ class TestAlbum(TestShelfFixture):
 class TestPlainAlbum(TestShelfFixture):
     def test_getType(self):
         alpha = self.shelf.getAlbumByTag(u"alpha")
-        assert alpha.getType() == "plain"
+        assert alpha.getType() == AlbumType.Plain
 
     def test_isMutable(self):
         alpha = self.shelf.getAlbumByTag(u"alpha")
@@ -777,6 +777,11 @@ class TestPlainAlbum(TestShelfFixture):
         assert list(beta.getChildren()) == []
 
 class TestImage(TestShelfFixture):
+    def test_isAlbum(self):
+        imageversion = self.shelf.getImageVersionByLocation(
+            os.path.join(PICDIR, "arlaharen.png"))
+        assert not imageversion.getImage().isAlbum()
+
     def test_getImageVersions(self):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
@@ -792,7 +797,7 @@ class TestImage(TestShelfFixture):
         self.shelf.deleteImageVersion(imageversion2.getId())
         assert list(image.getImageVersions()) == []
 
-    def test_getPrimaryversion(self):
+    def test_getPrimaryVersion(self):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
         image = imageversion.getImage()
@@ -803,18 +808,22 @@ class TestImage(TestShelfFixture):
         assert image.getPrimaryVersion() == imageversion
         imageversion2.makePrimary()
         assert image.getPrimaryVersion() == imageversion2
+        self.shelf.deleteImageVersion(imageversion2.getId())
+        assert image.getPrimaryVersion() == imageversion
+        self.shelf.deleteImageVersion(imageversion.getId())
+        assert image.getPrimaryVersion() == None
 
 class TestImageVersion(TestShelfFixture):
     def test_getType(self):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
-        assert imageversion.getType() == ImageVersionType.Other
+        assert imageversion.getType() == ImageVersionType.Original
         imageversion.setType(ImageVersionType.Important)
         assert imageversion.getType() == ImageVersionType.Important
-        imageversion.setType(ImageVersionType.Original)
-        assert imageversion.getType() == ImageVersionType.Original
         imageversion.setType(ImageVersionType.Other)
         assert imageversion.getType() == ImageVersionType.Other
+        imageversion.setType(ImageVersionType.Original)
+        assert imageversion.getType() == ImageVersionType.Original
 
     # ImageVersion.makePrimary tested in TestImage.test_getPrimaryversion.
     # ImageVersion.setImage tested in TestImage.test_getPrimaryversion.
@@ -845,11 +854,11 @@ class TestImageVersion(TestShelfFixture):
     def test_contentChanged(self):
         path = os.path.join(PICDIR, "arlaharen.png")
         imageversion = self.shelf.getImageVersionByLocation(path)
-        self.shelf.deleteImageVersion(imageversion1.getId())
+        self.shelf.deleteImageVersion(imageversion.getId())
         newpath = u"tmp.png"
         try:
             shutil.copy2(path, newpath)
-            newimage = self.shelf.createImage(newpath)
+            newimage = self.shelf.createImage()
             newimageversion = self.shelf.createImageVersion(
                 newimage, newpath, ImageVersionType.Original)
             oldmtime = imageversion.getModificationTime()
@@ -872,20 +881,16 @@ class TestImageVersion(TestShelfFixture):
         imageversion.locationChanged(u"/foo/../bar")
         assert imageversion.getLocation() == "/bar"
 
-    def test_isAlbum(self):
-        imageversion = self.shelf.getImageVersionByLocation(
-            os.path.join(PICDIR, "arlaharen.png"))
-        assert not imageversion.isAlbum()
-
     def test_importExifTags(self):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
-        imageversion.importExifTags() # TODO: Test more.
+        imageversion.importExifTags(True) # TODO: Test more.
+        imageversion.importExifTags(False) # TODO: Test more.
 
 class TestOrphansAlbum(TestShelfFixture):
     def test_getType(self):
         orphans = self.shelf.getAlbumByTag(u"orphans")
-        assert orphans.getType() == "orphans"
+        assert orphans.getType() == AlbumType.Orphans
 
     def test_isMutable(self):
         orphans = self.shelf.getAlbumByTag(u"orphans")
@@ -915,7 +920,7 @@ class TestOrphansAlbum(TestShelfFixture):
 class TestSearchAlbum(TestShelfFixture):
     def test_getType(self):
         zeta = self.shelf.getAlbumByTag(u"zeta")
-        assert zeta.getType() == "search"
+        assert zeta.getType() == AlbumType.Search
 
     def test_isMutable(self):
         zeta = self.shelf.getAlbumByTag(u"zeta")
