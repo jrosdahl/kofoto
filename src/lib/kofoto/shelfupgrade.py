@@ -153,3 +153,14 @@ def upgradeShelf(connection, codeset, fromVersion, toVersion):
         " set    version = %s",
         toVersion)
     connection.commit()
+
+    # Make a dummy query to restart the SQLite transaction.
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            " select version"
+            " from   dbinfo")
+    except sql.OperationalError:
+        raise ShelfLockedError, self.location
+    except sql.DatabaseError:
+        raise UnsupportedShelfError, self.location

@@ -788,9 +788,10 @@ def main(argv):
             ("Don't know which shelf to use; none defined in %s and no\n" +
              "--shelf parameter given.\n") % configFilename)
 
+    shelf = Shelf(shelfLocation, CODESET)
     if args[0] == "create-shelf":
         try:
-            Shelf(shelfLocation, CODESET, create=True)
+            shelf.create()
         except FailedWritingError, filename:
             printErrorAndExit(
                 "Could not create shelf file %s (already exists?).\n" %
@@ -804,7 +805,7 @@ def main(argv):
             _from_uc(args[0]))
 
     try:
-        shelf = Shelf(shelfLocation, CODESET)
+        shelf.begin()
     except ShelfNotFoundError, x:
         printErrorAndExit(
             "Could not open shelf \"%s\".\n" % shelfLocation +
@@ -818,7 +819,6 @@ def main(argv):
         printErrorAndExit(
             "Could not read shelf file %s (too new shelf format?).\n" %
             filename)
-    shelf.begin()
     try:
         env.codeset = CODESET
         env.gencharenc = genCharEnc

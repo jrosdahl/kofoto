@@ -4,6 +4,7 @@ import gc
 import os
 import shutil
 import sys
+import threading
 import unittest
 import Image as PILImage
 
@@ -86,67 +87,90 @@ class TestNegativeShelfOpens(unittest.TestCase):
         removeTmpDb()
 
     def test_NonexistingShelf(self):
-        for params, kwparams in [((db, codeset), {}),
-                                 ((db, codeset, False), {}),
-                                 ((db, codeset), {"create": False})]:
-            try:
-                Shelf(*params, **kwparams)
-            except ShelfNotFoundError:
-                pass
-            else:
-                assert False, (params, kwparams)
-            assert not os.path.exists(db)
+        try:
+            s = Shelf(db, codeset)
+            s.begin()
+        except ShelfNotFoundError:
+            pass
+        else:
+            assert False
+        assert not os.path.exists(db)
 
     def test_BadShelf(self):
         file(db, "w") # Create empty file.
         try:
-            Shelf(db, codeset)
+            s = Shelf(db, codeset)
+            s.begin()
         except UnsupportedShelfError:
             pass
         else:
             assert False
+
+    def test_LockedShelf(self):
+        class LockerThread(threading.Thread):
+            def run(self):
+                s = Shelf(db, codeset)
+                s.create()
+                s.begin()
+                mContinue.set()
+                ltContinue.wait()
+                s.rollback()
+        lt = LockerThread()
+        mContinue = threading.Event()
+        ltContinue = threading.Event()
+        lt.start()
+        mContinue.wait()
+        try:
+            try:
+                s = Shelf(db, codeset)
+                s.begin()
+            except ShelfLockedError:
+                pass
+            else:
+                assert False
+        finally:
+            ltContinue.set()
+            lt.join()
 
 class TestShelfCreation(unittest.TestCase):
     def tearDown(self):
         removeTmpDb()
 
     def test_CreateShelf1(self):
-        assert Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         assert os.path.exists(db)
 
     def test_CreateShelf2(self):
-        assert Shelf(db, codeset, create=True)
-        assert os.path.exists(db)
-
-class TestShelfOpen(unittest.TestCase):
-    def tearDown(self):
-        removeTmpDb()
-
-    def test_CreateShelf(self):
-        assert Shelf(db, codeset, True)
-        assert os.path.exists(db)
-
-    def test_CreateShelf2(self):
-        assert Shelf(db, codeset, create=True)
-        assert os.path.exists(db)
+        file(db, "w") # Create empty file.
+        s = Shelf(db, codeset)
+        try:
+            s.create()
+        except FailedWritingError:
+            pass
+        else:
+            assert False
 
 class TestShelfMemoryLeakage(unittest.TestCase):
     def tearDown(self):
         removeTmpDb()
 
     def test_MemoryLeak1(self):
-        Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         assert gc.collect() == 0
 
     def test_MemoryLeak2(self):
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         s.getObject(0)
         s.rollback()
         assert gc.collect() == 0
 
     def test_MemoryLeak3(self):
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         s.getObject(0)
         s.commit()
@@ -157,7 +181,8 @@ class TestShelfTransactions(unittest.TestCase):
         removeTmpDb()
 
     def test_commit(self):
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         s.createAlbum(u"foo")
         assert s.getAlbum(u"foo")
@@ -168,7 +193,8 @@ class TestShelfTransactions(unittest.TestCase):
         s.rollback()
 
     def test_rollback(self):
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         s.createAlbum(u"foo")
         s.rollback()
@@ -181,7 +207,8 @@ class TestShelfTransactions(unittest.TestCase):
             assert False
 
     def test_isModified(self):
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         assert not s.isModified()
         s.createAlbum(u"foo")
@@ -195,7 +222,8 @@ class TestShelfTransactions(unittest.TestCase):
         res = [False]
         def f(x):
             res[0] = True
-        s = Shelf(db, codeset, True)
+        s = Shelf(db, codeset)
+        s.create()
         s.begin()
         s.registerModificationCallback(f)
         assert not res[0]
@@ -212,7 +240,8 @@ class TestShelfTransactions(unittest.TestCase):
 
 class TestShelfFixture(unittest.TestCase):
     def setUp(self):
-        self.shelf = Shelf(db, codeset, True)
+        self.shelf = Shelf(db, codeset)
+        self.shelf.create()
         self.shelf.begin()
         root = self.shelf.getRootAlbum()
         alpha = self.shelf.createAlbum(u"alpha")
@@ -731,6 +760,6 @@ class TestOrphansAlbum(TestShelfFixture):
 
 ######################################################################
 
+removeTmpDb()
 if __name__ == "__main__":
-    removeTmpDb()
     unittest.main()

@@ -404,7 +404,7 @@ class Shelf:
     ##############################
     # Public methods.
 
-    def __init__(self, location, codeset, create=False):
+    def __init__(self, location, codeset):
         """Constructor.
 
         Location is where the database is located. Codeset is the
@@ -423,47 +423,46 @@ class Shelf:
         self.allImagesCache = None
         self.modified = False
         self.modificationCallbacks = []
-
         if _DEBUG:
-            logfile = file("sql.log", "a")
+            self.logfile = file("sql.log", "a")
         else:
-            logfile = None
+            self.logfile = None
 
-        if os.path.exists(location):
-            if create:
-                raise FailedWritingError, location
-        else:
-            if not create:
-                raise ShelfNotFoundError, location
+
+    def create(self):
+        """Create the shelf."""
+        assert not self.inTransaction
+        if os.path.exists(self.location):
+            raise FailedWritingError, self.location
         try:
             self.connection = _UnicodeConnectionDecorator(
-                sql.connect(location,
+                sql.connect(self.location,
                             client_encoding="UTF-8",
-                            command_logfile=logfile),
+                            command_logfile=self.logfile),
                 "UTF-8")
         except sql.DatabaseError:
-            if create:
-                raise FailedWritingError, location
-            else:
-                raise ShelfNotFoundError, location
-
-        self.categorydag = CachedObject(_createCategoryDAG, (self.connection,))
-
-        if create:
-            self._createShelf(logfile)
-        else:
-            self._openShelf(logfile)
+            raise FailedWritingError, self.location
+        self._createShelf()
 
 
     def begin(self):
         """Begin working with the shelf."""
+        import threading
         assert not self.inTransaction
         self.transactionLock.acquire()
         self.inTransaction = True
-        # In PySQLite, the transaction starts when the first SQL
-        # command is executed, so execute a dummy command here.
-        cursor = self.connection.cursor()
-        cursor.execute("select * from dbinfo")
+        if not os.path.exists(self.location):
+            raise ShelfNotFoundError, self.location
+        try:
+            self.connection = _UnicodeConnectionDecorator(
+                sql.connect(self.location,
+                            client_encoding="UTF-8",
+                            command_logfile=self.logfile),
+                "UTF-8")
+        except sql.DatabaseError:
+            raise ShelfNotFoundError, self.location
+        self.categorydag = CachedObject(_createCategoryDAG, (self.connection,))
+        self._openShelf() # Starts the SQLite transaction.
 
 
     def commit(self):
@@ -1096,7 +1095,7 @@ class Shelf:
     ##############################
     # Internal methods.
 
-    def _createShelf(self, logfile):
+    def _createShelf(self):
         cursor = self.connection.cursor()
         cursor.execute(schema)
         cursor.execute(
@@ -1125,16 +1124,17 @@ class Shelf:
         self.commit()
 
 
-    def _openShelf(self, logfile):
+    def _openShelf(self):
         cursor = self.connection.cursor()
         try:
             cursor.execute(
                 " select version"
                 " from   dbinfo")
+        except sql.OperationalError:
+            raise ShelfLockedError, self.location
         except sql.DatabaseError:
             raise UnsupportedShelfError, self.location
         version = cursor.fetchone()[0]
-        self.connection.rollback()
         if version > _SHELF_FORMAT_VERSION:
             raise UnsupportedShelfError, location
         if version < _SHELF_FORMAT_VERSION:
