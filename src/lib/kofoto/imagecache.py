@@ -54,7 +54,9 @@ class ImageCache:
     def cleanup(self, imagesToKeep, sizes):
         keep = {}
         for image in imagesToKeep:
-            for size in sizes:
+            maxsize = max(int(image.getAttribute("height")),
+                          int(image.getAttribute("width")))
+            for size in sizes + [maxsize]:
                 keep[self._getCacheImageName(image.getLocation(),
                                              image.getHash(),
                                              image.getAttribute("orientation"),
