@@ -123,10 +123,11 @@ schema = """
         location    VARCHAR(256) NOT NULL,
 
         UNIQUE      (hash),
-        UNIQUE      (location),
         FOREIGN KEY (imageid) REFERENCES object,
         PRIMARY KEY (imageid)
     );
+
+    CREATE INDEX image_location_index ON image (location);
 
     -- Members in an album.
     CREATE TABLE member (
