@@ -14,22 +14,22 @@ def main(bindir, argv):
             DEFAULT_CONFIGFILE_LOCATION),
         default=None)
     parser.add_option(
+        "--database",
+        type="string",
+        dest="database",
+        help="use metadata database DATABASE instead of the default (specified in the configuration file)",
+        default=None)
+    parser.add_option(
         "--debug",
         action="store_true",
         help="print debug messages to stdout",
         default=False)
-    parser.add_option(
-        "--shelf",
-        type="string",
-        dest="shelf",
-        help="use shelf SHELF instead of the default (specified in the configuration file)",
-        default=None)
     options, args = parser.parse_args(argv[1:])
 
     if len(args) != 0:
         parser.error("incorrect number of arguments")
 
     setupOk = env.setup(
-        bindir, options.debug, options.configfile, options.shelf)
+        bindir, options.debug, options.configfile, options.database)
     env.controller = Controller()
     env.controller.start(setupOk)

@@ -23,14 +23,14 @@ if sys.platform.startswith("win"):
     DEFAULT_CONFIGFILE_LOCATION = os.path.join(
         "~", "KofotoData", "config.ini")
     DEFAULT_SHELF_LOCATION = os.path.join(
-        "~", "KofotoData", "shelf.db")
+        "~", "KofotoData", "metadata.db")
     DEFAULT_IMAGECACHE_LOCATION = os.path.join(
         "~", "KofotoData", "ImageCache")
 else:
     DEFAULT_CONFIGFILE_LOCATION = os.path.join(
         "~", ".kofoto", "config")
     DEFAULT_SHELF_LOCATION = os.path.join(
-        "~", ".kofoto", "shelf")
+        "~", ".kofoto", "metadata")
     DEFAULT_IMAGECACHE_LOCATION = os.path.join(
         "~", ".kofoto", "imagecache")
 
@@ -92,7 +92,7 @@ class Config(ConfigParser):
             if function and not function(value):
                 raise BadConfigurationValueError, (section, key, value)
 
-        checkConfigurationItem("shelf", "location", None)
+        checkConfigurationItem("database", "location", None)
         checkConfigurationItem("image cache", "location", None)
         checkConfigurationItem(
             "image cache", "use_orientation_attribute", None)
@@ -110,10 +110,10 @@ def createConfigTemplate(filename):
 
 ######################################################################
 ## General configuration
-[shelf]
+[database]
 
-# Default location of the shelf. This is where information about
-# albums, images, categories, etc., is stored.
+# Default location of the metadata database. This is where information
+# about albums, images, categories, etc., is stored.
 location = %s
 
 ######################################################################

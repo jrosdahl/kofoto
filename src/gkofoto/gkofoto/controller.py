@@ -14,7 +14,7 @@ class Controller:
                 env.shelf.begin()
             except ShelfLockedError, e:
                 env.startupNotices += [
-                    "Error: Could not open shelf \"%s\"." % e +
+                    "Error: Could not open metadata database \"%s\"." % e +
                     " Another process is locking it.\n"]
                 setupOk = False
         if env.startupNotices:

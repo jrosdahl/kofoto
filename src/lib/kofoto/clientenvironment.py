@@ -67,7 +67,7 @@ class ClientEnvironment(object):
         A missing configuration file will be created iff
         createMissingConfigFile is true.
 
-        A missing shelf will be created iff createMissingShel is true.
+        A missing shelf will be created iff createMissingShelf is true.
         """
 
         if configFileLocation == None:
@@ -116,7 +116,7 @@ class ClientEnvironment(object):
 
         if shelfLocation == None:
             self.__shelfLocation = self.unicodeToLocalizedString(
-                os.path.expanduser(self.config.get("shelf", "location")))
+                os.path.expanduser(self.config.get("database", "location")))
         else:
             self.__shelfLocation = shelfLocation
 
@@ -128,13 +128,13 @@ class ClientEnvironment(object):
                     self.shelf.create()
                 except FailedWritingError, self.shelfLocation:
                     raise BadShelfError, \
-                        ("Could not create shelf file %s.\n" % (
+                        ("Could not create metadata database \"%s\".\n" % (
                              self.shelfLocation),
                          self.shelfLocation)
-                self._writeInfo("Created shelf \"%s\".\n" % self.shelfLocation)
+                self._writeInfo("Created metadata database \"%s\".\n" % self.shelfLocation)
             else:
                 raise MissingShelfError, \
-                    ("Could not open shelf \"%s\"" % self.shelfLocation,
+                    ("Could not open metadata database \"%s\"" % self.shelfLocation,
                      self.shelfLocation)
 
         self.__imageCache = ImageCache(

@@ -50,6 +50,9 @@ def displayHelp():
         "    -h, --help                       Display this help.\n"
         "        --configfile FILE            Use configuration file FILE instead of the\n"
         "                                     default (%s).\n"
+        "        --database DATABASE          Use the metadata database DATABASE instead\n"
+        "                                     of the default (specified in the\n"
+        "                                     configuration file).\n"
         "        --gencharenc ENC             Generate HTML pages with character\n"
         "                                     encoding ENC instead of the default\n"
         "                                     (taken from locale settings).\n"
@@ -57,9 +60,8 @@ def displayHelp():
         "    -l, --location LOCATION          Add/register to location LOCATION.\n"
         "                                     Default: last.\n"
         "        --no-act                     Do everything which is supposed to be done,\n"
-        "                                     but don't commit any changes to the shelf.\n"
-        "        --shelf SHELF                Use the shelf SHELF instead of the default\n"
-        "                                     (specified in the configuration file).\n"
+        "                                     but don't commit any changes to the\n"
+        "                                     database.\n"
         "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
         "                                     or output type TYPE when generating output.\n"
         "    -v, --verbose                    Be verbose (and slower).\n"
@@ -67,8 +69,8 @@ def displayHelp():
         "\n"
         "Commands:\n"
         "\n"
-        "    For shelfs\n"
-        "    ==========\n"
+        "    For databases\n"
+        "    =============\n"
         "    check                            Find missing images and print some\n"
         "                                     statistics.\n"
         "    create-album TAG                 Create an empty, unlinked album with tag\n"
@@ -681,13 +683,13 @@ def main(argv):
         optlist, args = getopt.gnu_getopt(
             argv[1:],
             "hl:t:vV",
-            ["configfile=",
+            ["database=",
+             "configfile=",
              "gencharenc=",
              "help",
              "ids",
              "location=",
              "no-act",
-             "shelf=",
              "type=",
              "verbose",
              "version"])
@@ -706,6 +708,8 @@ def main(argv):
     for opt, optarg in optlist:
         if opt == "--configfile":
             configFileLocation = os.path.expanduser(env.to_l(optarg))
+        elif opt == "--database":
+            shelfLocation = env.to_l(optarg)
         elif opt == "--gencharenc":
             genCharEnc = str(optarg)
         elif opt in ("-h", "--help"):
@@ -722,8 +726,6 @@ def main(argv):
                 except ValueError:
                     printErrorAndExit("Invalid location: \"%s\"\n" %
                                       env.to_l(optarg))
-        elif opt == "--shelf":
-            shelfLocation = env.to_l(optarg)
         elif opt in ("-t", "--type"):
             env.type = optarg
         elif opt in ("-v", "--verbose"):
@@ -732,7 +734,7 @@ def main(argv):
             sys.stdout.write("%s\n" % env.version)
             sys.exit(0)
         elif opt == "--no-act":
-            sys.stdout.write("no-act: No changes will be commited to the shelf!\n")
+            sys.stdout.write("no-act: No changes will be commited to the database!\n")
             env.noAct = True
 
     if len(args) == 0:
@@ -752,15 +754,15 @@ def main(argv):
     try:
         env.shelf.begin()
     except ShelfNotFoundError, x:
-        printErrorAndExit("Could not open shelf \"%s\".\n" % (
+        printErrorAndExit("Could not open metadata database \"%s\".\n" % (
             env.shelfLocation))
     except ShelfLockedError, x:
         printErrorAndExit(
-            "Could not open shelf \"%s\".\n" % env.shelfLocation +
+            "Could not open metadata database \"%s\".\n" % env.shelfLocation +
             "Another process is locking it.\n")
     except UnsupportedShelfError, filename:
         printErrorAndExit(
-            "Could not read shelf file %s (too new shelf format?).\n" %
+            "Could not read metadata database file %s (too new database format?).\n" %
             filename)
     try:
         env.gencharenc = genCharEnc
@@ -785,7 +787,7 @@ def main(argv):
         commandTable[args[0]](env, args[1:])
         if env.noAct:
             env.shelf.rollback()
-            printOutput("no-act: All changes to the shelf have been revoked!\n")
+            printOutput("no-act: All changes to the database have been revoked!\n")
         else:
             env.shelf.commit()
         sys.exit(0)
