@@ -587,17 +587,25 @@ class Shelf:
             if not album.isAlbum():
                 raise AlbumDoesNotExistError, tag
             return album
+        try:
+            albumid = int(tag)
+        except ValueError:
+            albumid = None
         cursor = self.connection.cursor()
-        cursor.execute(
-            " select albumid, tag, type"
-            " from   album"
-            " where  albumid = %s"
-            " union"
-            " select albumid, tag, type"
-            " from   album"
-            " where  tag = %s",
-            tag,
-            tag)
+        if albumid is None:
+            # Tag.
+            cursor.execute(
+                " select albumid, tag, type"
+                " from   album"
+                " where  tag = %s",
+                tag)
+        else:
+            # ID.
+            cursor.execute(
+                " select albumid, tag, type"
+                " from   album"
+                " where  albumid = %s",
+                albumid)
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError, tag
@@ -675,16 +683,24 @@ class Shelf:
         """Delete the album for a given album tag/ID."""
         assert self.inTransaction
         cursor = self.connection.cursor()
-        cursor.execute(
-            " select albumid, tag"
-            " from   album"
-            " where  albumid = %s"
-            " union"
-            " select albumid, tag"
-            " from   album"
-            " where  tag = %s",
-            tag,
-            tag)
+        try:
+            albumid = int(tag)
+        except ValueError:
+            albumid = None
+        if albumid is None:
+            # Tag.
+            cursor.execute(
+                " select albumid, tag"
+                " from   album"
+                " where  tag = %s",
+                tag)
+        else:
+            # ID.
+            cursor.execute(
+                " select albumid, tag"
+                " from   album"
+                " where  albumid = %s",
+                albumid)
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError, tag
@@ -945,11 +961,11 @@ class Shelf:
         if objid in self.objectcache:
             return self.objectcache[objid]
         try:
-            return self.getAlbum(objid)
-        except AlbumDoesNotExistError:
+            return self.getImage(objid)
+        except ImageDoesNotExistError:
             try:
-                return self.getImage(objid)
-            except ImageDoesNotExistError:
+                return self.getAlbum(objid)
+            except AlbumDoesNotExistError:
                 raise ObjectDoesNotExistError, objid
 
 
@@ -1003,16 +1019,24 @@ class Shelf:
         """Delete a category for a given category tag/ID."""
         assert self.inTransaction
         cursor = self.connection.cursor()
-        cursor.execute(
-            " select categoryid, tag"
-            " from   category"
-            " where  categoryid = %s"
-            " union"
-            " select categoryid, tag"
-            " from   category"
-            " where  tag = %s",
-            tag,
-            tag)
+        try:
+            catid = int(tag)
+        except ValueError:
+            catid = None
+        if catid is None:
+            # Tag.
+            cursor.execute(
+                " select categoryid, tag"
+                " from   category"
+                " where  tag = %s",
+                tag)
+        else:
+            # ID.
+            cursor.execute(
+                " select categoryid, tag"
+                " from   category"
+                " where  categoryid = %s",
+                catid)
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError, tag
@@ -1042,27 +1066,35 @@ class Shelf:
         self._setModified()
 
 
-    def getCategory(self, catid):
+    def getCategory(self, tag):
         """Get a category for a given category tag/ID.
 
         Returns a Category instance."""
         assert self.inTransaction
-        if catid in self.categorycache:
-            return self.categorycache[catid]
+        if tag in self.categorycache:
+            return self.categorycache[tag]
         cursor = self.connection.cursor()
-        cursor.execute(
-            " select categoryid, tag, description"
-            " from   category"
-            " where  categoryid = %s"
-            " union"
-            " select categoryid, tag, description"
-            " from   category"
-            " where  tag = %s",
-            catid,
-            catid)
+        try:
+            catid = int(tag)
+        except ValueError:
+            catid = None
+        if catid is None:
+            # Tag.
+            cursor.execute(
+                " select categoryid, tag, description"
+                " from   category"
+                " where  tag = %s",
+                tag)
+        else:
+            # ID.
+            cursor.execute(
+                " select categoryid, tag, description"
+                " from   category"
+                " where  categoryid = %s",
+                catid)
         row = cursor.fetchone()
         if not row:
-            raise CategoryDoesNotExistError, catid
+            raise CategoryDoesNotExistError, tag
         catid, tag, desc = row
         category = Category(self, catid, tag, desc)
         self.categorycache[catid] = category
