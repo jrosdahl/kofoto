@@ -57,6 +57,7 @@ class ImageListModel(gtk.ListStore):
             self.set_value(iter, self.COLUMN_IMAGE_ID, image.getId()) 
             self.set_value(iter, self.COLUMN_LOCATION, image.getLocation())
             for attribute, value in image.getAttributeMap().items():
-                self.set_value(iter, self.attributeNamesMap[attribute], value)
+                utf8String = unicode(value, 'latin-1').encode('utf-8')
+                self.set_value(iter, self.attributeNamesMap[attribute], utf8String)
         self._shelf.rollback()
  
