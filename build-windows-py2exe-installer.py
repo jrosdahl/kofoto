@@ -13,13 +13,14 @@ from os.path import join, isdir, basename
 options = {
     "py2exe": {
         "includes": "pango,atk,gobject",
-        "packages": ["encodings", "PIL"],
+        "packages": ["encodings"],
         },
     }
 
 shutil.copy("src/cmdline/kofoto", "kofoto.py")
 shutil.copy("src/gkofoto/start-installed.py", "gkofoto.py")
-console = ["kofoto.py"]
+shutil.copy("packaging/windows/PIL-plugins-dummy.py", "PIL-plugins-dummy.py")
+console = ["kofoto.py", "PIL-plugins-dummy.py"]
 windows = ["gkofoto.py"]
 sys.argv = [sys.argv[0], "py2exe"]
 
@@ -27,6 +28,8 @@ setup.run(options=options, console=console, windows=windows)
 
 os.unlink("kofoto.py")
 os.unlink("gkofoto.py")
+os.unlink("PIL-plugins-dummy.py")
+os.unlink("dist/PIL-plugins-dummy.exe")
 shutil.rmtree(glob.glob("dist/tcl")[0])
 os.remove(glob.glob("dist/tcl*.dll")[0])
 os.remove(glob.glob("dist/tk*.dll")[0])
@@ -41,6 +44,7 @@ for dir in ["bin", "etc", "lib", "share"]:
         for filename in filenames:
             print "copying %s --> %s" % (join(dirpath, filename), destdir)
             shutil.copy(join(dirpath, filename), destdir)
+shutil.rmtree(glob.glob("dist/share/gtk-*/demo")[0])
 
 shutil.copy("COPYING.txt", "dist/license.txt")
 license_file = open("dist/license.txt", "a")
