@@ -17,7 +17,7 @@ Dependencies:
 
         http://pysqlite.sourceforge.net
 
-  * CherryPy (for the web client). Found at:
+  * CherryPy (for building the web client). Found at:
 
         http://www.cherrypy.org
 
