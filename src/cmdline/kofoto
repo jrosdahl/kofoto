@@ -630,7 +630,7 @@ def main(argv):
     for i in range(len(argv)):
         argv[i] = _to_uc(argv[i])
     try:
-        optlist, args = getopt.getopt(
+        optlist, args = getopt.gnu_getopt(
             argv[1:],
             "hl:t:vV",
             ["configfile=",
