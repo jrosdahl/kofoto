@@ -2158,8 +2158,15 @@ class SearchAlbum(MagicAlbum):
             objectlist = list(objects)
         else:
             objectlist = [x for x in objects if x.isAlbum()]
-        objectlist.sort(lambda x, y: cmp(x.getAttribute(u"captured"),
-                                         y.getAttribute(u"captured")))
+
+        def sortfn(x, y):
+            a = cmp(x.getAttribute(u"captured"), y.getAttribute(u"captured"))
+            if a == 0:
+                return cmp(x.getId(), y.getId())
+            else:
+                return a
+        objectlist.sort(sortfn)
+
         return objectlist
 
 
