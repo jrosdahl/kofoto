@@ -189,7 +189,8 @@ class ObjectCollection(object):
             else:
                 checkbutton = widgets.get_widget("deleteImageFilesCheckbutton")
                 deleteFiles = checkbutton.get_active()
-            for obj in self.__objectSelection.getSelectedObjects():
+            # Create a Set to avoid duplicated objects.
+            for obj in Set(self.__objectSelection.getSelectedObjects()):
                 if deleteFiles:
                     try:
                         os.remove(obj.getLocation())
@@ -197,12 +198,10 @@ class ObjectCollection(object):
                     except OSError:
                         pass
                 env.clipboard.removeObjects(obj)
+                for row in model:
+                    if row[ObjectCollection.COLUMN_OBJECT_ID] is obj.getId():
+                        del model[row.path]
                 env.shelf.deleteObject(obj.getId())
-            locations = list(self.getObjectSelection())
-            locations.sort()
-            locations.reverse()
-            for loc in locations:
-                del model[loc]
             self.getObjectSelection().unselectAll()
         dialog.destroy()
         # TODO: If the removed objects are albums, update the album widget.
