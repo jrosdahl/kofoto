@@ -408,7 +408,8 @@ class Categories:
                     or categoryRow[self.__COLUMN_INCONSISTENT]):
                     expandThisRow = True
             if expandThisRow:
-                self.__categoryView.expand_row(categoryRow.path, False)
+                for a in range(len(categoryRow.path)):
+                    self.__categoryView.expand_row(categoryRow.path[:a+1], False)
                 someRowsExpanded = True
             # Auto collapse?
             elif autoCollapse:
