@@ -30,7 +30,7 @@ class ObjectCollection(object):
             u"id"       :(gobject.TYPE_INT,    self.COLUMN_OBJECT_ID, None,                 None),
             u"location" :(gobject.TYPE_STRING, self.COLUMN_LOCATION,  None,                 None),
             u"thumbnail":(gtk.gdk.Pixbuf,      self.COLUMN_THUMBNAIL, None,                 None),
-            u"albumTag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG) }
+            u"albumtag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG) }
         for name in env.shelf.getAllAttributeNames():
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
@@ -182,7 +182,7 @@ class ObjectCollection(object):
     def _handleNrOfObjectsUpdate(self):
         updatedDisabledFields = Set()
         if self.__nrOfAlbums == 0:
-            updatedDisabledFields.add(u"albumTag")
+            updatedDisabledFields.add(u"albumtag")
         if self.__nrOfImages == 0:
             updatedDisabledFields.add(u"location")
         for view in self.__registeredViews:
