@@ -493,7 +493,7 @@ class OutputGenerator(OutputEngine):
                 previoustext = '<a href="%(htmlref)s"><img class="icon" src="images/previous.png" /></a>' % {
                     "htmlref": "%s-%s-%s.html" % (
                         album.getId(),
-                        number + 1,
+                        number - 1,
                         size)}
             else:
                 previoustext = '<img class="icon" src="images/noprevious.png" />'
