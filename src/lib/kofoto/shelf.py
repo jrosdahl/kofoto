@@ -306,7 +306,7 @@ def verifyValidAlbumTag(tag):
     try:
         int(tag)
     except ValueError:
-        if re.search(r"\s", tag):
+        if not tag or re.search(r"\s", tag):
             raise BadAlbumTagError, tag
     else:
         raise BadAlbumTagError, tag
@@ -316,7 +316,7 @@ def verifyValidCategoryTag(tag):
     try:
         int(tag)
     except ValueError:
-        if re.search(r"\s", tag):
+        if not tag or re.search(r"\s", tag):
             raise BadCategoryTagError, tag
     else:
         raise BadCategoryTagError, tag
