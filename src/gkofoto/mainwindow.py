@@ -61,6 +61,8 @@ class MainWindow(gtk.Window):
         env.widgets["menubarAbout"].get_children()[1].set_from_pixbuf(
             gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
 
+        env.widgets["menubarAbout"].connect("activate", self.showAboutBox)
+
         self.__sourceEntry.connect("activate", self._sourceEntryActivated)
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
@@ -104,6 +106,14 @@ class MainWindow(gtk.Window):
         dialog = HandleImagesDialog()
         dialog.run()
         dialog.destroy()
+
+    def showAboutBox(self, *unused):
+        widgets = gtk.glade.XML(env.gladeFile, "aboutDialog")
+        aboutDialog = widgets.get_widget("aboutDialog")
+        nameAndVersionLabel = widgets.get_widget("nameAndVersionLabel")
+        nameAndVersionLabel.set_text("Kofoto %s" % env.version)
+        aboutDialog.run()
+        aboutDialog.destroy()
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))

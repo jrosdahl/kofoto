@@ -15,6 +15,10 @@ import sys
 from kofoto.config import *
 from kofoto.shelf import Shelf, FailedWritingError
 from kofoto.imagecache import ImageCache
+try:
+    from kofoto.version import version as kofotoVersion
+except ImportError:
+    kofotoVersion = "development version"
 
 ######################################################################
 # Public classes.
@@ -164,6 +168,10 @@ class ClientEnvironment(object):
     def getImageCache(self):
         return self.__imageCache
     imageCache = property(getImageCache)
+
+    def getVersion(self):
+        return kofotoVersion
+    version = property(getVersion)
 
     def unicodeToLocalizedString(self, unicodeString):
         """If unicodeString is a Unicode string, convert it to a

@@ -729,7 +729,7 @@ def main(argv):
         elif opt in ("-v", "--verbose"):
             env.verbose = True
         elif opt in ("-V", "--version"):
-            sys.stdout.write("crowbar\n")
+            sys.stdout.write("%s\n" % env.version)
             sys.exit(0)
         elif opt == "--no-act":
             sys.stdout.write("no-act: No changes will be commited to the shelf!\n")

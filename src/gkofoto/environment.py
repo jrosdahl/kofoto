@@ -29,14 +29,15 @@ class Environment(ClientEnvironment):
         ClientEnvironment.__init__(self)
         self.startupNotices = []
 
-    def setup(self, bindir):
+    def setup(self, bindir, isDebug=False, configFileLocation=None,
+              shelfLocation=None):
         try:
-            ClientEnvironment.setup(self)
+            ClientEnvironment.setup(self, configFileLocation, shelfLocation)
         except ClientEnvironmentError, e:
             self.startupNotices += [e[0]]
             return False
 
-        # TODO: Make it possible for the user to specify configuration file on the command line.
+        self.isDebug = isDebug
         self.thumbnailSize = self.config.getcoordlist(
             "gkofoto", "thumbnail_size_limit")[0]
         self.defaultTableViewColumns = re.findall(
@@ -66,7 +67,6 @@ class Environment(ClientEnvironment):
 
         self.widgets = WidgetsWrapper()
 
-        self.isDebug = False # TODO get as a command line parameter
         return True
 
     def _writeInfo(self, infoString):
