@@ -750,6 +750,8 @@ class Shelf:
 #        except IOError:
         except: # Work-around for buggy PIL.
             raise NotAnImageError, path
+        if pilimg.format == "MPEG":
+            raise NotAnImageError, path
         width, height = pilimg.size
         location = unicode(os.path.realpath(path.encode(self.codeset)),
                            self.codeset)
