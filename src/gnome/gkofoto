@@ -9,10 +9,7 @@ import gnome
 import gnome.ui
 from gnomekofoto.environment import env
 from kofoto.imagecache import *
-from gnomekofoto.objectcollection import *
-from gnomekofoto.objectcollectionfactory import *
 from gnomekofoto.mainwindow import *
-from gnomekofoto.categories import *
 
 class WidgetsWrapper:
     def __init__(self):
@@ -26,9 +23,7 @@ class Controller:
         self.__clipboard = None
 
     def start(self):
-        self.__factory = ObjectCollectionFactory()
-        currentObjects = self.__factory.getDefaultObjectCollection()
-        self.__mainWindow = MainWindow(currentObjects)
+        self.__mainWindow = MainWindow()
         env.widgets["mainWindow"].connect('destroy', self.quit, False)
         env.widgets["mainWindow"].show()
         currentObjects = None
@@ -66,14 +61,7 @@ class Controller:
         env.shelf.rollback()
         print "rollback"
         env.shelf.begin()
-        self.__albums.loadAlbumTree()
-        self.__categories.loadCategoryTree()
-        loadedObjects = self.__factory.reloadPrevious()
-        self.__loadObjects(loadedObjects)
-
-    def loadUrl(self, url):
-        # TODO Move method to mainWindow?
-        self.__mainWindow.setObjectCollection(self.__factory.getObjectCollection(url))
+        self.__mainWindow.reload()
 
 ######################################################################
 ### Start

@@ -8,12 +8,15 @@ from environment import env
 from gnomekofoto.tableview import *
 from gnomekofoto.thumbnailview import *
 from gnomekofoto.singleobjectview import *
+from gnomekofoto.objectcollectionfactory import *
+from gnomekofoto.objectcollection import *
 
 class MainWindow(gtk.Window):
-    def __init__(self, objectCollection):
+    def __init__(self):
         self._toggleLock = False
         self.__currentObjectCollection = None
         self._currentView = None
+        self.__sourceEntry = env.widgets["sourceEntry"]
         env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
         env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
         env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
@@ -24,7 +27,8 @@ class MainWindow(gtk.Window):
         env.widgets["quit"].connect("activate", env.controller.quit)
         env.widgets["save"].set_sensitive(False)
         env.widgets["revert"].set_sensitive(False)
-
+        self.__sourceEntry.connect("activate", self._sourceEntryActivated)
+        
         # Gray out not yet implemented stuff...
         env.widgets["new"].set_sensitive(False)
         env.widgets["open"].set_sensitive(False)
@@ -32,22 +36,32 @@ class MainWindow(gtk.Window):
 
         env.shelf.registerModificationCallback(self._shelfModificationChangedCallback)
 
-        self.__albums = Albums()
-        self.__categories = Categories(objectCollection)
+        self.__albums = Albums(self)
+        self.__categories = Categories(self)
         self.__thumbnailView = ThumbnailView()
         self.__tableView = TableView()
         self.__singleObjectView = SingleObjectView()
-        self.setObjectCollection(objectCollection)
+        self.__factory = ObjectCollectionFactory()
+        self.loadUrl("album://" + str(env.shelf.getRootAlbum().getTag()))
         self.__showThumbnailView()
 
-    def setObjectCollection(self, objectCollection):
-        if self.__currentObjectCollection != objectCollection:
-            env.debug("MainWindow is propagating a new ObjectCollection")
-            self.__currentObjectCollection = objectCollection
-            self.__categories.setCollection(objectCollection)
-            if self._currentView is not None:
-                self._currentView.setObjectCollection(objectCollection)
+    def _sourceEntryActivated(self, widget):
+        self.__setObjectCollection(self.__factory.getObjectCollection(widget.get_text()))
+        self.__sourceEntry.grab_remove()
+        
+    def setUrl(self, url):
+        self.__url = url
+        self.__sourceEntry.set_text(url)
+        
+    def loadUrl(self, url):
+        self.setUrl(url)
+        self.__setObjectCollection(self.__factory.getObjectCollection(url))
 
+    def reload(self):
+        self.__albums.loadAlbumTree()
+        self.__categories.loadCategoryTree()
+        self.loadUrl(self.__url)
+        
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
         image = gtk.Image()
@@ -111,3 +125,13 @@ class MainWindow(gtk.Window):
     def _shelfModificationChangedCallback(self, modified):
         env.widgets["revert"].set_sensitive(modified)
         env.widgets["save"].set_sensitive(modified)
+
+    def __setObjectCollection(self, objectCollection):
+        if self.__currentObjectCollection != objectCollection:
+            env.debug("MainWindow is propagating a new ObjectCollection")
+            self.__currentObjectCollection = objectCollection
+            self.__categories.setCollection(objectCollection)
+            if self._currentView is not None:
+                self._currentView.setObjectCollection(objectCollection)
+
+        

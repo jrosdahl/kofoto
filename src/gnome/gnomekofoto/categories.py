@@ -12,8 +12,9 @@ class Categories:
 ######################################################################
 ### Public
     
-    def __init__(self, objectCollection):
+    def __init__(self, mainWindow):
         self.__toggleColumn = None
+        self.__objectCollection = None
         self.__ignoreSelectEvent = False
         self.__selectedCategoriesIds  = {}
         self.__categoryModel = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
@@ -23,8 +24,7 @@ class Categories:
         self.__categoryView = env.widgets["categoryView"]
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
-        self.__objectCollection = objectCollection
-        self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)
+        self.__mainWindow = mainWindow
         
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
@@ -106,10 +106,12 @@ class Categories:
         env.shelf.flushCategoryCache()
         for category in env.shelf.getRootCategories():
             self.__loadCategorySubTree(None, category)
-        self.objectSelectionChanged()
+        if self.__objectCollection is not None:
+            self.objectSelectionChanged()
 
     def setCollection(self, objectCollection):
-        self.__objectCollection.getObjectSelection().removeChangedCallback(self.objectSelectionChanged)
+        if self.__objectCollection is not None:
+            self.__objectCollection.getObjectSelection().removeChangedCallback(self.objectSelectionChanged)
         self.__objectCollection = objectCollection
         self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)        
         self.objectSelectionChanged()
@@ -127,7 +129,7 @@ class Categories:
     def _executeQuery(self, *foo):
         query = self.__buildQueryFromSelection()
         if query:
-            env.controller.loadUrl("query://" + query)
+            self.__mainWindow.loadUrl("query://" + query)
 
     def _categorySelectionChanged(self, selection):
         selectedCategoryRows = []

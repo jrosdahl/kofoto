@@ -11,11 +11,12 @@ class Albums:
     # TODO This class should probably be splited in a model and a view when/if
     #      a multiple windows feature is introduced.
     
-    def __init__(self):
+    def __init__(self, mainWindow):
         self.__albumModel = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                           gobject.TYPE_STRING,   # TAG
                                           gobject.TYPE_STRING,   # TYPE
                                           gobject.TYPE_BOOLEAN)  # SELECTABLE
+        self.__mainWindow = mainWindow
         albumView = env.widgets["albumView"]
         albumView.set_model(self.__albumModel)
         renderer = gtk.CellRendererText()
@@ -28,6 +29,7 @@ class Albums:
         self.loadAlbumTree()
 
     def loadAlbumTree(self):
+        env.shelf.flushObjectCache()
         self.__albumModel.clear()
         self.__loadAlbumTreeHelper()
         env.widgets["albumView"].expand_row(0, False) # Expand root album
@@ -43,7 +45,7 @@ class Albums:
         albumModel, iter = selection.get_selected()
         if iter:
             albumTag = albumModel.get_value(iter, self.__COLUMN_TAG)
-            env.controller.loadUrl("album://" + albumTag)
+            self.__mainWindow.loadUrl("album://" + albumTag)
         
 ###############################################################################        
 ### Private

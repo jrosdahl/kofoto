@@ -28,11 +28,6 @@ class ObjectCollectionFactory:
         else:
             raise "Unkown protocol" # TODO
 
-    def getDefaultObjectCollection(self):
-        self.__clear()
-        self.__albumMembers.loadAlbum(env.shelf.getRootAlbum())
-        return self.__albumMembers
-
 ######################################################################
 ### Private functions
     
