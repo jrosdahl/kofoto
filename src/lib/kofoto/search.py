@@ -402,7 +402,6 @@ class Scanner:
         self._string = self._string[nwhite:]
 
     def _next(self):
-
         self._eatWhite()
         for tokenregexp, kind in self._tokenRegexps:
             m = tokenregexp.match(self._string)
