@@ -17,26 +17,46 @@ class ThumbnailView(ObjectCollectionView):
         self._viewWidget.connect("select_icon", self._widgetIconSelected)
         self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
 
-    def show(self, objectCollection):
-        env.enter("ThumbnailView.show()")
-        ObjectCollectionView.show(self, objectCollection)
+    def importSelection(self, objectSelection):
+        if not self.__selectionLocked:        
+            env.debug("ThumbnailView is importing selection.")
+            self.__selectionLocked = True            
+            self._viewWidget.unselect_all()
+            for rowNr in objectSelection:
+                self._viewWidget.select_icon(rowNr)
+            self.__selectionLocked = False
+        self._updateContextMenu()
+
+    def _showHelper(self):
+        env.enter("ThumbnailView.showHelper()")
         env.widgets["thumbnailView"].show()
         self._viewWidget.grab_focus()
         self.__scrollToFirstSelectedObject()
-        env.exit("ThumbnailView.show()")            
+        env.exit("ThumbnailView.showHelper()")            
         
-    def hide(self):
-        env.enter("ThumbnailView.hide()")
-        ObjectCollectionView.hide(self)
+    def _hideHelper(self):
+        env.enter("ThumbnailView.hideHelper()")
         env.widgets["thumbnailView"].hide()
-        env.exit("ThumbnailView.hide()")
+        env.exit("ThumbnailView.hideHelper()")
 
-    def freeze(self):
+    def _connectObjectCollectionHelper(self):
+        env.enter("Connecting ThumbnailView to object collection")
+        # The model is loaded in thawHelper instead.
+        env.exit("Connecting ThumbnailView to object collection")
+
+    def _disconnectObjectCollectionHelper(self):
+        env.enter("Disconnecting ThumbnailView from object collection")
+        # The model is unloaded in freezeHelper instead.
+        env.exit("Disconnecting ThumbnailView from object collection")
+
+    def _freezeHelper(self):
+        env.enter("ThumbnailView.freezeHelper()")
         self._clearAllConnections()
         self._viewWidget.clear()
-
-    def thaw(self):
-        env.enter("ThumbnailView.thaw()")
+        env.exit("ThumbnailView.freezeHelper()")
+        
+    def _thawHelper(self):
+        env.enter("ThumbnailView.thawHelper()")
         model = self._objectCollection.getModel()
         for row in model:
             self.__loadRow(row)
@@ -44,40 +64,19 @@ class ThumbnailView(ObjectCollectionView):
         self._connect(model, "row_deleted",    self._rowDeleted)
         self._connect(model, "rows_reordered", self._rowsReordered)
         self._connect(model, "row_changed",    self._rowChanged)
-        self.importSelection(self._objectCollection.getObjectSelection())
-        env.exit("ThumbnailView.thaw()")        
-
-    def importSelection(self, objectSelection):
-        if not self.__selectionLocked:        
-            env.debug("TableView is importing selection")
-            self.__selectionLocked = True            
-            self._viewWidget.unselect_all()        
-            for row in self._objectCollection.getModel():
-                if row[ObjectCollection.COLUMN_OBJECT_ID] in objectSelection:
-                    self._viewWidget.select_icon(row.path[0])
-            self.__selectionLocked = False
-        
-    def _connectObjectCollection(self, objectCollection):
-        env.enter("Connecting ThumbnailView to object collection")
-        ObjectCollectionView._connectObjectCollection(self, objectCollection)
-        self.thaw()
-        env.exit("Connecting ThumbnailView to object collection")
-
-    def _disconnectObjectCollection(self):
-        env.enter("Disconnecting ThumbnailView from object collection")
-        ObjectCollectionView._disconnectObjectCollection(self)
-        self.freeze()
-        env.exit("Disconnecting ThumbnailView from object collection")
+        env.exit("ThumbnailView.thawHelper()")        
         
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
     def _rowChanged(self, model, path, iter):
         env.debug("ThumbnailView row changed.")
+        self.__selectionLocked = True
         self._viewWidget.remove(path[0])
         self.__loadRow(model[path])
-        if path[0] in self._objectCollection.getObjectSelection().getSelectedIds():
+        if path[0] in self._objectCollection.getObjectSelection():
             self._viewWidget.select_icon(path[0])
+        self.__selectionLocked = False
             
     def _rowInserted(self, model, path, iter):
         env.debug("ThumbnailView row inserted.")
@@ -85,7 +84,6 @@ class ThumbnailView(ObjectCollectionView):
 
     def _rowsReordered(self, model, b, c, d):
         env.debug("ThumbnailView rows reordered.")
-        print "rowReordered", model, b, c, d
         # TODO I Don't know how to parse which rows that has
         #      been reordered. Hence I must reload all rows.
         self._viewWidget.clear()        
@@ -101,16 +99,14 @@ class ThumbnailView(ObjectCollectionView):
         if not self.__selectionLocked:
             env.enter("ThumbnailView selection changed")
             self.__selectionLocked = True
-            objectId = self._objectCollection.getModel()[index][ObjectCollection.COLUMN_OBJECT_ID]
-            self._objectCollection.getObjectSelection().addSelection(objectId)
+            self._objectCollection.getObjectSelection().addSelection(index)
             self.__selectionLocked = False
 
     def _widgetIconUnselected(self, widget, index, event):
         if not self.__selectionLocked:
             env.enter("ThumbnailView selection changed")
             self.__selectionLocked = True
-            objectId = self._objectCollection.getModel()[index][ObjectCollection.COLUMN_OBJECT_ID]
-            self._objectCollection.getObjectSelection().removeSelection(objectId)
+            self._objectCollection.getObjectSelection().removeSelection(index)
             self.__selectionLocked = False
     
 ###############################################################################        
@@ -143,8 +139,6 @@ class ThumbnailView(ObjectCollectionView):
                 pass
             else:
                 # Scroll widget to first selected icon
-                selectedObjects = self._objectCollection.getObjectSelection()
-                for row in self._objectCollection.getModel():
-                    if row[ObjectCollection.COLUMN_OBJECT_ID] in selectedObjects:
-                        self._viewWidget.moveto(row.path[0], 0.4)
-                        break
+                rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
+                if rowNr is not None:
+                    self._viewWidget.moveto(rowNr, 0.4)

@@ -15,7 +15,7 @@ class ObjectCollection(object):
 
     def __init__(self):
         env.debug("Init ObjectCollection")
-        self.__objectSelection = ObjectSelection()
+        self.__objectSelection = ObjectSelection(self)
         self.__registeredViews = []
         self.__disabledFields = Set()
         self.__columnsType = [ gobject.TYPE_BOOLEAN,  # COLUMN_VALID_LOCATION
@@ -35,7 +35,6 @@ class ObjectCollection(object):
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
 
-
     # Return true if the objects has a defined order and may
     # be reordered. An object that is reorderable is not
     # allowed to also be sortable.
@@ -50,24 +49,18 @@ class ObjectCollection(object):
     def isMutable(self):
         return False
 
-    def loadThumbnails(self):
-        env.enter("Object collection loading thumbnails.")
-        for row in self.__treeModel:
-            objectId = row[self.COLUMN_OBJECT_ID]
-            object = env.shelf.getObject(objectId)
-            if object.isAlbum():
-                pixbuf = env.albumIconPixbuf
-            else:
-                try:
-                    thumbnailLocation = env.imageCache.get(
-                        object, env.thumbnailSize[0], env.thumbnailSize[1])
-                    pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
-                    # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
-                except IOError:
-                    pixbuf = env.thumbnailErrorIconPixbuf
-            row[self.COLUMN_THUMBNAIL] = pixbuf
-        env.exit("Object collection loading thumbnails.")            
-            
+    def getCutLabel(self):
+        return "Cut"
+
+    def getCopyLabel(self):
+        return "Copy"
+
+    def getPasteLabel(self):
+        return "Paste"
+
+    def getDeleteLabel(self):
+        return "Delete"
+    
     def getActions(self):
         return None
         # TODO implement
@@ -78,6 +71,15 @@ class ObjectCollection(object):
     def getModel(self):
         return self.__treeModel
 
+    def getUnsortedModel(self):
+        return self.__treeModel
+    
+    def convertToUnsortedRowNr(self, rowNr):
+        return rowNr
+    
+    def convertFromUnsortedRowNr(self, unsortedRowNr):
+        return unsortedRowNr
+
     def getObjectSelection(self):
         return self.__objectSelection
         
@@ -87,23 +89,37 @@ class ObjectCollection(object):
     def registerView(self, view):
         env.debug("Register view to object collection")
         self.__registeredViews.append(view)
-        self.__objectSelection.addChangedCallback(view.importSelection)
 
     def unRegisterView(self, view):
         env.debug("Unregister view from object collection")
         self.__registeredViews.remove(view)
-        self.__objectSelection.removeChangedCallback(view.importSelection)        
 
-    def clear(self):
+    def clear(self, freeze=True):
         env.debug("Clearing object collection")
-        for view in self.__registeredViews:
-            view.freeze()
+        if freeze:
+            self._freezeViews()
         self.__treeModel.clear()
         gc.collect()
-        for view in self.__registeredViews:
-            view.thaw()
+        self.__nrOfAlbums = 0
+        self.__nrOfImages = 0
+        self._handleNrOfObjectsUpdate()
+        self.__objectSelection.unselectAll()
+        if freeze:        
+            self._thawViews()
 
-    # Hidden columns
+    def cut(self, *foo):
+        raise "Error. Not allowed to cut objects into objectCollection." # TODO
+
+    def copy(self, *foo):
+        env.clipboard.setObjects(self.__objectSelection.getSelectedObjects())
+
+    def paste(self, *foo):
+        raise "Error. Not allowed to paste objects into objectCollection." # TODO
+
+    def delete(self, *foo):
+        raise "Error. Not allowed to delete objects from objectCollection." # TODO        
+                
+
     COLUMN_VALID_LOCATION = 0
     COLUMN_VALID_CHECKSUM = 1
     COLUMN_ROW_EDITABLE   = 2
@@ -131,49 +147,62 @@ class ObjectCollection(object):
 
     def _loadObjectList(self, objectList):
         env.enter("Object collection loading objects.")
-        for view in self.__registeredViews:
-            view.freeze()
-        self.__treeModel.clear()
-        gc.collect()
-        nrOfAlbums = 0
-        nrOfImages = 0
+        self._freezeViews()
+        self.clear(False)
+        self._insertObjectList(objectList)
+        self._thawViews()
+        env.exit("Object collection loading objects. (albums=" + str(self.__nrOfAlbums) + " images=" + str(self.__nrOfImages) + ")")
+
+    def _insertObjectList(self, objectList, iter=None):
+        # Note that this methods does NOT update objectSelection.
         for object in objectList:
-            iter = self.__treeModel.append()
+            if iter is None:
+                iter = self.__treeModel.append(None)
+            else:
+                iter = self.__treeModel.insert_after(iter, None)
             self.__treeModel.set_value(iter, self.COLUMN_OBJECT_ID, object.getId())
             if object.isAlbum():
                 self.__treeModel.set_value(iter, self.COLUMN_IS_ALBUM, True)
                 self.__treeModel.set_value(iter, self.COLUMN_ALBUM_TAG, object.getTag())
                 self.__treeModel.set_value(iter, self.COLUMN_LOCATION, None)
-                nrOfAlbums += 1
+                self.__nrOfAlbums += 1
             else:
                 self.__treeModel.set_value(iter, self.COLUMN_IS_ALBUM, False)
                 self.__treeModel.set_value(iter, self.COLUMN_ALBUM_TAG, None)
                 self.__treeModel.set_value(iter, self.COLUMN_LOCATION, object.getLocation())
-                nrOfImages += 1
+                self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             for attribute, value in object.getAttributeMap().items():
                 column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
                 self.__treeModel.set_value(iter, column, value)
             self.__treeModel.set_value(iter, self.COLUMN_ROW_EDITABLE, True)
-        self.loadThumbnails()
+            self.__loadThumbnail(self.__treeModel, iter)
+        self. _handleNrOfObjectsUpdate()
+
+    def _handleNrOfObjectsUpdate(self):
         updatedDisabledFields = Set()
-        if nrOfAlbums == 0:
+        if self.__nrOfAlbums == 0:
             updatedDisabledFields.add(u"albumTag")
-        if nrOfImages == 0:
+        if self.__nrOfImages == 0:
             updatedDisabledFields.add(u"location")
         for view in self.__registeredViews:
             view.fieldsDisabled(updatedDisabledFields - self.__disabledFields)
             view.fieldsEnabled(self.__disabledFields - updatedDisabledFields)
         self.__disabledFields = updatedDisabledFields
-        env.debug("The following fields are disabled: " + str(self.__disabledFields))
-        self.__objectSelection.unselectAll()
-        for view in self.__registeredViews:
-            view.thaw()
-        env.exit("Object collection loading objects. (albums=" + str(nrOfAlbums) + " images=" + str(nrOfImages) + ")")
-
+        env.debug("The following fields are disabled: " + str(self.__disabledFields))        
+        
     def _getTreeModel(self):
         return self.__treeModel
 
+    def _freezeViews(self):
+        for view in self.__registeredViews:
+            view.freeze()
+
+    def _thawViews(self):
+        for view in self.__registeredViews:
+            view.thaw()
+    
+    
 ###############################################################################
 ### Callback functions
 
@@ -213,8 +242,8 @@ class ObjectCollection(object):
         else:
             # TODO Show dialog error box?
             print "Not allowed to set album tag on image"
+
         
-            
 ######################################################################
 ### Private
     
@@ -224,6 +253,23 @@ class ObjectCollection(object):
                                                 self._attributeEdited,
                                                 name)
         self.__columnsType.append(gobject.TYPE_STRING)
+
+    def __loadThumbnail(self, model, iter):
+        objectId = model.get_value(iter, self.COLUMN_OBJECT_ID)
+        object = env.shelf.getObject(objectId)
+        if object.isAlbum():
+            pixbuf = env.albumIconPixbuf
+        else:
+            try:
+                thumbnailLocation = env.imageCache.get(
+                    object, env.thumbnailSize[0], env.thumbnailSize[1])
+                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
+                # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
+            except IOError:
+                pixbuf = env.thumbnailErrorIconPixbuf
+        model.set_value(iter, self.COLUMN_THUMBNAIL, pixbuf)
+
+
 
 ##    def rotate(self, button, angle):
 ##        # TODO: Make it possible for the user to configure if a rotation

@@ -24,7 +24,7 @@ class SortableObjectCollection(ObjectCollection):
         ObjectCollection.__init__(self)
         self.__sortOrder = None
         self.__sortColumnName = None
-        self.__sortedTreeModel = MySortedModel(ObjectCollection.getModel(self))
+        self.__sortedTreeModel = MySortedModel(self.getUnsortedModel())
         self.setSortOrder(order=gtk.SORT_ASCENDING)
         self.setSortColumnName(columnName=env.defaultSortColumn)
 
@@ -36,6 +36,15 @@ class SortableObjectCollection(ObjectCollection):
     
     def getModel(self):
         return self.__sortedTreeModel
+
+    def getUnsortedModel(self):
+        return ObjectCollection.getModel(self)
+
+    def convertToUnsortedRowNr(self, rowNr):
+        return self.__sortedTreeModel.convert_path_to_child_path(rowNr)[0]
+    
+    def convertFromUnsortedRowNr(self, unsortedRowNr):
+        return self.__sortedTreeModel. convert_child_path_to_path(unsortedRowNr)[0]
 
     def getSortOrder(self):
         return self.__sortOrder
@@ -67,7 +76,7 @@ class SortableObjectCollection(ObjectCollection):
         ObjectCollection.registerView(self, view)
         self.__emitSortOrderChanged()
         self.__emitSortColumnChanged()
-                
+
     def __emitSortOrderChanged(self):
         for view in self._getRegisteredViews():
             view.sortOrderChanged(self.__sortOrder)

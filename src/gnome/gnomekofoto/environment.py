@@ -57,9 +57,12 @@ env.albumIconFileName = os.path.join(env.iconDir, "album.png")
 env.albumIconPixbuf = gtk.gdk.pixbuf_new_from_file(env.albumIconFileName)
 env.loadingPixbuf = env.albumIconPixbuf # TODO create another icon with a hour-glass or something
 
+from clipboard import Clipboard
+env.clipboard = Clipboard()
+
 env.shelf = Shelf(genconf["shelf_location"], env.codeset)
 env.shelf.begin()
 
-env.isDebug=True # TODO get as a command line parameter
+env.isDebug=False # TODO get as a command line parameter
 
 

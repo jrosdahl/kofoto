@@ -24,47 +24,6 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self.connect("button_press_event", self._mouse_button_pressed)
         self.__selectionLocked = False
 
-    def show(self, objectCollection):
-        env.enter("SingleObjectView.show()")
-        ObjectCollectionView.show(self, objectCollection)
-        env.widgets["objectView"].show()
-        env.widgets["objectView"].grab_focus()
-        env.widgets["zoom100"].set_sensitive(True)
-        env.widgets["zoomToFit"].set_sensitive(True)
-        env.widgets["zoomIn"].set_sensitive(True)
-        env.widgets["zoomOut"].set_sensitive(True)
-        env.exit("SingleObjectView.show()")
-
-    def hide(self):
-        env.enter("SingleObjectView.hide()")
-        ObjectCollectionView.hide(self)
-        env.widgets["objectView"].hide()
-        env.widgets["previousButton"].set_sensitive(False)
-        env.widgets["nextButton"].set_sensitive(False)
-        env.widgets["zoom100"].set_sensitive(False)
-        env.widgets["zoomToFit"].set_sensitive(False)
-        env.widgets["zoomIn"].set_sensitive(False)
-        env.widgets["zoomOut"].set_sensitive(False)
-        env.exit("SingleObjectView.hide()")
-
-    def freeze(self):
-        self._clearAllConnections()
-        self.clear()
-        self.__selectionLocked = True
-        
-    def thaw(self):
-        env.enter("SingleObjectView.thaw()")
-        model = self._objectCollection.getModel()
-        # The row_changed event is needed when the location attribute of the image object is changed.
-        self._connect(model, "row_changed", self._rowChanged)
-        # The following events are needed to update the previous and next navigation buttons.
-        self._connect(model, "rows_reordered", self._modelUpdated)
-        self._connect(model, "row_inserted", self._modelUpdated)
-        self._connect(model, "row_deleted", self._modelUpdated)
-        self.__selectionLocked = False
-        self.importSelection(self._objectCollection.getObjectSelection())
-        env.exit("SingleObjectView.thaw()")
-        
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:
             env.debug("SingleImageView is importing selection")
@@ -77,21 +36,16 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             else:
                 if len(objectSelection) == 0:
                     # No objects is selected -> select first object
-                    self.__selectedRowNr = 0                    
-                    selectedRow = model[self.__selectedRowNr]
-                    selectedObjectId = selectedRow[ObjectCollection.COLUMN_OBJECT_ID]
-                    objectSelection.setSelection([selectedObjectId])
+                    self.__selectedRowNr = 0
+                    objectSelection.setSelection([self.__selectedRowNr])
+                elif len(objectSelection) > 1:
+                    # More than one object selected -> select first object
+                    self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
+                    objectSelection.setSelection([self.__selectedRowNr])
                 else:
-                    # There are one or more selected objects
-                    for row in model:
-                        objectId = row[ObjectCollection.COLUMN_OBJECT_ID]
-                        if objectId in objectSelection:
-                            self.__selectedRowNr = row.path[0]
-                            selectedObjectId = objectId
-                            if len(objectSelection) > 1:
-                                # We don't want more then one selected object.
-                                objectSelection.setSelection([selectedObjectId])
-                selectedObject = objectSelection[selectedObjectId]
+                    # Exactly one object selected
+                    self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
+                selectedObject = objectSelection[self.__selectedRowNr]
                 if selectedObject.isAlbum():
                     self.loadFile(env.albumIconFileName, False)
                 else:
@@ -105,19 +59,55 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             else:
                 env.widgets["nextButton"].set_sensitive(True)
             self.__selectionLocked = False
+        self._updateContextMenu()
         
-    def _connectObjectCollection(self, objectCollection):
+    def _showHelper(self):
+        env.enter("SingleObjectView.showHelper()")
+        env.widgets["objectView"].show()
+        env.widgets["objectView"].grab_focus()
+        env.widgets["zoom100"].set_sensitive(True)
+        env.widgets["zoomToFit"].set_sensitive(True)
+        env.widgets["zoomIn"].set_sensitive(True)
+        env.widgets["zoomOut"].set_sensitive(True)
+        env.exit("SingleObjectView.showHelper()")
+
+    def _hideHelper(self):
+        env.enter("SingleObjectView.hideHelper()")
+        env.widgets["objectView"].hide()
+        env.widgets["previousButton"].set_sensitive(False)
+        env.widgets["nextButton"].set_sensitive(False)
+        env.widgets["zoom100"].set_sensitive(False)
+        env.widgets["zoomToFit"].set_sensitive(False)
+        env.widgets["zoomIn"].set_sensitive(False)
+        env.widgets["zoomOut"].set_sensitive(False)
+        env.exit("SingleObjectView.hideHelper()")
+
+    def _connectObjectCollectionHelper(self):
         env.enter("Connecting SingleObjectView to object collection")
-        ObjectCollectionView._connectObjectCollection(self, objectCollection)
-        self.thaw()
         env.exit("Connecting SingleObjectView to object collection")
 
-    def _disconnectObjectCollection(self):
+    def _disconnectObjectCollectionHelper(self):
         env.enter("Disconnecting SingleObjectView from object collection")
-        ObjectCollectionView._disconnectObjectCollection(self)
-        self.freeze()
         env.exit("Disconnecting SingleObjectView from object collection")
 
+    def _freezeHelper(self):
+        env.enter("SingleObjectView.freezeHelper()")
+        self._clearAllConnections()
+        self.clear()
+        env.exit("SingleObjectView.freezeHelper()")
+        
+    def _thawHelper(self):
+        env.enter("SingleObjectView.thawHelper()")
+        model = self._objectCollection.getModel()
+        # The row_changed event is needed when the location attribute of the image object is changed.
+        self._connect(model, "row_changed", self._rowChanged)
+        # The following events are needed to update the previous and next navigation buttons.
+        self._connect(model, "rows_reordered", self._modelUpdated)
+        self._connect(model, "row_inserted", self._modelUpdated)
+        self._connect(model, "row_deleted", self._modelUpdated)
+        self.importSelection(self._objectCollection.getObjectSelection())
+        env.exit("SingleObjectView.thawHelper()")
+        
     def _modelUpdated(self, *foo):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())        
@@ -125,15 +115,11 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _rowChanged(self, model, path, iter):
         if path[0] == self.__selectedRowNr:
             env.debug("selected object in SingleObjectView changed")
-            objectId = model[path][ObjectCollection.COLUMN_OBJECT_ID]
             objectSelection = self._objectCollection.getObjectSelection()
-            object = objectSelection[objectId]
-            self.loadFile(selectedObject.getLocation(), False)
+            object = objectSelection[path[0]]
+            if not object.isAlbum():
+                self.loadFile(object.getLocation(), False)
         
     def _goto(self, button, direction):
-        model = self._objectCollection.getModel()
         objectSelection = self._objectCollection.getObjectSelection()
-        selectedObjectId = model[self.__selectedRowNr + direction][ObjectCollection.COLUMN_OBJECT_ID]
-        objectSelection.setSelection([selectedObjectId])
-
-
+        objectSelection.setSelection([self.__selectedRowNr + direction])

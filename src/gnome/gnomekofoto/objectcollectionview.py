@@ -17,28 +17,36 @@ class ObjectCollectionView:
         self.__connections = []        
         view.connect("button_press_event", self._mouse_button_pressed)
 
-    def freeze(self):
-        pass
-
-    def thaw(self):
-        pass
-        
     def show(self, objectCollection):
         if self.__hidden:
             self.__hidden = False
-            self._connectObjectCollection(objectCollection)
+            self.__connectObjectCollection(objectCollection)
+            self._showHelper()            
         else:
             self.setObjectCollection(objectCollection)
         
     def hide(self):
         if not self.__hidden:
             self.__hidden = True
-            self._disconnectObjectCollection()
+            self._hideHelper()
+            self.__disconnectObjectCollection()
     
     def setObjectCollection(self, objectCollection):
         if not self.__hidden:
             env.debug("ObjectCollectionView sets object collection")
-            self._connectObjectCollection(objectCollection)
+            self.__connectObjectCollection(objectCollection)
+        
+    def freeze(self):
+        self._freezeHelper()
+        self._objectCollection.getObjectSelection().removeChangedCallback(self.importSelection)
+        env.clipboard.removeChangedCallback(self._updateContextMenu)        
+
+    def thaw(self):
+        self._thawHelper()
+        self._objectCollection.getObjectSelection().addChangedCallback(self.importSelection)
+        env.clipboard.addChangedCallback(self._updateContextMenu)
+        self.importSelection(self._objectCollection.getObjectSelection())
+        # importSelection makes an implicit _updateContextMenu()
 
     def sortOrderChanged(self, sortOrder):
         env.debug("Sort order is " + str(sortOrder))
@@ -62,19 +70,6 @@ class ObjectCollectionView:
 ##############################################################################
 ### Methods used by and overloaded by subbclasses
 
-    def _connectObjectCollection(self, objectCollection):
-        if self._objectCollection != None:
-            self._disconnectObjectCollection()
-        self._objectCollection = objectCollection
-        self._createContextMenu(objectCollection)
-        self._objectCollection.registerView(self)
-
-    def _disconnectObjectCollection(self):
-        if self._objectCollection is not None:
-            self._objectCollection.unRegisterView(self)
-            self._clearContextMenu()
-            self._objectCollection = None
-        
     def _connect(self, object, signal, function):
         id = object.connect(signal, function)
         self.__connections.append((object, id))
@@ -87,17 +82,54 @@ class ObjectCollectionView:
     def _createContextMenu(self, objectCollection):
         env.debug("Creating view context menu")
         self._contextMenu = gtk.Menu()
+        self.__clipboardMenuGroup = self.__createClipboardMenuGroup(objectCollection)
+        for item in self.__clipboardMenuGroup:
+            self._contextMenu.add(item)
         self.__sortMenuGroup = self.__createSortMenuGroup(objectCollection)
         self._contextMenu.add(self.__sortMenuGroup.createGroupMenuItem())
-
+        
     def _clearContextMenu(self):
         env.debug("Clearing view context menu")
         self._contextMenu = None
         self.__sortMenuGroup = None
+        self.__clipboardMenuGroup = None
 
+    def _updateContextMenu(self, *foo):
+        env.debug("Updating context menu")
+        mutable = self._objectCollection.isMutable()
+        if env.clipboard.hasObjects():
+            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(mutable)
+        else:
+            self.__clipboardMenuGroup[self._objectCollection.getPasteLabel()].set_sensitive(False)
+        if len(self._objectCollection.getObjectSelection()) > 0:
+            self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(True)
+            self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable)
+            self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable)
+        else:
+            self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(False)
+            self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(False)
+            self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(False)
+            
 ###############################################################################        
 ### Private
 
+    def __connectObjectCollection(self, objectCollection):
+        if self._objectCollection != None:
+            self.__disconnectObjectCollection()
+        self._objectCollection = objectCollection
+        self._createContextMenu(objectCollection)
+        self._connectObjectCollectionHelper()
+        self.thaw()
+        self._objectCollection.registerView(self)
+
+    def __disconnectObjectCollection(self):
+        if self._objectCollection is not None:
+            self._objectCollection.unRegisterView(self)
+            self.freeze()
+            self._disconnectObjectCollectionHelper()
+            self._clearContextMenu()
+            self._objectCollection = None
+        
     def __createSortMenuGroup(self, objectCollection):
         menuGroup = MenuGroup("Sort by")
         if objectCollection.isSortable():
@@ -108,7 +140,6 @@ class ObjectCollectionView:
             menuGroup.addRadioMenuItem("Descending",
                                        objectCollection.setSortOrder,                            
                                        gtk.SORT_DESCENDING)
-            menuGroup.addSeparator()
             objectMetadataMap = objectCollection.getObjectMetadataMap()
             columnNames = list(objectMetadataMap.keys())
             columnNames.sort()
@@ -118,3 +149,13 @@ class ObjectCollectionView:
                                                objectCollection.setSortColumnName,
                                                columnName)
         return menuGroup
+
+    def __createClipboardMenuGroup(self, oc):
+        menuGroup = MenuGroup()
+        env.debug("Creating clipboard menu")
+        menuGroup.addMenuItem(oc.getCutLabel(), oc.cut)
+        menuGroup.addMenuItem(oc.getCopyLabel(), oc.copy)
+        menuGroup.addMenuItem(oc.getPasteLabel(), oc.paste)
+        menuGroup.addMenuItem(oc.getDeleteLabel(), oc.delete)
+        menuGroup.addSeparator()
+        return menuGroup    

@@ -15,7 +15,6 @@ class TableView(ObjectCollectionView):
         ObjectCollectionView.__init__(self, env.widgets["tableView"])
         selection = self._viewWidget.get_selection()
         selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.connect('changed', self._widgetSelectionChanged)
         self.__selectionLocked = False
         self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
         self._viewWidget.connect("drag-data-get", self._onDragDataGet)
@@ -29,88 +28,17 @@ class TableView(ObjectCollectionView):
             self.__userChoosenColumns[columnName] = columnLocation
             columnLocation += 1
 
-    def show(self, objectCollection):
-        env.enter("TableView.show()")
-        ObjectCollectionView.show(self, objectCollection)
-        env.widgets["tableViewScroll"].show()
-        self._viewWidget.grab_focus()
-        # Scroll to the first selected image
-        selectedIds = self._objectCollection.getObjectSelection().getSelectedIds()
-        for row in self._objectCollection.getModel():
-            if row[ObjectCollection.COLUMN_OBJECT_ID] in selectedIds:
-                self._viewWidget.scroll_to_cell(row.path, None, True, 0, 0)
-                break
-        env.exit("TableView.show()")
-            
-    def hide(self):
-        env.enter("TableView.hide()")        
-        ObjectCollectionView.hide(self)
-        env.widgets["tableViewScroll"].hide()
-        env.exit("TableView.hide()")                
-
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:        
             env.debug("TableView is importing selection")
             self.__selectionLocked = True
             selection = self._viewWidget.get_selection()
             selection.unselect_all()
-            for row in self._objectCollection.getModel():
-                if row[ObjectCollection.COLUMN_OBJECT_ID] in objectSelection:
-                    selection.select_iter(row.iter)
-            self.__selectionLocked = False            
-    
-    def _connectObjectCollection(self, objectCollection):
-        env.enter("Connecting TableView to object collection")
-        ObjectCollectionView._connectObjectCollection(self, objectCollection)
-        # Set model
-        self._viewWidget.set_model(objectCollection.getModel())
-        # Create columns
-        objectMetadataMap = self._objectCollection.getObjectMetadataMap()
-        disabledFields = self._objectCollection.getDisabledFields()
-        columnLocationList = self.__userChoosenColumns.items()
-        columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
-        env.debug("Column locations: " + str(columnLocationList))
-        for (columnName, columnLocation) in columnLocationList:
-            if (columnName in objectMetadataMap and
-                columnName not in disabledFields):
-                self.__createColumn(columnName, objectMetadataMap)
-                self.__viewGroup[columnName].activate()
-        # Init drag & drop
-        if objectCollection.isReorderable() and not objectCollection.isSortable():
-            targetEntries = [("STRING", gtk.TARGET_SAME_WIDGET, 0)]
-            self._viewWidget.enable_model_drag_source(gtk.gdk.BUTTON1_MASK,
-                                                      targetEntries,
-                                                      gtk.gdk.ACTION_MOVE)
-            self._viewWidget.enable_model_drag_dest(targetEntries, gtk.gdk.ACTION_COPY)
-        else:
-            self._viewWidget.unset_rows_drag_source()
-            self._viewWidget.unset_rows_drag_dest()
-        self.fieldsDisabled(objectCollection.getDisabledFields())
-        self.importSelection(objectCollection.getObjectSelection())
-        env.exit("Connecting TableView to object collection")
-        
-    def _disconnectObjectCollection(self):
-        env.enter("Disconnecting TableView from object collection")
-        ObjectCollectionView._disconnectObjectCollection(self)
-        self.__removeColumnsAndUpdateLocation()
-        self._viewWidget.set_model(None)
-        env.exit("Disconnecting TableView from object collection")
+            for rowNr in objectSelection:
+                selection.select_path(rowNr)
+            self.__selectionLocked = False
+        self._updateContextMenu()
 
-    def _createContextMenu(self, objectCollection):
-        ObjectCollectionView._createContextMenu(self, objectCollection)
-        columnNames = list(objectCollection.getObjectMetadataMap().keys())
-        columnNames.sort()
-        self.__viewGroup = MenuGroup("View")
-        for columnName in columnNames:
-            self.__viewGroup.addCheckedMenuItem(columnName,
-                                                self._viewColumnToggled,
-                                                columnName)
-        self._contextMenu.add(self.__viewGroup.createGroupMenuItem())
-
-    def _clearContextMenu(self):
-        ObjectCollectionView._clearContextMenu(self)
-        self.__viewGroup = None
-        
     def fieldsDisabled(self, fields):
         env.debug("Table view disable fields: " + str(fields))
         self.__removeColumnsAndUpdateLocation(fields)
@@ -125,10 +53,81 @@ class TableView(ObjectCollectionView):
             if columnName not in self.__createdColumns:
                 if columnName in self.__userChoosenColumns:
                     self.__createColumn(columnName, objectMetadataMap, self.__userChoosenColumns[columnName])
-                else:
-                    self.__createColumn(columnName, objectMetadataMap)
+            
+    def _showHelper(self):
+        env.enter("TableView.showHelper()")
+        env.widgets["tableViewScroll"].show()
+        self._viewWidget.grab_focus()
+        # Scroll to the first selected image
+        rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
+        if rowNr is not None:
+            self._viewWidget.scroll_to_cell(rowNr, None, True, 0, 0)
+        env.exit("TableView.showHelper()")
+            
+    def _hideHelper(self):
+        env.enter("TableView.hideHelper()")        
+        env.widgets["tableViewScroll"].hide()
+        env.exit("TableView.hideHelper()")                
 
-                
+    def _connectObjectCollectionHelper(self):
+        env.enter("Connecting TableView to object collection")
+        # Set model
+        self._viewWidget.set_model(self._objectCollection.getModel())
+        # Create columns
+        objectMetadataMap = self._objectCollection.getObjectMetadataMap()
+        disabledFields = self._objectCollection.getDisabledFields()
+        columnLocationList = self.__userChoosenColumns.items()
+        columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
+        env.debug("Column locations: " + str(columnLocationList))
+        for (columnName, columnLocation) in columnLocationList:
+            if (columnName in objectMetadataMap and
+                columnName not in disabledFields):
+                self.__createColumn(columnName, objectMetadataMap)
+                self.__viewGroup[columnName].activate()
+        # Init drag & drop
+        if self._objectCollection.isReorderable() and not self._objectCollection.isSortable():
+            targetEntries = [("STRING", gtk.TARGET_SAME_WIDGET, 0)]
+            self._viewWidget.enable_model_drag_source(gtk.gdk.BUTTON1_MASK,
+                                                      targetEntries,
+                                                      gtk.gdk.ACTION_MOVE)
+            self._viewWidget.enable_model_drag_dest(targetEntries, gtk.gdk.ACTION_COPY)
+        else:
+            self._viewWidget.unset_rows_drag_source()
+            self._viewWidget.unset_rows_drag_dest()
+        self.fieldsDisabled(self._objectCollection.getDisabledFields())
+        env.exit("Connecting TableView to object collection")
+        
+    def _disconnectObjectCollectionHelper(self):
+        env.enter("Disconnecting TableView from object collection")
+        self.__removeColumnsAndUpdateLocation()
+        self._viewWidget.set_model(None)
+        env.exit("Disconnecting TableView from object collection")
+
+    def _freezeHelper(self):
+        env.enter("TableView.freezeHelper()")
+        self._clearAllConnections()        
+        env.exit("TableView.freezeHelper()")
+        
+    def _thawHelper(self):
+        env.enter("TableView.thawHelper()")
+        self._connect(self._viewWidget.get_selection(), 'changed', self._widgetSelectionChanged)
+        env.exit("TableView.thawHelper()")
+        
+    def _createContextMenu(self, objectCollection):
+        ObjectCollectionView._createContextMenu(self, objectCollection)
+        columnNames = list(objectCollection.getObjectMetadataMap().keys())
+        columnNames.sort()
+        self.__viewGroup = MenuGroup("View columns")
+        for columnName in columnNames:
+            self.__viewGroup.addCheckedMenuItem(columnName,
+                                                self._viewColumnToggled,
+                                                columnName)
+        self._contextMenu.add(self.__viewGroup.createGroupMenuItem())
+
+    def _clearContextMenu(self):
+        ObjectCollectionView._clearContextMenu(self)
+        self.__viewGroup = None
+        
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
@@ -136,12 +135,12 @@ class TableView(ObjectCollectionView):
         if not self.__selectionLocked:        
             env.enter("TableView selection changed")
             self.__selectionLocked = True
-            selectedIds = []
+            rowNrs = []
             selection.selected_foreach(lambda model,
                                        path,
                                        iter:
-                                       selectedIds.append(model[path][ObjectCollection.COLUMN_OBJECT_ID]))
-            self._objectCollection.getObjectSelection().setSelection(selectedIds)
+                                       rowNrs.append(path[0]))
+            self._objectCollection.getObjectSelection().setSelection(rowNrs)
             self.__selectionLocked = False
             env.exit("TableView selection changed")        
             
@@ -180,6 +179,7 @@ class TableView(ObjectCollectionView):
                 children = list(container.getChildren())
                 sourceRow = model[sourceRowNumber]
                 targetIter = model.get_iter(targetPath)
+                objectSelection = self._objectCollection.getObjectSelection()
                 if (dropPosition == gtk.TREE_VIEW_DROP_INTO_OR_BEFORE
                     or dropPosition == gtk.TREE_VIEW_DROP_BEFORE):
                     container.setChildren(self.__moveListItem(children,
@@ -195,8 +195,8 @@ class TableView(ObjectCollectionView):
                                                               targetPath[0] + 1))
                     model.insert_after(sibling=targetIter, row=sourceRow)
                     model.remove(sourceRow.iter)
-                    # TODO update the album tree widget?
-                    
+                    # TODO update the album tree widget?                    
+                objectSelection.setSelection([targetPath[0]])
                 # I've experienced that the drag-data-delete signal isn't
                 # always emitted when I drag & drop rapidly in the TreeView.
                 # And when it is missing the source row is not removed as is
