@@ -91,7 +91,8 @@ def displayHelp():
         "                                     will be created.\n"
         "    create-shelf                     Create an empty shelf.\n"
         "    print-graph [ALBUM]              Print the album graph for ALBUM (default:\n"
-        "                                     root).\n"
+        "                                     root). If -v/--verbose is given, also print\n"
+        "                                     images and image attributes.\n"
         "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
         "    update-checksums                 Traverse all images in the shelf and\n"
         "                                     remember their new checksums.\n"
@@ -362,31 +363,36 @@ def cmdPrintGraph(env, args):
         root = env.shelf.getAlbum(args[0])
     else:
         root = env.shelf.getRootAlbum()
-    printGraphHelper(env, root, 0, [])
+    printGraphHelper(env, root, 0, 0, [])
 
 
-def printGraphHelper(env, object, level, visited):
-    imgtmpl = "%(indent)s[I] %(name)s <%(id)s>\n"
-    albtmpl = "%(indent)s[A] %(name)s <%(id)s> (%(type)s)\n"
+def printGraphHelper(env, object, position, level, visited):
+    imgtmpl = "%(indent)s[I] %(name)s {%(position)s} <%(id)s>\n"
+    albtmpl = "%(indent)s[A] %(name)s {%(position)s} <%(id)s> (%(type)s)\n"
     indentspaces = PRINT_GRAPH_INDENT * " "
     if object.isAlbum():
         tag = object.getTag()
         env.out(albtmpl % {"indent": level * indentspaces,
                            "name": _from_uc(tag),
+                           "position": position,
                            "id": object.getId(),
                            "type": _from_uc(object.getType()),
                            })
         if tag in visited:
             env.out("%s[...]\n" % ((level + 1) * indentspaces))
         else:
+            pos = 0
             for child in object.getChildren():
                 printGraphHelper(env,
                                  child,
+                                 pos,
                                  level + 1,
                                  visited + [tag])
-    else:
+                pos += 1
+    elif env.verbose:
         env.out(imgtmpl % {"indent": level * indentspaces,
                            "name": _from_uc(object.getLocation()),
+                           "position": position,
                            "id": object.getId(),
                            })
     if env.verbose:
