@@ -150,7 +150,7 @@ class Parser:
             else:
                 raise ParseError, \
                       "expected bareword or quoted string, got: " + token
-            return self._snfactory.attrcondNode(attribute, attroper, value)
+            return self._snfactory.attrcondNode(attribute[1:], attroper, value)
         elif kind == "lparen":
             expr = self.expr()
             kind, token = self._scanner.next()
