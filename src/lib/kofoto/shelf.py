@@ -45,8 +45,9 @@ class NameExistsError(KofotoError):
     pass
 
 
-class ReservedAlbumIdError(KofotoError):
-    """The album ID is reserved for other internal purposes."""
+class BadAlbumIdError(KofotoError):
+    """The album ID is reserved for other internal purposes or
+    otherwise inappropriate."""
     pass
 
 
@@ -65,7 +66,7 @@ def computeImageId(filename):
     return m.hexdigest()
 
 
-def createNewShelfFile(filename):
+def createShelfFile(filename):
     """Create a new Kofoto shelf file.
 
     The file is written to FILENAME.  If the file could not be written
@@ -115,6 +116,7 @@ class Shelf:
         self.imageMap = {}
         unlinkedImages = {}
         unlinkedAlbums = {}
+        self.highestAlbumId = 0
 
         # Magical albums.
         self.albumMap["_unlinked"] = Album(self, "_unlinked", magical=1)
@@ -150,6 +152,17 @@ class Shelf:
 
                 for albumElement in _xmlElements(node.childNodes):
                     albumId = _latin1(albumElement.getAttribute("id"))
+                    if albumId[0] == "a":
+                        # Maybe an automatically generated ID.
+                        # Remember the highest.
+                        try:
+                            num = int(albumId[1:])
+                            if num > self.highestAlbumId:
+                                self.highestAlbumId = num
+                        except ValueError:
+                            # Non-standard album ID (which is OK).
+                            pass
+
                     album = Album(self, albumId)
                     if self.albumMap.has_key(albumId):
                         raise AlbumExistsError, albumId
@@ -223,14 +236,14 @@ class Shelf:
         return self.albumMap["_root"]
 
 
-    def createAlbum(self, albumId):
-        """Create an empty, unlinked album."""
-        self.verifyAlbumId(albumId)
-        if self.getAlbum(albumId):
-            raise AlbumExistsError, albumId
-        else:
-            self.setDirty()
-            self.albumMap[albumId] = Album(self, albumId)
+    def createAlbum(self):
+        """Create an empty, unlinked album.
+
+        Returns the album ID."""
+        albumId = self.createAlbumId()
+        self.setDirty()
+        self.albumMap[albumId] = Album(self, albumId)
+        return albumId
 
 
     def getAlbum(self, albumId):
@@ -366,9 +379,17 @@ class Shelf:
         f.close()  # Also releases the lock.
 
 
+    def createAlbumId(self):
+        """Create a new, unique album ID."""
+        self.highestAlbumId += 1
+        return "a%d" % self.highestAlbumId
+
+
     def verifyAlbumId(self, albumId):
         if albumId[0] == "_":
-            raise ReservedAlbumIdError, albumId
+            raise BadAlbumIdError, albumId
+        if "/" in albumId:
+            raise BadAlbumIdError, albumId
 
 
 class Album:
@@ -463,6 +484,24 @@ class Album:
         self.attributeMap = {}
         self.children = []
         self.magical = magical
+
+
+class AlbumReference:
+    """A reference to a Kofoto Album."""
+
+    ##############################
+    # Public methods.
+
+    def getAlbum(self):
+        """Get the referenced album."""
+        return self.album
+
+
+    ##############################
+    # Internal methods.
+
+    def __init__(self, album):
+        self.album = album
 
 
 class Image:

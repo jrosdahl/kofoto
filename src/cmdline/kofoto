@@ -45,40 +45,59 @@ VERBATIM_EXIF_HEADERS = (
 ######################################################################
 ### Helper functions.
 
+helpText = """Usage: kofoto [flags] command [parameters]
+
+Flags:
+
+    -h, --help                       Display this help.
+        --shelf=X                    Use the shelf X instead of the default.
+    -v, --version                    Print version out standard output.
+
+Commands:
+
+    Shelf
+    =====
+
+    check                            Find missing images and print some
+                                     statistics.
+    create-shelf                     Create an empty shelf.
+    create-album NAME                Create an empty, unlinked album. NAME, if
+                                     given, sets the name attribute on the
+                                     album.
+    print-tree [ALBUMID]             Print the album tree under ALBUMID
+                                     (default: the root album.
+
+    Albums
+    ======
+
+    add ALBUMID IMAGEID1 [IMAGEID2 ...]
+                                     Add new images (to an album).
+    details ALBUMID                  Print details for ALBUMID.
+    link ALBUMID ID                  Add a link to ID (last) in album ALBUMID.
+    move ALBUMID1 POS ALBUMID2       Move the reference at POSITION in
+                                     ALBUMID1 to ALBUMID2.
+    refdetails ALBUMID POS           Print details for the reference at POS in
+                                     ALBUMID.
+    reorder ALBUMID POS1 POS2        Move the reference at POS1 to POS2 in
+                                     ALBUMID.
+    setattr ALBUMID KEY VAL [VAL2 ...]
+                                     Set attribute KEY to VAL [VAL2 ...] in
+                                     ALBUMID.
+    setrefattr ALBUMID POS KEY VAL [VAL2 ...]
+                                     Set attribute KEY to VAL [VAL2 ...] in
+                                     the reference at POS in ALBUMID.
+    unlink ALBUMID POS               Remove a link at POSITION in ALBUMID.
+
+    Images
+    ======
+    details IMAGEID                  Print details for IMAGEID.
+    setattr IMAGEID KEY VAL [VAL2 ...]
+                                     Set attribute KEY to VAL [VAL2 ...] in
+                                     IMAGEID.
+"""
+
 def displayHelp():
-    sys.stdout.write(
-#                                                                 79 characters here:  |
-        "Usage: kofoto [flags] command [parameters]\n"
-        "\n"
-        "Flags:\n"
-        "\n"
-        "    -h, --help                       Display this help.\n"
-        "        --shelf=X                    Use the shelf X instead of the default.\n"
-        "    -v, --version                    Print version out standard output.\n"
-        "\n"
-        "Commands:\n"
-        "\n"
-        "    Shelf\n"
-        "    =====\n"
-        "\n"
-        "    check                            Find missing images and print some\n"
-        "                                     statistics.\n"
-        "    create-shelf                     Create an empty shelf.\n"
-        "    create-album ALBUMID             Create an empty, unlinked album.\n"
-        "    print-tree                       Print the album tree.\n"
-        "    rename-albumid OLDID NEWID       Rename an album ID.\n"
-        "\n"
-        "    Albums\n"
-        "    ======\n"
-        "\n"
-        "    add ALBUM IMAGE1 [IMAGE2 ...]    Add new images (to an album).\n"
-        "    link-album ALBUM1 ALBUM2 NAME    Add a link with name NAME to ALBUMID2\n"
-        "                                     (last) in album ALBUMID1.\n"
-        "    link-image ALBUM IMAGE NAME      Describe me.\n"
-        "\n"
-        "    Images\n"
-        "    ======\n"
-        "\n")
+    sys.stdout.write(helpText)
 
 
 def printErrorAndExit(errorString):
@@ -143,7 +162,12 @@ def cmdCheck(shelf, args):
 
 
 def cmdCreateAlbum(shelf, args):
-    shelf.createAlbum(args[0])
+    albumId = shelf.createAlbum(args[0])
+    if len(args) > 1:
+        name = args[1]
+    else:
+        name = "Unnamed-%s" % albumId
+    album.setAttributes("name", name)
 
 
 def cmdLinkAlbum(shelf, args):
@@ -179,10 +203,6 @@ def cmdPrintTreeInternal(album, file, level, visited):
                                      level + 1,
                                      visited + [child.getId()])
 
-def cmdRenameAlbumId(shelf, args):
-    shelf.renameAlbumId(args[0], args[1])
-
-
 commandTable = {
     "add": cmdAdd,
     "check": cmdCheck,
@@ -190,7 +210,6 @@ commandTable = {
     "link-album": cmdLinkAlbum,
     "link-image": cmdLinkImage,
     "print-tree": cmdPrintTree,
-    "rename-albumid": cmdRenameAlbumId,
 }
 
 ######################################################################
@@ -248,7 +267,7 @@ def main(argv):
 
     if args[0] == "create-shelf":
         try:
-            createNewShelfFile(shelfFilename)
+            createShelfFile(shelfFilename)
         except FailedWritingError, filename:
             printErrorAndExit(
                 "Could not create shelf file \"%s\" (already exists?).\n" %
