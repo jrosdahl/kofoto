@@ -1,3 +1,4 @@
+import sys
 import gtk
 from kofoto.shelf import ShelfLockedError
 from gkofoto.mainwindow import MainWindow
