@@ -613,7 +613,7 @@ class Shelf:
         cursor.execute(
             " delete from object_category"
             " where  objectid = %s",
-            imageid)
+            albumid)
         for x in albumid, tag:
             if x in self.objectcache:
                 del self.objectcache[x]
