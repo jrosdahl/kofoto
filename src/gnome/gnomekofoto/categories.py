@@ -56,7 +56,7 @@ class Categories:
         self._copyItem.connect("activate", self._copyCategory, None)
         self._contextMenu.append(self._copyItem)
 
-        self._pasteItem = gtk.MenuItem("Paste")
+        self._pasteItem = gtk.MenuItem("Paste as child(ren)")
         self._pasteItem.show()
         self._pasteItem.connect("activate", self._pasteCategory, None)
         self._contextMenu.append(self._pasteItem)
