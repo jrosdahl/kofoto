@@ -785,7 +785,7 @@ class EXIF_header:
                             # use LUT for this tag
                             printable+=tag_entry[1].get(i, repr(i))
             else:
-                tag_name='Tag 0x%04X' % tag
+                tag_name='Tag 0x%04X' % (tag & 0xFFFFL)
             self.tags[ifd_name+' '+tag_name]=IFD_Tag(printable, tag,
                                                      field_type,
                                                      values, field_offset,
