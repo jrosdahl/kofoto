@@ -1636,6 +1636,11 @@ class Album(_Object):
         return self.albumtype
 
 
+    def isMutable(self):
+        """Whether the album can be modified with setChildren."""
+        raise UnimplementedError
+
+
     def getTag(self):
         """Get the tag of the album."""
         return self.tag
@@ -1702,6 +1707,10 @@ class PlainAlbum(Album):
 
     ##############################
     # Public methods.
+
+    def isMutable(self):
+        return True
+
 
     def getChildren(self):
         """Get the album's children.
@@ -1963,6 +1972,10 @@ class MagicAlbum(Album):
 
     ##############################
     # Public methods.
+
+    def isMutable(self):
+        return False
+
 
     def setChildren(self, children):
         raise UnsettableChildrenError, self.getTag()

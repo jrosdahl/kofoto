@@ -609,7 +609,11 @@ class TestObject(TestShelfFixture):
 class TestAlbum(TestShelfFixture):
     def test_getType(self):
         alpha = self.shelf.getAlbum(u"alpha")
-        assert alpha.getType()
+        assert alpha.getType() == "plain"
+
+    def test_isMutable(self):
+        alpha = self.shelf.getAlbum(u"alpha")
+        assert alpha.isMutable()
 
     def test_getTag(self):
         alpha = self.shelf.getAlbum(u"alpha")
@@ -631,6 +635,14 @@ class TestAlbum(TestShelfFixture):
         assert self.shelf.getRootAlbum().isAlbum()
 
 class TestPlainAlbum(TestShelfFixture):
+    def test_getType(self):
+        alpha = self.shelf.getAlbum(u"alpha")
+        assert alpha.getType() == "plain"
+
+    def test_isMutable(self):
+        alpha = self.shelf.getAlbum(u"alpha")
+        assert alpha.isMutable()
+
     def test_getChildren(self):
         epsilon = self.shelf.getAlbum(u"epsilon")
         alpha = self.shelf.getAlbum(u"alpha")
@@ -712,6 +724,14 @@ class TestImage(TestShelfFixture):
         image.importExifTags() # TODO: Test more.
 
 class TestAllAlbumsAlbum(TestShelfFixture):
+    def test_getType(self):
+        alpha = self.shelf.getAlbum(u"gamma")
+        assert alpha.getType() == "allalbums"
+
+    def test_isMutable(self):
+        alpha = self.shelf.getAlbum(u"gamma")
+        assert not alpha.isMutable()
+
     def test_getChildren(self):
         gamma = self.shelf.getAlbum(u"gamma")
         assert len(list(gamma.getChildren())) == 7
@@ -733,6 +753,14 @@ class TestAllAlbumsAlbum(TestShelfFixture):
         assert self.shelf.getAlbum(u"gamma").isAlbum()
 
 class TestAllImagesAlbum(TestShelfFixture):
+    def test_getType(self):
+        alpha = self.shelf.getAlbum(u"delta")
+        assert alpha.getType() == "allimages"
+
+    def test_isMutable(self):
+        alpha = self.shelf.getAlbum(u"delta")
+        assert not alpha.isMutable()
+
     def test_getChildren(self):
         delta = self.shelf.getAlbum(u"delta")
         assert len(list(delta.getChildren())) == 11
@@ -754,6 +782,14 @@ class TestAllImagesAlbum(TestShelfFixture):
         assert self.shelf.getAlbum(u"delta").isAlbum()
 
 class TestOrphansAlbum(TestShelfFixture):
+    def test_getType(self):
+        alpha = self.shelf.getAlbum(u"orphans")
+        assert alpha.getType() == "orphans"
+
+    def test_isMutable(self):
+        alpha = self.shelf.getAlbum(u"orphans")
+        assert not alpha.isMutable()
+
     def test_getChildren(self):
         orphans = self.shelf.getAlbum(u"orphans")
         assert len(list(orphans.getChildren())) == 2
@@ -776,6 +812,14 @@ class TestOrphansAlbum(TestShelfFixture):
         assert self.shelf.getAlbum(u"orphans").isAlbum()
 
 class TestSearchAlbum(TestShelfFixture):
+    def test_getType(self):
+        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        assert searchalbum.getType() == "search"
+
+    def test_isMutable(self):
+        searchalbum = self.shelf.createAlbum(u"search", u"search")
+        assert not searchalbum.isMutable()
+
     def test_getChildren(self):
         alpha = self.shelf.getAlbum(u"alpha")
         image1, image2 = list(alpha.getChildren())[0:2]
