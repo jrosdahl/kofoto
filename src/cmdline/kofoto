@@ -456,7 +456,7 @@ def cmdRemove(env, args):
             env.errexit("Bad position: %s\n" % _from_uc(pos))
     positions.sort()
     positions.reverse()
-    children = album.getChildren()
+    children = list(album.getChildren())
     if not (0 <= positions[0] < len(children)):
         env.errexit("Bad position: %d\n" % positions[0])
     for pos in positions:
