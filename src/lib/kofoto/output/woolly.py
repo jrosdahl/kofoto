@@ -293,6 +293,8 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <td></td>
 <td class="footer">
 <p>&nbsp;</p>
+%(cache_previous_image)s
+%(cache_next_image)s
 <hr>
 <small>%(blurb)s Image ID: %(imgid)s.</small>
 </td>
@@ -546,9 +548,13 @@ class OutputGenerator(OutputEngine):
                 previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" /></a>' % (
                     "%s-%dx%d.html" % (number - 1, wlim, hlim),
                     self.iconsdir)
+                cpi_text = '<img src="%s" width="1" height="1" style="display: none">' % (
+                    "../" + self.getImageReference(
+                                images[number - 1], wlim, hlim)[0])
             else:
                 previouslink = ""
                 previoustext = '<img class="icon" src="../%s/noprevious.png" />' % self.iconsdir
+                cpi_text = ""
 
             if number < len(images) - 1:
                 nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
@@ -556,9 +562,13 @@ class OutputGenerator(OutputEngine):
                 nexttext = '<a href="%s"><img class="icon" src="../%s/next.png" /></a>' % (
                     "%s-%dx%d.html" % (number + 1, wlim, hlim),
                     self.iconsdir)
+                cni_text = '<img src="%s" width="1" height="1" style="display: none">' % (
+                    "../" + self.getImageReference(
+                                images[number + 1], wlim, hlim)[0])
             else:
                 nextlink = ""
                 nexttext = '<img class="icon" src="../%s/nonext.png" />' % self.iconsdir
+                cni_text = ""
 
             if limnumber > 0:
                 smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" /></a>' % (
@@ -658,6 +668,8 @@ class OutputGenerator(OutputEngine):
                              "%s-%dx%d.html" % (number, wlim, hlim)),
                 image_frame_template % {
                     "blurb": self.blurb,
+                    "cache_previous_image": cpi_text,
+                    "cache_next_image": cni_text,
                     "charenc": self.charEnc,
                     "iconsdir": "../" + self.iconsdir,
                     "imgid": image.getId(),
