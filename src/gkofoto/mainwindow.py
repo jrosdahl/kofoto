@@ -12,6 +12,7 @@ from gkofoto.objectcollectionfactory import *
 from gkofoto.objectcollection import *
 from gkofoto.registerimagesdialog import RegisterImagesDialog
 from gkofoto.handleimagesdialog import HandleImagesDialog
+from gkofoto.generatehtmldialog import GenerateHTMLDialog
 
 class MainWindow(gtk.Window):
     def __init__(self):
@@ -116,72 +117,8 @@ class MainWindow(gtk.Window):
         aboutDialog.destroy()
 
     def generateHtml(self, album):
-        # TODO: Rewrite this gross hack.
-
-        import kofoto.generate
-        import re
-
-        def outputParser(string):
-            m = re.match(
-                r"Creating album (\S+) \((\d+) of (\d+)\)",
-                string,
-                re.UNICODE)
-            if m:
-                progressBar.set_text(m.group(1).decode("latin1"))
-                progressBar.set_fraction(
-                    (int(m.group(2)) - 1) / float(m.group(3)))
-                while gtk.events_pending():
-                    gtk.main_iteration()
-
-        fileSelectionDialog = gtk.FileSelection(title="Generate HTML")
-        if fileSelectionDialog.run() != gtk.RESPONSE_OK:
-            fileSelectionDialog.destroy()
-            return
-
-        directoryName = fileSelectionDialog.get_filename()
-        if not os.path.isdir(directoryName):
-            dialog = gtk.MessageDialog(
-                type=gtk.MESSAGE_ERROR,
-                buttons=gtk.BUTTONS_OK,
-                message_format="Not a directory: %s" % directoryName)
-            dialog.run()
-            dialog.destroy()
-            fileSelectionDialog.destroy()
-            return
-
-        fileSelectionDialog.destroy()
-
-        widgets = gtk.glade.XML(env.gladeFile, "generateHtmlProgressDialog")
-        dialog = widgets.get_widget("generateHtmlProgressDialog")
-        progressBar = widgets.get_widget("progressBar")
-        okButton = widgets.get_widget("okButton")
-        okButton.set_sensitive(False)
-
-        env.out = outputParser
-        env.verbose = True
-        env.thumbnailsizelimit = env.config.getcoordlist(
-            "album generation", "thumbnail_size_limit")[0]
-        env.defaultsizelimit = env.config.getcoordlist(
-            "album generation", "default_image_size_limit")[0]
-
-        imgsizesval = env.config.getcoordlist(
-            "album generation", "other_image_size_limits")
-        imgsizesset = Set(imgsizesval) # Get rid of duplicates.
-        defaultlimit = env.config.getcoordlist(
-            "album generation", "default_image_size_limit")[0]
-        imgsizesset.add(defaultlimit)
-        imgsizes = list(imgsizesset)
-        imgsizes.sort(lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
-        env.imagesizelimits = imgsizes
-
-        generator = kofoto.generate.Generator(u"woolly", env)
-        generator.generate(album, None, directoryName, "latin1")
-        progressBar.set_fraction(1)
-        while gtk.events_pending():
-            gtk.main_iteration()
-        okButton.set_sensitive(True)
+        dialog = GenerateHTMLDialog(album)
         dialog.run()
-        dialog.destroy()
 
     def getIconImage(self, name):
         pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
