@@ -711,7 +711,7 @@ class Shelf:
             imageid = cursor.lastrowid
             cursor.execute(
                 " insert into image (imageid, hash, directory, filename)"
-                " values (%s, %s, %s)",
+                " values (%s, %s, %s, %s)",
                 imageid,
                 hash,
                 os.path.dirname(location),
