@@ -38,8 +38,8 @@ class GenerateHTMLDialog:
             title="Choose directory",
             action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
             buttons=(
-                gtk.STOCK_OK, gtk.RESPONSE_OK,
-                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                gtk.STOCK_OK, gtk.RESPONSE_OK))
         if dirDialog.run() == gtk.RESPONSE_OK:
             self.directoryTextEntry.set_text(dirDialog.get_filename())
         dirDialog.destroy()

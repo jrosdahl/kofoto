@@ -12,8 +12,8 @@ class RegisterImagesDialog(gtk.FileChooserDialog):
             title="Register images",
             action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
             buttons=(
-                gtk.STOCK_OK, gtk.RESPONSE_OK,
-                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                gtk.STOCK_OK, gtk.RESPONSE_OK))
         self.__albumToAddTo = albumToAddTo
         self.connect("response", self._response)
 
