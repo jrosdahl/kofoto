@@ -32,10 +32,10 @@ class Environment:
     def exit(self, method):
         if self.isDebug:
             print "<--", method
-            
+
     def assertUnicode(self, obj):
-        if not isinstance(obj, (unicode)):
-            raise "Assertion failed! " + str(type(obj)) + " is not an unicode object: \"" + str(obj) + "\""
+        assert isinstance(obj, unicode), \
+               "%s is not a unicode object: \"%s\"" % (type(obj), obj)
         
 env = Environment()
 
