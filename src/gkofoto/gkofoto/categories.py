@@ -1,6 +1,6 @@
 import gobject
 import gtk
-import string
+import re
 
 from environment import env
 from categorydialog import CategoryDialog
@@ -14,6 +14,7 @@ class Categories:
 ### Public
 
     def __init__(self, mainWindow):
+        self.__mainWindow = mainWindow
         self.__toggleColumn = None
         self.__objectCollection = None
         self.__ignoreSelectEvent = False
@@ -22,12 +23,15 @@ class Categories:
                                              gobject.TYPE_STRING,   # DESCRIPTION
                                              gobject.TYPE_BOOLEAN,  # CONNECTED
                                              gobject.TYPE_BOOLEAN)  # INCONSISTENT
+
+        #
+        # Category tree view
+        #
         self.__categoryView = env.widgets["categoryView"]
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
         self.__categoryView.connect("focus-in-event", self._categoryViewFocusInEvent)
         self.__categoryView.connect("focus-out-event", self._categoryViewFocusOutEvent)
-        self.__mainWindow = mainWindow
 
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
@@ -43,6 +47,51 @@ class Categories:
         textColumn = gtk.TreeViewColumn("Category", textRenderer, text=self.__COLUMN_DESCRIPTION)
         self.__categoryView.append_column(textColumn)
         self.__categoryView.set_expander_column(textColumn)
+
+        #
+        # Category quick select view
+        # 
+        self.__categoryQSModel = gtk.ListStore(
+            gobject.TYPE_INT,      # CATEGORY_ID
+            gobject.TYPE_STRING,   # DESCRIPTION
+            gobject.TYPE_BOOLEAN,  # CONNECTED
+            gobject.TYPE_BOOLEAN)  # INCONSISTENT
+        self.__categoryQSView = env.widgets["categoryQuickSelectView"]
+        self.__categoryQSView.connect(
+            "focus-in-event", self._categoryQSViewFocusInEvent)
+        self.__categoryQSEntry = env.widgets["categoryQuickSelectEntry"]
+        self.__categoryQSEntry.connect(
+            "activate", self._categoryQSEntryActivateEvent)
+        self.__categoryQSEntry.connect(
+            "changed", self._categoryQSEntryChangedEvent)
+        self.__categoryQSButton = env.widgets["categoryQuickSelectButton"]
+        self.__categoryQSButton.connect(
+            "clicked", self._categoryQSEntryActivateEvent)
+        self.__categoryQSView.realize()
+        self.__categoryQSView.set_model(self.__categoryQSModel)
+        self.__categoryQSFreeze = False
+
+        # Create toggle column
+        toggleRenderer = gtk.CellRendererToggle()
+        toggleRenderer.connect("toggled", self._qsConnectionToggled)
+        self.__toggleQSColumn = gtk.TreeViewColumn(
+            "",
+            toggleRenderer,
+            active=self.__COLUMN_CONNECTED,
+            inconsistent=self.__COLUMN_INCONSISTENT)
+        self.__qsToggleColumn = gtk.TreeViewColumn(
+            "",
+            toggleRenderer,
+            active=self.__COLUMN_CONNECTED,
+            inconsistent=self.__COLUMN_INCONSISTENT)
+        self.__categoryQSView.append_column(self.__qsToggleColumn)
+
+        # Create text column
+        textRenderer = gtk.CellRendererText()
+        textColumn = gtk.TreeViewColumn(
+            "Category", textRenderer, text=self.__COLUMN_DESCRIPTION)
+        self.__categoryQSView.append_column(textColumn)
+        self.__categoryQSView.set_expander_column(textColumn)
 
         # Create context menu
         # TODO Is it possible to load a menu from a glade file instead?
@@ -98,6 +147,8 @@ class Categories:
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
         categorySelection.set_select_function(self._selectionFunction, None)
         categorySelection.connect("changed", self._categorySelectionChanged)
+        categoryQSSelection = self.__categoryQSView.get_selection()
+        categoryQSSelection.set_mode(gtk.SELECTION_NONE)
 
         # Connect the rest of the UI events
         self.__categoryView.connect("button_press_event", self._button_pressed)
@@ -110,6 +161,7 @@ class Categories:
 
     def loadCategoryTree(self):
         self.__categoryModel.clear()
+        self.__categoryList = []
         env.shelf.flushCategoryCache()
         for category in self.__sortCategories(env.shelf.getRootCategories()):
             self.__loadCategorySubTree(None, category)
@@ -125,6 +177,7 @@ class Categories:
 
     def objectSelectionChanged(self, objectSelection=None):
         self.__updateToggleColumn()
+        self.__updateQSToggleColumn()
         self.__updateContextMenu()
         self.__expandAndCollapseRows(env.widgets["autoExpand"].get_active(),
                                      env.widgets["autoCollapse"].get_active())
@@ -203,6 +256,7 @@ class Categories:
             categoryRow[self.__COLUMN_CONNECTED] = False
             categoryRow[self.__COLUMN_INCONSISTENT] = False
         self.__updateToggleColumn()
+        self.__updateQSToggleColumn()
 
     def _button_pressed(self, treeView, event):
         if event.button == 3:
@@ -331,6 +385,74 @@ class Categories:
     def _selectionFunction(self, path, b):
         return not self.__ignoreSelectEvent
 
+    def _categoryQSViewFocusInEvent(self, widget, event):
+        self.__categoryQSEntry.grab_focus()
+
+    def _categoryQSEntryActivateEvent(self, entry):
+        if not self.__qsSelectedPath:
+            return
+        self._qsConnectionToggled(None, self.__qsSelectedPath)
+        self.__categoryQSFreeze = True
+        self.__categoryQSEntry.set_text("")
+        self.__categoryQSFreeze = False
+        self.__qsSelectedPath = None
+
+    def _categoryQSEntryChangedEvent(self, entry):
+        if self.__categoryQSFreeze:
+            return
+        self.__categoryQSModel.clear()
+        self.__qsSelectedPath = None
+        self.__categoryQSButton.set_sensitive(False)
+        text = entry.get_text().decode("utf-8")
+        if text == "":
+            return
+
+        regexp = re.compile(".*%s.*" % re.escape(text.lower()))
+        categories = list(env.shelf.getMatchingCategories(regexp))
+        categories.sort(self.__compareCategories)
+        exactMatches = []
+        for category in categories:
+            iterator = self.__categoryQSModel.append()
+            if (category.getTag().lower() == text.lower() or
+                category.getDescription().lower() == text.lower()):
+                exactMatches.append(self.__categoryQSModel.get_path(iterator))
+            self.__categoryQSModel.set_value(
+                iterator, self.__COLUMN_CATEGORY_ID, category.getId())
+            self.__categoryQSModel.set_value(
+                iterator,
+                self.__COLUMN_DESCRIPTION,
+                "%s [%s]" % (category.getDescription(), category.getTag()))
+        if len(categories) == 1:
+            self.__qsSelectedPath = (0,)
+            self.__categoryQSButton.set_sensitive(True)
+        elif len(exactMatches) == 1:
+            self.__qsSelectedPath = exactMatches[0]
+            self.__categoryQSButton.set_sensitive(True)
+        self.__updateQSToggleColumn()
+
+    def _qsConnectionToggled(self, renderer, path):
+        categoryRow = self.__categoryQSModel[path]
+        category = env.shelf.getCategory(
+            categoryRow[self.__COLUMN_CATEGORY_ID])
+        if categoryRow[self.__COLUMN_INCONSISTENT] \
+               or not categoryRow[self.__COLUMN_CONNECTED]:
+            for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
+                try:
+                    obj.addCategory(category)
+                except CategoryPresentError:
+                    # The object was already connected to the category
+                    pass
+            categoryRow[self.__COLUMN_INCONSISTENT] = False
+            categoryRow[self.__COLUMN_CONNECTED] = True
+        else:
+            for obj in self.__objectCollection.getObjectSelection().getSelectedObjects():
+                obj.removeCategory(category)
+            categoryRow[self.__COLUMN_CONNECTED] = False
+            categoryRow[self.__COLUMN_INCONSISTENT] = False
+        self.__updateToggleColumn()
+        self.__expandAndCollapseRows(
+            env.widgets["autoExpand"].get_active(),
+            env.widgets["autoCollapse"].get_active())
 
 ######################################################################
 ### Private
@@ -419,6 +541,22 @@ class Categories:
                         nrSelectedObjectsInCategory[categoryId] = 1
         self.__forEachCategoryRow(self.__updateToggleColumnHelper,
                                   (nrSelectedObjects, nrSelectedObjectsInCategory))
+
+    def __updateQSToggleColumn(self):
+        selectedObjects = \
+            self.__objectCollection.getObjectSelection().getSelectedObjects()
+        nrSelectedObjectsInCategory = {}
+        nrSelectedObjects = 0
+        for obj in selectedObjects:
+            nrSelectedObjects += 1
+            for category in obj.getCategories():
+                catid = category.getId()
+                nrSelectedObjectsInCategory.setdefault(catid, 0)
+                nrSelectedObjectsInCategory[catid] += 1
+        self.__forEachCategoryRow(
+            self.__updateToggleColumnHelper,
+            (nrSelectedObjects, nrSelectedObjectsInCategory),
+            self.__categoryQSModel)
 
     def __updateToggleColumnHelper(self,
                                    categoryRow,
@@ -540,8 +678,13 @@ class Categories:
 
     def __sortCategories(self, categoryIter):
         categories = list(categoryIter)
-        categories.sort(lambda x, y: cmp(x.getDescription(), y.getDescription()))
+        categories.sort(self.__compareCategories)
         return categories
+
+    def __compareCategories(self, x, y):
+        return cmp(
+            (x.getDescription(), x.getTag()),
+            (y.getDescription(), y.getTag()))
 
 class ClipboardCategories:
     COPY = 1

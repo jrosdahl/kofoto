@@ -1123,6 +1123,19 @@ class Shelf:
             yield self.getCategory(catid)
 
 
+    def getMatchingCategories(self, regexp):
+        """Get the categories that case insensitively match a given
+        compiled regexp object.
+
+        Returns an iterable returning Category instances."""
+        assert self.inTransaction
+        for catid in self.categorydag.get():
+            category = self.getCategory(catid)
+            if (regexp.match(category.getTag().lower()) or
+                regexp.match(category.getDescription().lower())):
+                yield category
+
+
     def search(self, searchtree):
         """Search for objects matching a search node tree.
 
