@@ -59,8 +59,6 @@
 * Make it possible to generate an album with images symlinked to a
   local image store, not the system-wide cache.
 
-* Store database strings in UTF-8 encoding.
-
 Think more about:
 
     * Which auxilliary attributes should be set on import? Specify
