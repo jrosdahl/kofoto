@@ -172,7 +172,7 @@ def displayHelp():
         "    disconnect-category PARENT CHILD Remove parent-child realationship bewteen\n"
         "                                     two categories.\n"
         "    create-category TAG DESC         Create category.\n"
-        "    delete-category TAG              Delete category.\n"
+        "    obliterate-category TAG          Delete category permanently.\n"
         "    print-categories                 Print category tree.\n"
         "    rename-category OLDTAG NEWTAG    Rename category tag.\n"
         "    set-category-description TAG DESC\n"
@@ -303,12 +303,6 @@ def cmdDeleteAttribute(env, args):
         env.shelf.getObject(arg).deleteAttribute(attr)
 
 
-def cmdDeleteCategory(env, args):
-    if len(args) != 1:
-        raise ArgumentError
-    env.shelf.deleteCategory(args[0])
-
-
 def cmdDisconnectCategory(env, args):
     if len(args) != 2:
         raise ArgumentError
@@ -393,6 +387,12 @@ def cmdObliterate(env, args):
         raise ArgumentError
     for obj in args:
         env.shelf.deleteObject(obj)
+
+
+def cmdObliterateCategory(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    env.shelf.deleteCategory(args[0])
 
 
 def cmdPrintAlbums(env, args):
@@ -658,7 +658,6 @@ commandTable = {
     "create-album": cmdCreateAlbum,
     "create-category": cmdCreateCategory,
     "delete-attribute": cmdDeleteAttribute,
-    "delete-category": cmdDeleteCategory,
     "disconnect-category": cmdDisconnectCategory,
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
@@ -666,6 +665,7 @@ commandTable = {
     "get-categories": cmdGetCategories,
     "inspect-locations": cmdInspectLocations,
     "obliterate": cmdObliterate,
+    "obliterate-category": cmdObliterateCategory,
     "print-albums": cmdPrintAlbums,
     "print-categories": cmdPrintCategories,
     "register": cmdRegister,

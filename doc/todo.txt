@@ -106,9 +106,6 @@
   remove handling of orientation from Kofoto altogether. Or make it
   configurable.
 
-* Fix inconsistencies in commandline client commands. LysKOM text:
-  10994865.
-
 * Define a transport format (XML-based?) for metadata. Add import and
   export commands. How should conflicts be handled?
 
