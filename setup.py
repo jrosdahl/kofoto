@@ -13,12 +13,6 @@ packages = [
     "kofoto.output",
     "gkofoto",
     ]
-scripts = [
-    "src/cmdline/renameimage",
-    "src/cmdline/kofoto",
-    "src/cmdline/kofoto-upload",
-    "src/gkofoto/gkofoto",
-    ]
 data_files = [
     ("share/gkofoto/glade", ["src/gkofoto/glade/gkofoto.glade"]),
     ("share/gkofoto/icons", ["src/gkofoto/icons/album.png",
@@ -29,6 +23,15 @@ data_files = [
                              "src/gkofoto/icons/unknownimage.png"])
     ]
 if os.name == "posix":
+    import shutil
+    shutil.copy("src/gkofoto/start", "src/gkofoto/gkofoto")
+    scripts = [
+        "src/cmdline/renameimage",
+        "src/cmdline/kofoto",
+        "src/cmdline/kofoto-upload",
+        "src/gkofoto/gkofoto",
+        ]
+    os.unlink("src/gkofoto/gkofoto")
     if os.system("cd src/web && make") != 0:
         import sys
         sys.exit(1)
@@ -38,6 +41,10 @@ if os.name == "posix":
     data_files.append(("share/kofotoweb/static", [
         "src/web/static/webkofoto.css",
         ]))
+else:
+    scripts = [
+        "src/cmdline/kofoto",
+        ]
 
 setup(
     name="kofoto",

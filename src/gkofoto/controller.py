@@ -1,51 +1,7 @@
-#!/usr/bin/env python
-
-import sys
-import os
-
-if sys.platform.startswith("win"):
-    import _winreg
-    import msvcrt
-    try:
-        k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
-    except EnvironmentError:
-        print "You must install the Gtk+ 2.2 Runtime Environment to run this program"
-        while not msvcrt.kbhit():
-            pass
-        sys.exit(1)
-    else:
-        gtkdir = _winreg.QueryValueEx(k, "Path")
-        import os
-        os.environ["PATH"] += ";%s/lib;%s/bin" % (gtkdir[0], gtkdir[0])
-
-# Find libraries if installed in ../lib (like in the source tree).
-if os.path.islink(sys.argv[0]):
-    link = os.readlink(sys.argv[0])
-    absloc = os.path.normpath(
-        os.path.join(os.path.dirname(sys.argv[0]), link))
-    bindir = os.path.dirname(absloc)
-else:
-    bindir = os.path.dirname(sys.argv[0])
-sys.path.insert(0, os.path.join(bindir, "..", "lib"))
-sys.path.insert(0, os.path.join(bindir, ".."))
-
-import pygtk
-pygtk.require('2.0')
 import gtk
-import gobject
-import gtk.gdk
-import gtk.glade
-from kofoto.imagecache import *
-from gkofoto.mainwindow import *
-from gkofoto.registerimagesdialog import RegisterImagesDialog
+from kofoto.shelf import ShelfLockedError
+from gkofoto.mainwindow import MainWindow
 from gkofoto.environment import env
-
-class WidgetsWrapper:
-    def __init__(self):
-        self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
-
-    def __getitem__(self, key):
-        return self.widgets.get_widget(key)
 
 class Controller:
     def __init__(self):
@@ -116,11 +72,3 @@ class Controller:
             env.shelf.begin()
             self.__mainWindow.reload()
         dialog.destroy()
-
-######################################################################
-### Start
-
-setupOk = env.setup(bindir)
-env.widgets = WidgetsWrapper()
-env.controller = Controller()
-env.controller.start(setupOk)

@@ -1,15 +1,28 @@
 import sys
 import os
-import gtk
 import getopt
 import locale
 import re
+
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gobject
+import gtk.gdk
+import gtk.glade
 
 from kofoto.clientenvironment import *
 from kofoto.common import *
 from kofoto.shelf import *
 from kofoto.config import *
 from kofoto.imagecache import *
+
+class WidgetsWrapper:
+    def __init__(self):
+        self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
+
+    def __getitem__(self, key):
+        return self.widgets.get_widget(key)
 
 class Environment(ClientEnvironment):
     def __init__(self):
@@ -50,6 +63,8 @@ class Environment(ClientEnvironment):
         self.unknownImageIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.unknownImageIconFileName)
         from clipboard import Clipboard
         self.clipboard = Clipboard()
+
+        self.widgets = WidgetsWrapper()
 
         self.isDebug = False # TODO get as a command line parameter
         return True
