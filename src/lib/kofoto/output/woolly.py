@@ -130,8 +130,8 @@ previousalbum_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00
 
 album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
-     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
@@ -159,7 +159,7 @@ album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <tr>
 <td class="footer" colspan="3">
 <p>&nbsp;</p>
-<hr>
+<hr/>
 <small>%(blurb)s</small>
 </td>
 </tr>
@@ -188,7 +188,7 @@ thumbnails_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 thumbnails_frame_entry_template = '''<a name="%(number)s"></a>
 <a href="%(htmlref)s" class="toc" target="main">
 <div align="center">
-<img src="%(thumbimgref)s" class="toc" /></div>
+<img src="%(thumbimgref)s" class="toc" alt="" /></div>
 </a>
 '''
 
@@ -196,21 +196,21 @@ subalbum_entry_template = '''<td align="center" valign="top">
 <p>%(title)s</p>
 <table border="0" cellspacing="0" cellpadding="0">
 <tr>
-<td><img src="%(iconsdir)s/frame-topleft.png" /></td>
-<td><img src="%(iconsdir)s/frame-top.png" width="6" height="6" /></td>
-<td><img src="%(iconsdir)s/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" /></td>
-<td><img src="%(iconsdir)s/frame-toprightupper.png" /></td>
+<td><img src="%(iconsdir)s/frame-topleft.png" alt="" /></td>
+<td><img src="%(iconsdir)s/frame-top.png" width="6" height="6" alt="" /></td>
+<td><img src="%(iconsdir)s/frame-top.png" width="%(thumbwidth_minus_6)s" height="6" alt="" /></td>
+<td><img src="%(iconsdir)s/frame-toprightupper.png" alt="" /></td>
 </tr>
 <tr>
-<td rowspan="2"><img src="%(iconsdir)s/frame-left.png" width="6" height="%(thumbheight)s" /></td>
-<td rowspan="2" colspan="2"><a href="%(htmlref)s"><img src="%(thumbimgref)s" width="%(thumbwidth)s" height="%(thumbheight)s"/></a></td>
-<td><img src="%(iconsdir)s/frame-toprightlower.png" /></td>
+<td rowspan="2"><img src="%(iconsdir)s/frame-left.png" width="6" height="%(thumbheight)s" alt="" /></td>
+<td rowspan="2" colspan="2"><a href="%(htmlref)s"><img src="%(thumbimgref)s" width="%(thumbwidth)s" height="%(thumbheight)s" alt="Thumbnail"/></a></td>
+<td><img src="%(iconsdir)s/frame-toprightlower.png" alt="" /></td>
 </tr>
-<tr><td><img src="%(iconsdir)s/frame-right.png" width="17" height="%(thumbheight_minus_6)s" /></td></tr>
+<tr><td><img src="%(iconsdir)s/frame-right.png" width="17" height="%(thumbheight_minus_6)s" alt="" /></td></tr>
 <tr>
-<td colspan="2"><img src="%(iconsdir)s/frame-bottomleft.png" /></td>
-<td><img src="%(iconsdir)s/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" /></td>
-<td><img src="%(iconsdir)s/frame-bottomright.png" /></td>
+<td colspan="2"><img src="%(iconsdir)s/frame-bottomleft.png" alt="" /></td>
+<td><img src="%(iconsdir)s/frame-bottom.png" width="%(thumbwidth_minus_6)s" height="17" alt="" /></td>
+<td><img src="%(iconsdir)s/frame-bottomright.png" alt="" /></td>
 </tr>
 </table>
 </td>
@@ -218,7 +218,7 @@ subalbum_entry_template = '''<td align="center" valign="top">
 
 image_entry_template = '''<td align="left" valign="bottom">
 <a href="%(frameref)s">
-<img class="thinborder" src="%(thumbimgref)s" />
+<img class="thinborder" src="%(thumbimgref)s" alt="" />
 </a>
 </td>
 '''
@@ -240,7 +240,9 @@ image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <frame name="main" src="%(imageframeref)s" />
 <frame name="toc" src="%(thumbnailsframeref)s#%(imagenumber)s" marginheight="20" />
 <noframes>
+<body>
 This album needs frames. Sorry.
+</body>
 </noframes>
 </frameset>
 </html>
@@ -269,7 +271,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <tr>
 <td>%(previous)s</td>
 <td>%(next)s</td>
-<td><img src="%(iconsdir)s/1x1.png" height="1" width="20"></td>
+<td><img src="%(iconsdir)s/1x1.png" height="1" width="20" alt="" ></td>
 <td>%(smaller)s</td>
 <td>%(larger)s</td>
 </tr>
@@ -278,7 +280,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 <tr>
 <td width="50%%"></td>
-<td align="center"><img class="thinborder" src="%(imgref)s" align="center" /></td>
+<td align="center"><img class="thinborder" src="%(imgref)s" align="center" alt="The image" /></td>
 <td width="50%%"></td>
 </tr>
 <tr><td></td><td class="info">%(info)s</td><td></td></tr>
@@ -287,7 +289,7 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 <p>&nbsp;</p>
 %(cache_previous_image)s
 %(cache_next_image)s
-<hr>
+<hr/>
 <small>%(blurb)s Image ID: %(imgid)s.</small>
 </td>
 </tr>
@@ -386,7 +388,7 @@ class OutputGenerator(OutputEngine):
                 number = 0
                 subalbumtextElements = ["<tr>\n"]
                 for subalbum in subalbums:
-                    if number % 3 == 0:
+                    if number != 0 and number % 3 == 0:
                         subalbumtextElements.append("</tr>\n<tr>\n")
 
                     frontimage = self._getFrontImage(subalbum)
@@ -427,7 +429,7 @@ class OutputGenerator(OutputEngine):
                 number = 0
                 imagetextElements = ["<tr>\n"]
                 for image in images:
-                    if number % 3 == 0:
+                    if number != 0 and number % 3 == 0:
                         imagetextElements.append("</tr>\n<tr>\n")
                     imagetextElements.append(image_entry_template % {
                         "frameref": "%s/%s-%dx%d-frame.html" % (
@@ -536,33 +538,33 @@ class OutputGenerator(OutputEngine):
                     number - 1,
                     wlim,
                     hlim)
-                previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" /></a>' % (
+                previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" alt="Previous image" /></a>' % (
                     "%s-%dx%d.html" % (number - 1, wlim, hlim),
                     self.iconsdir)
-                cpi_text = '<img src="%s" width="1" height="1" style="display: none">' % (
+                cpi_text = '<img src="%s" width="1" height="1" style="display: none" alt="" >' % (
                     "../" + self.getImageReference(
                                 images[number - 1], wlim, hlim)[0])
             else:
                 previouslink = ""
-                previoustext = '<img class="icon" src="../%s/noprevious.png" />' % self.iconsdir
+                previoustext = '<img class="icon" src="../%s/noprevious.png" alt="No previous image" />' % self.iconsdir
                 cpi_text = ""
 
             if number < len(images) - 1:
                 nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
                     number + 1, wlim, hlim)
-                nexttext = '<a href="%s"><img class="icon" src="../%s/next.png" /></a>' % (
+                nexttext = '<a href="%s"><img class="icon" src="../%s/next.png"  alt="Next image" /></a>' % (
                     "%s-%dx%d.html" % (number + 1, wlim, hlim),
                     self.iconsdir)
-                cni_text = '<img src="%s" width="1" height="1" style="display: none">' % (
+                cni_text = '<img src="%s" width="1" height="1" style="display: none" alt="" >' % (
                     "../" + self.getImageReference(
                                 images[number + 1], wlim, hlim)[0])
             else:
                 nextlink = ""
-                nexttext = '<img class="icon" src="../%s/nonext.png" />' % self.iconsdir
+                nexttext = '<img class="icon" src="../%s/nonext.png" alt="No next image" />' % self.iconsdir
                 cni_text = ""
 
             if limnumber > 0:
-                smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" /></a>' % (
+                smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" alt="Smaller image" /></a>' % (
                     "%s-%dx%d-frame.html" % (
                         number,
                         self.env.imagesizelimits[limnumber - 1][0],
@@ -570,17 +572,17 @@ class OutputGenerator(OutputEngine):
                     self.iconsdir)
 
             else:
-                smallertext = '<img class="icon" src="../%s/nosmaller.png" />' % self.iconsdir
+                smallertext = '<img class="icon" src="../%s/nosmaller.png" alt="No smaller image available" />' % self.iconsdir
 
             if limnumber < len(self.env.imagesizelimits) - 1:
-                largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" /></a>' % (
+                largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" alt="Larger image" /></a>' % (
                     "%s-%dx%d-frame.html" % (
                         number,
                         self.env.imagesizelimits[limnumber + 1][0],
                         self.env.imagesizelimits[limnumber + 1][1]),
                     self.iconsdir)
             else:
-                largertext = '<img class="icon" src="../%s/nolarger.png" />' % self.iconsdir
+                largertext = '<img class="icon" src="../%s/nolarger.png" alt="No larger image available" />' % self.iconsdir
 
             desc = (image.getAttribute(u"description") or
                     image.getAttribute(u"title") or
@@ -683,7 +685,7 @@ class OutputGenerator(OutputEngine):
         pathtextElements = []
         pathtextElements.append("<table width=\"100%\">\n")
         for path in paths:
-            pathtextElements.append("<tr><td width=\"60%\">\n")
+            pathtextElements.append("<tr><td style=\"width: 60%\">\n")
             els = []
             for node in path:
                 title = node.getAttribute(u"title") or node.getTag()
@@ -698,7 +700,7 @@ class OutputGenerator(OutputEngine):
             pathtextElements.append(
                 u" \xbb ".encode(self.charEnc).join(els))
             pathtextElements.append("</td>\n")
-            pathtextElements.append("<td width=\"40%\" align=\"right\" style=\"text-align: right\">\n")
+            pathtextElements.append("<td width=\"40%\" align=\"right\" style=\"text-align: right; width: 40%\">\n")
             if len(path) == 1:
                 prevalbumtext = ""
             else:
@@ -713,7 +715,7 @@ class OutputGenerator(OutputEngine):
                     sibling = children[thispos - 1]
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
-                    prevalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/previousalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
+                    prevalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/previousalbum.png" alt="Previous album" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
                         "htmlref": "%s-%dx%d.html" % (
                             sibling.getTag().encode(self.charEnc),
                             wlim,
@@ -729,7 +731,7 @@ class OutputGenerator(OutputEngine):
                     sibling = children[thispos + 1]
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
-                    nextalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/nextalbum.png" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
+                    nextalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/nextalbum.png" alt="Next album" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
                         "htmlref": "%s-%dx%d.html" % (
                             sibling.getTag().encode(self.charEnc),
                             wlim,
