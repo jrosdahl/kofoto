@@ -38,7 +38,6 @@ class ThumbnailView:
         self._modelConnections.append(c)
 
     def _initFromModel(self, *garbage):
-        print "init from Model"
         self._thumbnailList.clear()
         iter = self._model.get_iter_first()
         for pos in range(self._model.iter_n_children(None)):
