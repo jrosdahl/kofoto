@@ -91,6 +91,7 @@ class ObjectCollectionView:
         pass
 
     def _mouse_button_pressed(self, widget, event):
+        widget.grab_focus()
         if event.button == 3:
             self._contextMenu.popup(None, None, None, event.button, event.time)
             return True
