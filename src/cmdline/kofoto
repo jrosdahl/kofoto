@@ -211,46 +211,18 @@ def cmdDeleteAttribute(env, args):
 def cmdGenerate(env, args):
     if len(args) != 2:
         raise ArgumentError
+    root = env.shelf.getAlbum(args[0])
+    dest = args[1]
     if env.type:
         otype = env.type
     else:
-        otype = "crude"
+        otype = "woolly"
+    import kofoto.generate
     try:
-        m = getattr(__import__("kofoto.output.%s" % otype).output, otype)
-        root = env.shelf.getAlbum(args[0])
-        og = m.OutputGenerator(env, root, args[1])
-        albummap = {}
-        imagemap = {}
-        generateHelper(root, [], albummap, imagemap)
-        while 1:
-            if len(albummap) == 0:
-                break
-            tag, paths = albummap.popitem()
-            og.generateAlbum(env.shelf.getAlbum(tag), paths)
-        while 1:
-            if len(imagemap) == 0:
-                break
-            hash, junk = imagemap.popitem()
-            og.generateImage(env.shelf.getImage(hash))
-        og.generateIndex()
-    except ImportError:
-        env.errexit("No such output module: %s\n" % otype)
-
-
-def generateHelper(album, path, albummap, imagemap):
-    if album.getTag() in [x.getTag() for x in path]:
-        # Already visited album, so break recursion here.
-        return
-    path = path[:] + [album]
-    tag = album.getTag()
-    if not albummap.has_key(tag):
-        albummap[tag] = []
-    albummap[tag].append(path)
-    for child in album.getChildren():
-        if child.isAlbum():
-            generateHelper(child, path, albummap, imagemap)
-        else:
-            imagemap[child.getHash()] = 1
+        generator = kofoto.generate.Generator(otype, env)
+        generator.generate(root, dest)
+    except kofoto.generate.OutputTypeError, x:
+        env.errexit("No such output module: %s\n" % x)
 
 
 def cmdGetAttribute(env, args):
@@ -592,8 +564,8 @@ def main(argv):
             "# The image size that will be used when first entering an album.\n"
             "default_image_size = 640\n"
             "\n"
-            "# A list of image sizes (other than thumbnail_image_size and\n"
-            "# default_image_size) to include in albums.\n"
+            "# A list of image sizes (other than default_image_size) to include in\n"
+            "# album.\n"
             "other_image_sizes = [400, 1024]\n")
         file.close()
         sys.stdout.write("Created configuration file \"%s\".\n" %
@@ -646,10 +618,7 @@ def main(argv):
             os.path.expanduser(conf["imagecache_location"]))
         env.thumbnailsize = conf["thumbnail_image_size"]
         env.defaultsize = conf["default_image_size"]
-        sizes = []
-        sizes.append(conf["thumbnail_image_size"])
-        sizes.append(conf["default_image_size"])
-        sizes.extend(conf["other_image_sizes"])
+        sizes = [conf["default_image_size"]] + conf["other_image_sizes"]
         sizes.sort()
         env.imagesizes = sizes
 
