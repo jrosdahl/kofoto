@@ -20,7 +20,9 @@ class AlbumMembers(ObjectCollection):
         return self.__album and self.__album.isMutable()
 
     def isMutable(self):
-        return self.__album and self.__album.isMutable()
+        return (self.__album and
+                self.__album.isMutable() and
+                not self.isLoading())
 
     def getContainer(self):
         return self.__album

@@ -145,6 +145,7 @@ class ObjectCollectionView:
         self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(False)
         env.widgets["menubarDestroy"].set_sensitive(False)
         mutable = self._objectCollection.isMutable()
+        loading = self._objectCollection.isLoading()
         objectSelection = self._objectCollection.getObjectSelection()
         if objectSelection:
             model = self._objectCollection.getModel()
@@ -165,13 +166,14 @@ class ObjectCollectionView:
                 else:
                     imagesSelected += 1
 
-            self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable)
-            env.widgets["menubarCut"].set_sensitive(mutable)
+            modifiable = mutable and not loading
+            self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable and not loading)
+            env.widgets["menubarCut"].set_sensitive(mutable and not loading)
             self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(True)
             env.widgets["menubarCopy"].set_sensitive(True)
-            self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable)
-            env.widgets["menubarDelete"].set_sensitive(mutable)
-            destroyActive = (imagesSelected == 0) ^ (albumsSelected == 0) and not rootAlbumSelected
+            self.__clipboardMenuGroup[self._objectCollection.getDeleteLabel()].set_sensitive(mutable and not loading)
+            env.widgets["menubarDelete"].set_sensitive(mutable and not loading)
+            destroyActive = (imagesSelected == 0) ^ (albumsSelected == 0) and not rootAlbumSelected and not loading
             self.__objectMenuGroup[self._objectCollection.getDestroyLabel()].set_sensitive(destroyActive)
             env.widgets["menubarDestroy"].set_sensitive(destroyActive)
             if albumsSelected == 1 and imagesSelected == 0:

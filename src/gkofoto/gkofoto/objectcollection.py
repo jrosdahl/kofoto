@@ -18,6 +18,7 @@ class ObjectCollection(object):
     def __init__(self):
         env.debug("Init ObjectCollection")
         self.__objectSelection = ObjectSelection(self)
+        self.__insertionWorkerTag = None
         self.__registeredViews = []
         self.__disabledFields = Set()
         self.__columnsType = [ gobject.TYPE_BOOLEAN,  # COLUMN_VALID_LOCATION
@@ -49,7 +50,11 @@ class ObjectCollection(object):
 
     # Return true if objects may be added and removed from the collection.
     def isMutable(self):
-        return False
+        return not self.isLoading()
+
+    # Return true if object collection has not finished loading.
+    def isLoading(self):
+        return self.__insertionWorkerTag != None
 
     def getCutLabel(self):
         return "Cut reference"
@@ -120,6 +125,7 @@ class ObjectCollection(object):
         env.debug("Clearing object collection")
         if freeze:
             self._freezeViews()
+        self.__stopInsertionWorker()
         self.__treeModel.clear()
         gc.collect()
         self.__nrOfAlbums = 0
@@ -223,19 +229,17 @@ class ObjectCollection(object):
         env.exit("Object collection loading objects. (albums=" + str(self.__nrOfAlbums) + " images=" + str(self.__nrOfImages) + ")")
 
     def _insertObjectList(self, objectList, location=None):
-        widgets = gtk.glade.XML(env.gladeFile, "loadingProgressDialog")
-        loadingProgressDialog = widgets.get_widget(
-            "loadingProgressDialog")
-        loadingProgressDialog.show()
-        while gtk.events_pending():
-            gtk.main_iteration()
-
         # location = None means insert last, otherwise insert before
         # location.
         #
-        # Note that this methods does NOT update objectSelection.
+        # Note that this method does NOT update objectSelection.
+
         if location == None:
             location = len(self.__treeModel)
+        self.__insertionWorkerTag = gobject.idle_add(
+            self.__insertionWorker(objectList, location).next)
+
+    def __insertionWorker(self, objectList, location):
         for obj in objectList:
             iterator = self.__treeModel.insert(location)
             self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
@@ -257,9 +261,19 @@ class ObjectCollection(object):
             self.__treeModel.set_value(iterator, self.COLUMN_ROW_EDITABLE, True)
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
-        self._handleNrOfObjectsUpdate()
+            yield True
 
-        loadingProgressDialog.destroy()
+        self._handleNrOfObjectsUpdate()
+        self.__insertionWorkerFinished()
+        yield False
+
+    def __stopInsertionWorker(self):
+        if self.__insertionWorkerTag:
+            gobject.source_remove(self.__insertionWorkerTag)
+            self.__insertionWorkerFinished()
+
+    def __insertionWorkerFinished(self):
+        self.__insertionWorkerTag = None
 
     def _handleNrOfObjectsUpdate(self):
         updatedDisabledFields = Set()
