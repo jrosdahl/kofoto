@@ -1,4 +1,5 @@
 import os
+from kofoto.common import symlinkOrCopyFile
 
 class OutputEngine:
     def __init__(self, env, root, dest):
@@ -46,26 +47,22 @@ class OutputEngine:
                 for size in self.env.imagesizes:
                     key = (hash, size)
                     imgabsloc = self.env.imagecache.get(child, size)
-                    child_ref_html[key] = "%s-%s.html" % (
-                        os.path.basename(imgabsloc).split(".")[0],
-                        album.getId())
+                    child_ref_html[key] = "%s-%s-%s.html" % (
+                        album.getId(),
+                        child.getId(),
+                        size)
                     child_ref_img[key] = "%s/%s" % (
                         self.imagesdest,
                         os.path.basename(imgabsloc))
                     child_loc_html[key] = os.path.join(
                         self.dest,
-                        "%s-%s.html" % (os.path.basename(imgabsloc).split(".")[0],
-                                        album.getId()))
+                        child_ref_html[key])
                     child_loc_img[key] = os.path.join(
                         self.dest,
                         self.imagesdest,
                         os.path.basename(imgabsloc))
                     if not os.path.isfile(child_loc_img[key]):
-                        try:
-                            os.symlink(imgabsloc, child_loc_img[key])
-                        except AttributeError:
-                            import shutil
-                            shutil.copy(imgabsloc, child_loc_img[key])
+                        symlinkOrCopyFile(imgabsloc, child_loc_img[key])
 
         for ix in range(len(children)):
             child = children[ix]
