@@ -1610,9 +1610,9 @@ class _Object:
             name)
         if cursor.rowcount > 0:
             value = cursor.fetchone()[0]
+            self.attributes[name] = value
         else:
             value = None
-        self.attributes[name] = value
         return value
 
 
@@ -1676,7 +1676,8 @@ class _Object:
             " where  object = %s and name = %s",
             self.getId(),
             name)
-        self.attributes[name] = None
+        if name in self.attributes:
+            del self.attributes[name]
         self.shelf._setModified()
 
 
