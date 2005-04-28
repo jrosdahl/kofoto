@@ -658,7 +658,9 @@ class TestObject(TestShelfFixture):
         orphans = self.shelf.getAlbumByTag(u"orphans")
         assert orphans.getAttribute(u"title")
         assert orphans.getAttribute(u"description")
+        orphans.getAttributeMap() # Just populate the cache.
         assert not orphans.getAttribute(u"nonexisting")
+        assert u"nonexisting" not in orphans.getAttributeMap()
 
     def test_getAttributeMap(self):
         orphans = self.shelf.getAlbumByTag(u"orphans")
@@ -689,7 +691,9 @@ class TestObject(TestShelfFixture):
         orphans.deleteAttribute(u"nonexisting") # No exception.
         assert orphans.getAttribute(u"title")
         orphans.deleteAttribute(u"title")
+        orphans.getAttributeMap() # Just populate the cache.
         assert not orphans.getAttribute(u"title")
+        assert u"title" not in orphans.getAttributeMap()
 
     def test_addCategory(self):
         orphans = self.shelf.getAlbumByTag(u"orphans")
