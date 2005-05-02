@@ -152,7 +152,7 @@ other_image_size_limits = 400 1024x800
 thumbnail_size_limit = 128
 
 # The columns that should be shown in the table view by default.
-default_table_columns = thumbnail @captured @title @description albumtag
+default_table_columns = thumbnail versions @captured @title @description albumtag
 
 # The column to sort on by default.
 default_sort_column = @captured

@@ -30,12 +30,15 @@ class ObjectCollection(object):
                                gobject.TYPE_INT,      # COLUMN_OBJECT_ID
                                gobject.TYPE_STRING,   # COLUMN_LOCATION
                                gtk.gdk.Pixbuf,        # COLUMN_THUMBNAIL
+                               gobject.TYPE_STRING,   # COLUMN_IMAGE_VERSIONS
                                gobject.TYPE_STRING ]  # COLUMN_ALBUM_TAG
         self.__objectMetadataMap = {
             u"id"       :(gobject.TYPE_INT,    self.COLUMN_OBJECT_ID, None,                 None),
             u"location" :(gobject.TYPE_STRING, self.COLUMN_LOCATION,  None,                 None),
             u"thumbnail":(gtk.gdk.Pixbuf,      self.COLUMN_THUMBNAIL, None,                 None),
-            u"albumtag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG) }
+            u"albumtag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG),
+            u"versions" :(gobject.TYPE_STRING, self.COLUMN_IMAGE_VERSIONS, None,            None),
+            }
         for name in env.shelf.getAllAttributeNames():
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
@@ -230,7 +233,8 @@ class ObjectCollection(object):
     COLUMN_OBJECT_ID      = 4
     COLUMN_LOCATION       = 5
     COLUMN_THUMBNAIL      = 6
-    COLUMN_ALBUM_TAG      = 7
+    COLUMN_IMAGE_VERSIONS = 7
+    COLUMN_ALBUM_TAG      = 8
 
     # Content in objectMetadata fields
     TYPE                 = 0
@@ -283,15 +287,22 @@ class ObjectCollection(object):
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, True)
                 self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, obj.getTag())
                 self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, None)
+                self.__treeModel.set_value(iterator, self.COLUMN_IMAGE_VERSIONS, "")
                 self.__nrOfAlbums += 1
             else:
                 if obj.getPrimaryVersion():
                     ivlocation = obj.getPrimaryVersion().getLocation()
                 else:
                     ivlocation = None
+                imageVersions = list(obj.getImageVersions())
+                if len(imageVersions) > 1:
+                    imageVersionsText = str(len(imageVersions))
+                else:
+                    imageVersionsText = ""
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, False)
                 self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, None)
                 self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, ivlocation)
+                self.__treeModel.set_value(iterator, self.COLUMN_IMAGE_VERSIONS, imageVersionsText)
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             for attribute, value in obj.getAttributeMap().items():
