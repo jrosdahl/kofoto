@@ -8,6 +8,17 @@
 VERSION HISTORY
 ===============
 
+0.3.2 (2005-05-06)
+
+    Fixed bugs:
+
+      * Added missing HTML output module in the Windows standalone
+        package (ticket #96).
+      * Added missing top menu bindings for "Open image", "Rotate image left"
+        and "Rotate image right".
+      * Don't scroll the table view to the beginning when the selection is
+        empty. This makes cut/delete/destroy less annoying.
+
 0.3.1 (2005-03-31)
 
     Fixed bugs:
