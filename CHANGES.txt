@@ -14,6 +14,7 @@ VERSION HISTORY
 
       * Added missing HTML output module in the Windows standalone
         package (ticket #96).
+      * Improved error handling in HTML generation dialog.
       * Added missing top menu bindings for "Open image", "Rotate image left"
         and "Rotate image right".
       * Don't scroll the table view to the beginning when the selection is
