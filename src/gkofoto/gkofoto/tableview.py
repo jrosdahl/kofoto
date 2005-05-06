@@ -40,11 +40,7 @@ class TableView(ObjectCollectionView):
             for rowNr in objectSelection:
                 selection.select_path(rowNr)
             rowNr = self._objectCollection.getObjectSelection().getLowestSelectedRowNr()
-            if rowNr is None:
-                if len(self._objectCollection.getModel()) > 0:
-                    # Scroll to first object in view
-                    self._viewWidget.scroll_to_cell((0,), None, False, 0, 0)
-            else:
+            if rowNr is not None:
                 # Scroll to first selected object in view
                 self._viewWidget.scroll_to_cell(rowNr, None, False, 0, 0)
             self.__selectionLocked = False
