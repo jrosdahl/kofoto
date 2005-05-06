@@ -19,8 +19,8 @@ options = {
 
 shutil.copy("src/cmdline/kofoto", "kofoto.py")
 shutil.copy("src/gkofoto/start-installed.py", "gkofoto.py")
-shutil.copy("packaging/windows/PIL-plugins-dummy.py", "PIL-plugins-dummy.py")
-console = ["kofoto.py", "PIL-plugins-dummy.py"]
+shutil.copy("packaging/windows/plugin-modules-to-ship.py", "plugin-modules-to-ship.py")
+console = ["kofoto.py", "plugin-modules-to-ship.py"]
 windows = ["gkofoto.py"]
 sys.argv = [sys.argv[0], "py2exe"]
 
@@ -28,8 +28,8 @@ setup.run(options=options, console=console, windows=windows)
 
 os.unlink("kofoto.py")
 os.unlink("gkofoto.py")
-os.unlink("PIL-plugins-dummy.py")
-os.unlink("dist/PIL-plugins-dummy.exe")
+os.unlink("plugin-modules-to-ship.py")
+os.unlink("dist/plugin-modules-to-ship.exe")
 shutil.rmtree(glob.glob("dist/tcl")[0])
 os.remove(glob.glob("dist/tcl*.dll")[0])
 os.remove(glob.glob("dist/tk*.dll")[0])
