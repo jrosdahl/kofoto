@@ -163,10 +163,13 @@ class TableView(ObjectCollectionView):
                 ("menubarDestroy", oc.destroy),
                 ("menubarClear", lambda x: widget.get_selection().unselect_all()),
                 ("menubarSelectAll", lambda x: widget.get_selection().select_all()),
+                ("menubarProperties", oc.albumProperties),
                 ("menubarCreateAlbumChild", oc.createAlbumChild),
                 ("menubarRegisterAndAddImages", oc.registerAndAddImages),
                 ("menubarGenerateHtml", oc.generateHtml),
-                ("menubarProperties", oc.albumProperties),
+                ("menubarOpenImage", oc.openImage),
+                ("menubarRotateLeft", oc.rotateImageLeft),
+                ("menubarRotateRight", oc.rotateImageRight),
                 ]:
             w = env.widgets[widgetName]
             oid = w.connect("activate", function)
@@ -193,10 +196,13 @@ class TableView(ObjectCollectionView):
                 "menubarDestroy",
                 "menubarClear",
                 "menubarSelectAll",
+                "menubarProperties",
                 "menubarCreateAlbumChild",
                 "menubarRegisterAndAddImages",
                 "menubarGenerateHtml",
-                "menubarProperties",
+                "menubarOpenImage",
+                "menubarRotateLeft",
+                "menubarRotateRight",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 
