@@ -88,8 +88,16 @@ class GenerateHTMLDialog:
         imgsizes.sort(lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
         env.imagesizelimits = imgsizes
 
-        generator = kofoto.generate.Generator(u"woolly", env)
-        generator.generate(self.album, None, directoryName, "latin1")
-        progressBar.set_fraction(1)
-        while gtk.events_pending():
-            gtk.main_iteration()
+        try:
+            generator = kofoto.generate.Generator(u"woolly", env)
+            generator.generate(self.album, None, directoryName, "latin1")
+            progressBar.set_fraction(1)
+            while gtk.events_pending():
+                gtk.main_iteration()
+        except (IOError, kofoto.shelf.KofotoError), e:
+            dialog = gtk.MessageDialog(
+                type=gtk.MESSAGE_ERROR,
+                buttons=gtk.BUTTONS_OK,
+                message_format="Error: \"%s\"" % e)
+            dialog.run()
+            dialog.destroy()

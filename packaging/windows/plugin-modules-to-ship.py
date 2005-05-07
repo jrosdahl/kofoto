@@ -1,5 +1,9 @@
-# Import PIL plugins explicitly so that py2exe can find them.
+# Import plugin modules explicitly so that py2exe can find them.
 
+# Kofoto plugins:
+import kofoto.output.woolly
+
+# PIL plugins:
 import ArgImagePlugin
 import BmpImagePlugin
 import CurImagePlugin
