@@ -8,6 +8,27 @@
 VERSION HISTORY
 ===============
 
+0.3.2 (2005-05-07)
+
+    Fixed bugs:
+
+      * Added missing HTML output module in the Windows standalone
+        package (ticket #96).
+      * Improved error handling in HTML generation dialog.
+      * Added missing top menu bindings for "Open image", "Rotate image left"
+        and "Rotate image right".
+      * Don't scroll the table view to the beginning when the selection is
+        empty. This makes cut/delete/destroy less annoying.
+
+0.3.1 (2005-03-31)
+
+    Fixed bugs:
+
+      * Made a work-around for bug in PyGTK 2.6.1 (ticket #94).
+      * Update the Album menu in the menu bar correctly (ticket #95).
+      * Be more permissive about the Image Model EXIF tag. Patch by
+        Chris Clark.
+
 0.3 (2005-02-12)
 
     New features:
