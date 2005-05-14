@@ -329,6 +329,8 @@ class ObjectCollection(object):
     def __insertionWorkerFinished(self):
         self.__insertionWorkerTag = None
         self.__updateObjectCount(False)
+        for view in self.__registeredViews:
+            view.loadingFinished()
 
     def __updateObjectCount(self, loadingInProgress):
         env.widgets["statusbarLoadedObjects"].pop(1)
