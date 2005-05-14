@@ -279,7 +279,7 @@ class ObjectCollection(object):
                 iterator = self.__treeModel.append()
             else:
                 iterator = self.__treeModel.insert_before(
-                    self.__treeModel[location])
+                    self.__treeModel[location].iter)
 # End work-around.
 
             self.__treeModel.set_value(iterator, self.COLUMN_OBJECT_ID, obj.getId())
