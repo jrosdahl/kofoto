@@ -8,6 +8,16 @@
 VERSION HISTORY
 ===============
 
+0.3.3 (2005-05-14)
+
+    Fixed bugs:
+
+      * Treat closing of the directory browser image as "Cancel"
+        instead of "OK" when registering images (ticket #97).
+      * Fixed bug related to pasting in the middle of albums (ticket
+        #98).
+      * Fixed bugs related to cut/copy/paste of objects.
+
 0.3.2 (2005-05-07)
 
     Fixed bugs:
