@@ -20,7 +20,7 @@ class RegisterImagesDialog(gtk.FileChooserDialog):
         self.connect("response", self._response)
 
     def _response(self, widget, responseId):
-        if responseId == gtk.RESPONSE_CANCEL:
+        if responseId != gtk.RESPONSE_OK:
             return
         widgets = gtk.glade.XML(env.gladeFile, "registrationProgressDialog")
         registrationProgressDialog = widgets.get_widget(
