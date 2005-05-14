@@ -90,6 +90,9 @@ class ObjectCollectionView:
     def fieldsEnabled(self, fields):
         pass
 
+    def loadingFinished(self):
+        self._updateContextMenu()
+
     def _mouse_button_pressed(self, widget, event):
         widget.grab_focus()
         if event.button == 3:

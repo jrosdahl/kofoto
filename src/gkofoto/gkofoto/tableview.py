@@ -149,6 +149,10 @@ class TableView(ObjectCollectionView):
 ### Callback functions registered by this class but invoked from other classes.
 
     def _treeViewFocusInEvent(self, widget, event, data):
+        if self.__hasFocus:
+            # Work-around for some bug that makes the focus-out signal
+            # disappear.
+            return
         self.__hasFocus = True
         oc = self._objectCollection
         for widgetName, function in [
