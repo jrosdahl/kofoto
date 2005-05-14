@@ -20,7 +20,7 @@ class HandleImagesDialog(gtk.FileChooserDialog):
         self.connect("response", self._response)
 
     def _response(self, widget, responseId):
-        if responseId == gtk.RESPONSE_CANCEL:
+        if responseId != gtk.RESPONSE_OK:
             return
         widgets = gtk.glade.XML(env.gladeFile, "handleImagesProgressDialog")
         handleImagesProgressDialog = widgets.get_widget(
