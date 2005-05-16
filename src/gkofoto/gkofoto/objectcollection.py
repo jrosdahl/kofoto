@@ -183,6 +183,7 @@ class ObjectCollection(object):
         widgets = gtk.glade.XML(env.gladeFile, dialogId)
         dialog = widgets.get_widget(dialogId)
         result = dialog.run()
+        albumDestroyed = False
         if result == gtk.RESPONSE_OK:
             if albumsSelected:
                 deleteFiles = False
@@ -201,6 +202,8 @@ class ObjectCollection(object):
                 env.clipboard.removeObjects(obj)
                 env.shelf.deleteObject(obj.getId())
                 objectIds.add(obj.getId())
+                if obj.isAlbum():
+                    albumDestroyed = True
             self.getObjectSelection().unselectAll()
             unsortedModel = self.getUnsortedModel()
             locations = [row.path for row in unsortedModel
@@ -210,7 +213,8 @@ class ObjectCollection(object):
             for loc in locations:
                 del unsortedModel[loc]
         dialog.destroy()
-        # TODO: If the removed objects are albums, update the album widget.
+        if albumDestroyed:
+            env.mainwindow.reloadAlbumTree()
         self._thawViews()
 
     COLUMN_VALID_LOCATION = 0
