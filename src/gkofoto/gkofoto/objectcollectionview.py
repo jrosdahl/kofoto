@@ -15,7 +15,6 @@ class ObjectCollectionView:
         self.__objectCollectionLoaded = False
         self.__hidden = True
         self.__connections = []
-        view.connect("button_press_event", self._mouse_button_pressed)
 
     def show(self, objectCollection):
         if self.__hidden:
@@ -344,7 +343,10 @@ class ObjectCollectionView:
 
     def __createImageMenuGroup(self, oc):
         menuGroup = MenuGroup()
-        menuGroup.addMenuItem(oc.getOpenImageLabel(), oc.openImage)
+        menuGroup.addStockImageMenuItem(
+            oc.getOpenImageLabel(),
+            gtk.STOCK_OPEN,
+            oc.openImage)
         menuGroup.addImageMenuItem(
             oc.getRotateImageLeftLabel(),
             os.path.join(env.iconDir, "rotateleft.png"),

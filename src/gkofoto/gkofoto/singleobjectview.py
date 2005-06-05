@@ -3,43 +3,60 @@ import sys
 from environment import env
 from gkofoto.imageview import *
 from gkofoto.objectcollectionview import *
+from gkofoto.imageversionslist import ImageVersionsList
 
-class SingleObjectView(ObjectCollectionView, ImageView):
+class SingleObjectView(ObjectCollectionView, gtk.HPaned):
 
 ###############################################################################
 ### Public
 
     def __init__(self):
         env.debug("Init SingleObjectView")
-        ImageView.__init__(self)
         ObjectCollectionView.__init__(self, env.widgets["objectView"])
+        gtk.HPaned.__init__(self)
         self._viewWidget.add(self)
+        self.__imageView = ImageView()
+        self.__imageView.connect("button_press_event", self._mouse_button_pressed)
+        self.pack1(self.__imageView, resize=True)
+        self.__imageVersionsFrame = gtk.Frame("Image versions")
+        self.__imageVersionsFrame.set_size_request(150, -1)
+        self.__imageVersionsWindow = gtk.ScrolledWindow()
+        self.__imageVersionsList = ImageVersionsList()
+        self.__imageVersionsFrame.add(self.__imageVersionsList)
+        self.pack2(self.__imageVersionsFrame, resize=False)
         self.show_all()
         env.widgets["nextButton"].connect("clicked", self._goto, 1)
         env.widgets["menubarNextImage"].connect("activate", self._goto, 1)
         env.widgets["previousButton"].connect("clicked", self._goto, -1)
         env.widgets["menubarPreviousImage"].connect("activate", self._goto, -1)
-        env.widgets["zoomToFit"].connect("clicked", self.fitToWindow)
-        env.widgets["menubarZoomToFit"].connect("activate", self.fitToWindow)
-        env.widgets["zoom100"].connect("clicked", self.zoom100)
-        env.widgets["menubarActualSize"].connect("activate", self.zoom100)
-        env.widgets["zoomIn"].connect("clicked", self.zoomIn)
-        env.widgets["menubarZoomIn"].connect("activate", self.zoomIn)
-        env.widgets["zoomOut"].connect("clicked", self.zoomOut)
-        env.widgets["menubarZoomOut"].connect("activate", self.zoomOut)
+        env.widgets["zoomToFit"].connect("clicked", self.__imageView.fitToWindow)
+        env.widgets["menubarZoomToFit"].connect("activate", self.__imageView.fitToWindow)
+        env.widgets["zoom100"].connect("clicked", self.__imageView.zoom100)
+        env.widgets["menubarActualSize"].connect("activate", self.__imageView.zoom100)
+        env.widgets["zoomIn"].connect("clicked", self.__imageView.zoomIn)
+        env.widgets["menubarZoomIn"].connect("activate", self.__imageView.zoomIn)
+        env.widgets["zoomOut"].connect("clicked", self.__imageView.zoomOut)
+        env.widgets["menubarZoomOut"].connect("activate", self.__imageView.zoomOut)
         env.widgets["mainWindow"].connect("key_press_event", self._key_pressed)
-        self.connect("button_press_event", self._mouse_button_pressed)
+        env.widgets["menubarViewDetailsPane"].set_sensitive(True)
         self.__selectionLocked = False
+
+    def showDetailsPane(self):
+        self.__imageVersionsFrame.show()
+
+    def hideDetailsPane(self):
+        self.__imageVersionsFrame.hide()
 
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:
             env.debug("SingleImageView is importing selection")
             self.__selectionLocked = True
+            self.__imageVersionsList.clear()
             model = self._objectCollection.getModel()
             if len(model) == 0:
                 # Model is empty. No rows can be selected.
                 self.__selectedRowNr = -1
-                self.clear()
+                self.__imageView.clear()
             else:
                 if len(objectSelection) == 0:
                     # No objects is selected -> select first object
@@ -54,13 +71,14 @@ class SingleObjectView(ObjectCollectionView, ImageView):
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
                 selectedObject = objectSelection[self.__selectedRowNr]
                 if selectedObject.isAlbum():
-                    self.loadFile(env.albumIconFileName, False)
+                    self.__imageView.loadFile(env.albumIconFileName, False)
                 elif selectedObject.getPrimaryVersion():
-                    self.loadFile(
+                    self.__imageView.loadFile(
                         selectedObject.getPrimaryVersion().getLocation(),
                         False)
+                    self.__imageVersionsList.loadImage(selectedObject)
                 else:
-                    self.loadFile(env.unknownImageIconFileName, False)
+                    self.__imageView.loadFile(env.unknownImageIconFileName, False)
             enablePreviousButton = (self.__selectedRowNr > 0)
             env.widgets["previousButton"].set_sensitive(enablePreviousButton)
             env.widgets["menubarPreviousImage"].set_sensitive(enablePreviousButton)
@@ -127,7 +145,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _freezeHelper(self):
         env.enter("SingleObjectView.freezeHelper()")
         self._clearAllConnections()
-        self.clear()
+        self.__imageView.clear()
         self._objectCollection.removeInsertedRowCallback(self._modelUpdated)
         env.exit("SingleObjectView.freezeHelper()")
 
@@ -140,7 +158,6 @@ class SingleObjectView(ObjectCollectionView, ImageView):
         self._connect(model, "rows_reordered", self._modelUpdated)
         self._connect(model, "row_deleted", self._modelUpdated)
         self._objectCollection.addInsertedRowCallback(self._modelUpdated)
-        self.importSelection(self._objectCollection.getObjectSelection())
         env.exit("SingleObjectView.thawHelper()")
 
     def _modelUpdated(self, *foo):
@@ -156,11 +173,11 @@ class SingleObjectView(ObjectCollectionView, ImageView):
             obj = env.shelf.getObject(objid)
             if not obj.isAlbum():
                 if obj.getPrimaryVersion():
-                    self.loadFile(
+                    self.__imageView.loadFile(
                         obj.getPrimaryVersion().getLocation(),
                         True)
                 else:
-                    self.loadFile(env.unknownImageIconFileName, True)
+                    self.__imageView.loadFile(env.unknownImageIconFileName, True)
 
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
@@ -177,7 +194,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _preloadImages(self):
         objectSelection = self._objectCollection.getObjectSelection()
         filenames = objectSelection.getImageFilenamesToPreload()
-        maxWidth, maxHeight = self.getAvailableSpace()
+        maxWidth, maxHeight = self.__imageView.getAvailableSpace()
 
         # Work-around for bug in GTK. (pixbuf.scale_iter(1, 1) crashes.)
         if maxWidth < 10 and maxHeight < 10:
@@ -189,7 +206,7 @@ class SingleObjectView(ObjectCollectionView, ImageView):
     def _key_pressed(self, widget, event):
         # TODO use UiManager instead of this...
         if event.state & gtk.gdk.CONTROL_MASK:
-            if (event.keyval == gtk.gdk.keyval_from_name("space") and 
+            if (event.keyval == gtk.gdk.keyval_from_name("space") and
                 env.widgets["nextButton"].flags() & gtk.SENSITIVE):
                 self._goto(None, 1)
             elif (event.keyval == gtk.gdk.keyval_from_name("BackSpace") and

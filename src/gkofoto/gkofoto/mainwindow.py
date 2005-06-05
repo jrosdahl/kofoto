@@ -28,8 +28,8 @@ class MainWindow(gtk.Window):
         self.__filterEntry = env.widgets["filterEntry"]
         self.__filterEntry.set_text(self.__persistentState.filterText)
         self.__isFilterEnabledCheckbox = env.widgets["isFilterEnabledCheckbox"]
-        env.widgets["expandViewToggleButton"].connect("toggled", self._toggleExpandView)
-        env.widgets["expandViewToggleButton"].get_child().add(self.getIconImage("fullscreen-24.png"))
+        env.widgets["menubarViewTreePane"].connect("toggled", self._toggleTree)
+        env.widgets["menubarViewDetailsPane"].connect("toggled", self._toggleDetails)
 #        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
         env.widgets["thumbnailsViewToggleButton"].hide()
         env.widgets["thumbnailsViewToggleButton"].set_sensitive(False)
@@ -174,11 +174,17 @@ class MainWindow(gtk.Window):
         self._hiddenViews = [self.__tableView, self.__thumbnailView]
         self._viewChanged()
 
-    def _toggleExpandView(self, button):
+    def _toggleTree(self, button):
         if button.get_active():
-            env.widgets["sourceNotebook"].hide()
-        else:
             env.widgets["sourceNotebook"].show()
+        else:
+            env.widgets["sourceNotebook"].hide()
+
+    def _toggleDetails(self, button):
+        if button.get_active():
+            self.__singleObjectView.showDetailsPane()
+        else:
+            self.__singleObjectView.hideDetailsPane()
 
     def _toggleThumbnailsView(self, button):
         if not self._toggleLock:

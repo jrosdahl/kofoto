@@ -26,8 +26,14 @@ class ImageView(gtk.ScrolledWindow):
         self.__fitToWindowMode = True
         self.__previousWidgetWidth = 0
         self.__previousWidgetHeight = 0
+
+        # Don't know why the EventBox is needed, but if it is removed,
+        # a size_allocate signal will trigger self.resizeEventHandler,
+        # which will resize the image, which will trigger
+        # size_allocate again, and so on.
         eventBox = gtk.EventBox()
         eventBox.add(self._image)
+
         self.add_with_viewport(eventBox)
         self.add_events(gtk.gdk.ALL_EVENTS_MASK)
         self.connect_after("size_allocate", self.resizeEventHandler)

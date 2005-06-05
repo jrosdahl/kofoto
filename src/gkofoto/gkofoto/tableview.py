@@ -30,6 +30,8 @@ class TableView(ObjectCollectionView):
         for columnName in env.defaultTableViewColumns:
             self.__userChosenColumns[columnName] = columnLocation
             columnLocation += 1
+        env.widgets["tableView"].connect("button_press_event", self._mouse_button_pressed)
+        env.widgets["menubarViewDetailsPane"].set_sensitive(False)
 
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:

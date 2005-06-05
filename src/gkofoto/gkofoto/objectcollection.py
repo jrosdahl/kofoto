@@ -99,7 +99,7 @@ class ObjectCollection(object):
         return "Rotate image right"
 
     def getImageVersionsLabel(self):
-        return "Image versions..."
+        return "Edit image versions..."
 
     def getMergeImagesLabel(self):
         return "Merge images..."
