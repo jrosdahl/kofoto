@@ -36,8 +36,16 @@ class ImageView(gtk.ScrolledWindow):
 
         self.add_with_viewport(eventBox)
         self.add_events(gtk.gdk.ALL_EVENTS_MASK)
-        self.connect_after("size_allocate", self.resizeEventHandler)
-        self.connect("scroll_event", self.scrollEventHandler)
+        self.connect_after("size-allocate", self.resizeEventHandler)
+        self.connect("scroll-event", self.scrollEventHandler)
+        self.connect("focus-in-event", self.focusInEventHandler)
+        self.connect("focus-out-event", self.focusOutEventHandler)
+
+    def focusInEventHandler(self, widget, event):
+        pass
+
+    def focusOutEventHandler(self, widget, event):
+        pass
 
     def loadFile(self, fileName, reload=True):
         if (not reload) and self.__loadedFileName == fileName:

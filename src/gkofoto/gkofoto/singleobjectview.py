@@ -19,7 +19,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self.__imageView.connect("button_press_event", self._mouse_button_pressed)
         self.pack1(self.__imageView, resize=True)
         self.__imageVersionsFrame = gtk.Frame("Image versions")
-        self.__imageVersionsFrame.set_size_request(150, -1)
+        self.__imageVersionsFrame.set_size_request(162, -1)
         self.__imageVersionsWindow = gtk.ScrolledWindow()
         self.__imageVersionsList = ImageVersionsList()
         self.__imageVersionsFrame.add(self.__imageVersionsList)
@@ -182,14 +182,6 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])
-
-    def _viewWidgetFocusInEvent(self, widget, event):
-        ObjectCollectionView._viewWidgetFocusInEvent(self, widget, event)
-        for widgetName in [
-                "menubarClear",
-                "menubarSelectAll",
-                ]:
-            env.widgets[widgetName].set_sensitive(False)
 
     def _preloadImages(self):
         objectSelection = self._objectCollection.getObjectSelection()
