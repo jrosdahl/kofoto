@@ -50,13 +50,14 @@ class ImageVersionsDialog:
         for image in images:
             for imageVersion in image.getImageVersions():
                 self._addRow(imageVersion)
-        self._dialog.show_all()
+        self._table.show_all()
         x, y = self._dialog.get_position()
         width, height = self._dialog.get_size()
         hackyConstant = 89 # TODO: How to calculate this properly?
         newheight = min(800, self._table.size_request()[1] + hackyConstant)
         self._dialog.move(x, max(0, y - ((newheight - height) / 2)))
         self._dialog.resize(450, newheight)
+        self._dialog.show()
 
     def _onCancel(self, *unused):
         self._dialog.destroy()

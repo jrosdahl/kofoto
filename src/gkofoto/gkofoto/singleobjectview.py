@@ -21,7 +21,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self.__imageVersionsFrame = gtk.Frame("Image versions")
         self.__imageVersionsFrame.set_size_request(162, -1)
         self.__imageVersionsWindow = gtk.ScrolledWindow()
-        self.__imageVersionsList = ImageVersionsList()
+        self.__imageVersionsList = ImageVersionsList(self, self.__imageView)
         self.__imageVersionsFrame.add(self.__imageVersionsList)
         self.pack2(self.__imageVersionsFrame, resize=False)
         self.show_all()
@@ -51,8 +51,8 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         if not self.__selectionLocked:
             env.debug("SingleImageView is importing selection")
             self.__selectionLocked = True
-            self.__imageVersionsList.clear()
             model = self._objectCollection.getModel()
+            self.__loadedObject = None
             if len(model) == 0:
                 # Model is empty. No rows can be selected.
                 self.__selectedRowNr = -1
@@ -69,16 +69,8 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
                 else:
                     # Exactly one object selected
                     self.__selectedRowNr = objectSelection.getLowestSelectedRowNr()
-                selectedObject = objectSelection[self.__selectedRowNr]
-                if selectedObject.isAlbum():
-                    self.__imageView.loadFile(env.albumIconFileName, False)
-                elif selectedObject.getPrimaryVersion():
-                    self.__imageView.loadFile(
-                        selectedObject.getPrimaryVersion().getLocation(),
-                        False)
-                    self.__imageVersionsList.loadImage(selectedObject)
-                else:
-                    self.__imageView.loadFile(env.unknownImageIconFileName, False)
+                self.__loadedObject = objectSelection[self.__selectedRowNr]
+            self.__loadObject(self.__loadedObject)
             enablePreviousButton = (self.__selectedRowNr > 0)
             env.widgets["previousButton"].set_sensitive(enablePreviousButton)
             env.widgets["menubarPreviousImage"].set_sensitive(enablePreviousButton)
@@ -102,6 +94,23 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
                 "menubarGenerateHtml",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
+
+    def __loadObject(self, obj):
+        self.__imageVersionsList.clear()
+        if obj == None:
+            filename = env.unknownImageIconFileName
+        elif obj.isAlbum():
+            filename = env.albumIconFileName
+        elif obj.getPrimaryVersion():
+            filename = obj.getPrimaryVersion().getLocation()
+            self.__imageVersionsList.loadImage(obj)
+        else:
+            filename = env.unknownImageIconFileName
+        self.__imageView.loadFile(filename)
+
+    def reload(self):
+        self.__loadObject(self.__loadedObject)
+        self._objectCollection.reloadSelectedThumbnails()
 
     def _showHelper(self):
         env.enter("SingleObjectView.showHelper()")
@@ -176,8 +185,10 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
                     self.__imageView.loadFile(
                         obj.getPrimaryVersion().getLocation(),
                         True)
+                    self.__imageVersionsList.loadImage(obj)
                 else:
                     self.__imageView.loadFile(env.unknownImageIconFileName, True)
+                    self.__imageVersionsList.clear()
 
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()

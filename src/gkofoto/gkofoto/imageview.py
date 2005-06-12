@@ -76,6 +76,9 @@ class ImageView(gtk.ScrolledWindow):
         gc.collect()
         env.debug("ImageView is cleared.")
 
+    def reload(self):
+        self.loadFile(self.__loadedFileName)
+
     def renderImage(self):
         # TODO: Scaling should be asyncronous to avoid freezing the gtk-main loop
         if self.__pixBuf == None:

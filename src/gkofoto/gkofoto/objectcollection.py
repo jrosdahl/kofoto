@@ -407,6 +407,12 @@ class ObjectCollection(object):
             # TODO Update the album tree widget.
             env.debug("Album tag edited")
 
+    def reloadSelectedThumbnails(self):
+        model = self.getUnsortedModel()
+        for (rowNr, obj) in self.__objectSelection.getMap().items():
+            if not obj.isAlbum():
+                self.__loadThumbnail(model, model.get_iter(rowNr))
+
     def createAlbumChild(self, *unused):
         dialog = AlbumDialog("Create album")
         dialog.run(self._createAlbumChildHelper)
@@ -486,6 +492,7 @@ class ObjectCollection(object):
                     imageversion.contentChanged()
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
+                    env.mainwindow.getImagePreloader().clearCache()
                 else:
                     dialog = gtk.MessageDialog(
                         type=gtk.MESSAGE_ERROR,
