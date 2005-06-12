@@ -60,9 +60,11 @@ class RegisterImagesDialog(gtk.FileChooserDialog):
             except ImageVersionExistsError:
                 alreadyRegisteredImages += 1
                 alreadyRegisteredImagesCount.set_text(str(alreadyRegisteredImages))
+                env.shelf.deleteImage(image.getId())
             except NotAnImageFileError:
                 nonImages += 1
                 nonImagesCount.set_text(str(nonImages))
+                env.shelf.deleteImage(image.getId())
             filesInvestigated += 1
             filesInvestigatedCount.set_text(str(filesInvestigated))
             while gtk.events_pending():
