@@ -215,21 +215,15 @@ class ImageVersionsList(gtk.ScrolledWindow):
     def __split(self, *args):
         assert len(self.__selectedImageWidgets) > 0
         assert len(self.__selectedImageWidgets) < len(self.__imageWidgetList)
-        splitAPrimaryVersion = False
         for widget in self.__selectedImageWidgets:
             imageVersion = self.__imageWidgetToImageVersion[widget]
-            if imageVersion.isPrimary():
-                splitAPrimaryVersion = True
             image = env.shelf.createImage()
             imageVersion.setImage(image)
             for key, value in self.__image.getAttributeMap().items():
                 image.setAttribute(key, value)
             for category in  self.__image.getCategories():
                 image.addCategory(category)
-        if splitAPrimaryVersion:
-            self.__singleObjectView.reload()
-        else:
-            self.reload()
+        self.__singleObjectView.reload()
 
     def __rotateLeft(self, *args):
         assert len(self.__selectedImageWidgets) > 0
@@ -295,5 +289,4 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 dialog.run()
                 dialog.destroy()
         env.mainwindow.getImagePreloader().clearCache()
-        self.reload()
         self.__singleObjectView.reload()

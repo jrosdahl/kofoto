@@ -411,11 +411,17 @@ class ObjectCollection(object):
             # TODO Update the album tree widget.
             env.debug("Album tag edited")
 
-    def reloadSelectedThumbnails(self):
+    def reloadSelectedRows(self):
         model = self.getUnsortedModel()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
                 self.__loadThumbnail(model, model.get_iter(rowNr))
+                imageVersions = list(obj.getImageVersions())
+                if len(imageVersions) > 1:
+                    imageVersionsText = str(len(imageVersions))
+                else:
+                    imageVersionsText = ""
+                model.set_value(model.get_iter(rowNr), self.COLUMN_IMAGE_VERSIONS, imageVersionsText)
 
     def createAlbumChild(self, *unused):
         dialog = AlbumDialog("Create album")

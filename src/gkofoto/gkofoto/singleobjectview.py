@@ -110,7 +110,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
 
     def reload(self):
         self.__loadObject(self.__loadedObject)
-        self._objectCollection.reloadSelectedThumbnails()
+        self._objectCollection.reloadSelectedRows()
 
     def _showHelper(self):
         env.enter("SingleObjectView.showHelper()")
