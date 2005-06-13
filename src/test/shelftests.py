@@ -821,6 +821,14 @@ class TestImage(TestShelfFixture):
         assert image.getPrimaryVersion() == imageversion
         imageversion2.makePrimary()
         assert image.getPrimaryVersion() == imageversion2
+
+        newImage = self.shelf.createImage()
+        lastImageVersion = list(image.getImageVersions())[-1]
+        lastImageVersion.setImage(newImage)
+        assert image.getPrimaryVersion() != lastImageVersion
+        assert newImage.getPrimaryVersion() == lastImageVersion
+        lastImageVersion.setImage(image)
+
         self.shelf.deleteImageVersion(imageversion2.getId())
         assert image.getPrimaryVersion() == imageversion
         self.shelf.deleteImageVersion(imageversion.getId())
@@ -838,8 +846,8 @@ class TestImageVersion(TestShelfFixture):
         imageversion.setType(ImageVersionType.Original)
         assert imageversion.getType() == ImageVersionType.Original
 
-    # ImageVersion.makePrimary tested in TestImage.test_getPrimaryversion.
-    # ImageVersion.setImage tested in TestImage.test_getPrimaryversion.
+    # ImageVersion.makePrimary tested in TestImage.test_getPrimaryVersion.
+    # ImageVersion.setImage tested in TestImage.test_getPrimaryVersion.
     # ImageVersion.setType tested in TestImageVersion.test_getType.
     # ImageVersion.setComment tested in TestImageVersion.test_getComment.
 
