@@ -2063,7 +2063,9 @@ class ImageVersion:
         if image == oldimage:
             return
         if oldimage.getPrimaryVersion() == self:
-            oldimage._makeNewPrimaryVersion()
+            oldImageNeedsNewPrimaryVersion = True
+        else:
+            oldImageNeedsNewPrimaryVersion = False
         self.imageid = image.getId()
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
@@ -2074,6 +2076,8 @@ class ImageVersion:
             self.id)
         if image.getPrimaryVersion() == None:
             image._makeNewPrimaryVersion()
+        if oldImageNeedsNewPrimaryVersion:
+            oldimage._makeNewPrimaryVersion()
         self.shelf._setModified()
 
 
