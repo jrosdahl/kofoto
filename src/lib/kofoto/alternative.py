@@ -38,6 +38,7 @@ class Alternative:
     ...         print "Right."
     ...
     >>> f(options.Yes)
+    OK!
     >>> options2 = Alternative("Yes")
     >>> f(options2.Yes)
     Traceback (most recent call last):
