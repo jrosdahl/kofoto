@@ -2,45 +2,67 @@
 
 __all__ = ["Alternative"]
 
-from sets import Set
+try:
+    set
+except NameError:
+    from sets import Set as set
 
 class Alternative:
     """A simple variant record (AKA discriminated union) class
-    representing a set of unique identifers. It's sort of like an
-    enum, except there's no enumeration, i.e. no integers are
-    associated with the identifiers.
+    representing a set of unique identifers. It's sort of an enum,
+    except there's no enumeration, i.e. no integers are associated
+    with the identifiers and the identifiers have no specific order.
 
     Example usage:
 
-    >>> a = Alternative("Foo", "Bar", "Gazonk")
-    >>> print a
-    Alternative('Bar', 'Gazonk', 'Foo')
-    >>> x = a.Foo
+    >>> from alternative import Alternative
+    >>> options = Alternative("Yes", "Maybe", "No")
+    >>> options
+    Alternative('Maybe', 'Yes', 'No')
+    >>> x = options.Yes
+    >>> x
+    <alternative.AlternativeInstance instance at 0x4022b50c>
     >>> print x
-    Foo
-    >>> x in a
+    Yes
+    >>> x in options
     True
-    >>> "Foo" in a
+    >>> "Yes" in options
     False
+    >>> def f(x):
+    ...     assert x in options
+    ...     if x == options.Yes:
+    ...         print "OK!"
+    ...     elif x == options.Maybe:
+    ...         print "Hmm?"
+    ...     elif x == options.No:
+    ...         print "Right."
+    ...
+    >>> f(options.Yes)
+    >>> options2 = Alternative("Yes")
+    >>> f(options2.Yes)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in ?
+      File "<stdin>", line 2, in f
+    AssertionError
     """
 
     def __init__(self, *identifiers):
-        self.__identifiers = Set()
+        self.__identifiers = set()
         for x in identifiers:
-            ei = _EnumInstance(x)
-            setattr(self, x, ei)
-            self.__identifiers.add(ei)
+            ai = AlternativeInstance(x)
+            setattr(self, x, ai)
+            self.__identifiers.add(ai)
 
     def __repr__(self):
         return "Alternative(%s)" % ", ".join(
-            ["'" + str(x) + "'" for x in self.__identifiers])
+            [repr(str(x)) for x in self.__identifiers])
 
     def __contains__(self, x):
         return x in self.__identifiers
 
-class _EnumInstance:
+class AlternativeInstance:
     def __init__(self, identifier):
-        self.__name = identifier
+        self.__identifier = identifier
 
     def __str__(self):
-        return self.__name
+        return self.__identifier
