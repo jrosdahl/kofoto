@@ -163,7 +163,6 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         model = self._objectCollection.getModel()
         # The following events are needed to update the previous and
         # next navigation buttons.
-        self._connect(model, "row_changed", self._rowChanged)
         self._connect(model, "rows_reordered", self._modelUpdated)
         self._connect(model, "row_deleted", self._modelUpdated)
         self._objectCollection.addInsertedRowCallback(self._modelUpdated)
@@ -172,23 +171,6 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def _modelUpdated(self, *foo):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())
-
-    def _rowChanged(self, model, path, iter, arg, *unused):
-        if path[0] == self.__selectedRowNr:
-            env.debug("selected object in SingleObjectView changed")
-            oc = self._objectCollection
-            model = oc.getUnsortedModel()
-            objid = model.get_value(model.get_iter(path), oc.COLUMN_OBJECT_ID)
-            obj = env.shelf.getObject(objid)
-            if not obj.isAlbum():
-                if obj.getPrimaryVersion():
-                    self.__imageView.loadFile(
-                        obj.getPrimaryVersion().getLocation(),
-                        True)
-                    self.__imageVersionsList.loadImage(obj)
-                else:
-                    self.__imageView.loadFile(env.unknownImageIconFileName, True)
-                    self.__imageVersionsList.clear()
 
     def _goto(self, button, direction):
         objectSelection = self._objectCollection.getObjectSelection()
