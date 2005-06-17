@@ -16,9 +16,12 @@ class Controller:
                         type=gtk.MESSAGE_INFO,
                         buttons=gtk.BUTTONS_OK_CANCEL,
                         message_format=
-                            "The metadata database format has changed."
-                            " Press OK to update it."
-                            " A backup copy of the old database will be made.")
+                            "You have a metadata database from an older"
+                            " Kofoto version. It needs to be upgraded"
+                            " before you can continue.\n\n"
+                            "Press OK to upgrade the database"
+                            " automatically. A backup copy of the old"
+                            " database will be made before upgrading.")
                     dialog.set_default_response(gtk.RESPONSE_OK)
                     result = dialog.run()
                     dialog.destroy()
