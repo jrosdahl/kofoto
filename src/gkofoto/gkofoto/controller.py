@@ -24,10 +24,16 @@ class Controller:
                             " database will be made before upgrading.")
                     dialog.set_default_response(gtk.RESPONSE_OK)
                     result = dialog.run()
-                    dialog.destroy()
                     if result == gtk.RESPONSE_CANCEL:
                         return
-                    if not env.shelf.tryUpgrade():
+                    dialog.set_response_sensitive(gtk.RESPONSE_CANCEL, False)
+                    dialog.set_response_sensitive(gtk.RESPONSE_OK, False)
+                    dialog.label.set_text("Upgrading database. Please wait...")
+                    while gtk.events_pending():
+                        gtk.main_iteration()
+                    success = env.shelf.tryUpgrade()
+                    dialog.destroy()
+                    if not success:
                         dialog = gtk.MessageDialog(
                             type=gtk.MESSAGE_ERROR,
                             buttons=gtk.BUTTONS_OK,
