@@ -1,6 +1,6 @@
 import sys
 import gtk
-from kofoto.shelf import ShelfLockedError
+from kofoto.shelf import ShelfLockedError, UnsupportedShelfError
 from gkofoto.mainwindow import MainWindow
 from gkofoto.environment import env
 
@@ -46,6 +46,10 @@ class Controller:
                 env.startupNotices += [
                     "Error: Could not open metadata database \"%s\"." % e +
                     " Another process is locking it.\n"]
+                setupOk = False
+            except UnsupportedShelfError, e:
+                env.startupNotices += [
+                    "Error: Too new format for metadata database \"%s\"." % e]
                 setupOk = False
         if env.startupNotices:
             if setupOk:
