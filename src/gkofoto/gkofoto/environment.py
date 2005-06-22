@@ -11,6 +11,8 @@ import gtk
 import gobject
 import gtk.gdk
 import gtk.glade
+import gkofoto.crashdialog
+sys.excepthook = gkofoto.crashdialog.show
 
 from kofoto.clientenvironment import *
 from kofoto.common import *
