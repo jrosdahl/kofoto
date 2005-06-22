@@ -129,7 +129,7 @@ class CrashDialog(gtk.Dialog):
                 addSource(line)
         a = lines[-1].split(":")
         if len(a) == 1:
-            add(a, "exception")
+            add(a[0], "exception")
         else:
             add(a[0], "exception")
             add(":" + a[1])
