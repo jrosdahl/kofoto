@@ -9,6 +9,7 @@ from environment import env
 from objectselection import *
 from albumdialog import AlbumDialog
 from registerimagesdialog import RegisterImagesDialog
+from imageversionsdialog import ImageVersionsDialog
 
 class ObjectCollection(object):
 
@@ -29,12 +30,15 @@ class ObjectCollection(object):
                                gobject.TYPE_INT,      # COLUMN_OBJECT_ID
                                gobject.TYPE_STRING,   # COLUMN_LOCATION
                                gtk.gdk.Pixbuf,        # COLUMN_THUMBNAIL
+                               gobject.TYPE_STRING,   # COLUMN_IMAGE_VERSIONS
                                gobject.TYPE_STRING ]  # COLUMN_ALBUM_TAG
         self.__objectMetadataMap = {
             u"id"       :(gobject.TYPE_INT,    self.COLUMN_OBJECT_ID, None,                 None),
             u"location" :(gobject.TYPE_STRING, self.COLUMN_LOCATION,  None,                 None),
             u"thumbnail":(gtk.gdk.Pixbuf,      self.COLUMN_THUMBNAIL, None,                 None),
-            u"albumtag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG) }
+            u"albumtag" :(gobject.TYPE_STRING, self.COLUMN_ALBUM_TAG, self._albumTagEdited, self.COLUMN_ALBUM_TAG),
+            u"versions" :(gobject.TYPE_STRING, self.COLUMN_IMAGE_VERSIONS, None,            None),
+            }
         for name in env.shelf.getAllAttributeNames():
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
@@ -93,6 +97,12 @@ class ObjectCollection(object):
 
     def getRotateImageRightLabel(self):
         return "Rotate image right"
+
+    def getImageVersionsLabel(self):
+        return "Edit image versions..."
+
+    def getMergeImagesLabel(self):
+        return "Merge images..."
 
     def getObjectMetadataMap(self):
         return self.__objectMetadataMap
@@ -193,12 +203,13 @@ class ObjectCollection(object):
             objectIds = Set()
             # Create a Set to avoid duplicated objects.
             for obj in Set(self.__objectSelection.getSelectedObjects()):
-                if deleteFiles:
-                    try:
-                        os.remove(obj.getLocation())
-                        # TODO: Delete from image cache too?
-                    except OSError:
-                        pass
+                if deleteFiles and not obj.isAlbum():
+                    for iv in obj.getImageVersions():
+                        try:
+                            os.remove(iv.getLocation())
+                            # TODO: Delete from image cache too?
+                        except OSError:
+                            pass
                 env.clipboard.removeObjects(obj)
                 env.shelf.deleteObject(obj.getId())
                 objectIds.add(obj.getId())
@@ -226,7 +237,8 @@ class ObjectCollection(object):
     COLUMN_OBJECT_ID      = 4
     COLUMN_LOCATION       = 5
     COLUMN_THUMBNAIL      = 6
-    COLUMN_ALBUM_TAG      = 7
+    COLUMN_IMAGE_VERSIONS = 7
+    COLUMN_ALBUM_TAG      = 8
 
     # Content in objectMetadata fields
     TYPE                 = 0
@@ -279,11 +291,22 @@ class ObjectCollection(object):
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, True)
                 self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, obj.getTag())
                 self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, None)
+                self.__treeModel.set_value(iterator, self.COLUMN_IMAGE_VERSIONS, "")
                 self.__nrOfAlbums += 1
             else:
+                if obj.getPrimaryVersion():
+                    ivlocation = obj.getPrimaryVersion().getLocation()
+                else:
+                    ivlocation = None
+                imageVersions = list(obj.getImageVersions())
+                if len(imageVersions) > 1:
+                    imageVersionsText = str(len(imageVersions))
+                else:
+                    imageVersionsText = ""
                 self.__treeModel.set_value(iterator, self.COLUMN_IS_ALBUM, False)
                 self.__treeModel.set_value(iterator, self.COLUMN_ALBUM_TAG, None)
-                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, obj.getLocation())
+                self.__treeModel.set_value(iterator, self.COLUMN_LOCATION, ivlocation)
+                self.__treeModel.set_value(iterator, self.COLUMN_IMAGE_VERSIONS, imageVersionsText)
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             for attribute, value in obj.getAttributeMap().items():
@@ -388,6 +411,18 @@ class ObjectCollection(object):
             # TODO Update the album tree widget.
             env.debug("Album tag edited")
 
+    def reloadSelectedRows(self):
+        model = self.getUnsortedModel()
+        for (rowNr, obj) in self.__objectSelection.getMap().items():
+            if not obj.isAlbum():
+                self.__loadThumbnail(model, model.get_iter(rowNr))
+                imageVersions = list(obj.getImageVersions())
+                if len(imageVersions) > 1:
+                    imageVersionsText = str(len(imageVersions))
+                else:
+                    imageVersionsText = ""
+                model.set_value(model.get_iter(rowNr), self.COLUMN_IMAGE_VERSIONS, imageVersionsText)
+
     def createAlbumChild(self, *unused):
         dialog = AlbumDialog("Create album")
         dialog.run(self._createAlbumChildHelper)
@@ -436,11 +471,27 @@ class ObjectCollection(object):
         env.mainwindow.reloadAlbumTree()
         # TODO: Update objectCollection.
 
+    def imageVersions(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1
+        dialog = ImageVersionsDialog()
+        dialog.runViewImageVersions(selectedObjects[0])
+
+    def mergeImages(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) > 1
+        dialog = ImageVersionsDialog()
+        dialog.runMergeImages(selectedObjects)
+
     def rotateImage(self, widget, angle):
         env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
-                location = obj.getLocation().encode(env.codeset)
+                imageversion = obj.getPrimaryVersion()
+                if not imageversion:
+                    # Image has no versions. Skip it for now.
+                    continue
+                location = imageversion.getLocation().encode(env.codeset)
                 if angle == 90:
                     commandString = env.rotateRightCommand
                 else:
@@ -448,9 +499,10 @@ class ObjectCollection(object):
                 command = commandString.encode(env.codeset) % { "location":location }
                 result = os.system(command)
                 if result == 0:
-                    obj.contentChanged()
+                    imageversion.contentChanged()
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
+                    env.mainwindow.getImagePreloader().clearCache()
                 else:
                     dialog = gtk.MessageDialog(
                         type=gtk.MESSAGE_ERROR,
@@ -459,11 +511,21 @@ class ObjectCollection(object):
                     dialog.run()
                     dialog.destroy()
 
-    def openImage(self, widget, data):
+    def rotateImageLeft(self, widget, *unused):
+        self.rotateImage(widget, 270)
+
+    def rotateImageRight(self, widget, *unused):
+        self.rotateImage(widget, 90)
+
+    def openImage(self, widget, *unused):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
             if not obj.isAlbum():
-                location = obj.getLocation()
+                imageversion = obj.getPrimaryVersion()
+                if not imageversion:
+                    # Image has no versions. Skip it for now.
+                    continue
+                location = imageversion.getLocation()
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
@@ -493,10 +555,14 @@ class ObjectCollection(object):
         obj = env.shelf.getObject(objectId)
         if obj.isAlbum():
             pixbuf = env.albumIconPixbuf
+        elif not obj.getPrimaryVersion():
+            pixbuf = env.unknownImageIconPixbuf
         else:
             try:
                 thumbnailLocation = env.imageCache.get(
-                    obj, env.thumbnailSize[0], env.thumbnailSize[1])[0]
+                    obj.getPrimaryVersion(),
+                    env.thumbnailSize[0],
+                    env.thumbnailSize[1])[0]
                 pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:

@@ -312,9 +312,10 @@ class OutputGenerator(OutputEngine):
             displayCategories = re.split(r"(?:,|\s)\s*", env.config.get(
                 "woolly",
                 "display_categories"))
-            self.displayCategories = [env.shelf.getCategory(x)
-                                      for x in displayCategories
-                                      if x]
+            self.displayCategories = [
+                env.shelf.getCategoryByTag(x)
+                for x in displayCategories
+                if x]
         else:
             self.displayCategories = []
         self.autoImageDescTemplate = ""
@@ -391,11 +392,11 @@ class OutputGenerator(OutputEngine):
                     if number != 0 and number % 3 == 0:
                         subalbumtextElements.append("</tr>\n<tr>\n")
 
-                    frontimage = self._getFrontImage(subalbum)
+                    frontimageversion = self._getFrontImageVersion(subalbum)
                     if frontimage:
                         thumbimgref, thumbwidth, thumbheight = \
                             self.getImageReference(
-                                frontimage,
+                                frontimageversion,
                                 self.env.thumbnailsizelimit[0],
                                 self.env.thumbnailsizelimit[1])
                     else:
@@ -600,7 +601,7 @@ class OutputGenerator(OutputEngine):
                     catdict = {}
                     for tag in self.autoImageDescTags:
                         catlist = []
-                        cat = self.env.shelf.getCategory(tag)
+                        cat = self.env.shelf.getCategoryByTag(tag)
                         for imgcat in imageCategories:
                             if cat.isParentOf(imgcat, True):
                                 catlist.append(imgcat)
@@ -751,7 +752,7 @@ class OutputGenerator(OutputEngine):
         return "".join(pathtextElements)
 
 
-    def _getFrontImage(self, object, visited=None):
+    def _getFrontImageVersion(self, object, visited=None):
         if visited and object.getId() in visited:
             return None
 
@@ -763,12 +764,15 @@ class OutputGenerator(OutputEngine):
             if thumbid:
                 from kofoto.shelf import ImageDoesNotExistError
                 try:
-                    return self.env.shelf.getImage(thumbid)
+                    image = self.env.shelf.getImage(int(thumbid))
+                    imageversion = image.getPrimaryVersion()
+                    if imageversion:
+                        return imageversion
                 except ImageDoesNotExistError:
                     pass
             children = iter(object.getChildren())
             try:
-                return self._getFrontImage(children.next(), visited)
+                return self._getFrontImageVersion(children.next(), visited)
             except StopIteration:
                 return None
         else:

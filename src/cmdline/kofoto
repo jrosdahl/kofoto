@@ -38,137 +38,262 @@ class ArgumentError:
     pass
 
 ######################################################################
+### Help text data.
+
+optionDefinitionList = [
+    ("    --configfile FILE",
+     "Use configuration file FILE instead of the default (%s)." % (
+         DEFAULT_CONFIGFILE_LOCATION)),
+    ("    --database FILE",
+     "Use the metadata database FILE instead of the default (specified in the configuration file)."),
+    ("    --gencharenc ENCODING",
+     "Generate HTML pages with character encoding ENCODING instead of the default (taken from locale settings)."),
+    ("-h, --help",
+     "Display this help."),
+    ("    --identify-by-hash",
+     "Identify image versions by hash. This is the default."),
+    ("    --identify-by-path",
+     "Identify image versions by path."),
+    ("    --ids",
+     "Print ID numbers instead of locations."),
+    ("    --include-all",
+     "Include all image versions for images matching a search expression."),
+    ("    --include-important",
+     "Include all image versions with type \"important\" for images matching a search expression."),
+    ("    --include-original",
+     "Include all image versions with type \"original\" for images matching a search expression."),
+    ("    --include-other",
+     "Include all image versions with type \"other\" for images matching a search expression."),
+    ("    --include-primary",
+     "Include all primary image versions for images matching a search expression."),
+    ("    --no-act",
+     "Do everything which is supposed to be done, but don't commit any changes to the database."),
+    ("    --position POSITION",
+     "Add/register to position POSITION. Default: last."),
+    ("-t, --type TYPE",
+     "Use album type TYPE when creating an album or output type TYPE when generating output."),
+    ("-v, --verbose",
+      "Be verbose (and slower)."),
+    ("    --version",
+     "Print version to standard output."),
+    ]
+
+albumAndImageCommandsDefinitionList = [
+    ("add-category CATEGORY OBJECT [OBJECT ...]",
+     "Add a category to the given objects."),
+    ("delete-attribute ATTRIBUTE OBJECT [OBJECT ...]",
+     "Delete an attribute from the given objects."),
+    ("get-attribute ATTRIBUTE OBJECT",
+     "Get an attribute's value for an object."),
+    ("get-attributes OBJECT",
+     "Get attributes for an object."),
+    ("get-categories OBJECT",
+     "Get categories for an object."),
+    ("remove-category CATEGORY OBJECT [OBJECT ...]",
+     "Remove a category from the given objects."),
+    ("search SEARCHEXPRESSION",
+     "Search for images matching an expression and print image version locations on standard output (or image IDs if the --ids option is given). By default, only primary image versions are printed, but other versions can be printed by supplying one or several of the options --include-all, --include-important, --include-original and --include-other. (If no --include-* option is supplied, --include-primary is assumed.)"),
+    ("set-attribute ATTRIBUTE VALUE OBJECT [OBJECT ...]",
+     "Set ATTRIBUTE to VALUE for the given objects."),
+    ]
+
+albumCommandsDefinitionList = [
+    ("add ALBUM OBJECT [OBJECT ...]",
+     "Add the given objects (albums and images) to the album ALBUM. (The objects are placed last if a position is not specified with --position.)"),
+    ("create-album TAG",
+     "Create an empty, unlinked album with tag TAG. If a type argument is not given with -t/--type, an album of type \"plain\" will be created."),
+    ("destroy-album ALBUM [ALBUM ...]",
+     "Destroy the given albums permanently. All metadata is also destroyed, but not the album's children."),
+    ("generate ROOTALBUM DIRECTORY [SUBALBUM ...]",
+     "Generate output for ROOTALBUM in the directory DIRECTORY. If subalbums are given, only generate those albums, their descendants and their immediate parents. Use -t/--type to use another output type than the default."),
+    ("print-albums [ALBUM]",
+     "Print the album graph for ALBUM (default: root). If -v/--verbose is given, also print images and attributes."),
+    ("register ALBUM PATH [PATH ...]",
+     "Register objects (i.e. directories and images) and add them to the album ALBUM. (The objects are placed last.) Directories are recursively scanned for other directories and images, which also will be registered."),
+    ("remove ALBUM POSITION [POSITION ...]",
+     "Remove the objects at the given positions from ALBUM."),
+    ("rename-album OLDTAG NEWTAG",
+     "Rename album tag."),
+    ("sort-album ALBUM [ATTRIBUTE]",
+     "Sort the contents of ALBUM by an attribute (default: captured)."),
+    ]
+
+imageCommandsDefinitionList = [
+    ("destroy-image IMAGE [IMAGE ...]",
+     "Destroy the given images permanently. All metadata and image versions are also destroyed (but not the image files on disk)."),
+    ("find-missing-imageversions",
+     "Find missing image versions and print them to standard output."),
+    ("get-imageversions IMAGE",
+     "Print image versions for an image. If -v/--verbose is given, print more information."),
+    ]
+
+imageversionCommandsDefinitionList = [
+    ("destroy-imageversion IMAGEVERSION [IMAGEVERSION ...]",
+     "Destroy the given image versions permanently. All metadata is also destroyed (but not the image files on disk)."),
+    ("inspect-path PATH [PATH ...]",
+     "Traverse the given paths and print whether each found file is a registered, modified, moved or unregistered image version or a non-image."),
+    ("make-primary IMAGEVERSION [IMAGEVERSION ...]",
+     "Make an image version the primary version."),
+    ("set-imageversion-comment VALUE IMAGEVERSION [IMAGEVERSION ...]",
+     "Set comment of the given image versions."),
+    ("set-imageversion-image IMAGE IMAGEVERSION [IMAGEVERSION ...]",
+     "Set the image to which the given image versions belong."),
+    ("set-imageversion-type IMAGEVERSIONTYPE IMAGEVERSION [IMAGEVERSION ...]",
+     "Set type of the given image versions."),
+    ("update-contents PATH [PATH ...]",
+     "Traverse the given paths recursively and remember the new contents (checksum, width and height) of found image versions."),
+    ("update-locations PATH [PATH ...]",
+     "Traverse the given paths recursively and remember the new locations of found image versions."),
+    ]
+
+categoryCommandsDefinitionList = [
+    ("connect-category PARENTCATEGORY CHILDCATEGORY",
+     "Make a category a child of another category."),
+    ("disconnect-category PARENTCATEGORY CHILDCATEGORY",
+     "Remove parent-child realationship bewteen two categories."),
+    ("create-category TAG DESCRIPTION",
+     "Create category."),
+    ("destroy-category CATEGORY [CATEGORY ...]",
+     "Destroy category permanently."),
+    ("print-categories",
+     "Print category tree."),
+    ("rename-category OLDTAG NEWTAG",
+     "Rename category tag."),
+    ("set-category-description TAG DESCRIPTION",
+     "Set category description."),
+    ]
+
+miscellaneousCommandsDefinitionList = [
+    ("clean-cache",
+     "Clean up the image cache (remove left-over generated images)."),
+    ("print-statistics",
+     "Print some statistics about the database."),
+    ]
+
+parameterSemanticsDefinitionList = [
+    ("ALBUM",
+     "An integer ID or an album tag (see TAG)."),
+    ("ATTRIBUTE",
+     "An arbitrary attribute name."),
+    ("CATEGORY",
+     "A category tag (see TAG)."),
+    ("DESCRIPTION",
+     "An arbitrary string."),
+    ("ENCODING",
+     "An encoding parsable by Python, e.g. \"utf-8\", \"latin1\" or \"iso-8859-1\"."),
+    ("FILE",
+     "A path to a file."),
+    ("IMAGE",
+     "An integer ID or a path to an image version file. If it's a path to an image version, its corresponding image is selected. If --identify-by-path is given, the path is used for identifying the image version; otherwise the file's content used for identification."),
+    ("IMAGEVERSION",
+     "An integer ID or a path to an image version file. If --identify-by-path is given, the path is used for identifying the image version; otherwise the file's contents used for identification."),
+    ("IMAGEVERSIONTYPE",
+     "\"important\", \"original\" or \"other\"."),
+    ("OBJECT",
+     "An integer ID, an album tag (see TAG) or a path to an image version file. If it's a path to an image version, its corresponding image is selected. If --identify-by-path is given, the path is used for identifying the image version; otherwise the file's contents used for identification."),
+    ("PATH",
+     "A path to a directory or a file."),
+    ("POSITION",
+     "An integer specifying an index into an album's children. 0 is the first position, 1 is the second, and so on."),
+    ("SEARCHEXPRESSION",
+     "A search expression. See http://kofoto.rosdahl.net/trac/wiki/SearchExpressions for more information."),
+    ("TAG",
+     "A text string not containing space or @ characters and not consisting solely of integers."),
+    ("TYPE",
+     "An album type (as listed below) or an HTML output type (for the moment, only \"woolly\" is allowed)."),
+    ("VALUE",
+     "An arbitrary string."),
+    ]
+
+albumTypesDefinitionList = [
+    ("orphans",
+     "All albums and images that don't exist in any plain album."),
+    ("plain",
+     "An ordinary container that holds albums and images."),
+    ("search",
+     "An album containing the albums and images that match a search string (sorted by capture timestamp). The search string is read from the album's \"query\" attribute."),
+    ]
+
+######################################################################
 ### Helper functions.
+
+def printDefinitionList(
+    definitionList, outfile, basicIndentation, definitionIndentation, width):
+    from textwrap import TextWrapper
+    wrapper = TextWrapper(width=width)
+    for term, definition in definitionList:
+        wrapper.subsequent_indent = \
+            (basicIndentation + definitionIndentation) * " "
+        if len(term) < definitionIndentation - 1:
+            wrapper.initial_indent = basicIndentation * " "
+            textToWrap = "%s%s%s" % (
+                term,
+                (definitionIndentation - len(term)) * " ",
+                definition)
+        else:
+            wrapper.initial_indent = wrapper.subsequent_indent
+            outfile.write("%s%s\n" % (basicIndentation * " ", term))
+            textToWrap = definition
+        outfile.write("%s\n" % wrapper.fill(textToWrap))
 
 def displayHelp():
     sys.stdout.write(
-#                                                                 79 characters here:  |
-        "Usage: kofoto [flags] command [parameters]\n"
+        "Usage: kofoto [options] command [parameters]\n"
         "\n"
-        "Flags:\n"
-        "\n"
-        "    -h, --help                       Display this help.\n"
-        "        --configfile FILE            Use configuration file FILE instead of the\n"
-        "                                     default (%s).\n"
-        "        --database DATABASE          Use the metadata database DATABASE instead\n"
-        "                                     of the default (specified in the\n"
-        "                                     configuration file).\n"
-        "        --gencharenc ENC             Generate HTML pages with character\n"
-        "                                     encoding ENC instead of the default\n"
-        "                                     (taken from locale settings).\n"
-        "        --ids                        Print ID numbers instead of locations.\n"
-        "    -l, --location LOCATION          Add/register to location LOCATION.\n"
-        "                                     Default: last.\n"
-        "        --no-act                     Do everything which is supposed to be done,\n"
-        "                                     but don't commit any changes to the\n"
-        "                                     database.\n"
-        "    -t, --type TYPE                  Use album type TYPE when creating an album\n"
-        "                                     or output type TYPE when generating output.\n"
-        "    -v, --verbose                    Be verbose (and slower).\n"
-        "    -V, --version                    Print version to standard output.\n"
+        "Options:\n"
+        "\n")
+    printDefinitionList(optionDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
         "\n"
         "Commands:\n"
         "\n"
-        "    For databases\n"
-        "    =============\n"
-        "    check                            Find missing images and print some\n"
-        "                                     statistics.\n"
-        "    create-album TAG                 Create an empty, unlinked album with tag\n"
-        "                                     TAG. If a type argument is not given\n"
-        "                                     with -t/--type, an album of type \"plain\"\n"
-        "                                     will be created.\n"
-        "    print-albums [ALBUM]             Print the album graph for ALBUM (default:\n"
-        "                                     root). If -v/--verbose is given, also print\n"
-        "                                     images and attributes.\n"
-        "    rename-tag OLDTAG NEWTAG         Rename an album tag.\n"
-        "    update-contents PATH [PATH ...]  Traverse the given paths recursively and\n"
-        "                                     remember the new contents (checksum, width\n"
-        "                                     and height) of found images.\n"
-        "    update-locations PATH [PATH ...] Traverse the given paths recursively and\n"
-        "                                     remember the new locations of found images.\n"
-        "\n"
         "    For albums and images\n"
-        "    =====================\n"
-        "\n"
-        "    add-category CAT OBJ [OBJ ...]   Add category CAT (tag or ID) to the given\n"
-        "                                     objects.\n"
-        "    delete-attribute NAME OBJ [OBJ ...]\n"
-        "                                     Delete attribute NAME for the given\n"
-        "                                     objects.\n"
-        "    destroy OBJ [OBJ ...]            Delete the given objects permanently. All\n"
-        "                                     metadata is also deleted.\n"
-        "    get-attribute NAME OBJ           Get attribute NAME for object OBJ.\n"
-        "    get-attributes OBJ               Get attributes for object OBJ.\n"
-        "    get-categories OBJ               Get categories for object OBJ.\n"
-        "    remove-category CAT OBJ [OBJ ...]\n"
-        "                                     Remove category CAT from the given\n"
-        "                                     objects.\n"
-        "    search EXPR                      Search for images matching an expression.\n"
-        "    set-attribute NAME VALUE OBJ [OBJ ...]\n"
-        "                                     Set attribute NAME to VALUE for the given\n"
-        "                                     objects.\n"
+        "    =====================\n")
+    printDefinitionList(
+        albumAndImageCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
         "\n"
         "    For albums\n"
-        "    ==========\n"
-        "    add DEST OBJ [OBJ ...]           Add the given objects (albums and images)\n"
-        "                                     to the album DEST. (The objects are placed\n"
-        "                                     last if a location is not specified with\n"
-        "                                     -l/--location.)\n"
-        "    generate ROOTALBUM DEST [SUBALBUM ...]\n"
-        "                                     Generate output for ROOTALBUM in\n"
-        "                                     the directory DEST. If subalbums are given,\n"
-        "                                     only generate those albums, their\n"
-        "                                     descendants and their immediate parents.\n"
-        "                                     Use -t/--type to use another output type\n"
-        "                                     than the default.\n"
-        "    register DEST PATH [PATH ...]    Register objects (i.e. directories and\n"
-        "                                     images) and add them to the album DEST.\n"
-        "                                     (The objects are placed last.)\n"
-        "                                     Directories are recursively scanned for\n"
-        "                                     other directories and images, which also\n"
-        "                                     will be registered.\n"
-        "    remove ALBUM POS [POS ...]       Remove the given objects from ALBUM.\n"
-        "    sort ALBUM [ATTR]                Sort the contents of ALBUM by the\n"
-        "                                     attribute named ATTR (default: captured).\n"
+        "    ==========\n")
+    printDefinitionList(albumCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
         "\n"
         "    For images\n"
-        "    ==========\n"
-        "    inspect-locations PATH [PATH ...]\n"
-        "                                     Traverse the given paths and print whether\n"
-        "                                     each found file is a registered, modified,\n"
-        "                                     moved or unregistered image or a non-image.\n"
+        "    ==========\n")
+    printDefinitionList(imageCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
+        "\n"
+        "    For image versions\n"
+        "    ==================\n")
+    printDefinitionList(
+        imageversionCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
         "\n"
         "    For categories\n"
-        "    ==============\n"
-        "    connect-category PARENT CHILD    Make a category a child of another\n"
-        "                                     category.\n"
-        "    disconnect-category PARENT CHILD Remove parent-child realationship bewteen\n"
-        "                                     two categories.\n"
-        "    create-category TAG DESC         Create category.\n"
-        "    destroy-category TAG             Delete category permanently.\n"
-        "    print-categories                 Print category tree.\n"
-        "    rename-category OLDTAG NEWTAG    Rename category tag.\n"
-        "    set-category-description TAG DESC\n"
-        "                                     Set category description.\n"
+        "    ==============\n")
+    printDefinitionList(categoryCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
         "\n"
         "    Miscellaneous\n"
-        "    =============\n"
-        "    clean-cache                      Clean up the image cache (remove\n"
-        "                                     left-over generated images).\n"
+        "    =============\n")
+    printDefinitionList(
+        miscellaneousCommandsDefinitionList, sys.stdout, 4, 27, 79)
+    sys.stdout.write(
+        "\n"
+        "Parameter semantics:\n"
+        "\n"
+        "    Parameter         Interpretation\n"
+        "    --------------------------------\n")
+    printDefinitionList(
+        parameterSemanticsDefinitionList, sys.stdout, 4, 18, 79)
+    sys.stdout.write(
         "\n"
         "Album types:\n"
         "\n"
-        "    Type         Description\n"
-        "    ------------------------\n"
-        "    orphans      All albums and images that don't exist in any plain album.\n"
-        "    plain        An ordinary container that holds albums and images.\n"
-        "    search       An album containing the albums and images that match a search\n"
-        "                 string (sorted by capture timestamp). The search string is\n"
-        "                 read from the album's \"query\" attribute.\n"
-        "\n"
-        % DEFAULT_CONFIGFILE_LOCATION)
-#                                                                 79 characters here:  |
-
+        "    Type              Description\n"
+        "    -----------------------------\n")
+    printDefinitionList(
+        albumTypesDefinitionList, sys.stdout, 4, 18, 79)
 
 def printOutput(infoString):
     sys.stdout.write(infoString)
@@ -184,6 +309,65 @@ def printErrorAndExit(errorString):
     printError(errorString)
     sys.exit(1)
 
+def sloppyGetAlbum(env, idOrTag):
+    try:
+        return env.shelf.getAlbum(int(idOrTag))
+    except ValueError:
+        return env.shelf.getAlbumByTag(idOrTag)
+
+def sloppyGetImage(env, idOrLocation):
+    try:
+        return env.shelf.getImage(int(idOrLocation))
+    except ValueError:
+        try:
+            if env.identifyByPath:
+                imageversion = env.shelf.getImageVersionByLocation(
+                    idOrLocation)
+            else:
+                imageversion = env.shelf.getImageVersionByHash(
+                    computeImageHash(idOrLocation))
+            return imageversion.getImage()
+        except ImageVersionDoesNotExistError:
+            raise ImageDoesNotExistError, idOrLocation
+
+def sloppyGetImageVersion(env, idOrLocation):
+    try:
+        return env.shelf.getImageVersion(int(idOrLocation))
+    except ValueError:
+        if env.identifyByPath:
+            return env.shelf.getImageVersionByLocation(idOrLocation)
+        else:
+            return env.shelf.getImageVersionByHash(
+                computeImageHash(idOrLocation))
+
+def sloppyGetObject(env, idOrTagOrLocation):
+    try:
+        return sloppyGetAlbum(env, idOrTagOrLocation)
+    except AlbumDoesNotExistError:
+        try:
+            return sloppyGetImage(env, idOrTagOrLocation)
+        except (ImageDoesNotExistError, ImageVersionDoesNotExistError), x:
+            raise ObjectDoesNotExistError, x
+
+def parseAlbumType(atype):
+    try:
+        return {
+            u"plain": AlbumType.Plain,
+            u"orphans": AlbumType.Orphans,
+            u"search": AlbumType.Search,
+            }[atype]
+    except KeyError:
+        raise UnknownAlbumTypeError, atype
+
+def parseImageVersionType(ivtype):
+    try:
+        return {
+            u"important": ImageVersionType.Important,
+            u"original": ImageVersionType.Original,
+            u"other": ImageVersionType.Other,
+            }[ivtype]
+    except KeyError:
+        raise UnknownImageVersionTypeError, ivtype
 
 ######################################################################
 ### Helper classes.
@@ -201,55 +385,26 @@ class CommandlineClientEnvironment(ClientEnvironment):
 def cmdAdd(env, args):
     if len(args) < 2:
         raise ArgumentError
-    destalbum = env.shelf.getAlbum(args[0])
-    objects = [env.shelf.getObject(x) for x in args[1:]]
+    destalbum = sloppyGetAlbum(env, args[0])
+    objects = [sloppyGetObject(env, x) for x in args[1:]]
     addHelper(env, destalbum, objects)
 
 
 def addHelper(env, destalbum, objects):
     oldchildren = list(destalbum.getChildren())
-    if env.location == -1:
-        loc = len(oldchildren)
+    if env.position == -1:
+        pos = len(oldchildren)
     else:
-        loc = env.location
-    destalbum.setChildren(oldchildren[:loc] + objects + oldchildren[loc:])
+        pos = env.position
+    destalbum.setChildren(oldchildren[:pos] + objects + oldchildren[pos:])
 
 
 def cmdAddCategory(env, args):
     if len(args) < 2:
         raise ArgumentError
-    category = env.shelf.getCategory(args[0])
+    category = env.shelf.getCategoryByTag(args[0])
     for arg in args[1:]:
-        env.shelf.getObject(arg).addCategory(category)
-
-
-def cmdCheck(env, args):
-    stats = env.shelf.getStatistics()
-    env.out("Number of albums: %d\n" % stats["nalbums"])
-    env.out("Number of images: %d\n" % stats["nimages"])
-    badchecksums = []
-    missingfiles = []
-    for image in env.shelf.getAllImages():
-        location = env.to_l(image.getLocation())
-        if env.verbose:
-            env.out("Checking %s ...\n" % location)
-        try:
-            realId = computeImageHash(location)
-            storedId = image.getHash()
-            if realId != storedId:
-                badchecksums.append(location)
-        except IOError:
-            missingfiles.append(location)
-
-    env.out("Missing images:")
-    if badchecksums or missingfiles:
-        for path in badchecksums:
-            env.out("\n    (bad checksum) %s" % path)
-        for path in missingfiles:
-            env.out("\n    (missing) %s" % path)
-        env.out("\n")
-    else:
-        env.out(" none\n")
+        sloppyGetObject(env, arg).addCategory(category)
 
 
 def cmdCleanCache(env, args):
@@ -263,8 +418,8 @@ def cmdCleanCache(env, args):
 def cmdConnectCategory(env, args):
     if len(args) != 2:
         raise ArgumentError
-    parent = env.shelf.getCategory(args[0])
-    child = env.shelf.getCategory(args[1])
+    parent = env.shelf.getCategoryByTag(args[0])
+    child = env.shelf.getCategoryByTag(args[1])
     parent.connectChild(child)
 
 
@@ -275,7 +430,7 @@ def cmdCreateAlbum(env, args):
         atype = env.type
     else:
         atype = u"plain"
-    env.shelf.createAlbum(args[0], atype)
+    env.shelf.createAlbum(args[0], parseAlbumType(atype))
 
 
 def cmdCreateCategory(env, args):
@@ -289,36 +444,79 @@ def cmdDeleteAttribute(env, args):
         raise ArgumentError
     attr = args[0]
     for arg in args[1:]:
-        env.shelf.getObject(arg).deleteAttribute(attr)
+        sloppyGetObject(env, arg).deleteAttribute(attr)
 
 
-def cmdDestroy(env, args):
-    if len(args) < 1:
+def cmdDestroyAlbum(env, args):
+    if len(args) == 0:
         raise ArgumentError
-    for obj in args:
-        env.shelf.deleteObject(obj)
+    for arg in args:
+        env.shelf.deleteAlbum(sloppyGetAlbum(env, arg).getId())
 
 
 def cmdDestroyCategory(env, args):
-    if len(args) != 1:
+    if len(args) == 0:
         raise ArgumentError
-    env.shelf.deleteCategory(args[0])
+    for arg in args:
+        env.shelf.deleteCategory(env.shelf.getCategoryByTag(arg).getId())
+
+
+def cmdDestroyImage(env, args):
+    if len(args) == 0:
+        raise ArgumentError
+    for arg in args:
+        env.shelf.deleteImage(sloppyGetImage(env, arg).getId())
+
+
+def cmdDestroyImageVersion(env, args):
+    if len(args) == 0:
+        raise ArgumentError
+    for arg in args:
+        env.shelf.deleteImageVersion(sloppyGetImageVersion(env, arg).getId())
 
 
 def cmdDisconnectCategory(env, args):
     if len(args) != 2:
         raise ArgumentError
-    parent = env.shelf.getCategory(args[0])
-    child = env.shelf.getCategory(args[1])
+    parent = env.shelf.getCategoryByTag(args[0])
+    child = env.shelf.getCategoryByTag(args[1])
     parent.disconnectChild(child)
+
+
+def cmdFindMissingImageVersions(env, args):
+    if len(args) != 0:
+        raise ArgumentError
+    badchecksums = []
+    missingfiles = []
+    for iv in env.shelf.getAllImageVersions():
+        location = env.to_l(iv.getLocation())
+        if env.verbose:
+            env.out("Checking %s ...\n" % location)
+        try:
+            realId = computeImageHash(location)
+            storedId = iv.getHash()
+            if realId != storedId:
+                badchecksums.append(location)
+        except IOError:
+            missingfiles.append(location)
+
+    env.out("Missing image versions:")
+    if badchecksums or missingfiles:
+        for path in badchecksums:
+            env.out("\n    (bad checksum) %s" % path)
+        for path in missingfiles:
+            env.out("\n    (missing) %s" % path)
+        env.out("\n")
+    else:
+        env.out(" none\n")
 
 
 def cmdGenerate(env, args):
     if len(args) < 2:
         raise ArgumentError
-    root = env.shelf.getAlbum(args[0])
+    root = sloppyGetAlbum(env, args[0])
     dest = args[1]
-    subalbums = [env.shelf.getAlbum(x) for x in args[2:]]
+    subalbums = [sloppyGetAlbum(env, x) for x in args[2:]]
     if env.type:
         otype = env.type
     else:
@@ -334,8 +532,8 @@ def cmdGenerate(env, args):
 def cmdGetAttribute(env, args):
     if len(args) != 2:
         raise ArgumentError
-    object = env.shelf.getObject(args[1])
-    value = object.getAttribute(args[0])
+    obj = sloppyGetObject(env, args[1])
+    value = obj.getAttribute(args[0])
     if value:
         env.out(env.to_l(value) + "\n")
 
@@ -343,40 +541,61 @@ def cmdGetAttribute(env, args):
 def cmdGetAttributes(env, args):
     if len(args) != 1:
         raise ArgumentError
-    object = env.shelf.getObject(args[0])
-    for name in object.getAttributeNames():
-        env.out("%s: %s\n" % (env.to_l(name),
-                              env.to_l(object.getAttribute(name))))
+    obj = sloppyGetObject(env, args[0])
+    for name in obj.getAttributeNames():
+        env.out("%s: %s\n" % (
+            env.to_l(name),
+            env.to_l(obj.getAttribute(name))))
 
 
 def cmdGetCategories(env, args):
     if len(args) != 1:
         raise ArgumentError
-    object = env.shelf.getObject(args[0])
-    for category in object.getCategories():
-        env.out("%s (%s) <%s>\n" % (env.to_l(category.getDescription()),
-                                    env.to_l(category.getTag()),
-                                    category.getId()))
+    obj = sloppyGetObject(env, args[0])
+    for category in obj.getCategories():
+        env.out("%s (%s) <%s>\n" % (
+            env.to_l(category.getDescription()),
+            env.to_l(category.getTag()),
+            category.getId()))
 
-def cmdInspectLocations(env, args):
+
+def cmdGetImageVersions(env, args):
+    if len(args) != 1:
+        raise ArgumentError
+    image = sloppyGetImage(env, args[0])
+    for iv in image.getImageVersions():
+        if env.printIDs:
+            env.out("%s\n" % iv.getId())
+        elif env.verbose:
+            env.out("%s\n  %s%s\n" % (
+                env.to_l(iv.getLocation()),
+                iv.isPrimary() and "Primary, " or "",
+                iv.getType()))
+            if iv.getComment():
+                env.out("  %s\n" % env.to_l(iv.getComment()))
+        else:
+            env.out("%s\n" % env.to_l(iv.getLocation()))
+
+
+def cmdInspectPath(env, args):
     if len(args) < 1:
         raise ArgumentError
     import Image as PILImage
     for filepath in walk_files(args):
         try:
-            image = env.shelf.getImage(filepath)
-            if image.getLocation() == os.path.realpath(filepath):
+            imageversion = env.shelf.getImageVersionByHash(
+                computeImageHash(filepath))
+            if imageversion.getLocation() == os.path.realpath(filepath):
                 env.out("[Registered]   %s\n" % env.to_l(filepath))
             else:
                 env.out("[Moved]        %s\n" % env.to_l(filepath))
-        except ImageDoesNotExistError:
+        except ImageVersionDoesNotExistError:
             try:
-                image = env.shelf.getImage(
-                    filepath, identifyByLocation=True)
+                imageversion = env.shelf.getImageVersionByLocation(filepath)
                 env.out("[Modified]     %s\n" % env.to_l(filepath))
-            except MultipleImagesAtOneLocationError:
+            except MultipleImageVersionsAtOneLocationError:
                 env.out("[Multiple]     %s\n" % env.to_l(filepath))
-            except ImageDoesNotExistError:
+            except ImageVersionDoesNotExistError:
                 try:
                     PILImage.open(env.to_l(filepath))
                     env.out("[Unregistered] %s\n" % env.to_l(filepath))
@@ -385,16 +604,24 @@ def cmdInspectLocations(env, args):
                     env.out("[Non-image]    %s\n" % env.to_l(filepath))
 
 
+def cmdMakePrimary(env, args):
+    if len(args) == 0:
+        raise ArgumentError
+    for iv in args:
+        sloppyGetImageVersion(env, iv).makePrimary()
+
+
 def cmdPrintAlbums(env, args):
     if len(args) > 0:
-        root = env.shelf.getAlbum(args[0])
+        root = sloppyGetAlbum(env, args[0])
     else:
         root = env.shelf.getRootAlbum()
     printAlbumsHelper(env, root, 0, 0, [])
 
 
 def printAlbumsHelper(env, object, position, level, visited):
-    imgtmpl = "%(indent)s[I] %(name)s {%(position)s} <%(id)s>\n"
+    imgtmpl = "%(indent)s[I] {%(position)s} <%(id)s>\n"
+    imgvertmpl = "%(indent)s[V] %(location)s {%(primary)s%(type)s} <%(id)s>\n"
     if env.verbose:
         albtmpl = "%(indent)s[A] %(name)s {%(position)s} <%(id)s> (%(type)s)\n"
     else:
@@ -402,12 +629,13 @@ def printAlbumsHelper(env, object, position, level, visited):
     indentspaces = PRINT_ALBUMS_INDENT * " "
     if object.isAlbum():
         tag = object.getTag()
-        env.out(albtmpl % {"indent": level * indentspaces,
-                           "name": env.to_l(tag),
-                           "position": position,
-                           "id": object.getId(),
-                           "type": env.to_l(object.getType()),
-                           })
+        env.out(albtmpl % {
+            "indent": level * indentspaces,
+            "name": env.to_l(tag),
+            "position": position,
+            "id": object.getId(),
+            "type": env.to_l(object.getType()),
+            })
         if tag in visited:
             env.out("%s[...]\n" % ((level + 1) * indentspaces))
         else:
@@ -425,11 +653,19 @@ def printAlbumsHelper(env, object, position, level, visited):
                     visited + [tag])
                 pos += 1
     else:
-        env.out(imgtmpl % {"indent": level * indentspaces,
-                           "name": env.to_l(object.getLocation()),
-                           "position": position,
-                           "id": object.getId(),
-                           })
+        env.out(imgtmpl % {
+            "indent": level * indentspaces,
+            "position": position,
+            "id": object.getId(),
+            })
+        for iv in object.getImageVersions():
+            env.out(imgvertmpl % {
+                "indent": (level + 1) * indentspaces,
+                "id": iv.getId(),
+                "location": env.to_l(iv.getLocation()),
+                "primary": iv.isPrimary() and "Primary " or "",
+                "type": iv.getType(),
+                })
     if env.verbose:
         attrtmpl = "%(indent)s%(key)s: %(value)s\n"
         names = object.getAttributeNames()
@@ -459,10 +695,17 @@ def printCategoriesHelper(env, category, level):
         printCategoriesHelper(env, child, level + 1)
 
 
+def cmdPrintStatistics(env, args):
+    stats = env.shelf.getStatistics()
+    env.out("Number of albums: %d\n" % stats["nalbums"])
+    env.out("Number of images: %d\n" % stats["nimages"])
+    env.out("Number of image versions: %d\n" % stats["nimageversions"])
+
+
 def cmdRegister(env, args):
     if len(args) < 2:
         raise ArgumentError
-    destalbum = env.shelf.getAlbum(args[0])
+    destalbum = sloppyGetAlbum(env, args[0])
     registrationTimeString = unicode(time.strftime("%Y-%m-%d %H:%M:%S"))
     registerHelper(
         env,
@@ -501,15 +744,17 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
                 [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
             try:
-                image = env.shelf.createImage(env.to_u(path))
+                image = env.shelf.createImage()
+                imageversion = env.shelf.createImageVersion(
+                    image, env.to_u(path), ImageVersionType.Original)
                 image.setAttribute(u"registered", registrationTimeString)
                 newchildren.append(image)
                 if env.verbose:
                     env.out("Registered image: %s\n" % path)
-            except NotAnImageError, x:
+            except NotAnImageFileError, x:
                 env.out("Ignoring non-image file: %s\n" % path)
-            except ImageExistsError, x:
-                env.err("Ignoring already registered image: %s\n" % path)
+            except ImageVersionExistsError, x:
+                env.err("Ignoring already registered image version: %s\n" % path)
         else:
             env.err("No such file or directory (ignored): %s\n" % path)
     addHelper(env, destalbum, newchildren)
@@ -518,7 +763,7 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
 def cmdRemove(env, args):
     if len(args) < 2:
         raise ArgumentError
-    album = env.shelf.getAlbum(args[0])
+    album = sloppyGetAlbum(env, args[0])
     positions = []
     for pos in args[1:]:
         try:
@@ -538,21 +783,21 @@ def cmdRemove(env, args):
 def cmdRemoveCategory(env, args):
     if len(args) < 2:
         raise ArgumentError
-    category = env.shelf.getCategory(args[0])
+    category = env.shelf.getCategoryByTag(args[0])
     for arg in args[1:]:
-        env.shelf.getObject(arg).removeCategory(category)
+        sloppyGetObject(env, arg).removeCategory(category)
+
+
+def cmdRenameAlbum(env, args):
+    if len(args) != 2:
+        raise ArgumentError
+    sloppyGetAlbum(env, args[0]).setTag(args[1])
 
 
 def cmdRenameCategory(env, args):
     if len(args) != 2:
         raise ArgumentError
-    env.shelf.getCategory(args[0]).setTag(args[1])
-
-
-def cmdRenameTag(env, args):
-    if len(args) != 2:
-        raise ArgumentError
-    env.shelf.getAlbum(args[0]).setTag(args[1])
+    env.shelf.getCategoryByTag(args[0]).setTag(args[1])
 
 
 def cmdSearch(env, args):
@@ -560,14 +805,29 @@ def cmdSearch(env, args):
         raise ArgumentError
     parser = Parser(env.shelf)
     objects = env.shelf.search(parser.parse(args[0]))
+    objects = [x for x in objects if not x.isAlbum()]
+    ivs = []
+    for o in objects:
+        for iv in o.getImageVersions():
+            ivs.append(iv)
     if env.printIDs:
-        ids = [str(x.getId()) for x in objects if not x.isAlbum()]
-        if ids:
-            env.out(" ".join(ids) + "\n")
+        ids = Set()
+        for iv in ivs:
+            ids.add(iv.getImage().getId())
+        output = [str(x) for x in ids]
     else:
-        locations = [env.to_l(x.getLocation()) for x in objects if not x.isAlbum()]
-        if locations:
-            env.out("\n".join(locations) + "\n")
+        output = []
+        for iv in ivs:
+            t = iv.getType()
+            if (env.includeAll or
+                (env.includeImportant and t == ImageVersionType.Important) or
+                (env.includeOriginal and t == ImageVersionType.Original) or
+                (env.includeOther and t == ImageVersionType.Other) or
+                (env.includePrimary and iv.isPrimary())):
+                output.append(env.to_l(iv.getLocation()))
+        output.sort()
+    if output:
+        env.out("%s\n" % "\n".join(output))
 
 
 def cmdSetAttribute(env, args):
@@ -576,23 +836,47 @@ def cmdSetAttribute(env, args):
     attr = args[0]
     value = args[1]
     for arg in args[2:]:
-        env.shelf.getObject(arg).setAttribute(attr, value)
+        sloppyGetObject(env, arg).setAttribute(attr, value)
 
 
 def cmdSetCategoryDescription(env, args):
     if len(args) != 2:
         raise ArgumentError
-    env.shelf.getCategory(args[0]).setDescription(args[1])
+    env.shelf.getCategoryByTag(args[0]).setDescription(args[1])
 
 
-def cmdSort(env, args):
+def cmdSetImageVersionComment(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    comment = args[0]
+    for iv in args[1:]:
+        sloppyGetImageVersion(env, iv).setComment(comment)
+
+
+def cmdSetImageVersionImage(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    image = sloppyGetImage(env, args[0])
+    for iv in args[1:]:
+        sloppyGetImageVersion(env, iv).setImage(image)
+
+
+def cmdSetImageVersionType(env, args):
+    if len(args) < 2:
+        raise ArgumentError
+    ivtype = parseImageVersionType(args[0])
+    for iv in args[1:]:
+        sloppyGetImageVersion(env, iv).setType(ivtype)
+
+
+def cmdSortAlbum(env, args):
     if not 1 <= len(args) <= 2:
         raise ArgumentError
     if len(args) == 2:
         attr = args[1]
     else:
         attr = u"captured"
-    album = env.shelf.getAlbum(args[0])
+    album = sloppyGetAlbum(env, args[0])
     children = list(album.getChildren())
     children.sort(
         lambda x, y: cmp(x.getAttribute(attr), y.getAttribute(attr)))
@@ -604,22 +888,21 @@ def cmdUpdateContents(env, args):
         raise ArgumentError
     for filepath in walk_files(args):
         try:
-            image = env.shelf.getImage(
-                filepath, identifyByLocation=True)
-            oldhash = image.getHash()
-            image.contentChanged()
-            if image.getHash() != oldhash:
+            imageversion = env.shelf.getImageVersionByLocation(filepath)
+            oldhash = imageversion.getHash()
+            imageversion.contentChanged()
+            if imageversion.getHash() != oldhash:
                 env.out("New checksum: %s\n" % env.to_l(filepath))
             else:
                 if env.verbose:
                     env.out("Same checksum as before: %s\n" %
                             env.to_l(filepath))
-        except ImageDoesNotExistError:
+        except ImageVersionDoesNotExistError:
             if env.verbose:
                 env.out("Unregistered image/file: %s\n" % env.to_l(filepath))
-        except MultipleImagesAtOneLocationError:
+        except MultipleImageVersionsAtOneLocationError:
             env.errexit(
-                "Multiple known images at this location: %s\n" %
+                "Multiple known image versions at this location: %s\n" %
                 env.to_l(filepath))
 
 
@@ -628,13 +911,14 @@ def cmdUpdateLocations(env, args):
         raise ArgumentError
     for filepath in walk_files(args):
         try:
-            image = env.shelf.getImage(filepath)
-            oldlocation = image.getLocation()
+            imageversion = env.shelf.getImageVersionByHash(
+                computeImageHash(filepath))
+            oldlocation = imageversion.getLocation()
             if oldlocation != os.path.realpath(filepath):
-                image.locationChanged(filepath)
+                imageversion.locationChanged(filepath)
                 env.out("New location: %s --> %s\n" % (
                     env.to_l(oldlocation),
-                    env.to_l(image.getLocation())))
+                    env.to_l(imageversion.getLocation())))
             else:
                 if env.verbose:
                     env.out("Same location as before: %s\n" %
@@ -642,7 +926,7 @@ def cmdUpdateLocations(env, args):
         except IOError, x:
             if env.verbose:
                 env.out("Failed to read: %s\n" % env.to_l(filepath))
-        except ImageDoesNotExistError:
+        except ImageVersionDoesNotExistError:
             if env.verbose:
                 env.out("Unregistered image/file: %s\n" % env.to_l(filepath))
 
@@ -650,31 +934,39 @@ def cmdUpdateLocations(env, args):
 commandTable = {
     "add": cmdAdd,
     "add-category": cmdAddCategory,
-    "check": cmdCheck,
     "clean-cache": cmdCleanCache,
     "connect-category": cmdConnectCategory,
     "create-album": cmdCreateAlbum,
     "create-category": cmdCreateCategory,
     "delete-attribute": cmdDeleteAttribute,
-    "destroy": cmdDestroy,
+    "destroy-album": cmdDestroyAlbum,
     "destroy-category": cmdDestroyCategory,
+    "destroy-image": cmdDestroyImage,
+    "destroy-imageversion": cmdDestroyImageVersion,
     "disconnect-category": cmdDisconnectCategory,
+    "find-missing-imageversions": cmdFindMissingImageVersions,
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
     "get-categories": cmdGetCategories,
-    "inspect-locations": cmdInspectLocations,
+    "get-imageversions": cmdGetImageVersions,
+    "inspect-path": cmdInspectPath,
+    "make-primary": cmdMakePrimary,
     "print-albums": cmdPrintAlbums,
     "print-categories": cmdPrintCategories,
+    "print-statistics": cmdPrintStatistics,
     "register": cmdRegister,
     "remove": cmdRemove,
     "remove-category": cmdRemoveCategory,
+    "rename-album": cmdRenameAlbum,
     "rename-category": cmdRenameCategory,
-    "rename-tag": cmdRenameTag,
     "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
     "set-category-description": cmdSetCategoryDescription,
-    "sort": cmdSort,
+    "set-imageversion-comment": cmdSetImageVersionComment,
+    "set-imageversion-image": cmdSetImageVersionImage,
+    "set-imageversion-type": cmdSetImageVersionType,
+    "sort-album": cmdSortAlbum,
     "update-contents": cmdUpdateContents,
     "update-locations": cmdUpdateLocations,
 }
@@ -689,29 +981,45 @@ def main(argv):
     try:
         optlist, args = getopt.gnu_getopt(
             argv[1:],
-            "hl:t:vV",
-            ["database=",
-             "configfile=",
+            "ht:v",
+            ["configfile=",
+             "database=",
              "gencharenc=",
              "help",
+             "identify-by-hash",
+             "identify-by-path",
              "ids",
-             "location=",
+             "include-all",
+             "include-important",
+             "include-original",
+             "include-other",
+             "include-primary",
              "no-act",
+             "position=",
              "type=",
              "verbose",
              "version"])
     except getopt.GetoptError:
-        printErrorAndExit("Unknown flag. See \"kofoto --help\" for help.\n")
+        printErrorAndExit("Unknown option. See \"kofoto --help\" for help.\n")
 
-    env.printIDs = False
-    env.location = -1
+    # Defaults in env:
+    env.identifyByPath = False
+    env.includeAll = False
+    env.includeImportant = False
+    env.includeOriginal = False
+    env.includeOther = False
+    env.includePrimary = False
     env.noAct = False
-    env.verbose = False
+    env.position = -1
+    env.printIDs = False
     env.type = None
+    env.verbose = False
 
+    # Other defaults:
     shelfLocation = None
     configFileLocation = None
     genCharEnc = env.codeset
+
     for opt, optarg in optlist:
         if opt == "--configfile":
             configFileLocation = os.path.expanduser(env.to_l(optarg))
@@ -722,27 +1030,46 @@ def main(argv):
         elif opt in ("-h", "--help"):
             displayHelp()
             sys.exit(0)
+        elif opt == "--identify-by-hash":
+            env.identifyByPath = False
+        elif opt == "--identify-by-path":
+            env.identifyByPath = True
         elif opt == "--ids":
             env.printIDs = True
-        elif opt in ("-l", "--location"):
+        elif opt == "--include-all":
+            env.includeAll = True
+        elif opt == "--include-important":
+            env.includeImportant = True
+        elif opt == "--include-original":
+            env.includeOriginal = True
+        elif opt == "--include-other":
+            env.includeOther = True
+        elif opt == "--include-primary":
+            env.includePrimary = True
+        elif opt == "--no-act":
+            printNotice(
+                "no-act: No changes will be commited to the database!\n")
+            env.noAct = True
+        elif opt == "--position":
             if optarg == "last":
-                env.location = -1
+                env.position = -1
             else:
                 try:
-                    env.location = int(optarg)
+                    env.position = int(optarg)
                 except ValueError:
-                    printErrorAndExit("Invalid location: \"%s\"\n" %
-                                      env.to_l(optarg))
+                    printErrorAndExit(
+                        "Invalid position: \"%s\"\n" % env.to_l(optarg))
         elif opt in ("-t", "--type"):
             env.type = optarg
         elif opt in ("-v", "--verbose"):
             env.verbose = True
-        elif opt in ("-V", "--version"):
+        elif opt == "--version":
             sys.stdout.write("%s\n" % env.version)
             sys.exit(0)
-        elif opt == "--no-act":
-            sys.stdout.write("no-act: No changes will be commited to the database!\n")
-            env.noAct = True
+
+    if not (env.includeAll or env.includeImportant or env.includeOriginal
+            or env.includeOther or env.includePrimary):
+        env.includePrimary = True
 
     if len(args) == 0:
         printErrorAndExit(
@@ -759,6 +1086,11 @@ def main(argv):
             env.to_l(args[0]))
 
     try:
+        if env.shelf.isUpgradable():
+            printNotice(
+                "Upgrading %s to new database format...\n" % env.shelfLocation)
+            if not env.shelf.tryUpgrade():
+                printErrorAndExit("Failed to upgrade metadata database format.\n")
         env.shelf.begin()
     except ShelfNotFoundError, x:
         printErrorAndExit("Could not open metadata database \"%s\".\n" % (
@@ -839,6 +1171,9 @@ def main(argv):
             env.to_l(x.args[0])))
     except BadTokenError, x:
         printError("While scanning search expression: bad token starting at character %d.\n" % (
+            env.to_l(x.args[0])))
+    except UnknownImageVersionTypeError, x:
+        printError("Unknown image version type: \"%s\".\n" % (
             env.to_l(x.args[0])))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")

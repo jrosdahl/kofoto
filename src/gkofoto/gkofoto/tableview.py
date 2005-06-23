@@ -30,6 +30,8 @@ class TableView(ObjectCollectionView):
         for columnName in env.defaultTableViewColumns:
             self.__userChosenColumns[columnName] = columnLocation
             columnLocation += 1
+        env.widgets["tableView"].connect("button_press_event", self._mouse_button_pressed)
+        env.widgets["menubarViewDetailsPane"].set_sensitive(False)
 
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:
@@ -163,10 +165,15 @@ class TableView(ObjectCollectionView):
                 ("menubarDestroy", oc.destroy),
                 ("menubarClear", lambda x: widget.get_selection().unselect_all()),
                 ("menubarSelectAll", lambda x: widget.get_selection().select_all()),
+                ("menubarProperties", oc.albumProperties),
                 ("menubarCreateAlbumChild", oc.createAlbumChild),
                 ("menubarRegisterAndAddImages", oc.registerAndAddImages),
                 ("menubarGenerateHtml", oc.generateHtml),
-                ("menubarProperties", oc.albumProperties),
+                ("menubarOpenImage", oc.openImage),
+                ("menubarRotateLeft", oc.rotateImageLeft),
+                ("menubarRotateRight", oc.rotateImageRight),
+                ("menubarImageVersions", oc.imageVersions),
+                ("menubarMergeImages", oc.mergeImages),
                 ]:
             w = env.widgets[widgetName]
             oid = w.connect("activate", function)
@@ -193,10 +200,15 @@ class TableView(ObjectCollectionView):
                 "menubarDestroy",
                 "menubarClear",
                 "menubarSelectAll",
+                "menubarProperties",
                 "menubarCreateAlbumChild",
                 "menubarRegisterAndAddImages",
                 "menubarGenerateHtml",
-                "menubarProperties",
+                "menubarOpenImage",
+                "menubarRotateLeft",
+                "menubarRotateRight",
+                "menubarImageVersions",
+                "menubarMergeImages",
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 

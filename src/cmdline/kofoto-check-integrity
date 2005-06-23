@@ -1,0 +1,76 @@
+#! /usr/bin/env python
+
+import sqlite
+import sys
+from sets import Set
+
+if len(sys.argv) != 2:
+    print "Usage: kofoto-check-integrity <path-to-database>"
+    sys.exit(1)
+
+def getIds(connection, idMapping, tableColumn):
+    cursor = connection.cursor()
+    s = Set()
+    table, column = tableColumn.split(".")
+    cursor.execute("select %s from %s" % (column, table))
+    for row in cursor.fetchall():
+        s.add(row[0])
+    idMapping[tableColumn] = s
+
+def checkSubset(idMapping, subsetName, supersetName):
+    subset = idMapping[subsetName]
+    superset = idMapping[supersetName]
+    if not subset.issubset(superset):
+        print "%s not in %s: %s" % (
+            subsetName,
+            supersetName,
+            ", ".join([str(x) for x in subset.difference(superset)]))
+
+connection = sqlite.connect(sys.argv[1])
+idMapping = {}
+
+for tableColumn in [
+    "object.id",
+    "album.id",
+    "image.id",
+    "image.primary_version",
+    "image_version.id",
+    "image_version.image",
+    "member.album",
+    "member.object",
+    "attribute.object",
+    "category.id",
+    "category_child.parent",
+    "category_child.child",
+    "object_category.object",
+    "object_category.category",
+    ]:
+    getIds(connection, idMapping, tableColumn)
+
+for subset, superset in [
+    ("album.id", "object.id"),
+    ("image.id", "object.id"),
+    ("image.primary_version", "image_version.id"),
+    ("image_version.image", "image.id"),
+    ("member.album", "album.id"),
+    ("member.object", "object.id"),
+    ("attribute.object", "object.id"),
+    ("category_child.parent", "category.id"),
+    ("category_child.child", "category.id"),
+    ("object_category.object", "object.id"),
+    ("object_category.category", "category.id"),
+    ]:
+    checkSubset(idMapping, subset, superset)
+
+cursor = connection.cursor()
+cursor.execute(
+    " select i1.id, iv.id, i2.id"
+    " from   image as i1,"
+    "        image_version as iv,"
+    "        image as i2"
+    " where  i1.primary_version = iv.id and"
+    "        iv.image = i2.id and"
+    "        i1.id != i2.id")
+for image1_id, imageversion_id, image2_id in cursor.fetchall():
+    print "Image %d has primary version %d, but version %d belongs to " \
+          "image %d" % (image1_id, imageversion_id, imageversion_id, image2_id)

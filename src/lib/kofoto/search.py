@@ -57,7 +57,7 @@ class SearchNodeFactory:
         if isinstance(tag_or_album, kofoto.shelf.Album):
             album = tag_or_album
         else:
-            album = self._shelf.getAlbum(tag_or_album)
+            album = self._shelf.getAlbumByTag(tag_or_album)
         return AlbumSearchNode(self._shelf, album)
 
     def andNode(self, subnodes):
@@ -71,7 +71,7 @@ class SearchNodeFactory:
         if isinstance(tag_or_category, kofoto.shelf.Category):
             category = tag_or_category
         else:
-            category = self._shelf.getCategory(tag_or_category)
+            category = self._shelf.getCategoryByTag(tag_or_category)
         if recursive:
             catids = list(self._shelf.categorydag.get().getDescendants(
                 category.getId()))
@@ -187,17 +187,17 @@ class AlbumSearchNode:
 
     def getQuery(self):
         t = self._album.getType()
-        if t == "orphans":
-            return (" select imageid"
-                    " from   image left join attribute"
-                    " on     imageid = objectid and name = 'captured'"
-                    " where  imageid not in (select objectid from member)"
-                    " order by lcvalue, directory, filename")
-        elif t == "plain":
-            return (" select distinct objectid"
+        if t == kofoto.shelf.AlbumType.Orphans:
+            return (" select i.id"
+                    " from   image as i left join attribute as a"
+                    " on     i.id = a.object and a.name = 'captured'"
+                    " where  i.id not in (select object from member)"
+                    " order by a.lcvalue")
+        elif t == kofoto.shelf.AlbumType.Plain:
+            return (" select distinct object"
                     " from   member"
-                    " where  albumid = %s" % self._album.getId())
-        elif t == "search":
+                    " where  album = %s" % self._album.getId())
+        elif t == kofoto.shelf.AlbumType.Search:
             query = self._album.getAttribute(u"query")
             if not query:
                 return ""
@@ -232,7 +232,7 @@ class AndSearchNode:
         tables = []
         andclauses = []
         if categories and attrconds:
-            andclauses.append("oc0.objectid = a0.objectid")
+            andclauses.append("oc0.object = a0.object")
         if categories:
             first = True
             for ix in range(len(categories)):
@@ -240,9 +240,9 @@ class AndSearchNode:
                 if first:
                     first = False
                 else:
-                    andclauses.append("oc0.objectid = oc%d.objectid" % ix)
+                    andclauses.append("oc0.object = oc%d.object" % ix)
                 andclauses.append(
-                    "oc%d.categoryid in (%s)" % (
+                    "oc%d.category in (%s)" % (
                     ix,
                     ",".join([str(x) for x in categories[ix].getIds()])))
         if attrconds:
@@ -252,7 +252,7 @@ class AndSearchNode:
                 if first:
                     first = False
                 else:
-                    andclauses.append("a0.objectid = a%d.objectid" % ix)
+                    andclauses.append("a0.object = a%d.object" % ix)
                 andclauses.append(
                     "a%d.name = '%s' and a%d.lcvalue %s '%s'" % (
                         ix,
@@ -261,11 +261,11 @@ class AndSearchNode:
                         attrconds[ix].getOperator(),
                         attrconds[ix].getAttributeValue().replace("'", "''")))
         if categories:
-            selectvar = "oc0.objectid"
+            selectvar = "oc0.object"
         elif attrconds:
-            selectvar = "a0.objectid"
+            selectvar = "a0.object"
         else:
-            selectvar = "objectid"
+            selectvar = "id"
             tables.append("object")
 
         if others:
@@ -314,7 +314,7 @@ class AttributeConditionSearchNode:
         return self._operator
 
     def getQuery(self):
-        return (" select distinct objectid"
+        return (" select distinct object"
                 " from   attribute"
                 " where  name = '%s' and lcvalue %s '%s'" % (
                     self._name,
@@ -331,9 +331,9 @@ class CategorySearchNode:
     __str__ = __repr__
 
     def getQuery(self):
-        return (" select distinct objectid"
+        return (" select distinct object"
                 " from   object_category"
-                " where  categoryid in (%s)" % (
+                " where  category in (%s)" % (
                     ",".join([str(x) for x in self._ids])))
 
     def getIds(self):
@@ -364,9 +364,9 @@ class OrSearchNode:
         selects = []
         if catids:
             selects.append(
-                " select distinct objectid"
+                " select distinct object"
                 " from   object_category"
-                " where  categoryid in (%s)" % (
+                " where  category in (%s)" % (
                     ",".join([str(x) for x in catids])))
         if attrconds:
             orclauses = []
@@ -377,7 +377,7 @@ class OrSearchNode:
                         attrcond.getOperator(),
                         attrcond.getAttributeValue().replace("'", "''")))
             selects.append(
-                " select distinct objectid"
+                " select distinct object"
                 " from   attribute"
                 " where  %s" % (
                     " or ".join(orclauses)))
@@ -395,9 +395,9 @@ class NotSearchNode:
     __str__ = __repr__
 
     def getQuery(self):
-        return (" select objectid"
+        return (" select id"
                 " from   object"
-                " where  objectid not in (%s)" % self._subnode.getQuery())
+                " where  id not in (%s)" % self._subnode.getQuery())
 
 class Scanner:
     _whiteRegexp = re.compile(r"\s*", re.LOCALE | re.MULTILINE)

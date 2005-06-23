@@ -1,6 +1,6 @@
 import sys
 import gtk
-from kofoto.shelf import ShelfLockedError
+from kofoto.shelf import ShelfLockedError, UnsupportedShelfError
 from gkofoto.mainwindow import MainWindow
 from gkofoto.environment import env
 
@@ -11,11 +11,45 @@ class Controller:
     def start(self, setupOk):
         if setupOk:
             try:
+                if env.shelf.isUpgradable():
+                    dialog = gtk.MessageDialog(
+                        type=gtk.MESSAGE_INFO,
+                        buttons=gtk.BUTTONS_OK_CANCEL,
+                        message_format=
+                            "You have a metadata database from an older"
+                            " Kofoto version. It needs to be upgraded"
+                            " before you can continue.\n\n"
+                            "Press OK to upgrade the database"
+                            " automatically. A backup copy of the old"
+                            " database will be made before upgrading.")
+                    dialog.set_default_response(gtk.RESPONSE_OK)
+                    result = dialog.run()
+                    if result == gtk.RESPONSE_CANCEL:
+                        return
+                    dialog.set_response_sensitive(gtk.RESPONSE_CANCEL, False)
+                    dialog.set_response_sensitive(gtk.RESPONSE_OK, False)
+                    dialog.label.set_text("Upgrading database. Please wait...")
+                    while gtk.events_pending():
+                        gtk.main_iteration()
+                    success = env.shelf.tryUpgrade()
+                    dialog.destroy()
+                    if not success:
+                        dialog = gtk.MessageDialog(
+                            type=gtk.MESSAGE_ERROR,
+                            buttons=gtk.BUTTONS_OK,
+                            message_format="Failed to upgrade metadata database format.\n")
+                        dialog.run()
+                        dialog.destroy()
+                        return
                 env.shelf.begin()
             except ShelfLockedError, e:
                 env.startupNotices += [
                     "Error: Could not open metadata database \"%s\"." % e +
                     " Another process is locking it.\n"]
+                setupOk = False
+            except UnsupportedShelfError, e:
+                env.startupNotices += [
+                    "Error: Too new format for metadata database \"%s\"." % e]
                 setupOk = False
         if env.startupNotices:
             if setupOk:

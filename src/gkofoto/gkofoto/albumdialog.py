@@ -27,7 +27,7 @@ class AlbumDialog(TagAndDescriptionDialog):
         except BadAlbumTagError:
             return False
         try:
-            album = env.shelf.getAlbum(tagString)
+            album = env.shelf.getAlbumByTag(tagString)
             if album == self._album:
                 # The tag exists, but is same as before.
                 return True

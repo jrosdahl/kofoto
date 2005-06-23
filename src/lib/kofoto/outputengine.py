@@ -38,13 +38,18 @@ class OutputEngine:
             filename = "%s%s" % (image.getId(), ext)
             return "/".join([year, filename])
 
-        key = (image.getHash(), widthlimit, heightlimit)
+        imageversion = image.getPrimaryVersion()
+        if not imageversion:
+            # TODO: Handle this in a better way.
+            raise Exception, "No image versions for image %d" % image.getid()
+
+        key = (imageversion.getHash(), widthlimit, heightlimit)
         if not self.imgref.has_key(key):
             if self.env.verbose:
                 self.env.out("Generating image %d, size limit %dx%d..." % (
                     image.getId(), widthlimit, heightlimit))
             imgabsloc, width, height = self.env.imageCache.get(
-                image, widthlimit, heightlimit)
+                imageversion, widthlimit, heightlimit)
             ext = os.path.splitext(imgabsloc)[1]
             htmlimgloc = os.path.join(
                 "@images",

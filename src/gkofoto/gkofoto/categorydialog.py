@@ -23,7 +23,7 @@ class CategoryDialog(TagAndDescriptionDialog):
         except BadCategoryTagError:
             return False
         try:
-            category = env.shelf.getCategory(tagString)
+            category = env.shelf.getCategoryByTag(tagString)
             if category == self._category:
                 # The tag exists, but is same as before.
                 return True
