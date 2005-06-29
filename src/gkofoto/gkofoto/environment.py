@@ -46,6 +46,9 @@ class Environment(ClientEnvironment):
         self.defaultTableViewColumns = re.findall(
             "\S+",
             self.config.get("gkofoto", "default_table_columns"))
+        if not "versions" in self.defaultTableViewColumns:
+            # Ugly, temporary hack:
+            self.defaultTableViewColumns.insert(1, "versions")
         self.defaultSortColumn = self.config.get(
             "gkofoto", "default_sort_column")
         self.openCommand = self.config.get(
