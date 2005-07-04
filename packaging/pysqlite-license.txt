@@ -2,7 +2,7 @@ PySQLite (http://www.pysqlite.org) is bundled with Kofoto. It has the
 following copyright and license terms:
 
 --- [begin] ----------------------------------------------------------
-Copyright (c) 2004 Gerhard Häring
+Copyright (c) 2004 Gerhard HÃ¤ring
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
