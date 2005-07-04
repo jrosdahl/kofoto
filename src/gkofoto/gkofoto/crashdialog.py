@@ -135,7 +135,8 @@ class CrashDialog(gtk.Dialog):
             add(":" + a[1])
 
 def show(exctype, value, tb):
-    window = CrashDialog(exctype, value, tb)
-    window.run()
-    window.destroy()
+    if exctype != KeyboardInterrupt:
+        window = CrashDialog(exctype, value, tb)
+        window.run()
+        window.destroy()
     raise SystemExit
