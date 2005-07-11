@@ -801,7 +801,7 @@ class Shelf:
             else:
                 ivtype = _imageVersionTypeIdentifierToType(ivtype)
                 yield self._imageVersionFactory(
-                    ivid, imageid, ivtype, imghash, location, mtime,
+                    ivid, imageid, ivtype, ivhash, location, mtime,
                     width, height, comment)
 
 
