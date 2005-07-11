@@ -363,8 +363,16 @@ class TestShelfMethods(TestShelfFixture):
         assert len(imageversions) == 11
 
     def test_getImageVersionsInDirectory(self):
+        self.shelf.flushImageVersionCache()
+
         imageversions = list(self.shelf.getImageVersionsInDirectory(u"."))
         assert len(imageversions) == 0
+
+        # Image versions not in cache.
+        imageversions = list(self.shelf.getImageVersionsInDirectory(PICDIR))
+        assert len(imageversions) == 11
+
+        # Image versions in cache.
         imageversions = list(self.shelf.getImageVersionsInDirectory(PICDIR))
         assert len(imageversions) == 11
 
