@@ -132,7 +132,7 @@ class CrashDialog(gtk.Dialog):
             add(a[0], "exception")
         else:
             add(a[0], "exception")
-            add(":" + a[1])
+            add(":" + ":".join(a[1:]))
 
 def show(exctype, value, tb):
     if exctype != KeyboardInterrupt:
