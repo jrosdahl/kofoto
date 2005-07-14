@@ -67,6 +67,10 @@ class MainWindow(gtk.Window):
             gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
         env.widgets["menubarRotateRight"].get_children()[1].set_from_pixbuf(
             gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+        env.widgets["menubarRotateImageVersionLeft"].get_children()[1].set_from_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+        env.widgets["menubarRotateImageVersionRight"].get_children()[1].set_from_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
         env.widgets["menubarAbout"].get_children()[1].set_from_pixbuf(
             gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
 

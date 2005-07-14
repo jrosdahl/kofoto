@@ -31,7 +31,21 @@ class ImageVersionsList(gtk.ScrolledWindow):
         self.__recentlySelectedImageWidget = None
         self.connect("focus-in-event", self.__focusInEventHandler)
         self.connect("focus-out-event", self.__focusOutEventHandler)
+        self.__contextMenu = self.__createContextMenu()
         self.clear()
+
+        callbacks = [
+            ("menubarViewImageVersion", self.__view),
+            ("menubarCopyImageVersionLocations", self.__copyImageLocation),
+            ("menubarOpenImageVersions", self.__open),
+            ("menubarRotateImageVersionLeft", self.__rotateLeft),
+            ("menubarRotateImageVersionRight", self.__rotateRight),
+            ("menubarSplitToIndependentImages", self.__split),
+            ("menubarDestroyImageVersion", self.__destroy),
+            ("menubarEditImageVersionProperties", self.__editProperties),
+            ]
+        for widgetName, callback in callbacks:
+            env.widgets[widgetName].connect("activate", callback)
 
     def clear(self):
         for widget in self.__vbox.get_children():
@@ -39,6 +53,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         self.__imageWidgetList = []
         self.__imageWidgetToImageVersion = {}
         self.__selectedImageWidgets = set()
+        self.__updateMenus()
 
     def loadImage(self, image):
         self.clear()
@@ -91,9 +106,6 @@ class ImageVersionsList(gtk.ScrolledWindow):
             "Open image version(s) in external program...",
             gtk.STOCK_OPEN,
             self.__open)
-        menugroup.addMenuItem(
-            "Split to independent image(s)",
-            self.__split)
         menugroup.addImageMenuItem(
             "Rotate left",
             os.path.join(env.iconDir, "rotateleft.png"),
@@ -102,6 +114,11 @@ class ImageVersionsList(gtk.ScrolledWindow):
             "Rotate right",
             os.path.join(env.iconDir, "rotateright.png"),
             self.__rotateRight)
+        menugroup.addSeparator()
+        menugroup.addMenuItem(
+            "Split to independent image(s)",
+            self.__split)
+        menugroup.addSeparator()
         menugroup.addStockImageMenuItem(
             "Destroy...",
             gtk.STOCK_DELETE,
@@ -110,16 +127,34 @@ class ImageVersionsList(gtk.ScrolledWindow):
             "Edit properties...",
             gtk.STOCK_PROPERTIES,
             self.__editProperties)
-
-        if len(self.__selectedImageWidgets) != 1:
-            menugroup["View"].set_sensitive(False)
-
-        if len(self.__selectedImageWidgets) == len(self.__imageWidgetList):
-            menugroup["Split to independent image(s)"].set_sensitive(False)
-
         for item in menugroup:
             menu.add(item)
+        self.__menuGroup = menugroup
         return menu
+
+    def __updateMenus(self):
+        zeroSelected = len(self.__selectedImageWidgets) == 0
+        oneSelected = len(self.__selectedImageWidgets) == 1
+        allSelected = (
+            len(self.__selectedImageWidgets) == len(self.__imageWidgetList))
+
+        env.widgets["menubarViewImageVersion"].set_sensitive(oneSelected)
+        env.widgets["menubarCopyImageVersionLocations"].set_sensitive(not zeroSelected)
+        env.widgets["menubarOpenImageVersions"].set_sensitive(not zeroSelected)
+        env.widgets["menubarRotateImageVersionLeft"].set_sensitive(not zeroSelected)
+        env.widgets["menubarRotateImageVersionRight"].set_sensitive(not zeroSelected)
+        env.widgets["menubarSplitToIndependentImages"].set_sensitive(not zeroSelected and not allSelected)
+        env.widgets["menubarDestroyImageVersion"].set_sensitive(not zeroSelected)
+        env.widgets["menubarEditImageVersionProperties"].set_sensitive(not zeroSelected)
+
+        if zeroSelected:
+            self.__menuGroup.disable()
+        else:
+            self.__menuGroup.enable()
+            if not oneSelected:
+                self.__menuGroup["View"].set_sensitive(False)
+            if allSelected:
+                self.__menuGroup["Split to independent image(s)"].set_sensitive(False)
 
     def __mouseButtonPressed(self, widget, event):
         def selectWidget(widget):
@@ -165,12 +200,12 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 selectThisToo()
             else:
                 selectOnlyThis()
-            contextMenu = self.__createContextMenu()
-            contextMenu.popup(
+            self.__contextMenu.popup(
                 None, None, None, event.button, event.time)
         if self.__recentlySelectedImageWidget:
             self.__recentlySelectedImageWidget.queue_draw()
         self.__recentlySelectedImageWidget = widget
+        self.__updateMenus()
 
     def __imageWidgetExposed(self, widget, event):
         if widget == self.__recentlySelectedImageWidget:
@@ -189,6 +224,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         self.__imageView.loadFile(imageVersion.getLocation())
 
     def __copyImageLocation(self, widget, param):
+        assert len(self.__selectedImageWidgets) > 0
         clipboard = gtk.clipboard_get(gtk.gdk.SELECTION_CLIPBOARD)
         primary = gtk.clipboard_get(gtk.gdk.SELECTION_PRIMARY)
         location = "\n".join(
