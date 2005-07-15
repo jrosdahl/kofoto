@@ -119,9 +119,12 @@ class TableView(ObjectCollectionView):
     def _thawHelper(self):
         env.enter("TableView.thawHelper()")
         self._initDragAndDrop()
-        self._connect(self._viewWidget, "focus-in-event", self._treeViewFocusInEvent)
-        self._connect(self._viewWidget, "focus-out-event", self._treeViewFocusOutEvent)
-        self._connect(self._viewWidget.get_selection(), "changed", self._widgetSelectionChanged)
+        self._connect(
+            self._viewWidget, "focus-in-event", self._treeViewFocusInEvent)
+        self._connect(
+            self._viewWidget, "focus-out-event", self._treeViewFocusOutEvent)
+        self._connect(
+            self._viewWidget.get_selection(), "changed", self._widgetSelectionChanged)
         env.exit("TableView.thawHelper()")
 
     def _createContextMenu(self, objectCollection):
@@ -170,9 +173,11 @@ class TableView(ObjectCollectionView):
                 ("menubarRegisterAndAddImages", oc.registerAndAddImages),
                 ("menubarGenerateHtml", oc.generateHtml),
                 ("menubarOpenImage", oc.openImage),
+                ("menubarDuplicateAndOpenImage", oc.duplicateAndOpenImage),
                 ("menubarRotateLeft", oc.rotateImageLeft),
                 ("menubarRotateRight", oc.rotateImageRight),
                 ("menubarImageVersions", oc.imageVersions),
+                ("menubarRegisterImageVersions", oc.registerImageVersions),
                 ("menubarMergeImages", oc.mergeImages),
                 ]:
             w = env.widgets[widgetName]
@@ -205,9 +210,11 @@ class TableView(ObjectCollectionView):
                 "menubarRegisterAndAddImages",
                 "menubarGenerateHtml",
                 "menubarOpenImage",
+                "menubarDuplicateAndOpenImage",
                 "menubarRotateLeft",
                 "menubarRotateRight",
                 "menubarImageVersions",
+                "menubarRegisterImageVersions",
                 "menubarMergeImages",
                 ]:
             env.widgets[widgetName].set_sensitive(False)

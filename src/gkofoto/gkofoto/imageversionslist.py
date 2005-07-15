@@ -1,11 +1,13 @@
 import os
 import gtk
+
 from environment import env
 from kofoto.shelf import ImageVersionType
 from gkofoto.menuhandler import MenuGroup
 from imageversionsdialog import ImageVersionsDialog
 from sets import Set as set
 from kofoto.alternative import Alternative
+from duplicateandopenimagedialog import DuplicateAndOpenImageDialog
 
 _imageVersionTypeToStringMap = {
     ImageVersionType.Important: "Important",
@@ -38,6 +40,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             ("menubarViewImageVersion", self.__view),
             ("menubarCopyImageVersionLocations", self.__copyImageLocation),
             ("menubarOpenImageVersions", self.__open),
+            ("menubarDuplicateAndOpenImageVersion", self.__duplicateAndOpen),
             ("menubarRotateImageVersionLeft", self.__rotateLeft),
             ("menubarRotateImageVersionRight", self.__rotateRight),
             ("menubarSplitToIndependentImages", self.__split),
@@ -106,6 +109,10 @@ class ImageVersionsList(gtk.ScrolledWindow):
             "Open image version(s) in external program...",
             gtk.STOCK_OPEN,
             self.__open)
+        menugroup.addStockImageMenuItem(
+            "Duplicate and open image version(s) in external program...",
+            gtk.STOCK_OPEN,
+            self.__duplicateAndOpen)
         menugroup.addImageMenuItem(
             "Rotate left",
             os.path.join(env.iconDir, "rotateleft.png"),
@@ -138,14 +145,24 @@ class ImageVersionsList(gtk.ScrolledWindow):
         allSelected = (
             len(self.__selectedImageWidgets) == len(self.__imageWidgetList))
 
-        env.widgets["menubarViewImageVersion"].set_sensitive(oneSelected)
-        env.widgets["menubarCopyImageVersionLocations"].set_sensitive(not zeroSelected)
-        env.widgets["menubarOpenImageVersions"].set_sensitive(not zeroSelected)
-        env.widgets["menubarRotateImageVersionLeft"].set_sensitive(not zeroSelected)
-        env.widgets["menubarRotateImageVersionRight"].set_sensitive(not zeroSelected)
-        env.widgets["menubarSplitToIndependentImages"].set_sensitive(not zeroSelected and not allSelected)
-        env.widgets["menubarDestroyImageVersion"].set_sensitive(not zeroSelected)
-        env.widgets["menubarEditImageVersionProperties"].set_sensitive(not zeroSelected)
+        env.widgets["menubarViewImageVersion"].set_sensitive(
+            oneSelected)
+        env.widgets["menubarCopyImageVersionLocations"].set_sensitive(
+            not zeroSelected)
+        env.widgets["menubarOpenImageVersions"].set_sensitive(
+            not zeroSelected)
+        env.widgets["menubarDuplicateAndOpenImageVersion"].set_sensitive(
+            oneSelected)
+        env.widgets["menubarRotateImageVersionLeft"].set_sensitive(
+            not zeroSelected)
+        env.widgets["menubarRotateImageVersionRight"].set_sensitive(
+            not zeroSelected)
+        env.widgets["menubarSplitToIndependentImages"].set_sensitive(
+            not zeroSelected and not allSelected)
+        env.widgets["menubarDestroyImageVersion"].set_sensitive(
+            not zeroSelected)
+        env.widgets["menubarEditImageVersionProperties"].set_sensitive(
+            not zeroSelected)
 
         if zeroSelected:
             self.__menuGroup.disable()
@@ -153,6 +170,10 @@ class ImageVersionsList(gtk.ScrolledWindow):
             self.__menuGroup.enable()
             if not oneSelected:
                 self.__menuGroup["View"].set_sensitive(False)
+                self.__menuGroup[
+                    ("Duplicate and open image version(s) in external"
+                     " program...")
+                    ].set_sensitive(False)
             if allSelected:
                 self.__menuGroup["Split to independent image(s)"].set_sensitive(False)
 
@@ -247,6 +268,13 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 message_format="Failed to execute command: \"%s\"" % command)
             dialog.run()
             dialog.destroy()
+
+    def __duplicateAndOpen(self, *args):
+        assert len(self.__selectedImageWidgets) == 1
+        imageWidget = list(self.__selectedImageWidgets)[0]
+        imageVersion = self.__imageWidgetToImageVersion[imageWidget]
+        dialog = DuplicateAndOpenImageDialog()
+        dialog.run(imageVersion)
 
     def __split(self, *args):
         assert len(self.__selectedImageWidgets) > 0

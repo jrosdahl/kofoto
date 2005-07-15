@@ -50,7 +50,7 @@ class Categories:
 
         #
         # Category quick select view
-        # 
+        #
         self.__categoryQSModel = gtk.ListStore(
             gobject.TYPE_INT,      # CATEGORY_ID
             gobject.TYPE_STRING,   # DESCRIPTION

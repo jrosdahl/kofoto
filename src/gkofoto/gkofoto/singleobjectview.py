@@ -116,6 +116,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.enter("SingleObjectView.showHelper()")
         env.widgets["objectView"].show()
         env.widgets["objectView"].grab_focus()
+        self._connectMenubarImageItems() # Grossest hack of the month. Sigh.
         for widgetName in [
                 "zoom100",
                 "zoomToFit",

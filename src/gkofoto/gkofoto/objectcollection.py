@@ -10,6 +10,8 @@ from objectselection import *
 from albumdialog import AlbumDialog
 from registerimagesdialog import RegisterImagesDialog
 from imageversionsdialog import ImageVersionsDialog
+from registerimageversionsdialog import RegisterImageVersionsDialog
+from duplicateandopenimagedialog import DuplicateAndOpenImageDialog
 
 class ObjectCollection(object):
 
@@ -92,6 +94,9 @@ class ObjectCollection(object):
     def getOpenImageLabel(self):
         return "Open image in external program..."
 
+    def getDuplicateAndOpenImageLabel(self):
+        return "Duplicate and open image in external program..."
+
     def getRotateImageLeftLabel(self):
         return "Rotate image left"
 
@@ -100,6 +105,9 @@ class ObjectCollection(object):
 
     def getImageVersionsLabel(self):
         return "Edit image versions..."
+
+    def getRegisterImageVersionsLabel(self):
+        return "Register image versions..."
 
     def getMergeImagesLabel(self):
         return "Merge images..."
@@ -477,6 +485,12 @@ class ObjectCollection(object):
         dialog = ImageVersionsDialog()
         dialog.runViewImageVersions(selectedObjects[0])
 
+    def registerImageVersions(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1
+        dialog = RegisterImageVersionsDialog()
+        dialog.run(selectedObjects[0])
+
     def mergeImages(self, widget, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) > 1
@@ -539,6 +553,13 @@ class ObjectCollection(object):
                     message_format="Failed to execute command: \"%s\"" % command)
                 dialog.run()
                 dialog.destroy()
+
+    def duplicateAndOpenImage(self, widget, *unused):
+        selectedObjects = self.__objectSelection.getSelectedObjects()
+        assert len(selectedObjects) == 1
+        assert not selectedObjects[0].isAlbum()
+        dialog = DuplicateAndOpenImageDialog()
+        dialog.run(selectedObjects[0].getPrimaryVersion())
 
 ######################################################################
 ### Private
