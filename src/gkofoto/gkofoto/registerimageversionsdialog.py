@@ -11,7 +11,8 @@ from kofoto.shelf import \
     NotAnImageFileError
 
 class RegisterImageVersionsDialog:
-    def __init__(self):
+    def __init__(self, model):
+        self._model = model
         self._widgets = gtk.glade.XML(
             env.gladeFile, "registerImageVersionsDialog")
         self._dialog = self._widgets.get_widget("registerImageVersionsDialog")
@@ -52,12 +53,14 @@ class RegisterImageVersionsDialog:
     def _onOk(self, *unused):
         selection = self._fileListView.get_selection()
         model, selectedRows = selection.get_selected_rows()
+        changed = False
         for path in selectedRows:
             treeiter = self._fileListStore.get_iter(path)
             location = self._fileListStore.get_value(treeiter, 0)
             try:
-                env.shelf.createImageVersion(
+                imageVersion = env.shelf.createImageVersion(
                     self._image, location, ImageVersionType.Other)
+                changed = True
             except NotAnImageFileError:
                 dialog = gtk.MessageDialog(
                     self._dialog,
@@ -76,6 +79,9 @@ class RegisterImageVersionsDialog:
                     "Already registered: %s" % location)
                 dialog.run()
                 dialog.destroy()
+        if changed:
+            imageVersion.makePrimary()
+            self._model.reloadSelectedRows()
         self._dialog.destroy()
 
     def _onBrowse(self, *unused):

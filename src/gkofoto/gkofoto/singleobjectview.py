@@ -108,8 +108,12 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
             filename = env.unknownImageIconFileName
         self.__imageView.loadFile(filename)
 
+    def _reloadSingleObjectView(self):
+        self.reload()
+
     def reload(self):
         self.__loadObject(self.__loadedObject)
+        self.__imageVersionsList.reload()
         self._objectCollection.reloadSelectedRows()
 
     def _showHelper(self):

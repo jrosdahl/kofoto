@@ -151,6 +151,10 @@ class ObjectCollection(object):
         env.debug("Unregister view from object collection")
         self.__registeredViews.remove(view)
 
+    def reloadSingleObjectView(self):
+        for view in self.__registeredViews:
+            view._reloadSingleObjectView()
+
     def clear(self, freeze=True):
         env.debug("Clearing object collection")
         if freeze:
@@ -482,19 +486,21 @@ class ObjectCollection(object):
     def imageVersions(self, widget, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1
-        dialog = ImageVersionsDialog()
+        dialog = ImageVersionsDialog(self)
         dialog.runViewImageVersions(selectedObjects[0])
+        self.reloadSingleObjectView()
 
     def registerImageVersions(self, widget, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1
-        dialog = RegisterImageVersionsDialog()
+        dialog = RegisterImageVersionsDialog(self)
         dialog.run(selectedObjects[0])
+        self.reloadSingleObjectView()
 
     def mergeImages(self, widget, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) > 1
-        dialog = ImageVersionsDialog()
+        dialog = ImageVersionsDialog(self)
         dialog.runMergeImages(selectedObjects)
 
     def rotateImage(self, widget, angle):
@@ -524,6 +530,7 @@ class ObjectCollection(object):
                         message_format="Failed to execute command: \"%s\"" % command)
                     dialog.run()
                     dialog.destroy()
+        self.reloadSingleObjectView()
 
     def rotateImageLeft(self, widget, *unused):
         self.rotateImage(widget, 270)

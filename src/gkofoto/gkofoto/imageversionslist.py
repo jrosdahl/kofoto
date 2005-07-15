@@ -319,7 +319,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
 
     def __editProperties(self, *args):
         assert len(self.__selectedImageWidgets) > 0
-        dialog = ImageVersionsDialog()
+        dialog = ImageVersionsDialog(self.__singleObjectView._objectCollection)
         dialog.runViewImageVersions(self.__image)
 
     def __focusInEventHandler(self, widget, event):

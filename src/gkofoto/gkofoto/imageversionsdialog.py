@@ -17,7 +17,8 @@ RowDataStruct = makeStructClass(
 class ImageVersionsDialog:
     tableWidth = 3
 
-    def __init__(self):
+    def __init__(self, model):
+        self._model = model
         self._versionDataList = []
         self._widgets = gtk.glade.XML(
             env.gladeFile, "imageVersionsDialog")
@@ -57,7 +58,7 @@ class ImageVersionsDialog:
         newheight = min(800, self._table.size_request()[1] + hackyConstant)
         self._dialog.move(x, max(0, y - ((newheight - height) / 2)))
         self._dialog.resize(450, newheight)
-        self._dialog.show()
+        self._dialog.run()
 
     def _onCancel(self, *unused):
         self._dialog.destroy()
@@ -142,7 +143,9 @@ class ImageVersionsDialog:
                     textBuffer.get_text(
                         textBuffer.get_start_iter(),
                         textBuffer.get_end_iter()).decode("utf-8"))
-        env.mainwindow.reloadObjectList()
+            env.mainwindow.reloadObjectList()
+        else:
+            self._model.reloadSelectedRows()
         self._dialog.destroy()
 
     def _addRow(self, imageVersion):

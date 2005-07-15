@@ -319,6 +319,9 @@ class TableView(ObjectCollectionView):
             if columnName in self.__createdColumns:
                 self.__removeColumn(columnName)
 
+    def _reloadSingleObjectView(self):
+        pass
+
 ###############################################################################
 ### Private
 
