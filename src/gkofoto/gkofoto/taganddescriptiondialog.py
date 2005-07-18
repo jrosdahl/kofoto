@@ -39,7 +39,7 @@ class TagAndDescriptionDialog:
 
     def __generateTagName(self, descText):
         env.assertUnicode(descText)
-        return re.sub(r"(?Lu)\W", "", descText).lower()
+        return re.sub(r"(?u)\W", "", descText).lower()
 
     def __generateTagNameDeprecated1(self, descText):
         # An algoritm for generating tag names used in previous gkofoto

@@ -26,7 +26,7 @@
 #
 # <quoted string> ::= "\"" .* "\""   (where each backslash and quotation mark in
 #                                     the .* part is preceeded by a backslash)
-# where \w is characters (locale dependent), digits and underscore.
+# where \w is alpha-numeric characters and underscore.
 
 __all__ = [
     "BadTokenError",
@@ -400,9 +400,9 @@ class NotSearchNode:
                 " where  id not in (%s)" % self._subnode.getQuery())
 
 class Scanner:
-    _whiteRegexp = re.compile(r"\s*", re.LOCALE | re.MULTILINE)
+    _whiteRegexp = re.compile(r"\s*", re.UNICODE | re.MULTILINE)
     _tokenRegexps = [
-        (re.compile(x, re.IGNORECASE | re.LOCALE | re.MULTILINE), y)
+        (re.compile(x, re.IGNORECASE | re.UNICODE | re.MULTILINE), y)
         for (x, y) in [
             (r"\(", "lparen"),
             (r"\)", "rparen"),
