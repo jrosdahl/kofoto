@@ -63,7 +63,7 @@ class GenerateHTMLDialog:
                 string,
                 re.UNICODE)
             if m:
-                progressBar.set_text(m.group(1).decode("latin1"))
+                progressbar.set_text(m.group(1).decode("utf-8"))
                 progressBar.set_fraction(
                     (int(m.group(2)) - 1) / float(m.group(3)))
                 while gtk.events_pending():
@@ -90,7 +90,7 @@ class GenerateHTMLDialog:
 
         try:
             generator = kofoto.generate.Generator(u"woolly", env)
-            generator.generate(self.album, None, directoryName, "latin1")
+            generator.generate(self.album, None, directoryName, "utf-8")
             progressBar.set_fraction(1)
             while gtk.events_pending():
                 gtk.main_iteration()
