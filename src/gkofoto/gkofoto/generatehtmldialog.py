@@ -63,7 +63,7 @@ class GenerateHTMLDialog:
                 string,
                 re.UNICODE)
             if m:
-                progressbar.set_text(m.group(1).decode("utf-8"))
+                progressBar.set_text(m.group(1).decode("utf-8"))
                 progressBar.set_fraction(
                     (int(m.group(2)) - 1) / float(m.group(3)))
                 while gtk.events_pending():
