@@ -321,6 +321,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         assert len(self.__selectedImageWidgets) > 0
         dialog = ImageVersionsDialog(self.__singleObjectView._objectCollection)
         dialog.runViewImageVersions(self.__image)
+        self.__singleObjectView.reload()
 
     def __focusInEventHandler(self, widget, event):
         for x in self.__selectedImageWidgets:
