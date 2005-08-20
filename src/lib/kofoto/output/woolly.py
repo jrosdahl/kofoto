@@ -392,11 +392,11 @@ class OutputGenerator(OutputEngine):
                     if number != 0 and number % 3 == 0:
                         subalbumtextElements.append("</tr>\n<tr>\n")
 
-                    frontimageversion = self._getFrontImageVersion(subalbum)
+                    frontimage = self._getFrontImage(subalbum)
                     if frontimage:
                         thumbimgref, thumbwidth, thumbheight = \
                             self.getImageReference(
-                                frontimageversion,
+                                frontimage,
                                 self.env.thumbnailsizelimit[0],
                                 self.env.thumbnailsizelimit[1])
                     else:
@@ -752,7 +752,7 @@ class OutputGenerator(OutputEngine):
         return "".join(pathtextElements)
 
 
-    def _getFrontImageVersion(self, object, visited=None):
+    def _getFrontImage(self, object, visited=None):
         if visited and object.getId() in visited:
             return None
 
@@ -764,15 +764,12 @@ class OutputGenerator(OutputEngine):
             if thumbid:
                 from kofoto.shelf import ImageDoesNotExistError
                 try:
-                    image = self.env.shelf.getImage(int(thumbid))
-                    imageversion = image.getPrimaryVersion()
-                    if imageversion:
-                        return imageversion
+                    return self.env.shelf.getImage(int(thumbid))
                 except ImageDoesNotExistError:
                     pass
             children = iter(object.getChildren())
             try:
-                return self._getFrontImageVersion(children.next(), visited)
+                return self._getFrontImage(children.next(), visited)
             except StopIteration:
                 return None
         else:
