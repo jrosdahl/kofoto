@@ -60,10 +60,9 @@ class GenerateHTMLDialog:
         def outputParser(string):
             m = re.match(
                 r"Creating album (\S+) \((\d+) of (\d+)\)",
-                string,
-                re.UNICODE)
+                string)
             if m:
-                progressBar.set_text(m.group(1).decode("utf-8"))
+                progressBar.set_text(m.group(1).decode(env.codeset))
                 progressBar.set_fraction(
                     (int(m.group(2)) - 1) / float(m.group(3)))
                 while gtk.events_pending():
