@@ -1,5 +1,6 @@
-import glob
 import os
+import re
+import sets
 
 import gtk
 
@@ -35,15 +36,18 @@ class RegisterImageVersionsDialog:
 
     def run(self, image):
         self._image = image
-        location = image.getPrimaryVersion().getLocation()
-        prefix, suffix = os.path.splitext(location)
-        candidates = glob.glob("%s?*%s" % (prefix, suffix))
-        files = []
-        for candidate in candidates:
-            try:
-                env.shelf.getImageVersionByLocation(candidate)
-            except ImageVersionDoesNotExistError:
-                files.append(candidate)
+        files = sets.Set()
+        for imageversion in image.getImageVersions():
+            base, filename = os.path.split(imageversion.getLocation())
+            prefix, suffix = os.path.splitext(filename)
+            for candidateFilename in os.listdir(base):
+                if (re.match("%s[^a-zA-Z0-9].*" % prefix, candidateFilename)):
+                    candidatePath = os.path.join(base, candidateFilename)
+                    if os.path.isfile(candidatePath):
+                        try:
+                            env.shelf.getImageVersionByLocation(candidatePath)
+                        except ImageVersionDoesNotExistError:
+                            files.add(candidatePath)
         self.__setFiles(files)
         self._dialog.run()
 
