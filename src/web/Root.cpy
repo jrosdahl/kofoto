@@ -1,6 +1,7 @@
 use Page
 
 import os
+import sys
 from kofoto.clientenvironment import *
 from kofoto.common import *
 from kofoto.config import *
@@ -13,13 +14,16 @@ def initServer():
     env = ClientEnvironment()
     env.setup()
     env.shelf.begin()
+    if len(sys.argv) > 1:
+        env.root = env.shelf.getAlbumByTag(unicode(sys.argv[1]))
+    else:
+        env.root = env.shelf.getRootAlbum()
 
 def initNonStaticResponse():
     if request.path == "image":
         response.headerMap["content-type"] = "image/jpeg"
     else:
         response.headerMap["content-type"] = "application/xhtml+xml"
-
 
 CherryClass Root(Page):
 view:
@@ -41,7 +45,7 @@ mask:
     def treeframe(self):
         <py-eval="self.header()">
         <ul>
-        <py-eval="self.albumTreeHelper(env.shelf.getRootAlbum(), 0, [])">
+        <py-eval="self.albumTreeHelper(env.root, 0, [])">
         </ul>
         <py-eval="self.footer()">
 
