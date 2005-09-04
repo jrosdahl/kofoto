@@ -76,7 +76,8 @@ mask:
 view:
     def image(self, imageid, widthlimit, heightlimit):
         path, width, height = env.imageCache.get(
-            env.shelf.getImage(int(imageid)), int(widthlimit), int(heightlimit))
+            env.shelf.getImage(int(imageid)).getPrimaryVersion(),
+            int(widthlimit), int(heightlimit))
         return file(path).read()
 
     def submitAlbum(self, **kw):
