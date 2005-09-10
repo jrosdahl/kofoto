@@ -49,7 +49,7 @@ class HandleImagesDialog(gtk.FileChooserDialog):
         movedImages = []
         for filepath in walk_files([self.get_filename()]):
             try:
-                filepath = filepath.decode("utf-8")
+                filepath = filepath.decode(env.codeset)
             except UnicodeDecodeError:
                 filepath = filepath.decode("latin1")
             try:

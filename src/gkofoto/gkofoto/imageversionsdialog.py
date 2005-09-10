@@ -162,8 +162,8 @@ class ImageVersionsDialog:
         image = gtk.Image()
         try:
             thumbnailLocation, w, h = env.imageCache.get(
-                imageVersion.getLocation(), 128, 128)
-            image.set_from_file(thumbnailLocation)
+                imageVersion.getLocation().encode(env.codeset), 128, 128)
+            image.set_from_file(thumbnailLocation.decode(env.codeset))
         except OSError:
             image.set_from_pixbuf(env.unknownImageIconPixbuf)
         table.attach(

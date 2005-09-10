@@ -218,7 +218,7 @@ class ObjectCollection(object):
                 if deleteFiles and not obj.isAlbum():
                     for iv in obj.getImageVersions():
                         try:
-                            os.remove(iv.getLocation())
+                            os.remove(iv.getLocation().encode(env.codeset))
                             # TODO: Delete from image cache too?
                         except OSError:
                             pass
@@ -511,13 +511,13 @@ class ObjectCollection(object):
                 if not imageversion:
                     # Image has no versions. Skip it for now.
                     continue
-                location = imageversion.getLocation().encode(env.codeset)
+                location = imageversion.getLocation()
                 if angle == 90:
                     commandString = env.rotateRightCommand
                 else:
                     commandString = env.rotateLeftCommand
-                command = commandString.encode(env.codeset) % { "location":location }
-                result = os.system(command)
+                command = commandString % { "location":location }
+                result = os.system(command.encode(env.codeset))
                 if result == 0:
                     imageversion.contentChanged()
                     model = self.getUnsortedModel()
@@ -550,9 +550,7 @@ class ObjectCollection(object):
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
-            # GIMP does not seem to be able to open locations containing swedish
-            # characters. I tried latin-1 and utf-8 without success.
-            result = os.system(command + " &")
+            result = os.system(command.encode(env.codeset) + " &")
             if result != 0:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,

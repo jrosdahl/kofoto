@@ -260,7 +260,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             self.__imageWidgetToImageVersion[x].getLocation()
             for x in self.__selectedImageWidgets]
         command = env.openCommand % {"locations": " ".join(locations)}
-        result = os.system(command + " &")
+        result = os.system(command.encode(env.codeset) + " &")
         if result != 0:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
@@ -309,7 +309,8 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 imageVersion = self.__imageWidgetToImageVersion[widget]
                 if deleteFiles:
                     try:
-                        os.remove(imageVersion.getLocation())
+                        os.remove(
+                            imageVersion.getLocation().encode(env.codset))
                         # TODO: Delete from image cache too?
                     except OSError:
                         pass
@@ -341,9 +342,8 @@ class ImageVersionsList(gtk.ScrolledWindow):
             else:
                 # Can't happen.
                 assert True
-            command = rotateCommand.encode(env.codeset) % {
-                "location": imageVersion.getLocation()}
-            result = os.system(command)
+            command = rotateCommand % {"location": imageVersion.getLocation()}
+            result = os.system(command.encode(env.codeset))
             if result == 0:
                 imageVersion.contentChanged()
             else:

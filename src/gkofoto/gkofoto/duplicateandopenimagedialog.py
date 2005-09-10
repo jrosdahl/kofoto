@@ -34,7 +34,7 @@ class DuplicateAndOpenImageDialog:
 
     def _onOk(self, *unused):
         duplicateLocation = self._fileEntry.get_text()
-        if os.path.exists(duplicateLocation):
+        if os.path.exists(duplicateLocation.encode(env.codeset)):
             dialog = gtk.MessageDialog(
                 self._dialog,
                 gtk.DIALOG_MODAL,
@@ -45,10 +45,10 @@ class DuplicateAndOpenImageDialog:
             dialog.destroy()
         else:
             shutil.copyfile(
-                self._imageversion.getLocation(),
-                duplicateLocation)
+                self._imageversion.getLocation().encode(env.codeset),
+                duplicateLocation.encode(env.codeset))
             command = env.openCommand % {"locations": duplicateLocation}
-            result = os.system(command + " &")
+            result = os.system(command.encode(env.codeset) + " &")
             if result != 0:
                 dialog = gtk.MessageDialog(
                     self._dialog,
