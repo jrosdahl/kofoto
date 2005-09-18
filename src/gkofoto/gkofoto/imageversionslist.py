@@ -310,7 +310,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 if deleteFiles:
                     try:
                         os.remove(
-                            imageVersion.getLocation().encode(env.codset))
+                            imageVersion.getLocation().encode(env.codeset))
                         # TODO: Delete from image cache too?
                     except OSError:
                         pass
