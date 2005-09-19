@@ -84,6 +84,7 @@ def tryUpgrade(location, toVersion):
             " set    version = %s",
             toVersion)
         connection.commit()
+        del connection # Drop file handle; needed on Windows.
         os.rename(location, "%s-backup-%s" % (
             location, time.strftime("%Y%m%d-%H%M%S")))
         os.rename(new_location, location)
