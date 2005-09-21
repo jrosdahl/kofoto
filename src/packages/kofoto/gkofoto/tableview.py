@@ -1,7 +1,7 @@
 import gtk
 from environment import env
 from sets import Set
-from gkofoto.objectcollectionview import *
+from kofoto.gkofoto.objectcollectionview import *
 from sets import Set
 from objectcollection import *
 from menuhandler import *

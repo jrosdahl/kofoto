@@ -54,7 +54,7 @@ for x in ["python", "gtk", "pygtk", "pil", "pysqlite"]:
     license_file.write(f.read())
 
 versionDict = {}
-execfile("src/lib/kofoto/version.py", versionDict)
+execfile("src/packages/kofoto/version.py", versionDict)
 
 print "creating kofoto.iss"
 template = \

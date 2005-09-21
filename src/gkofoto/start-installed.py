@@ -12,5 +12,5 @@ if os.path.islink(sys.argv[0]):
 else:
     bindir = os.path.dirname(sys.argv[0])
 
-from gkofoto.main import main
+from kofoto.gkofoto.main import main
 main(bindir, sys.argv)

@@ -2,19 +2,19 @@ import gtk
 import gtk.gdk
 import os
 
-from gkofoto.categories import *
-from gkofoto.albums import *
+from kofoto.gkofoto.categories import *
+from kofoto.gkofoto.albums import *
 from environment import env
-from gkofoto.tableview import *
-from gkofoto.thumbnailview import *
-from gkofoto.singleobjectview import *
-from gkofoto.objectcollectionfactory import *
-from gkofoto.objectcollection import *
-from gkofoto.registerimagesdialog import RegisterImagesDialog
-from gkofoto.handleimagesdialog import HandleImagesDialog
-from gkofoto.generatehtmldialog import GenerateHTMLDialog
-from gkofoto.persistentstate import PersistentState
-from gkofoto.imagepreloader import ImagePreloader
+from kofoto.gkofoto.tableview import *
+from kofoto.gkofoto.thumbnailview import *
+from kofoto.gkofoto.singleobjectview import *
+from kofoto.gkofoto.objectcollectionfactory import *
+from kofoto.gkofoto.objectcollection import *
+from kofoto.gkofoto.registerimagesdialog import RegisterImagesDialog
+from kofoto.gkofoto.handleimagesdialog import HandleImagesDialog
+from kofoto.gkofoto.generatehtmldialog import GenerateHTMLDialog
+from kofoto.gkofoto.persistentstate import PersistentState
+from kofoto.gkofoto.imagepreloader import ImagePreloader
 
 class MainWindow(gtk.Window):
     def __init__(self):

@@ -6,7 +6,7 @@ testModules = ["dagtests", "shelftests", "searchtests"]
 
 cwd = os.getcwd()
 libdir = unicode(os.path.realpath(
-    os.path.join(os.path.dirname(sys.argv[0]), "..", "lib")))
+    os.path.join(os.path.dirname(sys.argv[0]), "..", "packages")))
 os.chdir(libdir)
 sys.path.insert(0, libdir)
 

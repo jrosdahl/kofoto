@@ -7,7 +7,7 @@ import unittest
 if __name__ == "__main__":
     cwd = os.getcwd()
     libdir = unicode(os.path.realpath(
-        os.path.join(os.path.dirname(sys.argv[0]), "..", "lib")))
+        os.path.join(os.path.dirname(sys.argv[0]), "..", "packages")))
     os.chdir(libdir)
     sys.path.insert(0, libdir)
 from kofoto.shelf import *

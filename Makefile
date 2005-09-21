@@ -1,6 +1,6 @@
 PREFIX = /usr/local
 
-VERSION = $(shell sed -n 's/^version = "\(.*\)"$$/\1/p' src/lib/kofoto/version.py)
+VERSION = $(shell sed -n 's/^version = "\(.*\)"$$/\1/p' src/packages/kofoto/version.py)
 
 help:
 	@echo "Available targets:"

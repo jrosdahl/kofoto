@@ -1,8 +1,8 @@
 import sys
 import gtk
 from kofoto.shelf import ShelfLockedError, UnsupportedShelfError
-from gkofoto.mainwindow import MainWindow
-from gkofoto.environment import env
+from kofoto.gkofoto.mainwindow import MainWindow
+from kofoto.gkofoto.environment import env
 
 class Controller:
     def __init__(self):

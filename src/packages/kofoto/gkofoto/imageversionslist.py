@@ -3,7 +3,7 @@ import gtk
 
 from environment import env
 from kofoto.shelf import ImageVersionType
-from gkofoto.menuhandler import MenuGroup
+from kofoto.gkofoto.menuhandler import MenuGroup
 from imageversionsdialog import ImageVersionsDialog
 from sets import Set as set
 from kofoto.alternative import Alternative

@@ -7,20 +7,20 @@ import shutil
 import sys
 
 package_dirs = {
-    "kofoto": "src/lib/kofoto",
-    "gkofoto": "src/gkofoto/gkofoto",
+    "kofoto": "src/packages/kofoto",
     }
 packages = [
     "kofoto",
+    "kofoto.commandline",
+    "kofoto.gkofoto",
     "kofoto.output",
-    "gkofoto",
     ]
 data_files = [
     ("share/gkofoto/glade", ["src/gkofoto/glade/gkofoto.glade"]),
     ("share/gkofoto/icons", glob.glob("src/gkofoto/icons/*.png")),
     ]
 versionDict = {}
-execfile("src/lib/kofoto/version.py", versionDict)
+execfile("src/packages/kofoto/version.py", versionDict)
 common_setup_options = {
     "name": "kofoto",
     "version": versionDict["version"],

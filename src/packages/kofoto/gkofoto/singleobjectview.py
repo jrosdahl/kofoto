@@ -1,9 +1,9 @@
 import gtk
 import sys
 from environment import env
-from gkofoto.imageview import *
-from gkofoto.objectcollectionview import *
-from gkofoto.imageversionslist import ImageVersionsList
+from kofoto.gkofoto.imageview import *
+from kofoto.gkofoto.objectcollectionview import *
+from kofoto.gkofoto.imageversionslist import ImageVersionsList
 
 class SingleObjectView(ObjectCollectionView, gtk.HPaned):
 

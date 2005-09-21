@@ -2,7 +2,7 @@ import gtk
 import string
 import re
 from environment import env
-from gkofoto.taganddescriptiondialog import *
+from kofoto.gkofoto.taganddescriptiondialog import *
 
 class CategoryDialog(TagAndDescriptionDialog):
     def __init__(self, title, categoryId=None):

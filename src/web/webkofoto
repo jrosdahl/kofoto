@@ -6,7 +6,7 @@ import socket
 import sys
 import tempfile
 
-# Find libraries if installed in ../lib (like in the source tree).
+# Find libraries if installed in ../packages (like in the source tree).
 if os.path.islink(sys.argv[0]):
     link = os.readlink(sys.argv[0])
     absloc = os.path.normpath(
@@ -14,7 +14,7 @@ if os.path.islink(sys.argv[0]):
     bindir = os.path.dirname(absloc)
 else:
     bindir = os.path.dirname(sys.argv[0])
-sys.path.insert(0, os.path.join(bindir, "..", "lib"))
+sys.path.insert(0, os.path.join(bindir, "..", "packages"))
 datadir = os.path.join(bindir, "..", "share", "kofotoweb")
 if not os.path.exists(datadir):
     datadir = bindir

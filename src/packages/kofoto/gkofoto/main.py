@@ -1,8 +1,8 @@
 import os
 import sys
 from kofoto.clientenvironment import DEFAULT_CONFIGFILE_LOCATION
-from gkofoto.environment import env
-from gkofoto.controller import Controller
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.controller import Controller
 from optparse import OptionParser
 
 def setupWindowsEnvironment(bindir):
