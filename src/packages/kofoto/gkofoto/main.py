@@ -1,6 +1,6 @@
 import os
 import sys
-from kofoto.clientenvironment import DEFAULT_CONFIGFILE_LOCATION
+from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.controller import Controller
 from optparse import OptionParser

@@ -25,6 +25,8 @@ class KofotoError(Exception):
 ### Functions.
 
 def calculateDownscaledDimensions(width, height, widthlimit, heightlimit):
+    """Scale down width and height to fit within given limits."""
+
     w = width
     h = height
     if w > widthlimit:
@@ -36,6 +38,8 @@ def calculateDownscaledDimensions(width, height, widthlimit, heightlimit):
     return w, h
 
 def symlinkOrCopyFile(source, destination):
+    """Create a symbolic link, or copy if support links are not supported."""
+
     try:
         os.unlink(destination)
     except OSError:
@@ -43,6 +47,8 @@ def symlinkOrCopyFile(source, destination):
     try:
         os.symlink(source, destination)
     except AttributeError:
+        # The platform doesn't support symlinks.
+
         import shutil
         if not os.path.dirname(source):
             # Handle the case of "ln -s foo dir/bar".

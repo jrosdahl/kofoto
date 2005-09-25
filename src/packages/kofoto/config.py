@@ -47,14 +47,13 @@ class BadConfigurationValueError(KofotoError):
     pass
 
 class Config(ConfigParser):
-    def __init__(self, filename, encoding):
+    def __init__(self, encoding):
         ConfigParser.__init__(self)
-        self.filename = filename
         self.encoding = encoding
 
-    def read(self):
+    def read(self, filenames):
         try:
-            ConfigParser.read(self, self.filename)
+            ConfigParser.read(self, filenames)
         except ConfigParserMissingSectionHeaderError:
             raise MissingSectionHeaderError
 
@@ -78,11 +77,6 @@ class Config(ConfigParser):
                 raise BadConfigurationValueError, (section, option, val)
             ret.append((x, y))
         return ret
-
-    def getImageSizeList(self):
-        """Returns image size limits as a sorted list of unique tuples
-        of width and height."""
-        return imgsizes
 
     def verify(self):
         def checkConfigurationItem(section, key, function):
