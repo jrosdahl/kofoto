@@ -29,6 +29,7 @@ class CachedObject:
 
         if not self.__created:
             self.__object = self.__constructor(*self.__args)
+            self.__created = True
         return self.__object
 
     def invalidate(self):
@@ -39,3 +40,4 @@ class CachedObject:
 
         if self.__created:
             self.__object = None
+            self.__created = False
