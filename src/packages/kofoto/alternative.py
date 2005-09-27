@@ -8,10 +8,12 @@ except NameError:
     from sets import Set as set
 
 class Alternative:
-    """A simple variant record (AKA discriminated union) class
-    representing a set of unique identifers. It's sort of an enum,
-    except there's no enumeration, i.e. no integers are associated
-    with the identifiers and the identifiers have no specific order.
+    """A simple variant record (AKA discriminated union) class.
+
+    The class represents a set of unique identifers. It's sort of an
+    enum, except there's no enumeration, i.e. no integers are
+    associated with the identifiers and the identifiers have no
+    specific order.
 
     Example usage:
 
@@ -62,7 +64,7 @@ class Alternative:
         return x in self.__identifiers
 
 class AlternativeInstance:
-    """An alternativ instance."""
+    """An alternative instance."""
 
     def __init__(self, identifier):
         self.__identifier = identifier
