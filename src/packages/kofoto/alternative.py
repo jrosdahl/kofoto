@@ -62,6 +62,8 @@ class Alternative:
         return x in self.__identifiers
 
 class AlternativeInstance:
+    """An alternativ instance."""
+
     def __init__(self, identifier):
         self.__identifier = identifier
 

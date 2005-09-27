@@ -1,3 +1,5 @@
+# pylint: disable-msg=W0232
+
 """A simple struct-like class."""
 
 __all__ = ["StructClass"]
@@ -17,5 +19,6 @@ def makeStructClass(*attributes):
     """
 
     class Struct(object):
+        """A struct."""
         __slots__ = attributes
     return Struct

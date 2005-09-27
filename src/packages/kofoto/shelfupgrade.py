@@ -1,4 +1,6 @@
-__all__ = ["upgradeShelf"]
+"""Implementation of code that upgrades the shelf to a newer format."""
+
+__all__ = ["isUpgradable", "upgradeShelf"]
 
 import os
 import kofoto.shelf
@@ -6,6 +8,8 @@ import sqlite as sql
 import time
 
 def isUpgradable(location):
+    """Check whether a shelf is upgradable, i.e. not the latest version."""
+
     if not os.path.exists(location):
         raise kofoto.shelf.ShelfNotFoundError, location
     try:
@@ -25,7 +29,8 @@ def isUpgradable(location):
 def tryUpgrade(location, toVersion):
     """Upgrade the database format.
 
-    Returns True if upgrade was successful, otherwise False."""
+    Returns True if upgrade was successful, otherwise False.
+    """
 
     connection = sql.connect(location)
     cursor = connection.cursor()
@@ -66,7 +71,7 @@ def tryUpgrade(location, toVersion):
             " where  type in ('allalbums', 'allimages')")
         aids = [x[0] for x in cursor]
         if aids:
-            aids_str = ",".join(map(str, aids))
+            aids_str = ",".join([str(x) for x in aids])
             cursor.execute(
                 " delete from album"
                 " where  id in (%s)" % aids_str)

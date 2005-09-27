@@ -1,16 +1,26 @@
+"""Implementation of the Timer class."""
+
 import time
 
 class Timer:
+    """A class for measuring a time interval."""
+
     def __init__(self):
+        self.__time = None
         self.reset()
 
     def reset(self):
-        self.time = time.time()
+        """Reset the timer."""
+        self.__time = time.time()
 
     def get(self):
-        return time.time() - self.time
+        """Get the number of seconds since the timer was last reset (or
+        created)."""
+        return time.time() - self.__time
 
     def getAndReset(self):
-        t = time.time() - self.time
+        """Get the number of seconds since the timer was last reset (or
+        created) and then reset the timer."""
+        t = time.time() - self.__time
         self.reset()
         return t

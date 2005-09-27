@@ -27,7 +27,6 @@ __all__ = [
     "ShelfLockedError",
     "ShelfNotFoundError",
     "UndeletableAlbumError",
-    "UnimplementedError",
     "UnknownAlbumTypeError",
     "UnknownImageVersionTypeError",
     "UnsettableChildrenError",
@@ -45,10 +44,9 @@ __all__ = [
 import os
 import re
 import threading
-import time
 import sqlite as sql
 from sets import Set
-from kofoto.common import KofotoError
+from kofoto.common import KofotoError, UnimplementedError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
 from kofoto.alternative import Alternative
@@ -367,11 +365,6 @@ class UndeletableAlbumError(KofotoError):
     pass
 
 
-class UnimplementedError(KofotoError):
-    """Unimplemented action."""
-    pass
-
-
 class UnknownAlbumTypeError(KofotoError):
     """The album type is unknown."""
     pass
@@ -408,6 +401,7 @@ def computeImageHash(filename):
 
 
 def verifyValidAlbumTag(tag):
+    """Verify that an album tag is valid."""
     if not isinstance(tag, (str, unicode)):
         raise BadAlbumTagError, tag
     try:
@@ -420,6 +414,7 @@ def verifyValidAlbumTag(tag):
 
 
 def verifyValidCategoryTag(tag):
+    """Verify that a category tag is valid."""
     if not isinstance(tag, (str, unicode)):
         raise BadCategoryTagError, tag
     try:
@@ -433,6 +428,10 @@ def verifyValidCategoryTag(tag):
 
 
 def makeValidTag(tag):
+    """Make a string a valid tag.
+
+    Returns the valid tag string.
+    """
     tag = tag.lstrip("@")
     tag = re.sub(r"\s", "", tag)
     if re.match("^\d+$", tag):
@@ -480,6 +479,8 @@ class Shelf:
             self.logfile = file("sql.log", "a")
         else:
             self.logfile = None
+        self.connection = None
+        self.categorydag = None
 
 
     def create(self):
@@ -517,7 +518,8 @@ class Shelf:
         Returns True if upgrade was successful, otherwise False.
         """
         assert not self.inTransaction
-        return kofoto.shelfupgrade.tryUpgrade(self.location, _SHELF_FORMAT_VERSION)
+        return kofoto.shelfupgrade.tryUpgrade(
+            self.location, _SHELF_FORMAT_VERSION)
 
 
     def begin(self):
@@ -621,6 +623,14 @@ class Shelf:
 
 
     def getStatistics(self):
+        """Get statistics about the metadata database.
+
+        The returned value is a mapping with the following keys:
+
+        nalbums        -- Number of albums.
+        nimages        -- Number of images.
+        nimageversions -- Number of image versions.
+        """
         assert self.inTransaction
         cursor = self.connection.cursor()
         cursor.execute(
@@ -1153,7 +1163,6 @@ class Shelf:
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError, catid
-        (tag,) = row
         cursor.execute(
             " delete from category_child"
             " where  parent = %s",
@@ -1265,6 +1274,7 @@ class Shelf:
     # Internal methods.
 
     def _createShelf(self):
+        """Helper method for Shelf.create."""
         cursor = self.connection.cursor()
         cursor.execute(schema)
         cursor.execute(
@@ -1299,6 +1309,7 @@ class Shelf:
 
 
     def _openShelf(self):
+        """Helper method for Shelf.open."""
         cursor = self.connection.cursor()
         try:
             cursor.execute(
@@ -1314,6 +1325,14 @@ class Shelf:
 
 
     def _albumFactory(self, albumid, tag, albumtype):
+        """Factory method for creating Album instances.
+
+        Arguments:
+
+        albumid   -- ID of the album.
+        tag       -- Tag of the album.
+        albumtype -- An instance of the AlbumType alternative.
+        """
         albumtypemap = {
             AlbumType.Orphans: OrphansAlbum,
             AlbumType.Plain: PlainAlbum,
@@ -1325,6 +1344,13 @@ class Shelf:
 
 
     def _imageFactory(self, imageid, primary_version_id):
+        """Factory method for creating Image instances.
+
+        Arguments:
+
+        imageid            -- ID of the image.
+        primary_version_id -- ID of the primary image version.
+        """
         image = Image(self, imageid, primary_version_id)
         self.objectcache[imageid] = image
         return image
@@ -1332,6 +1358,20 @@ class Shelf:
 
     def _imageVersionFactory(self, ivid, imageid, ivtype, ivhash,
                              location, mtime, width, height, comment):
+        """Factory method for creating ImageVersion instances.
+
+        Arguments:
+
+        ivid     -- ID of the image version.
+        imageid  -- ID of the image the image version belongs to.
+        ivtype   -- An instance of the ImageVersionType alternative.
+        ivhash   -- Hash of the image version file.
+        location -- Location of the image version file.
+        mtime    -- mtime of the image version file.
+        width    -- Width of the image version.
+        height   -- Height of the image version.
+        comment  -- Comment of the image version.
+        """
         imageversion = ImageVersion(
             self, ivid, imageid, ivtype, ivhash, location, mtime, width,
             height, comment)
@@ -1340,6 +1380,7 @@ class Shelf:
 
 
     def _deleteObjectFromParents(self, objid):
+        """Helper method that deletes an object from its parents."""
         cursor = self.connection.cursor()
         cursor.execute(
             " select distinct album.id, album.tag"
@@ -1347,7 +1388,7 @@ class Shelf:
             " where  member.object = %s and member.album = album.id",
             objid)
         parentinfolist = cursor.fetchall()
-        for parentid, parenttag in parentinfolist:
+        for parentid, _ in parentinfolist:
             cursor.execute(
                 " select position"
                 " from   member"
@@ -1373,38 +1414,45 @@ class Shelf:
 
 
     def _setModified(self):
+        """Set the modified flag."""
         self.modified = True
         for fn in self.modificationCallbacks:
             fn(True)
 
 
     def _unsetModified(self):
+        """Unset the modified flag."""
         self.modified = False
         for fn in self.modificationCallbacks:
             fn(False)
 
 
     def _getConnection(self):
+        """Get the database connection instance."""
         assert self.inTransaction
         return self.connection
 
 
     def _getOrphanAlbumsCache(self):
+        """Get the cache of the orphaned albums."""
         assert self.inTransaction
         return self.orphanAlbumsCache
 
 
     def _setOrphanAlbumsCache(self, albums):
+        """Set the cache of the orphaned albums."""
         assert self.inTransaction
         self.orphanAlbumsCache = albums
 
 
     def _getOrphanImagesCache(self):
+        """Get the cache of the orphaned images."""
         assert self.inTransaction
         return self.orphanImagesCache
 
 
     def _setOrphanImagesCache(self, images):
+        """Set the cache of the orphaned images."""
         assert self.inTransaction
         self.orphanImagesCache = images
 
@@ -1568,10 +1616,17 @@ class Category:
 
 
 class _Object:
+    """Abstract base class of Kofoto objects (albums and images)."""
+
     ##############################
     # Public methods.
 
+    def isAlbum(self):
+        """Return True if this an album, False if this is an image."""
+        raise UnimplementedError
+
     def getId(self):
+        """Get the ID of an object."""
         return self.objid
 
 
@@ -1626,12 +1681,12 @@ class _Object:
             " from   attribute"
             " where  object = %s",
             self.getId())
-        map = {}
+        amap = {}
         for key, value in cursor:
-            map[key] = value
-        self.attributes = map
+            amap[key] = value
+        self.attributes = amap
         self.allAttributesFetched = True
-        return map
+        return amap
 
 
     def getAttributeNames(self):
@@ -1746,6 +1801,7 @@ class _Object:
         self.allCategoriesFetched = False
 
     def _categoriesDirty(self):
+        """Set the categories dirty flag."""
         self.allCategoriesFetched = False
 
 
@@ -1762,12 +1818,16 @@ class _Object:
 
 
 class Album(_Object):
-    """Base class of Kofoto albums."""
+    """Abstract base class of Kofoto albums."""
 
     ##############################
     # Public methods.
 
     def getType(self):
+        """Get the album type.
+
+        The returned value is an instance of the AlbumType alternative.
+        """
         return self.albumtype
 
 
@@ -1782,6 +1842,7 @@ class Album(_Object):
 
 
     def setTag(self, newtag):
+        """Set the tag of the album."""
         verifyValidAlbumTag(newtag)
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
@@ -1795,10 +1856,18 @@ class Album(_Object):
 
 
     def getChildren(self):
+        """Get the album's children.
+
+        Returns an iterable returning Album/Image instances.
+        """
         raise UnimplementedError
 
 
     def getAlbumChildren(self):
+        """Get the album's album children.
+
+        Returns an iterable returning Album instances.
+        """
         raise UnimplementedError
 
 
@@ -1819,10 +1888,17 @@ class Album(_Object):
 
 
     def setChildren(self, children):
+        """Set the children of the album.
+
+        Arguments:
+
+        children -- A list of Album/Image instances.
+        """
         raise UnimplementedError
 
 
     def isAlbum(self):
+        """Return True if this an album, False if this is an image."""
         return True
 
 
@@ -1844,6 +1920,7 @@ class PlainAlbum(Album):
     # Public methods.
 
     def isMutable(self):
+        """Whether the album can be modified with setChildren."""
         return True
 
 
@@ -1894,7 +1971,12 @@ class PlainAlbum(Album):
 
 
     def setChildren(self, children):
-        """Set an album's children."""
+        """Set the album's children.
+
+        Arguments:
+
+        children -- A list of Album/Image instances.
+        """
         albumid = self.getId()
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
@@ -1949,6 +2031,7 @@ class Image(_Object):
     # Public methods.
 
     def isAlbum(self):
+        """Return True if this an album, False if this is an image."""
         return False
 
 
@@ -1990,6 +2073,7 @@ class Image(_Object):
 
 
     def _makeNewPrimaryVersion(self):
+        """Helper method to make a new primary image version of needed."""
         ivs = list(self.getImageVersions())
         if len(ivs) > 0:
             # The last version is probably the best.
@@ -2006,6 +2090,7 @@ class Image(_Object):
 
 
     def _setPrimaryVersion(self, imageversion):
+        """Helper method to set the primary image version."""
         self.primary_version_id = imageversion.getId()
 
 
@@ -2059,6 +2144,7 @@ class ImageVersion:
 
 
     def setImage(self, image):
+        """Associate the image version with an image."""
         oldimage = self.getImage()
         if image == oldimage:
             return
@@ -2082,6 +2168,12 @@ class ImageVersion:
 
 
     def setType(self, ivtype):
+        """Set the type of the image version.
+
+        Arguments:
+
+        ivtype -- An instance of the ImageVersionType alternative.
+        """
         self.type = ivtype
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
@@ -2094,6 +2186,7 @@ class ImageVersion:
 
 
     def setComment(self, comment):
+        """Set the comment of the image version."""
         self.comment = comment
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
@@ -2106,6 +2199,7 @@ class ImageVersion:
 
 
     def makePrimary(self):
+        """Make this image version the primary image version."""
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image"
@@ -2127,7 +2221,8 @@ class ImageVersion:
 
         Checksum, width, height and mtime are updated.
 
-        It is assumed that the image version location is still correct."""
+        It is assumed that the image version location is still correct.
+        """
         self.hash = computeImageHash(self.location)
         import Image as PILImage
         try:
@@ -2277,10 +2372,17 @@ class MagicAlbum(Album):
     # Public methods.
 
     def isMutable(self):
+        """Whether the album can be modified with setChildren."""
         return False
 
 
     def setChildren(self, children):
+        """Set the album's children.
+
+        Arguments:
+
+        children -- A list of Album/Image instances.
+        """
         raise UnsettableChildrenError, self.getTag()
 
 
@@ -2310,6 +2412,12 @@ class OrphansAlbum(MagicAlbum):
     # Internal methods.
 
     def _getChildren(self, includeimages):
+        """Helper method to get the albums children.
+
+        Arguments:
+
+        includeimages -- Whether images should be included.
+        """
         albums = self.shelf._getOrphanAlbumsCache()
         if albums != None:
             for album in albums:
@@ -2377,16 +2485,22 @@ class SearchAlbum(MagicAlbum):
     # Internal methods.
 
     def _getChildren(self, includeimages):
+        """Helper method to get the albums children.
+
+        Arguments:
+
+        includeimages -- Whether images should be included.
+        """
         query = self.getAttribute(u"query")
         if not query:
             return []
-        import kofoto.search
-        parser = kofoto.search.Parser(self.shelf)
+        from kofoto import search
+        parser = search.Parser(self.shelf)
         try:
             tree = parser.parse(query)
         except (AlbumDoesNotExistError,
                 CategoryDoesNotExistError,
-                kofoto.search.ParseError):
+                search.ParseError):
             return []
         objects = self.shelf.search(tree)
         if includeimages:
@@ -2395,6 +2509,7 @@ class SearchAlbum(MagicAlbum):
             objectlist = [x for x in objects if x.isAlbum()]
 
         def sortfn(x, y):
+            """Helper function."""
             a = cmp(x.getAttribute(u"captured"), y.getAttribute(u"captured"))
             if a == 0:
                 return cmp(x.getId(), y.getId())
@@ -2409,6 +2524,7 @@ class SearchAlbum(MagicAlbum):
 ### Internal helper functions and classes.
 
 def _albumTypeIdentifierToType(atid):
+    """Map an album type identifer string to an AlbumType alternative."""
     try:
         return {
             u"orphans": AlbumType.Orphans,
@@ -2420,6 +2536,7 @@ def _albumTypeIdentifierToType(atid):
 
 
 def _albumTypeToIdentifier(atype):
+    """Map an AlbumType alternative to an album type identifer string."""
     try:
         return {
             AlbumType.Orphans: u"orphans",
@@ -2431,6 +2548,7 @@ def _albumTypeToIdentifier(atype):
 
 
 def _createCategoryDAG(connection):
+    """Create the category DAG."""
     cursor = connection.cursor()
     cursor.execute(
         " select id"
@@ -2445,6 +2563,9 @@ def _createCategoryDAG(connection):
 
 
 def _imageVersionTypeIdentifierToType(ivtype):
+    """Map an image version type identifer string to an ImageVersionType
+    alternative.
+    """
     try:
         return {
             u"important": ImageVersionType.Important,
@@ -2456,6 +2577,9 @@ def _imageVersionTypeIdentifierToType(ivtype):
 
 
 def _imageVersionTypeToIdentifier(ivtype):
+    """Map an ImageVersionType alternative to an image version type identifer
+    string.
+    """
     try:
         return {
             ImageVersionType.Important: u"important",
@@ -2467,7 +2591,16 @@ def _imageVersionTypeToIdentifier(ivtype):
 
 
 class _UnicodeConnectionDecorator:
+    """A class that makes a database connection Unicode-aware."""
+
     def __init__(self, connection, encoding):
+        """Constructor.
+
+        Arguments:
+
+        connection -- The database connection to wrap.
+        encoding   -- The encoding (e.g. utf-8) to use.
+        """
         self.connection = connection
         self.encoding = encoding
 
@@ -2475,12 +2608,22 @@ class _UnicodeConnectionDecorator:
         return getattr(self.connection, attrname)
 
     def cursor(self):
+        """Return a _UnicodeConnectionDecorator."""
         return _UnicodeCursorDecorator(
             self.connection.cursor(), self.encoding)
 
 
 class _UnicodeCursorDecorator:
+    """A class that makes database cursor Unicode-aware."""
+
     def __init__(self, cursor, encoding):
+        """Constructor.
+
+        Arguments:
+
+        cursor   -- The database cursor to wrap.
+        encoding -- The encoding (e.g. utf-8) to use.
+        """
         self.cursor = cursor
         self.encoding = encoding
 
@@ -2499,6 +2642,7 @@ class _UnicodeCursorDecorator:
                 yield self._unicodifyRow(row)
 
     def _unicodifyRow(self, row):
+        """Helper method that decodes fields of a row into Unicode."""
         result = []
         for col in row:
             if isinstance(col, str):
@@ -2508,6 +2652,10 @@ class _UnicodeCursorDecorator:
         return result
 
     def _assertUnicode(self, obj):
+        """Check that all strings in an object are in Unicode.
+
+        Lists, tuples and maps are recursively checked.
+        """
         if isinstance(obj, str):
             raise AssertionError, ("non-Unicode string", obj)
         elif isinstance(obj, (list, tuple)):
@@ -2517,11 +2665,19 @@ class _UnicodeCursorDecorator:
             for val in obj.itervalues():
                 self._assertUnicode(val)
 
-    def execute(self, sql, *parameters):
+    def execute(self, statement, *parameters):
+        """Execute an SQL statement.
+
+        The SQL string must be Unicode.
+        """
         self._assertUnicode(parameters)
-        return self.cursor.execute(sql, *parameters)
+        return self.cursor.execute(statement, *parameters)
 
     def fetchone(self):
+        """Fetch a row from the result set.
+
+        The returned row contains Unicode strings.
+        """
         row = self.cursor.fetchone()
         if row:
             return self._unicodifyRow(row)
@@ -2529,4 +2685,8 @@ class _UnicodeCursorDecorator:
             return None
 
     def fetchall(self):
+        """Fetch all row of the result set.
+
+        The returned rows contain Unicode strings.
+        """
         return list(self)

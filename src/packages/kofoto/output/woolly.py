@@ -1,3 +1,7 @@
+# pylint: disable-msg=C0301
+
+'''Implementation of the output module "woolly".'''
+
 import os
 import re
 from kofoto.outputengine import OutputEngine
@@ -304,8 +308,11 @@ image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 
 
 class OutputGenerator(OutputEngine):
+    '''A class implementing the "woolly" output module.'''
+
     def __init__(self, env, character_encoding):
         OutputEngine.__init__(self, env)
+        self.iconsdir = None
         self.env = env
         self.charEnc = character_encoding
         if env.config.has_option("woolly", "display_categories"):
@@ -329,12 +336,14 @@ class OutputGenerator(OutputEngine):
             pass
 
 
-    def preGeneration(self, root):
+    def preGeneration(self, _):
+        """Method called before generation of the output."""
         self.iconsdir = "@icons"
         self.makeDirectory(self.iconsdir)
 
 
     def postGeneration(self, root):
+        """Method called after generation of the output."""
         if self.env.verbose:
             self.env.out("Generating index page, style sheet and icons...\n")
         self.symlinkFile(
@@ -367,6 +376,14 @@ class OutputGenerator(OutputEngine):
 
 
     def generateAlbum(self, album, subalbums, images, paths):
+        """Method called to generate output of an album.
+
+        Arguments:
+
+        album     -- The Album instance.
+        subalbums -- Album children of the album.
+        images    -- Image children of the album.
+        """
         # ------------------------------------------------------------
         # Create album overview pages, one per size limit.
         # ------------------------------------------------------------
@@ -523,71 +540,104 @@ class OutputGenerator(OutputEngine):
 
 
     def generateImage(self, album, image, images, number, paths):
+        """Method called to generate output of an album.
+
+        Arguments:
+
+        album     -- The parent album of the image.
+        image     -- The Image instance.
+        images    -- A list of images in the album.
+        number    -- The current image's index in the image list.
+        paths     -- A list of lists of Album instances.
+        """
         # ------------------------------------------------------------
         # Create image frameset and image fram, one per size limit.
         # ------------------------------------------------------------
 
         for limnumber, (wlim, hlim) in enumerate(self.env.imagesizelimits):
             pathtext = self._generatePathText(wlim, hlim, paths, "../")
-            uplink = '<link rel="up" href="../%s-%dx%d.html" target="_top" />' % (
-                paths[0][-1].getTag().encode(self.charEnc),
-                wlim,
-                hlim)
-
-            if number > 0:
-                previouslink = '<link rel="previous" href="%s-%dx%d-frame.html" />' % (
-                    number - 1,
+            uplink = \
+                '<link rel="up" href="../%s-%dx%d.html" target="_top" />' % (
+                    paths[0][-1].getTag().encode(self.charEnc),
                     wlim,
                     hlim)
-                previoustext = '<a href="%s"><img class="icon" src="../%s/previous.png" alt="Previous image" /></a>' % (
-                    "%s-%dx%d.html" % (number - 1, wlim, hlim),
-                    self.iconsdir)
-                cpi_text = '<img src="%s" width="1" height="1" style="display: none" alt="" >' % (
-                    "../" + self.getImageReference(
-                                images[number - 1], wlim, hlim)[0])
+
+            if number > 0:
+                previouslink = \
+                    '<link rel="previous" href="%s-%dx%d-frame.html" />' % (
+                        number - 1,
+                        wlim,
+                        hlim)
+                previoustext = (
+                    '<a href="%s"><img class="icon" src="../%s/previous.png"'
+                    ' alt="Previous image" /></a>' % (
+                        "%s-%dx%d.html" % (number - 1, wlim, hlim),
+                        self.iconsdir))
+                cpi_text = (
+                    '<img src="%s" width="1" height="1" style="display: none"'
+                    ' alt="" >' % (
+                        "../" + self.getImageReference(
+                            images[number - 1], wlim, hlim)[0]))
             else:
                 previouslink = ""
-                previoustext = '<img class="icon" src="../%s/noprevious.png" alt="No previous image" />' % self.iconsdir
+                previoustext = (
+                    '<img class="icon" src="../%s/noprevious.png"'
+                    ' alt="No previous image" />' % self.iconsdir)
                 cpi_text = ""
 
             if number < len(images) - 1:
                 nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
                     number + 1, wlim, hlim)
-                nexttext = '<a href="%s"><img class="icon" src="../%s/next.png"  alt="Next image" /></a>' % (
-                    "%s-%dx%d.html" % (number + 1, wlim, hlim),
-                    self.iconsdir)
-                cni_text = '<img src="%s" width="1" height="1" style="display: none" alt="" >' % (
-                    "../" + self.getImageReference(
-                                images[number + 1], wlim, hlim)[0])
+                nexttext = (
+                    '<a href="%s"><img class="icon" src="../%s/next.png"'
+                    ' alt="Next image" /></a>' % (
+                        "%s-%dx%d.html" % (number + 1, wlim, hlim),
+                        self.iconsdir))
+                cni_text = (
+                    '<img src="%s" width="1" height="1" style="display: none"'
+                    ' alt="" >' % (
+                        "../" + self.getImageReference(
+                            images[number + 1], wlim, hlim)[0]))
             else:
                 nextlink = ""
-                nexttext = '<img class="icon" src="../%s/nonext.png" alt="No next image" />' % self.iconsdir
+                nexttext = (
+                    '<img class="icon" src="../%s/nonext.png"'
+                    ' alt="No next image" />' % self.iconsdir)
                 cni_text = ""
 
             if limnumber > 0:
-                smallertext = '<a href="%s" target="_top"><img class="icon" src="../%s/smaller.png" alt="Smaller image" /></a>' % (
-                    "%s-%dx%d-frame.html" % (
-                        number,
-                        self.env.imagesizelimits[limnumber - 1][0],
-                        self.env.imagesizelimits[limnumber - 1][1]),
-                    self.iconsdir)
+                smallertext = (
+                    '<a href="%s" target="_top"><img class="icon"'
+                    ' src="../%s/smaller.png" alt="Smaller image" /></a>' % (
+                        "%s-%dx%d-frame.html" % (
+                            number,
+                            self.env.imagesizelimits[limnumber - 1][0],
+                            self.env.imagesizelimits[limnumber - 1][1]),
+                        self.iconsdir))
 
             else:
-                smallertext = '<img class="icon" src="../%s/nosmaller.png" alt="No smaller image available" />' % self.iconsdir
+                smallertext = (
+                    '<img class="icon" src="../%s/nosmaller.png"'
+                    ' alt="No smaller image available" />' % self.iconsdir)
 
             if limnumber < len(self.env.imagesizelimits) - 1:
-                largertext = '<a href="%s" target="_top"><img class="icon" src="../%s/larger.png" alt="Larger image" /></a>' % (
-                    "%s-%dx%d-frame.html" % (
-                        number,
-                        self.env.imagesizelimits[limnumber + 1][0],
-                        self.env.imagesizelimits[limnumber + 1][1]),
-                    self.iconsdir)
+                largertext = (
+                    '<a href="%s" target="_top"><img class="icon"'
+                    ' src="../%s/larger.png" alt="Larger image" /></a>' % (
+                        "%s-%dx%d-frame.html" % (
+                            number,
+                            self.env.imagesizelimits[limnumber + 1][0],
+                            self.env.imagesizelimits[limnumber + 1][1]),
+                        self.iconsdir))
             else:
-                largertext = '<img class="icon" src="../%s/nolarger.png" alt="No larger image available" />' % self.iconsdir
+                largertext = (
+                    '<img class="icon" src="../%s/nolarger.png"'
+                    ' alt="No larger image available" />' % self.iconsdir)
 
-            desc = (image.getAttribute(u"description") or
-                    image.getAttribute(u"title") or
-                    u"")
+            desc = (
+                image.getAttribute(u"description") or
+                image.getAttribute(u"title") or
+                u"")
             desc = desc.encode(self.charEnc)
             title = image.getAttribute(u"title") or u""
             title = title.encode(self.charEnc)
@@ -612,7 +662,9 @@ class OutputGenerator(OutputEngine):
                 else:
                     descElement = ""
             infotextElements.append("<p>%s</p>\n" % descElement)
-            infotextElements.append('<table border="0" cellpadding="0" cellspacing="0" width="100%">\n<tr>')
+            infotextElements.append(
+                '<table border="0" cellpadding="0" cellspacing="0"'
+                ' width="100%">\n<tr>')
             firstrow = True
             for dispcat in self.displayCategories:
                 matching = [x.getDescription().encode(self.charEnc)
@@ -625,7 +677,8 @@ class OutputGenerator(OutputEngine):
                     else:
                         infotextElements.append("<td></td></tr>\n<tr>")
                     infotextElements.append(
-                        '<td align="left"><small><b>%s</b>: %s</small></td>' % (
+                        '<td align="left"><small><b>%s</b>:'
+                        ' %s</small></td>' % (
                             dispcat.getDescription().encode(self.charEnc),
                             ", ".join(matching)))
             infotextElements.append('</td><td align="right">')
@@ -638,8 +691,9 @@ class OutputGenerator(OutputEngine):
             infotext = "".join(infotextElements)
 
             self.writeFile(
-                os.path.join(str(album.getId()),
-                             "%s-%dx%d-frame.html" % (number, wlim, hlim)),
+                os.path.join(
+                    str(album.getId()),
+                    "%s-%dx%d-frame.html" % (number, wlim, hlim)),
                 image_frameset_template % {
                     "albumtitle": title,
                     "charenc": self.charEnc,
@@ -685,6 +739,8 @@ class OutputGenerator(OutputEngine):
 
 
     def _generatePathText(self, wlim, hlim, paths, pathprefix):
+        """Internal helper method."""
+
         # Create path text, used in top of the album overview.
         pathtextElements = []
         pathtextElements.append("<table width=\"100%\">\n")
@@ -693,18 +749,22 @@ class OutputGenerator(OutputEngine):
             els = []
             for node in path:
                 title = node.getAttribute(u"title") or node.getTag()
-                els.append('''<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>''' % {
-                    "htmlref": "%s-%dx%d.html" % (
-                        node.getTag().encode(self.charEnc),
-                        wlim,
-                        hlim),
-                    "pathprefix": pathprefix,
-                    "title": title.encode(self.charEnc),
-                    })
+                els.append(
+                    '''<a href="%(pathprefix)s%(htmlref)s" target="_top">'''
+                    '''%(title)s</a>''' % {
+                        "htmlref": "%s-%dx%d.html" % (
+                            node.getTag().encode(self.charEnc),
+                            wlim,
+                            hlim),
+                        "pathprefix": pathprefix,
+                        "title": title.encode(self.charEnc),
+                        })
             pathtextElements.append(
                 u" \xbb ".encode(self.charEnc).join(els))
             pathtextElements.append("</td>\n")
-            pathtextElements.append("<td width=\"40%\" align=\"right\" style=\"text-align: right; width: 40%\">\n")
+            pathtextElements.append(
+                "<td width=\"40%\" align=\"right\" style=\"text-align:"
+                " right; width: 40%\">\n")
             if len(path) == 1:
                 prevalbumtext = ""
             else:
@@ -719,15 +779,21 @@ class OutputGenerator(OutputEngine):
                     sibling = children[thispos - 1]
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
-                    prevalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/previousalbum.png" alt="Previous album" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
-                        "htmlref": "%s-%dx%d.html" % (
-                            sibling.getTag().encode(self.charEnc),
-                            wlim,
-                            hlim),
-                        "iconsdir": self.iconsdir,
-                        "pathprefix": pathprefix,
-                        "title": title.replace(" ", "&nbsp;").encode(self.charEnc)
-                        }
+                    prevalbumtext = (
+                        '<a href="%(pathprefix)s%(htmlref)s" target="_top">'
+                        '<img class="icon" src="%(pathprefix)s%(iconsdir)s/'
+                        'previousalbum.png" alt="Previous album" /></a>'
+                        '&nbsp;<a href="%(pathprefix)s%(htmlref)s"'
+                        ' target="_top">%(title)s</a>' % {
+                            "htmlref": "%s-%dx%d.html" % (
+                                sibling.getTag().encode(self.charEnc),
+                                wlim,
+                                hlim),
+                            "iconsdir": self.iconsdir,
+                            "pathprefix": pathprefix,
+                            "title": title.replace(" ", "&nbsp;").encode(
+                                self.charEnc)
+                            })
                 if thispos == len(children) - 1:
                     # No next sibling.
                     nextalbumtext = ""
@@ -735,15 +801,21 @@ class OutputGenerator(OutputEngine):
                     sibling = children[thispos + 1]
                     title = (sibling.getAttribute(u"title") or
                              sibling.getTag())
-                    nextalbumtext = '<a href="%(pathprefix)s%(htmlref)s" target="_top"><img class="icon" src="%(pathprefix)s%(iconsdir)s/nextalbum.png" alt="Next album" /></a>&nbsp;<a href="%(pathprefix)s%(htmlref)s" target="_top">%(title)s</a>' % {
-                        "htmlref": "%s-%dx%d.html" % (
-                            sibling.getTag().encode(self.charEnc),
-                            wlim,
-                            hlim),
-                        "iconsdir": self.iconsdir,
-                        "pathprefix": pathprefix,
-                        "title": title.replace(" ", "&nbsp;").encode(self.charEnc),
-                        }
+                    nextalbumtext = (
+                        '<a href="%(pathprefix)s%(htmlref)s" target="_top">'
+                        '<img class="icon" src="%(pathprefix)s%(iconsdir)s/'
+                        'nextalbum.png" alt="Next album" /></a>'
+                        '&nbsp;<a href="%(pathprefix)s%(htmlref)s"'
+                        ' target="_top">%(title)s</a>' % {
+                            "htmlref": "%s-%dx%d.html" % (
+                                sibling.getTag().encode(self.charEnc),
+                                wlim,
+                                hlim),
+                            "iconsdir": self.iconsdir,
+                            "pathprefix": pathprefix,
+                            "title": title.replace(" ", "&nbsp;").encode(
+                                self.charEnc),
+                            })
                 pathtextElements.append(prevalbumtext)
                 pathtextElements.append("\n")
                 pathtextElements.append(nextalbumtext)
@@ -752,31 +824,33 @@ class OutputGenerator(OutputEngine):
         return "".join(pathtextElements)
 
 
-    def _getFrontImage(self, object, visited=None):
-        if visited and object.getId() in visited:
+    def _getFrontImage(self, obj, visited=None):
+        """Internal helper method."""
+        if visited and obj.getId() in visited:
             return None
 
-        if object.isAlbum():
+        if obj.isAlbum():
             if not visited:
                 visited = []
-            visited.append(object.getId())
-            thumbid = object.getAttribute(u"frontimage")
+            visited.append(obj.getId())
+            thumbid = obj.getAttribute(u"frontimage")
             if thumbid:
                 from kofoto.shelf import ImageDoesNotExistError
                 try:
                     return self.env.shelf.getImage(int(thumbid))
                 except ImageDoesNotExistError:
                     pass
-            children = iter(object.getChildren())
+            children = iter(obj.getChildren())
             try:
                 return self._getFrontImage(children.next(), visited)
             except StopIteration:
                 return None
         else:
-            return object
+            return obj
 
 
     def _maybeMakeUTF8Symlink(self, filename):
+        """Internal helper method."""
         try:
             # Check whether the filename contains ASCII characters
             # only. If so, do nothing.

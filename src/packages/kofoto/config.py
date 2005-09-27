@@ -1,3 +1,5 @@
+# pylint: disable-msg=C0301, W0221
+
 """Configuration module for Kofoto."""
 
 __all__ = [
@@ -12,8 +14,9 @@ __all__ = [
     "createConfigTemplate",
 ]
 
-from ConfigParser import *
-ConfigParserMissingSectionHeaderError = MissingSectionHeaderError
+from ConfigParser import ConfigParser
+from ConfigParser import MissingSectionHeaderError as \
+    ConfigParserMissingSectionHeaderError
 import os
 import re
 import sys
@@ -35,32 +38,59 @@ else:
         "~", ".kofoto", "imagecache")
 
 class ConfigError(KofotoError):
+    """Configuration error."""
     pass
 
 class MissingSectionHeaderError(KofotoError):
+    """A section header is missing in the configuration file."""
     pass
 
 class MissingConfigurationKeyError(KofotoError):
+    """A key is missing in the configuration file."""
     pass
 
 class BadConfigurationValueError(KofotoError):
+    """A value is badly formatted in the configuration file."""
     pass
 
 class Config(ConfigParser):
+    """A customized configuration parser."""
+
     def __init__(self, encoding):
+        """Constructor.
+
+        Arguments:
+
+        encoding -- The encoding to use when translating between Unicode and
+                    byte strings.
+        """
         ConfigParser.__init__(self)
         self.encoding = encoding
 
     def read(self, filenames):
+        """Read configuration files."""
         try:
             ConfigParser.read(self, filenames)
         except ConfigParserMissingSectionHeaderError:
             raise MissingSectionHeaderError
 
     def get(self, *args, **kwargs):
+        """Get a configuration item.
+
+        This method wraps ConfigReader.read and decodes the value into
+        Unicode according to the chosen encoding.
+        """
         return unicode(ConfigParser.get(self, *args, **kwargs), self.encoding)
 
     def getcoordlist(self, section, option):
+        """Get a coordinate list.
+
+        Coordinate lists look like this:
+
+        100x200, 1024x768 3000x2000
+
+        Returns a list of two-tuples of integers.
+        """
         val = self.get(section, option)
         coords = re.split("[,\s]+", val)
         ret = []
@@ -79,7 +109,10 @@ class Config(ConfigParser):
         return ret
 
     def verify(self):
+        """Verify the Kofoto configuration."""
+
         def checkConfigurationItem(section, key, function):
+            """Internal helper."""
             if not self.has_option(section, key):
                 raise MissingConfigurationKeyError, (section, key)
             value = self.get(section, key)
@@ -99,6 +132,8 @@ class Config(ConfigParser):
 
 
 def createConfigTemplate(filename):
+    """Write a Kofoto configuration template to a file."""
+
     file(filename, "w").write(
         """### Configuration file for Kofoto.
 

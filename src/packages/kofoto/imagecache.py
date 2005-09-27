@@ -1,10 +1,14 @@
+"""Implementation of the ImageCache class."""
+
 __all__ = ["ImageCache"]
 
 import os
 import Image as PILImage
-from kofoto.common import calculateDownscaledDimensions, symlinkOrCopyFile
+from kofoto.common import calculateDownscaledDimensions
 
 class ImageCache:
+    """A class representing the Kofoto image cache."""
+
     def __init__(self, cacheLocation, useOrientation=False):
         """Constructor.
 
@@ -89,6 +93,7 @@ class ImageCache:
 
     def _get(self, location, mtime, width, height, widthlimit,
              heightlimit, orientation):
+        """Internal helper method."""
         # Scale image to fit within limits.
         w, h = calculateDownscaledDimensions(
             width, height, widthlimit, heightlimit)
@@ -102,7 +107,7 @@ class ImageCache:
 
         # No version of the wanted size existed in the cache. Create
         # one.
-        directory, filename = os.path.split(path)
+        directory, _ = os.path.split(path)
         if not os.path.isdir(directory):
             os.makedirs(directory)
         pilimg = PILImage.open(location)
@@ -127,6 +132,7 @@ class ImageCache:
 
     def _getCachedImagePath(self, location, mtime, width, height,
                             orientation):
+        """Internal helper method."""
         drive, drivelessPath = os.path.splitdrive(location)
         directory, filename = os.path.split(drivelessPath[1:])
         if drive:
