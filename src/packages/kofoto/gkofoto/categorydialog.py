@@ -1,8 +1,7 @@
-import gtk
-import string
-import re
-from environment import env
-from kofoto.gkofoto.taganddescriptiondialog import *
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.taganddescriptiondialog import TagAndDescriptionDialog
+from kofoto.shelf import \
+    BadCategoryTagError, CategoryDoesNotExistError, verifyValidCategoryTag
 
 class CategoryDialog(TagAndDescriptionDialog):
     def __init__(self, title, categoryId=None):
@@ -18,8 +17,8 @@ class CategoryDialog(TagAndDescriptionDialog):
 
     def _isTagOkay(self, tagString):
         try:
-           # Check that the tag name is valid.
-           verifyValidCategoryTag(tagString)
+            # Check that the tag name is valid.
+            verifyValidCategoryTag(tagString)
         except BadCategoryTagError:
             return False
         try:

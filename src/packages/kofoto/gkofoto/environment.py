@@ -1,24 +1,19 @@
+# pylint: disable-msg=W0222
+
 import sys
 import os
-import getopt
-import locale
 import re
 
 import pygtk
 if sys.platform != "win32":
-    pygtk.require('2.0')
+    pygtk.require("2.0")
 import gtk
-import gobject
 import gtk.gdk
 import gtk.glade
 from kofoto.gkofoto import crashdialog
 sys.excepthook = crashdialog.show
 
-from kofoto.clientenvironment import *
-from kofoto.common import *
-from kofoto.shelf import *
-from kofoto.config import *
-from kofoto.imagecache import *
+from kofoto.clientenvironment import ClientEnvironment, ClientEnvironmentError
 
 class WidgetsWrapper:
     def __init__(self):
@@ -31,6 +26,22 @@ class Environment(ClientEnvironment):
     def __init__(self):
         ClientEnvironment.__init__(self)
         self.startupNotices = []
+        self.openCommand = None
+        self.loadingPixbuf = None
+        self.gladeFile = None
+        self.unknownImageIconFileName = None
+        self.albumIconFileName = None
+        self.thumbnailSize = None
+        self.albumIconPixbuf = None
+        self.unknownImageIconPixbuf = None
+        self.defaultSortColumn = None
+        self.isDebug = None
+        self.clipboard = None
+        self.defaultTableViewColumns = None
+        self.iconDir = None
+        self.widgets = None
+        self.rotateRightCommand = None
+        self.rotateLeftCommand = None
 
     def setup(self, bindir, isDebug=False, configFileLocation=None,
               shelfLocation=None):
@@ -73,7 +84,7 @@ class Environment(ClientEnvironment):
         self.loadingPixbuf = self.albumIconPixbuf # TODO: create another icon with a hour-glass or something
         self.unknownImageIconFileName = os.path.join(self.iconDir, "unknownimage.png")
         self.unknownImageIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.unknownImageIconFileName)
-        from clipboard import Clipboard
+        from kofoto.gkofoto.clipboard import Clipboard
         self.clipboard = Clipboard()
 
         self.widgets = WidgetsWrapper()

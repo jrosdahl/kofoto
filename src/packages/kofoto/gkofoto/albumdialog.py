@@ -1,8 +1,7 @@
-import gtk
-import string
-import re
-from environment import env
-from kofoto.gkofoto.taganddescriptiondialog import *
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.taganddescriptiondialog import TagAndDescriptionDialog
+from kofoto.shelf import \
+    AlbumDoesNotExistError, BadAlbumTagError, verifyValidAlbumTag
 
 class AlbumDialog(TagAndDescriptionDialog):
     def __init__(self, title, albumId=None):
@@ -22,8 +21,8 @@ class AlbumDialog(TagAndDescriptionDialog):
 
     def _isTagOkay(self, tagString):
         try:
-           # Check that the tag name is valid.
-           verifyValidAlbumTag(tagString)
+            # Check that the tag name is valid.
+            verifyValidAlbumTag(tagString)
         except BadAlbumTagError:
             return False
         try:

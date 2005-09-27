@@ -1,5 +1,5 @@
-from objectcollection import *
-from environment import env
+from kofoto.gkofoto.objectcollection import ObjectCollection
+from kofoto.gkofoto.environment import env
 
 class AlbumMembers(ObjectCollection):
 
@@ -27,11 +27,11 @@ class AlbumMembers(ObjectCollection):
     def getContainer(self):
         return self.__album
 
-    def cut(self, *foo):
+    def cut(self, *unused):
         self.copy()
         self.delete()
 
-    def paste(self, *foo):
+    def paste(self, *unused):
         # This method assumes that self.getModel() returns an unsorted
         # and mutable model.
         self._freezeViews()
@@ -59,7 +59,7 @@ class AlbumMembers(ObjectCollection):
         self.getObjectSelection().unselectAll()
         self._thawViews()
 
-    def delete(self, *foo):
+    def delete(self, *unused):
         # This method assumes that self.getModel() returns an unsorted
         # and mutable model
         model = self.getModel()

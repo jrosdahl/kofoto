@@ -27,7 +27,7 @@ cache-size=500
 
 [REPORTS]
 # Tells wether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Use HTML as output format instead of text
 html=no
@@ -74,7 +74,7 @@ enable-variables=yes
 init-import=no
 
 # List of variable names used for dummy variables (i.e. not used).
-dummy-variables=_,dummy
+dummy-variables=_,dummy,unused,unused1,unused2,unused3,unused4,unused5,unused6
 
 # List of additional names supposed to be defined in builtins. Remember that you
 # should avoid to define new builtins when possible.

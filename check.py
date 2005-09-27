@@ -34,7 +34,9 @@ else:
 normally_disabled_tests = [
     "C0101", # "Too short variable name."
     "I0011", # "Locally disabling ..."
+    "W0131", # "Missing docstring."
     "W0142", # "Used * or ** magic."
+    "W0511", # "TODO ..."
     "W0704", # "Except doesn't do anything."
 ]
 

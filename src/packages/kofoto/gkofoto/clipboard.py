@@ -1,8 +1,6 @@
 from sets import Set
-from environment import env
-from kofoto.shelf import Image
-from kofoto.shelf import Album
-from categories import ClipboardCategories
+from kofoto.shelf import Album, Image
+from kofoto.gkofoto.categories import ClipboardCategories
 
 class Clipboard:
 
@@ -11,6 +9,8 @@ class Clipboard:
     CATEGORIES = 1 # shelf.Category
 
     def __init__(self):
+        self.__objects = None
+        self.__types = None
         self.__changedCallbacks = Set()
         self.clear()
 
@@ -20,15 +20,15 @@ class Clipboard:
     def removeChangedCallback(self, callback):
         self.__changedCallbacks.remove(callback)
 
-    def setObjects(self, iter):
+    def setObjects(self, iterable):
         self.__objects = []
         self.__types = Clipboard.OBJECTS
-        for object in iter:
-            if (isinstance(object, Image) or isinstance(object, Album)):
+        for obj in iterable:
+            if (isinstance(obj, Image) or isinstance(obj, Album)):
                 self.__objects.append(object)
             else:
                 self.clear()
-                raise "Object is not an Image nor an Album" # TODO
+                raise Exception("Object is not an Image nor an Album") # TODO
         self.__invokeChangedCallbacks()
 
     def setCategories(self, clipboardCategories):
@@ -37,7 +37,7 @@ class Clipboard:
             self.__objects.append(clipboardCategories)
         else:
             self.clear()
-            raise "Object is not a ClipboardCategories" # TODO
+            raise Exception("Object is not a ClipboardCategories") # TODO
         self.__types = Clipboard.CATEGORIES
         self.__invokeChangedCallbacks()
 
@@ -46,8 +46,8 @@ class Clipboard:
         self.__types = None
         self.__invokeChangedCallbacks()
 
-    def removeObjects(self, object):
-        self.__objects = [x for x in self.__objects if x != object]
+    def removeObjects(self, obj):
+        self.__objects = [x for x in self.__objects if x != obj]
         self.__invokeChangedCallbacks()
 
     def hasCategories(self):

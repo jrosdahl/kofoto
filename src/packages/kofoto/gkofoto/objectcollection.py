@@ -2,16 +2,16 @@ import os
 import gtk
 import gobject
 import gc
-from sets import *
-from kofoto.shelf import *
-from menuhandler import *
-from environment import env
-from objectselection import *
-from albumdialog import AlbumDialog
-from registerimagesdialog import RegisterImagesDialog
-from imageversionsdialog import ImageVersionsDialog
-from registerimageversionsdialog import RegisterImageVersionsDialog
-from duplicateandopenimagedialog import DuplicateAndOpenImageDialog
+from sets import Set
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.objectselection import ObjectSelection
+from kofoto.gkofoto.albumdialog import AlbumDialog
+from kofoto.gkofoto.registerimagesdialog import RegisterImagesDialog
+from kofoto.gkofoto.imageversionsdialog import ImageVersionsDialog
+from kofoto.gkofoto.registerimageversionsdialog import \
+    RegisterImageVersionsDialog
+from kofoto.gkofoto.duplicateandopenimagedialog import \
+    DuplicateAndOpenImageDialog
 
 class ObjectCollection(object):
 
@@ -45,6 +45,8 @@ class ObjectCollection(object):
             self.__addAttribute(name)
         self.__treeModel = gtk.ListStore(*self.__columnsType)
         self.__frozen = False
+        self.__nrOfAlbums = 0
+        self.__nrOfImages = 0
 
     # Return true if the objects has a defined order and may
     # be reordered. An object that is reorderable is not
@@ -169,19 +171,19 @@ class ObjectCollection(object):
         if freeze:
             self._thawViews()
 
-    def cut(self, *foo):
+    def cut(self, *unused):
         raise Exception("Error. Not allowed to cut objects into objectCollection.") # TODO
 
-    def copy(self, *foo):
+    def copy(self, *unused):
         env.clipboard.setObjects(self.__objectSelection.getSelectedObjects())
 
-    def paste(self, *foo):
+    def paste(self, *unused):
         raise Exception("Error. Not allowed to paste objects into objectCollection.") # TODO
 
-    def delete(self, *foo):
+    def delete(self, *unused):
         raise Exception("Error. Not allowed to delete objects from objectCollection.") # TODO
 
-    def destroy(self, *foo):
+    def destroy(self, *unused):
         model = self.getModel()
 
         albumsSelected = False
@@ -389,7 +391,7 @@ class ObjectCollection(object):
 ###############################################################################
 ### Callback functions
 
-    def _attributeEdited(self, renderer, path, value, column, attributeName):
+    def _attributeEdited(self, unused1, path, value, unused2, attributeName):
         model = self.getModel()
         columnNumber = self.__objectMetadataMap["@" + attributeName][self.COLUMN_NR]
         iterator = model.get_iter(path)
@@ -405,7 +407,7 @@ class ObjectCollection(object):
             model.set_value(iterator, columnNumber, value)
             env.debug("Object attribute edited")
 
-    def _albumTagEdited(self, renderer, path, value, column, columnNumber):
+    def _albumTagEdited(self, unused1, path, value, unused2, columnNumber):
         model = self.getModel()
         iterator = model.get_iter(path)
         assert model.get_value(iterator, self.COLUMN_IS_ALBUM)
@@ -483,27 +485,27 @@ class ObjectCollection(object):
         env.mainwindow.reloadAlbumTree()
         # TODO: Update objectCollection.
 
-    def imageVersions(self, widget, *unused):
+    def imageVersions(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1
         dialog = ImageVersionsDialog(self)
         dialog.runViewImageVersions(selectedObjects[0])
         self.reloadSingleObjectView()
 
-    def registerImageVersions(self, widget, *unused):
+    def registerImageVersions(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1
         dialog = RegisterImageVersionsDialog(self)
         dialog.run(selectedObjects[0])
         self.reloadSingleObjectView()
 
-    def mergeImages(self, widget, *unused):
+    def mergeImages(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) > 1
         dialog = ImageVersionsDialog(self)
         dialog.runMergeImages(selectedObjects)
 
-    def rotateImage(self, widget, angle):
+    def rotateImage(self, unused, angle):
         env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
@@ -538,7 +540,7 @@ class ObjectCollection(object):
     def rotateImageRight(self, widget, *unused):
         self.rotateImage(widget, 90)
 
-    def openImage(self, widget, *unused):
+    def openImage(self, *unused):
         locations = ""
         for obj in self.__objectSelection.getSelectedObjects():
             if not obj.isAlbum():
@@ -559,7 +561,7 @@ class ObjectCollection(object):
                 dialog.run()
                 dialog.destroy()
 
-    def duplicateAndOpenImage(self, widget, *unused):
+    def duplicateAndOpenImage(self, *unused):
         selectedObjects = self.__objectSelection.getSelectedObjects()
         assert len(selectedObjects) == 1
         assert not selectedObjects[0].isAlbum()

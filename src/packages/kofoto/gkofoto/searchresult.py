@@ -1,7 +1,6 @@
-from kofoto.shelf import *
-from kofoto.search import *
-from sortableobjectcollection import *
-from environment import env
+from kofoto.search import Parser
+from kofoto.gkofoto.sortableobjectcollection import SortableObjectCollection
+from kofoto.gkofoto.environment import env
 
 class SearchResult(SortableObjectCollection):
 

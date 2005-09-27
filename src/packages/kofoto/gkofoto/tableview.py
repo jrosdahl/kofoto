@@ -1,10 +1,9 @@
 import gtk
-from environment import env
-from sets import Set
-from kofoto.gkofoto.objectcollectionview import *
-from sets import Set
-from objectcollection import *
-from menuhandler import *
+import gobject
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.objectcollectionview import ObjectCollectionView
+from kofoto.gkofoto.objectcollection import ObjectCollection
+from kofoto.gkofoto.menuhandler import MenuGroup
 
 class TableView(ObjectCollectionView):
 
@@ -16,6 +15,7 @@ class TableView(ObjectCollectionView):
         ObjectCollectionView.__init__(self, env.widgets["tableView"])
         selection = self._viewWidget.get_selection()
         selection.set_mode(gtk.SELECTION_MULTIPLE)
+        self.__viewGroup = None
         self.__selectionLocked = False
         self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
         self._viewWidget.connect("drag-data-get", self._onDragDataGet)
@@ -85,7 +85,7 @@ class TableView(ObjectCollectionView):
         columnLocationList = self.__userChosenColumns.items()
         columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
         env.debug("Column locations: " + str(columnLocationList))
-        for (columnName, columnLocation) in columnLocationList:
+        for (columnName, _) in columnLocationList:
             if (columnName in objectMetadataMap and
                 columnName not in disabledFields):
                 self.__createColumn(columnName, objectMetadataMap)
@@ -153,7 +153,7 @@ class TableView(ObjectCollectionView):
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
-    def _treeViewFocusInEvent(self, widget, event, data):
+    def _treeViewFocusInEvent(self, widget, unused1, unused2):
         if self.__hasFocus:
             # Work-around for some bug that makes the focus-out signal
             # disappear.
@@ -192,7 +192,7 @@ class TableView(ObjectCollectionView):
                 ]:
             env.widgets[widgetName].set_sensitive(True)
 
-    def _treeViewFocusOutEvent(self, widget, event, data):
+    def _treeViewFocusOutEvent(self, widget, unused1, unused2):
         self.__hasFocus = False
         for (widget, oid) in self._connectedOids:
             widget.disconnect(oid)
@@ -219,7 +219,7 @@ class TableView(ObjectCollectionView):
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 
-    def _widgetSelectionChanged(self, selection, data):
+    def _widgetSelectionChanged(self, selection, unused):
         if not self.__selectionLocked:
             env.enter("TableView selection changed")
             self.__selectionLocked = True
@@ -232,7 +232,7 @@ class TableView(ObjectCollectionView):
             self.__selectionLocked = False
             env.exit("TableView selection changed")
 
-    def _onDragDataGet(self, widget, dragContext, selection, info, timestamp):
+    def _onDragDataGet(self, unused1, unused2, selection, unused3, unused4):
         selectedRows = []
         # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API
         self._viewWidget.get_selection().selected_foreach(lambda model,
@@ -249,7 +249,7 @@ class TableView(ObjectCollectionView):
             env.debug("Ignoring drag&drop when only one row is selected")
 
 
-    def _onDragDataReceived(self, treeview, dragContext, x, y, selection, info, eventtime):
+    def _onDragDataReceived(self, treeview, dragContext, x, y, selection, unused, eventtime):
         targetData = treeview.get_dest_row_at_pos(x, y)
         if selection.get_text() == None:
             dragContext.finish(False, False, eventtime)
@@ -367,28 +367,28 @@ class TableView(ObjectCollectionView):
         env.debug("Removed column " + columnName)
 
     def __removeColumnsAndUpdateLocation(self, columnNames=None):
-       # Remove columns and store their relative locations for next time
-       # they are re-created.
-       columnLocation = 0
-       for column in self._viewWidget.get_columns():
-           columnName = column.get_title()
-           # TODO Store the column width and reuse it when the column is
-           #      recreated. I don't know how to store the width since
-           #      column.get_width() return correct values for columns
-           #      containing a gtk.CellRendererPixbuf but only 0 for all
-           #      columns containing a gtk.CellRendererText. It is probably
-           #      a bug in gtk och pygtk. I have not yet reported the bug.
-           if columnNames is None or columnName in columnNames:
-               if columnName in self.__createdColumns:
-                   self.__removeColumn(columnName)
-                   self.__userChosenColumns[columnName] = columnLocation
-           columnLocation += 1
+        # Remove columns and store their relative locations for next time
+        # they are re-created.
+        columnLocation = 0
+        for column in self._viewWidget.get_columns():
+            columnName = column.get_title()
+            # TODO Store the column width and reuse it when the column is
+            #      recreated. I don't know how to store the width since
+            #      column.get_width() return correct values for columns
+            #      containing a gtk.CellRendererPixbuf but only 0 for all
+            #      columns containing a gtk.CellRendererText. It is probably
+            #      a bug in gtk och pygtk. I have not yet reported the bug.
+            if columnNames is None or columnName in columnNames:
+                if columnName in self.__createdColumns:
+                    self.__removeColumn(columnName)
+                    self.__userChosenColumns[columnName] = columnLocation
+            columnLocation += 1
 
-    def __moveListItem(self, list, currentIndex, newIndex):
+    def __moveListItem(self, lst, currentIndex, newIndex):
         if currentIndex == newIndex:
-            return list
+            return lst
         if currentIndex < newIndex:
             newIndex -= 1
-        movingChild = list[currentIndex]
-        del list[currentIndex]
-        return list[:newIndex] + [movingChild] + list[newIndex:]
+        movingChild = lst[currentIndex]
+        del lst[currentIndex]
+        return lst[:newIndex] + [movingChild] + lst[newIndex:]

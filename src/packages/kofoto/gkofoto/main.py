@@ -5,7 +5,7 @@ from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.controller import Controller
 from optparse import OptionParser
 
-def setupWindowsEnvironment(bindir):
+def setupWindowsEnvironment():
     # Allow (default) datafile location to be determined under Windows 98.
     if os.path.expanduser("~") == "~":
         # Probably running under Windows 98 or similar OS where the
@@ -61,7 +61,7 @@ def main(bindir, argv):
         parser.error("incorrect number of arguments")
 
     if sys.platform == "win32":
-        setupWindowsEnvironment(bindir)
+        setupWindowsEnvironment()
 
     setupOk = env.setup(
         bindir, options.debug, options.configfile, options.database)

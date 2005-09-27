@@ -1,4 +1,4 @@
-from environment import env
+from kofoto.gkofoto.environment import env
 from sets import Set
 
 class ObjectSelection:

@@ -1,10 +1,10 @@
+import pygtk
+pygtk.require("2.0")
 import gtk
-import os
 import time
-from environment import env
+from kofoto.gkofoto.environment import env
 from kofoto.shelf import \
-     ImageVersionExistsError, ImageVersionType, NotAnImageFileError, \
-     makeValidTag
+    ImageVersionExistsError, ImageVersionType, NotAnImageFileError
 from kofoto.clientutils import walk_files
 
 class RegisterImagesDialog(gtk.FileChooserDialog):
@@ -19,7 +19,7 @@ class RegisterImagesDialog(gtk.FileChooserDialog):
         self.__albumToAddTo = albumToAddTo
         self.connect("response", self._response)
 
-    def _response(self, widget, responseId):
+    def _response(self, unused, responseId):
         if responseId != gtk.RESPONSE_OK:
             return
         widgets = gtk.glade.XML(env.gladeFile, "registrationProgressDialog")

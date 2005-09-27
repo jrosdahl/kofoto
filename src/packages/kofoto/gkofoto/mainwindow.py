@@ -2,14 +2,13 @@ import gtk
 import gtk.gdk
 import os
 
-from kofoto.gkofoto.categories import *
-from kofoto.gkofoto.albums import *
-from environment import env
-from kofoto.gkofoto.tableview import *
-from kofoto.gkofoto.thumbnailview import *
-from kofoto.gkofoto.singleobjectview import *
-from kofoto.gkofoto.objectcollectionfactory import *
-from kofoto.gkofoto.objectcollection import *
+from kofoto.gkofoto.categories import Categories
+from kofoto.gkofoto.albums import Albums
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.tableview import TableView
+from kofoto.gkofoto.thumbnailview import ThumbnailView
+from kofoto.gkofoto.singleobjectview import SingleObjectView
+from kofoto.gkofoto.objectcollectionfactory import ObjectCollectionFactory
 from kofoto.gkofoto.registerimagesdialog import RegisterImagesDialog
 from kofoto.gkofoto.handleimagesdialog import HandleImagesDialog
 from kofoto.gkofoto.generatehtmldialog import GenerateHTMLDialog
@@ -18,6 +17,8 @@ from kofoto.gkofoto.imagepreloader import ImagePreloader
 
 class MainWindow(gtk.Window):
     def __init__(self):
+        self._hiddenViews = None
+        self.__query = None
         env.mainwindow = self
         self._toggleLock = False
         self.__currentObjectCollection = None
@@ -93,7 +94,7 @@ class MainWindow(gtk.Window):
     def saveState(self):
         self.__persistentState.save()
 
-    def _queryChanged(self, *foo):
+    def _queryChanged(self, *unused):
         query = self.__sourceEntry.get_text().decode("utf-8")
         self.loadQuery(query)
         self.__sourceEntry.grab_remove()
@@ -125,13 +126,13 @@ class MainWindow(gtk.Window):
     def unselectAlbumTree(self):
         self.__albums.unselect()
 
-    def registerImages(self, widget, data):
+    def registerImages(self, *unused):
         dialog = RegisterImagesDialog()
         if dialog.run() == gtk.RESPONSE_OK:
             self.reload() # TODO: don't reload everything.
         dialog.destroy()
 
-    def handleModifiedOrRenamedImages(self, widget, data):
+    def handleModifiedOrRenamedImages(self, *unused):
         dialog = HandleImagesDialog()
         dialog.run()
         dialog.destroy()

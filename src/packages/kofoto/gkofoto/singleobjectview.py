@@ -1,8 +1,7 @@
 import gtk
-import sys
-from environment import env
-from kofoto.gkofoto.imageview import *
-from kofoto.gkofoto.objectcollectionview import *
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.imageview import ImageView
+from kofoto.gkofoto.objectcollectionview import ObjectCollectionView
 from kofoto.gkofoto.imageversionslist import ImageVersionsList
 
 class SingleObjectView(ObjectCollectionView, gtk.HPaned):
@@ -39,7 +38,9 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.widgets["menubarZoomOut"].connect("activate", self.__imageView.zoomOut)
         env.widgets["mainWindow"].connect("key_press_event", self._key_pressed)
         env.widgets["menubarViewDetailsPane"].set_sensitive(True)
+        self.__loadedObject = False
         self.__selectionLocked = False
+        self.__selectedRowNr = None
 
     def showDetailsPane(self):
         self.__imageVersionsFrame.show()
@@ -173,11 +174,11 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self._objectCollection.addInsertedRowCallback(self._modelUpdated)
         env.exit("SingleObjectView.thawHelper()")
 
-    def _modelUpdated(self, *foo):
+    def _modelUpdated(self, *unused):
         env.debug("SingleObjectView is handling model update")
         self.importSelection(self._objectCollection.getObjectSelection())
 
-    def _goto(self, button, direction):
+    def _goto(self, unused, direction):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])
 
@@ -193,7 +194,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.mainwindow.getImagePreloader().preloadImages(
             filenames, maxWidth, maxHeight)
 
-    def _key_pressed(self, widget, event):
+    def _key_pressed(self, unused, event):
         # TODO use UiManager instead of this...
         if event.state & gtk.gdk.CONTROL_MASK:
             if (event.keyval == gtk.gdk.keyval_from_name("space") and

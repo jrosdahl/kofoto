@@ -1,11 +1,11 @@
 import gtk
 import gobject
 import os
-from environment import env
+from kofoto.gkofoto.environment import env
 from kofoto.shelf import \
-     ImageVersionDoesNotExistError, ImageVersionExistsError, \
+     ImageVersionDoesNotExistError, \
      MultipleImageVersionsAtOneLocationError, \
-     makeValidTag, computeImageHash
+     computeImageHash
 from kofoto.clientutils import walk_files
 
 class HandleImagesDialog(gtk.FileChooserDialog):
@@ -19,7 +19,7 @@ class HandleImagesDialog(gtk.FileChooserDialog):
                 gtk.STOCK_OK, gtk.RESPONSE_OK))
         self.connect("response", self._response)
 
-    def _response(self, widget, responseId):
+    def _response(self, unused, responseId):
         if responseId != gtk.RESPONSE_OK:
             return
         widgets = gtk.glade.XML(env.gladeFile, "handleImagesProgressDialog")

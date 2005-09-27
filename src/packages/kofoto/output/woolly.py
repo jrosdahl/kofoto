@@ -336,7 +336,7 @@ class OutputGenerator(OutputEngine):
             pass
 
 
-    def preGeneration(self, _):
+    def preGeneration(self, unused):
         """Method called before generation of the output."""
         self.iconsdir = "@icons"
         self.makeDirectory(self.iconsdir)

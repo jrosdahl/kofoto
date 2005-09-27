@@ -1,9 +1,11 @@
-import string
-from searchresult import *
-from albummembers import *
-from environment import env
-from kofoto.search import *
-from kofoto.shelf import *
+import gtk
+from kofoto.gkofoto.searchresult import SearchResult
+from kofoto.gkofoto.albummembers import AlbumMembers
+from kofoto.gkofoto.environment import env
+from kofoto.search import BadTokenError, ParseError, UnterminatedStringError
+from kofoto.shelf import \
+    AlbumDoesNotExistError, BadAlbumTagError, CategoryDoesNotExistError, \
+    verifyValidAlbumTag
 
 class ObjectCollectionFactory:
 
