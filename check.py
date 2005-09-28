@@ -3,12 +3,15 @@
 import os
 import sys
 from optparse import OptionParser
+import warnings
 from pylint import lint
 
 def disable_message(arguments, message_id):
     arguments.append("--disable-msg=%s" % message_id)
 
 ######################################################################
+
+warnings.filterwarnings("ignore", "logilab.common.compat.Set is deprecated")
 
 option_parser = OptionParser()
 option_parser.add_option(
@@ -34,6 +37,7 @@ else:
 normally_disabled_tests = [
     "C0101", # "Too short variable name."
     "I0011", # "Locally disabling ..."
+    "R0801", # "Similar lines ..."
     "W0131", # "Missing docstring."
     "W0142", # "Used * or ** magic."
     "W0511", # "TODO ..."

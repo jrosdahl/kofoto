@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 
 class MySortedModel(gtk.TreeModelSort):
@@ -20,9 +22,9 @@ class MySortedModel(gtk.TreeModelSort):
         else:
             raise IndexError
 
-    def set_value(self, iter, column, value):
+    def set_value(self, iterator, column, value):
         childIter = self._model.get_iter_first()
-        self.convert_iter_to_child_iter(childIter, iter)
+        self.convert_iter_to_child_iter(childIter, iterator)
         self._model.set_value(childIter, column, value)
 
     # Workaround until http://bugzilla.gnome.org/show_bug.cgi?id=121633 is solved.

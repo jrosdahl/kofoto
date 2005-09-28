@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import gobject
 import gtk
 from kofoto.timer import Timer
@@ -86,8 +88,6 @@ class ImagePreloader(object):
 
         The pixbuf may be None if the image was unloadable.
         """
-        pixbuf = None
-
         if not self.__preloadStates.has_key(filename):
             self.__preloadStates[filename] = _PreloadState(
                 filename, self._fileSystemCodeset)
@@ -131,7 +131,6 @@ class ImagePreloader(object):
         # Discard old preloaded images.
         for filename in self.__preloadStates.keys():
             if not filename in filenames:
-                pixbufLoader = self.__preloadStates[filename].pixbufLoader
                 del self.__preloadStates[filename]
 
         # Preload the new images.

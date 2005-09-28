@@ -4,7 +4,7 @@ import sets
 
 import gtk
 
-from environment import env
+from kofoto.gkofoto.environment import env
 from kofoto.shelf import \
     ImageVersionDoesNotExistError, \
     ImageVersionExistsError, \
@@ -13,6 +13,7 @@ from kofoto.shelf import \
 
 class RegisterImageVersionsDialog:
     def __init__(self, model):
+        self._image = None
         self._model = model
         self._widgets = gtk.glade.XML(
             env.gladeFile, "registerImageVersionsDialog")
@@ -39,7 +40,7 @@ class RegisterImageVersionsDialog:
         files = sets.Set()
         for imageversion in image.getImageVersions():
             base, filename = os.path.split(imageversion.getLocation())
-            prefix, suffix = os.path.splitext(filename)
+            prefix, _ = os.path.splitext(filename)
             for candidateFilename in os.listdir(base):
                 if (re.match("%s[^a-zA-Z0-9].*" % prefix, candidateFilename)):
                     candidatePath = os.path.join(base, candidateFilename)
@@ -56,7 +57,7 @@ class RegisterImageVersionsDialog:
 
     def _onOk(self, *unused):
         selection = self._fileListView.get_selection()
-        model, selectedRows = selection.get_selected_rows()
+        _, selectedRows = selection.get_selected_rows()
         changed = False
         for path in selectedRows:
             treeiter = self._fileListStore.get_iter(path)

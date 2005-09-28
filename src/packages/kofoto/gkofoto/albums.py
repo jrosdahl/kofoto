@@ -1,10 +1,9 @@
 import gtk
 import gobject
-import gtk
-from environment import env
-from albumdialog import AlbumDialog
-from menuhandler import *
-from registerimagesdialog import RegisterImagesDialog
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.albumdialog import AlbumDialog
+from kofoto.gkofoto.menuhandler import MenuGroup
+from kofoto.gkofoto.registerimagesdialog import RegisterImagesDialog
 
 class Albums:
 
@@ -21,6 +20,7 @@ class Albums:
     #      a multiple windows feature is introduced.
 
     def __init__(self, mainWindow):
+        self.__menuGroup = None
         self._connectedOids = []
         self.__albumModel = gtk.TreeStore(gobject.TYPE_INT,      # ALBUM_ID
                                           gobject.TYPE_STRING,   # TAG
@@ -30,17 +30,17 @@ class Albums:
         self.__mainWindow = mainWindow
         self.__albumView = env.widgets["albumView"]
         self.__albumView.set_model(self.__albumModel)
-        self.__albumView.connect("focus-in-event", self._treeViewFocusInEvent)
-        self.__albumView.connect("focus-out-event", self._treeViewFocusOutEvent)
+        self.__albumView.connect("focus-in-event", self._treeViewFocusInEvent_cb)
+        self.__albumView.connect("focus-out-event", self._treeViewFocusOutEvent_cb)
         renderer = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Albums", renderer, text=self.__COLUMN_TEXT)
         column.set_clickable(True)
         self.__albumView.append_column(column)
         albumSelection = self.__albumView.get_selection()
-        albumSelection.connect("changed", self._albumSelectionUpdated)
+        albumSelection.connect("changed", self._albumSelectionUpdated_cb)
         albumSelection.set_select_function(self._isSelectable, self.__albumModel)
         self.__contextMenu = self.__createContextMenu()
-        self.__albumView.connect("button_press_event", self._button_pressed)
+        self.__albumView.connect("button_press_event", self._button_pressed_cb)
         self.loadAlbumTree()
         iterator = self.__albumModel.get_iter_first()
         albumSelection.select_iter(iterator)
@@ -60,7 +60,7 @@ class Albums:
     def _isSelectable(self, path, model):
         return model[path][self.__COLUMN_SELECTABLE]
 
-    def _albumSelectionUpdated(self, selection=None, load=True):
+    def _albumSelectionUpdated_cb(self, selection=None, load=True):
         # The focus grab below is made to compensate for what could be
         # some GTK bug. Without the call, the focus-out-event signal
         # sometimes isn't emitted for the view widget in the table
@@ -103,11 +103,11 @@ class Albums:
             env.widgets["menubarDestroy"].set_sensitive(False)
             env.widgets["menubarProperties"].set_sensitive(False)
 
-    def _createChildAlbum(self, *dummies):
+    def _createChildAlbum(self, *unused):
         dialog = AlbumDialog("Create album")
         dialog.run(self._createAlbumHelper)
 
-    def _registerImages(self, *dummies):
+    def _registerImages(self, *unused):
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
         selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
         selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
@@ -116,7 +116,7 @@ class Albums:
             self.__mainWindow.reload() # TODO: don't reload everything.
         dialog.destroy()
 
-    def _generateHtml(self, *dummies):
+    def _generateHtml(self, *unused):
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
         selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
         selectedAlbum = env.shelf.getAlbum(selectedAlbumId)
@@ -139,7 +139,7 @@ class Albums:
         self.loadAlbumTree()
         # TODO update objectCollection?
 
-    def _destroyAlbum(self, *dummies):
+    def _destroyAlbum(self, *unused):
         dialogId = "destroyAlbumsDialog"
         widgets = gtk.glade.XML(env.gladeFile, dialogId)
         dialog = widgets.get_widget(dialogId)
@@ -153,7 +153,7 @@ class Albums:
             # TODO update objectCollection?
         dialog.destroy()
 
-    def _editAlbum(self, *dummies):
+    def _editAlbum(self, *unused):
         albumModel, iterator =  self.__albumView.get_selection().get_selected()
         selectedAlbumId = albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID)
         dialog = AlbumDialog("Edit album", selectedAlbumId)
@@ -172,15 +172,15 @@ class Albums:
         self.loadAlbumTree()
         # TODO update objectCollection?
 
-    def _button_pressed(self, treeView, event):
+    def _button_pressed_cb(self, treeView, event):
         if event.button == 3:
-            self.__contextMenu.popup(None,None,None,event.button,event.time)
+            self.__contextMenu.popup(None, None, None, event.button, event.time)
             return True
         else:
             return False
 
-    def _treeViewFocusInEvent(self, widget, event):
-        self._albumSelectionUpdated(None, load=False)
+    def _treeViewFocusInEvent_cb(self, widget, event):
+        self._albumSelectionUpdated_cb(None, load=False)
         for widgetName, function in [
                 ("menubarCreateAlbumChild", self._createChildAlbum),
                 ("menubarRegisterAndAddImages", self._registerImages),
@@ -192,7 +192,7 @@ class Albums:
             oid = w.connect("activate", function, None)
             self._connectedOids.append((w, oid))
 
-    def _treeViewFocusOutEvent(self, widget, event):
+    def _treeViewFocusOutEvent_cb(self, widget, event):
         for (widget, oid) in self._connectedOids:
             widget.disconnect(oid)
         self._connectedOids = []
@@ -214,7 +214,9 @@ class Albums:
     __COLUMN_TYPE       = 3
     __COLUMN_SELECTABLE = 4
 
-    def __loadAlbumTreeHelper(self, parentAlbum=None, album=None, visited=[]):
+    def __loadAlbumTreeHelper(self, parentAlbum=None, album=None, visited=None):
+        if visited is None:
+            visited = []
         if not album:
             album = env.shelf.getRootAlbum()
         iterator = self.__albumModel.append(parentAlbum)

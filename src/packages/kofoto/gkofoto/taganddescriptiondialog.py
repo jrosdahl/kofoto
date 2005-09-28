@@ -1,8 +1,7 @@
 import gtk
-import string
 import re
-from environment import env
-from kofoto.shelf import *
+from kofoto.gkofoto.environment import env
+from kofoto.common import UnimplementedError
 
 class TagAndDescriptionDialog:
     def __init__(self, title, tagText=u"", descText=u""):
@@ -37,32 +36,17 @@ class TagAndDescriptionDialog:
         else:
             return None
 
+    def _isTagOkay(self, tag):
+        raise UnimplementedError
+
     def __generateTagName(self, descText):
         env.assertUnicode(descText)
         return re.sub(r"(?u)\W", "", descText).lower()
 
-    def __generateTagNameDeprecated1(self, descText):
-        # An algoritm for generating tag names used in previous gkofoto
-        # versions (2004-04-26 -- 2004-05-15). This algoritm
-        # must always remove all swedish characters, regardles of LOCAL
-        # or UNICODE setting, to be backward compatible with the old version.
-        env.assertUnicode(descText)
-        return re.sub("\W", "", descText)
-
-    def __generateTagNameDeprecated2(self, descText):
-        # An algoritm for generating tag names used in previous gkofoto
-        # versions (< 2004-04-26)
-        env.assertUnicode(descText)
-        return string.translate(descText.encode(env.codeset),
-                                string.maketrans("", ""),
-                                string.whitespace)
-
     def _descriptionChanged(self, description, tag):
         newDescText = description.get_text().decode("utf-8")
         currentTagText = self._tagWidget.get_text()
-        if (currentTagText == self.__generateTagName(self.__descText) or
-            currentTagText == self.__generateTagNameDeprecated1(self.__descText) or
-            currentTagText == self.__generateTagNameDeprecated2(self.__descText)):
+        if currentTagText == self.__generateTagName(self.__descText):
             tag.set_text(self.__generateTagName(newDescText))
         self.__descText = newDescText
 

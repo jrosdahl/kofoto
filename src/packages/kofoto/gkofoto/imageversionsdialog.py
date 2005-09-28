@@ -1,10 +1,7 @@
 import gtk
-import os
-import re
-from environment import env
+from kofoto.gkofoto.environment import env
 from kofoto.structclass import makeStructClass
 from kofoto.shelf import CategoryPresentError, ImageVersionType
-from sets import Set
 
 RowDataStruct = makeStructClass(
     "imageVersion",
@@ -18,6 +15,8 @@ class ImageVersionsDialog:
     tableWidth = 3
 
     def __init__(self, model):
+        self._mergeImages = []
+        self._isMerge = False
         self._model = model
         self._versionDataList = []
         self._widgets = gtk.glade.XML(
@@ -53,7 +52,7 @@ class ImageVersionsDialog:
                 self._addRow(imageVersion)
         self._table.show_all()
         x, y = self._dialog.get_position()
-        width, height = self._dialog.get_size()
+        _, height = self._dialog.get_size()
         hackyConstant = 89 # TODO: How to calculate this properly?
         newheight = min(800, self._table.size_request()[1] + hackyConstant)
         self._dialog.move(x, max(0, y - ((newheight - height) / 2)))
@@ -64,7 +63,6 @@ class ImageVersionsDialog:
         self._dialog.destroy()
 
     def _onOk(self, *unused):
-        t = self._table
         for data in self._versionDataList:
             tb = data.commentTextBuffer
             comment = tb.get_text(tb.get_start_iter(), tb.get_end_iter())
@@ -80,7 +78,6 @@ class ImageVersionsDialog:
             else:
                 assert False
 
-        proceed = True
         if self._isMerge:
             #
             # The mother image below is the image of the primary
@@ -161,7 +158,7 @@ class ImageVersionsDialog:
         #
         image = gtk.Image()
         try:
-            thumbnailLocation, w, h = env.imageCache.get(
+            thumbnailLocation, _, _ = env.imageCache.get(
                 imageVersion.getLocation().encode(env.codeset), 128, 128)
             image.set_from_file(thumbnailLocation.decode(env.codeset))
         except OSError:

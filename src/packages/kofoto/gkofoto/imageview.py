@@ -1,9 +1,10 @@
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 import gtk.gdk
 import math
-import gobject
 import gc
-from environment import env
+from kofoto.gkofoto.environment import env
 from kofoto.common import calculateDownscaledDimensions
 
 class ImageView(gtk.ScrolledWindow):
@@ -19,6 +20,7 @@ class ImageView(gtk.ScrolledWindow):
     def __init__(self):
         self._image = gtk.Image()
         gtk.ScrolledWindow.__init__(self)
+        self._newImageLoaded = False
         self.__loadedFileName = None
         self.__pixBuf = None
         self.__currentZoom = None
@@ -36,19 +38,19 @@ class ImageView(gtk.ScrolledWindow):
 
         self.add_with_viewport(eventBox)
         self.add_events(gtk.gdk.ALL_EVENTS_MASK)
-        self.connect_after("size-allocate", self.resizeEventHandler)
-        self.connect("scroll-event", self.scrollEventHandler)
-        self.connect("focus-in-event", self.focusInEventHandler)
-        self.connect("focus-out-event", self.focusOutEventHandler)
+        self.connect_after("size-allocate", self.resizeEventHandler_cb)
+        self.connect("scroll-event", self.scrollEventHandler_cb)
+        self.connect("focus-in-event", self.focusInEventHandler_cb)
+        self.connect("focus-out-event", self.focusOutEventHandler_cb)
 
-    def focusInEventHandler(self, widget, event):
+    def focusInEventHandler_cb(self, widget, event):
         pass
 
-    def focusOutEventHandler(self, widget, event):
+    def focusOutEventHandler_cb(self, widget, event):
         pass
 
-    def loadFile(self, fileName, reload=True):
-        if (not reload) and self.__loadedFileName == fileName:
+    def loadFile(self, fileName, reloadFile=True):
+        if (not reloadFile) and self.__loadedFileName == fileName:
             return
         self.clear()
         env.debug("ImageView is loading image from file: " + fileName)
@@ -66,7 +68,7 @@ class ImageView(gtk.ScrolledWindow):
             self.__loadedFileName = None
         self._newImageLoaded = True
         self._image.show()
-        self.fitToWindow()
+        self.fitToWindow_cb()
 
     def clear(self):
         self._image.hide()
@@ -119,17 +121,17 @@ class ImageView(gtk.ScrolledWindow):
         self.__currentZoom = self.__wantedZoom
         gc.collect()
 
-    def resizeEventHandler(self, widget, gdkEvent):
+    def resizeEventHandler_cb(self, widget, gdkEvent):
         if self.__fitToWindowMode:
-            x, y, width, height = self.get_allocation()
+            _, _, width, height = self.get_allocation()
             if height != self.__previousWidgetHeight or width != self.__previousWidgetWidth:
-                self.fitToWindow()
+                self.fitToWindow_cb()
         return False
 
-    def fitToWindow(self, *foo):
+    def fitToWindow_cb(self, *unused):
         self.__fitToWindowMode = True
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
-        y, x, widgetWidth, widgetHeight = self.get_allocation()
+        _, _, widgetWidth, widgetHeight = self.get_allocation()
         if self.__pixBuf != None:
             self.__previousWidgetWidth = widgetWidth
             self.__previousWidgetHeight = widgetHeight
@@ -146,32 +148,32 @@ class ImageView(gtk.ScrolledWindow):
     def _log(self, base, value):
         return math.log(value) / math.log(base)
 
-    def zoomIn(self, *foo):
+    def zoomIn_cb(self, *unused):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.__fitToWindowMode = False
         if self.__wantedZoom <= self._MAX_ZOOM:
             self.__wantedZoom = math.floor(self.__wantedZoom + 1)
             self.renderImage()
 
-    def zoomOut(self, *foo):
+    def zoomOut_cb(self, *unused):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.__fitToWindowMode = False
         if self.__wantedZoom >= self._MIN_ZOOM:
             self.__wantedZoom = math.ceil(self.__wantedZoom - 1)
             self.renderImage()
 
-    def zoom100(self, *foo):
+    def zoom100_cb(self, *unused):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.__fitToWindowMode = False
         self.__wantedZoom = 0
         self.renderImage()
 
-    def scrollEventHandler(self, widget, gdkEvent):
+    def scrollEventHandler_cb(self, widget, gdkEvent):
         if gdkEvent.type == gtk.gdk.SCROLL:
             if gdkEvent.direction == gtk.gdk.SCROLL_UP:
-                self.zoomOut()
+                self.zoomOut_cb()
             elif gdkEvent.direction == gtk.gdk.SCROLL_DOWN:
-                self.zoomIn()
+                self.zoomIn_cb()
             return True
         else:
             return False

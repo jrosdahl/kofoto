@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 import gtk.gdk
 import os
@@ -48,11 +50,11 @@ class MainWindow(gtk.Window):
         env.widgets["zoomIn"].set_sensitive(False)
         env.widgets["zoomOut"].set_sensitive(False)
 
-        env.widgets["menubarSave"].connect("activate", env.controller.save)
+        env.widgets["menubarSave"].connect("activate", env.controller.save_cb)
         env.widgets["menubarSave"].set_sensitive(False)
-        env.widgets["menubarRevert"].connect("activate", env.controller.revert)
+        env.widgets["menubarRevert"].connect("activate", env.controller.revert_cb)
         env.widgets["menubarRevert"].set_sensitive(False)
-        env.widgets["menubarQuit"].connect("activate", env.controller.quit)
+        env.widgets["menubarQuit"].connect("activate", env.controller.quit_cb)
 
         env.widgets["menubarThumbnailsView"].hide()
 

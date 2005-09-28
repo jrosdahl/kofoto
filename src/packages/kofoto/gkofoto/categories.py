@@ -2,11 +2,13 @@ import gobject
 import gtk
 import re
 
-from environment import env
-from categorydialog import CategoryDialog
-from menuhandler import *
-from kofoto.search import *
-from kofoto.shelf import *
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.categorydialog import CategoryDialog
+from kofoto.gkofoto.menuhandler import MenuGroup
+from kofoto.shelf import \
+    CategoriesAlreadyConnectedError, CategoryLoopError, CategoryPresentError
+from kofoto.alternative import Alternative
+from kofoto.structclass import makeStructClass
 
 class Categories:
 
@@ -18,6 +20,8 @@ class Categories:
         self.__toggleColumn = None
         self.__objectCollection = None
         self.__ignoreSelectEvent = False
+        self.__qsSelectedPath = None
+        self._menubarOids = None
         self.__selectedCategoriesIds  = {}
         self.__categoryModel = gtk.TreeStore(gobject.TYPE_INT,      # CATEGORY_ID
                                              gobject.TYPE_STRING,   # DESCRIPTION
@@ -30,12 +34,12 @@ class Categories:
         self.__categoryView = env.widgets["categoryView"]
         self.__categoryView.realize()
         self.__categoryView.set_model(self.__categoryModel)
-        self.__categoryView.connect("focus-in-event", self._categoryViewFocusInEvent)
-        self.__categoryView.connect("focus-out-event", self._categoryViewFocusOutEvent)
+        self.__categoryView.connect("focus-in-event", self._categoryViewFocusInEvent_cb)
+        self.__categoryView.connect("focus-out-event", self._categoryViewFocusOutEvent_cb)
 
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
-        toggleRenderer.connect("toggled", self._connectionToggled)
+        toggleRenderer.connect("toggled", self._connectionToggled_cb)
         self.__toggleColumn = gtk.TreeViewColumn("",
                                                  toggleRenderer,
                                                  active=self.__COLUMN_CONNECTED,
@@ -58,22 +62,22 @@ class Categories:
             gobject.TYPE_BOOLEAN)  # INCONSISTENT
         self.__categoryQSView = env.widgets["categoryQuickSelectView"]
         self.__categoryQSView.connect(
-            "focus-in-event", self._categoryQSViewFocusInEvent)
+            "focus-in-event", self._categoryQSViewFocusInEvent_cb)
         self.__categoryQSEntry = env.widgets["categoryQuickSelectEntry"]
         self.__categoryQSEntry.connect(
-            "activate", self._categoryQSEntryActivateEvent)
+            "activate", self._categoryQSEntryActivateEvent_cb)
         self.__categoryQSEntry.connect(
-            "changed", self._categoryQSEntryChangedEvent)
+            "changed", self._categoryQSEntryChangedEvent_cb)
         self.__categoryQSButton = env.widgets["categoryQuickSelectButton"]
         self.__categoryQSButton.connect(
-            "clicked", self._categoryQSEntryActivateEvent)
+            "clicked", self._categoryQSEntryActivateEvent_cb)
         self.__categoryQSView.realize()
         self.__categoryQSView.set_model(self.__categoryQSModel)
         self.__categoryQSFreeze = False
 
         # Create toggle column
         toggleRenderer = gtk.CellRendererToggle()
-        toggleRenderer.connect("toggled", self._qsConnectionToggled)
+        toggleRenderer.connect("toggled", self._qsConnectionToggled_cb)
         self.__toggleQSColumn = gtk.TreeViewColumn(
             "",
             toggleRenderer,
@@ -102,32 +106,32 @@ class Categories:
         self._contextMenuGroup.addStockImageMenuItem(
             self.__cutCategoryLabel,
             gtk.STOCK_CUT,
-            self._cutCategory)
+            self._cutCategory_cb)
         self._contextMenuGroup.addStockImageMenuItem(
             self.__copyCategoryLabel,
             gtk.STOCK_COPY,
-            self._copyCategory)
+            self._copyCategory_cb)
         self._contextMenuGroup.addStockImageMenuItem(
             self.__pasteCategoryLabel,
             gtk.STOCK_PASTE,
-            self._pasteCategory)
+            self._pasteCategory_cb)
         self._contextMenuGroup.addStockImageMenuItem(
             self.__destroyCategoryLabel,
             gtk.STOCK_DELETE,
-            self._deleteCategories)
+            self._deleteCategories_cb)
         self._contextMenuGroup.addMenuItem(
             self.__disconnectCategoryLabel,
-            self._disconnectCategory)
+            self._disconnectCategory_cb)
         self._contextMenuGroup.addMenuItem(
             self.__createChildCategoryLabel,
-            self._createChildCategory)
+            self._createChildCategory_cb)
         self._contextMenuGroup.addMenuItem(
             self.__createRootCategoryLabel,
-            self._createRootCategory)
+            self._createRootCategory_cb)
         self._contextMenuGroup.addStockImageMenuItem(
             self.__propertiesLabel,
             gtk.STOCK_PROPERTIES,
-            self._editProperties)
+            self._editProperties_cb)
 
         for item in self._contextMenuGroup:
             self._contextMenu.append(item)
@@ -136,25 +140,25 @@ class Categories:
 
         # Init menubar items.
         env.widgets["menubarDisconnectFromParent"].connect(
-            "activate", self._disconnectCategory, None)
+            "activate", self._disconnectCategory_cb, None)
         env.widgets["menubarCreateChild"].connect(
-            "activate", self._createChildCategory, None)
+            "activate", self._createChildCategory_cb, None)
         env.widgets["menubarCreateRoot"].connect(
-            "activate", self._createRootCategory, None)
+            "activate", self._createRootCategory_cb, None)
 
         # Init selection functions
         categorySelection = self.__categoryView.get_selection()
         categorySelection.set_mode(gtk.SELECTION_MULTIPLE)
-        categorySelection.set_select_function(self._selectionFunction, None)
-        categorySelection.connect("changed", self._categorySelectionChanged)
+        categorySelection.set_select_function(self._selectionFunction_cb, None)
+        categorySelection.connect("changed", self._categorySelectionChanged_cb)
         categoryQSSelection = self.__categoryQSView.get_selection()
         categoryQSSelection.set_mode(gtk.SELECTION_NONE)
 
         # Connect the rest of the UI events
-        self.__categoryView.connect("button_press_event", self._button_pressed)
-        self.__categoryView.connect("button_release_event", self._button_released)
-        self.__categoryView.connect("row-activated", self._rowActivated)
-        env.widgets["categorySearchButton"].connect('clicked', self._executeQuery)
+        self.__categoryView.connect("button_press_event", self._button_pressed_cb)
+        self.__categoryView.connect("button_release_event", self._button_released_cb)
+        self.__categoryView.connect("row-activated", self._rowActivated_cb)
+        env.widgets["categorySearchButton"].connect('clicked', self._executeQuery_cb)
 
         self.loadCategoryTree()
 
@@ -174,7 +178,7 @@ class Categories:
         self.__objectCollection.getObjectSelection().addChangedCallback(self.objectSelectionChanged)
         self.objectSelectionChanged()
 
-    def objectSelectionChanged(self, objectSelection=None):
+    def objectSelectionChanged(self, unused=None):
         self.__updateToggleColumn()
         self.__updateQSToggleColumn()
         self.__updateContextMenu()
@@ -185,32 +189,32 @@ class Categories:
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
-    def _executeQuery(self, *foo):
+    def _executeQuery_cb(self, *unused):
         query = self.__buildQueryFromSelection()
         if query:
             self.__mainWindow.loadQuery(query)
 
-    def _categoryViewFocusInEvent(self, widget, event):
+    def _categoryViewFocusInEvent_cb(self, widget, event):
         self._menubarOids = []
         for widgetName, function in [
-                ("menubarCut", lambda *x: self._cutCategory(None, None)),
-                ("menubarCopy", lambda *x: self._copyCategory(None, None)),
-                ("menubarPaste", lambda *x: self._pasteCategory(None, None)),
-                ("menubarDestroy", lambda *x: self._deleteCategories(None, None)),
+                ("menubarCut", lambda *x: self._cutCategory_cb(None, None)),
+                ("menubarCopy", lambda *x: self._copyCategory_cb(None, None)),
+                ("menubarPaste", lambda *x: self._pasteCategory_cb(None, None)),
+                ("menubarDestroy", lambda *x: self._deleteCategories_cb(None, None)),
                 ("menubarClear", lambda *x: widget.get_selection().unselect_all()),
                 ("menubarSelectAll", lambda *x: widget.get_selection().select_all()),
-                ("menubarProperties", lambda *x: self._editProperties(None, None)),
+                ("menubarProperties", lambda *x: self._editProperties_cb(None, None)),
                 ]:
             w = env.widgets[widgetName]
             oid = w.connect("activate", function)
             self._menubarOids.append((w, oid))
         self.__updateContextMenu()
 
-    def _categoryViewFocusOutEvent(self, widget, event):
+    def _categoryViewFocusOutEvent_cb(self, widget, event):
         for (widget, oid) in self._menubarOids:
             widget.disconnect(oid)
 
-    def _categorySelectionChanged(self, selection):
+    def _categorySelectionChanged_cb(self, selection):
         selectedCategoryRows = []
         selection = self.__categoryView.get_selection()
         # TODO replace with "get_selected_rows()" when it is introduced in Pygtk 2.2 API
@@ -229,14 +233,14 @@ class Categories:
             else:
                 parentId = None
             try:
-                 self.__selectedCategoriesIds[cid].append(parentId)
+                self.__selectedCategoriesIds[cid].append(parentId)
             except KeyError:
-                 self.__selectedCategoriesIds[cid] = [parentId]
+                self.__selectedCategoriesIds[cid] = [parentId]
         self.__updateContextMenu()
         env.widgets["categorySearchButton"].set_sensitive(
             len(selectedCategoryRows) > 0)
 
-    def _connectionToggled(self, renderer, path):
+    def _connectionToggled_cb(self, renderer, path):
         categoryRow = self.__categoryModel[path]
         category = env.shelf.getCategory(categoryRow[self.__COLUMN_CATEGORY_ID])
         if categoryRow[self.__COLUMN_INCONSISTENT] \
@@ -257,9 +261,9 @@ class Categories:
         self.__updateToggleColumn()
         self.__updateQSToggleColumn()
 
-    def _button_pressed(self, treeView, event):
+    def _button_pressed_cb(self, treeView, event):
         if event.button == 3:
-            self._contextMenu.popup(None,None,None,event.button,event.time)
+            self._contextMenu.popup(None, None, None, event.button, event.time)
             return True
         rec = self.__categoryView.get_cell_area(0, self.__toggleColumn)
         if event.x <= (rec.x + rec.width):
@@ -267,34 +271,34 @@ class Categories:
             self.__ignoreSelectEvent = True
         return False
 
-    def _button_released(self, treeView, event):
+    def _button_released_cb(self, treeView, event):
         self.__ignoreSelectEvent = False
         return False
 
-    def _rowActivated(self, a, b, c):
+    def _rowActivated_cb(self, a, b, c):
         # TODO What should happen if the user dubble-click on a category?
         pass
 
-    def _copyCategory(self, item, data):
+    def _copyCategory_cb(self, item, data):
         cc = ClipboardCategories()
-        cc.type = cc.COPY
+        cc.type = ClipboardCategoriesType.Copy
         cc.categories = self.__selectedCategoriesIds
         env.clipboard.setCategories(cc)
 
-    def _cutCategory(self, item, data):
+    def _cutCategory_cb(self, item, data):
         cc = ClipboardCategories()
-        cc.type = cc.CUT
+        cc.type = ClipboardCategoriesType.Cut
         cc.categories = self.__selectedCategoriesIds
         env.clipboard.setCategories(cc)
 
-    def _pasteCategory(self, item, data):
+    def _pasteCategory_cb(self, item, data):
         assert env.clipboard.hasCategories()
         clipboardCategories = env.clipboard[0]
         env.clipboard.clear()
         try:
             for (categoryId, previousParentIds) in clipboardCategories.categories.items():
                 for newParentId in self.__selectedCategoriesIds:
-                    if clipboardCategories.type == ClipboardCategories.COPY:
+                    if clipboardCategories.type == ClipboardCategoriesType.Copy:
                         self.__connectChildToCategory(categoryId, newParentId)
                         for parentId in previousParentIds:
                             if parentId is None:
@@ -321,7 +325,7 @@ class Categories:
         self.__updateToggleColumn()
         self.__expandAndCollapseRows(False, False)
 
-    def _createRootCategory(self, item, data):
+    def _createRootCategory_cb(self, item, data):
         dialog = CategoryDialog("Create top-level category")
         dialog.run(self._createRootCategoryHelper)
 
@@ -329,7 +333,7 @@ class Categories:
         category = env.shelf.createCategory(tag, desc)
         self.__loadCategorySubTree(None, category)
 
-    def _createChildCategory(self, item, data):
+    def _createChildCategory_cb(self, item, data):
         dialog = CategoryDialog("Create subcategory")
         dialog.run(self._createChildCategoryHelper)
 
@@ -339,7 +343,7 @@ class Categories:
             self.__connectChildToCategory(newCategory.getId(), selectedCategoryId)
         self.__expandAndCollapseRows(False, False)
 
-    def _deleteCategories(self, item, data):
+    def _deleteCategories_cb(self, item, data):
         dialogId = "destroyCategoriesDialog"
         widgets = gtk.glade.XML(env.gladeFile, dialogId)
         dialog = widgets.get_widget(dialogId)
@@ -363,40 +367,40 @@ class Categories:
         if categoryRow[self.__COLUMN_CATEGORY_ID] == categoryIdToDelete:
             self.__categoryModel.remove(categoryRow.iter)
 
-    def _disconnectCategory(self, item, data):
+    def _disconnectCategory_cb(self, item, data):
         for (categoryId, parentIds) in self.__selectedCategoriesIds.items():
             for parentId in parentIds:
                 if not parentId == None: # Not possible to disconnect root categories
                     self.__disconnectChild(categoryId, parentId)
 
-    def _editProperties(self, item, data):
+    def _editProperties_cb(self, item, data):
         for categoryId in self.__selectedCategoriesIds:
             dialog = CategoryDialog("Change properties", categoryId)
             dialog.run(self._editPropertiesHelper, data=categoryId)
 
     def _editPropertiesHelper(self, tag, desc, categoryId):
-         category = env.shelf.getCategory(categoryId)
-         category.setTag(tag)
-         category.setDescription(desc)
-         env.shelf.flushCategoryCache()
-         self.__forEachCategoryRow(self.__updatePropertiesFromShelf, categoryId)
+        category = env.shelf.getCategory(categoryId)
+        category.setTag(tag)
+        category.setDescription(desc)
+        env.shelf.flushCategoryCache()
+        self.__forEachCategoryRow(self.__updatePropertiesFromShelf, categoryId)
 
-    def _selectionFunction(self, path, b):
+    def _selectionFunction_cb(self, path, b):
         return not self.__ignoreSelectEvent
 
-    def _categoryQSViewFocusInEvent(self, widget, event):
+    def _categoryQSViewFocusInEvent_cb(self, widget, event):
         self.__categoryQSEntry.grab_focus()
 
-    def _categoryQSEntryActivateEvent(self, entry):
+    def _categoryQSEntryActivateEvent_cb(self, entry):
         if not self.__qsSelectedPath:
             return
-        self._qsConnectionToggled(None, self.__qsSelectedPath)
+        self._qsConnectionToggled_cb(None, self.__qsSelectedPath)
         self.__categoryQSFreeze = True
         self.__categoryQSEntry.set_text("")
         self.__categoryQSFreeze = False
         self.__qsSelectedPath = None
 
-    def _categoryQSEntryChangedEvent(self, entry):
+    def _categoryQSEntryChangedEvent_cb(self, entry):
         if self.__categoryQSFreeze:
             return
         self.__categoryQSModel.clear()
@@ -429,7 +433,7 @@ class Categories:
             self.__categoryQSButton.set_sensitive(True)
         self.__updateQSToggleColumn()
 
-    def _qsConnectionToggled(self, renderer, path):
+    def _qsConnectionToggled_cb(self, renderer, path):
         categoryRow = self.__categoryQSModel[path]
         category = env.shelf.getCategory(
             categoryRow[self.__COLUMN_CATEGORY_ID])
@@ -537,7 +541,7 @@ class Categories:
                 try:
                     nrSelectedObjectsInCategory[categoryId] += 1
                 except KeyError:
-                        nrSelectedObjectsInCategory[categoryId] = 1
+                    nrSelectedObjectsInCategory[categoryId] = 1
         self.__forEachCategoryRow(self.__updateToggleColumnHelper,
                                   (nrSelectedObjects, nrSelectedObjectsInCategory))
 
@@ -579,14 +583,14 @@ class Categories:
         # We can't use gtk.TreeModel.foreach() since it does not pass a row
         # to the callback function.
         if not categoryRows:
-            categoryRows=self.__categoryModel
+            categoryRows = self.__categoryModel
         for categoryRow in categoryRows:
             function(categoryRow, data)
             self.__forEachCategoryRow(function, data, categoryRow.iterchildren())
 
     def __expandAndCollapseRows(self, autoExpand, autoCollapse, categoryRows=None):
         if categoryRows is None:
-            categoryRows=self.__categoryModel
+            categoryRows = self.__categoryModel
         someRowsExpanded = False
         for categoryRow in categoryRows:
             expandThisRow = False
@@ -685,8 +689,5 @@ class Categories:
             (x.getDescription(), x.getTag()),
             (y.getDescription(), y.getTag()))
 
-class ClipboardCategories:
-    COPY = 1
-    CUT = 2
-    categories = None
-    type = None
+ClipboardCategoriesType = Alternative("Copy", "Cut")
+ClipboardCategories = makeStructClass("categories", "type")

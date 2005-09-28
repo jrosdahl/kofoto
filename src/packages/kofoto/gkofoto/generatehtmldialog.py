@@ -2,7 +2,7 @@ import gtk
 import os
 import re
 from sets import Set
-from environment import env
+from kofoto.gkofoto.environment import env
 import kofoto.generate
 
 class GenerateHTMLDialog:
@@ -33,7 +33,6 @@ class GenerateHTMLDialog:
             os.path.isdir(self.directoryTextEntry.get_text()))
 
     def _onBrowse(self, *unused):
-        directorySelectedInDirList = False
         dirDialog = gtk.FileChooserDialog(
             title="Choose directory",
             action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,

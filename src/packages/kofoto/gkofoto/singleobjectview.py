@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.imageview import ImageView
@@ -28,15 +30,15 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.widgets["menubarNextImage"].connect("activate", self._goto, 1)
         env.widgets["previousButton"].connect("clicked", self._goto, -1)
         env.widgets["menubarPreviousImage"].connect("activate", self._goto, -1)
-        env.widgets["zoomToFit"].connect("clicked", self.__imageView.fitToWindow)
-        env.widgets["menubarZoomToFit"].connect("activate", self.__imageView.fitToWindow)
-        env.widgets["zoom100"].connect("clicked", self.__imageView.zoom100)
-        env.widgets["menubarActualSize"].connect("activate", self.__imageView.zoom100)
-        env.widgets["zoomIn"].connect("clicked", self.__imageView.zoomIn)
-        env.widgets["menubarZoomIn"].connect("activate", self.__imageView.zoomIn)
-        env.widgets["zoomOut"].connect("clicked", self.__imageView.zoomOut)
-        env.widgets["menubarZoomOut"].connect("activate", self.__imageView.zoomOut)
-        env.widgets["mainWindow"].connect("key_press_event", self._key_pressed)
+        env.widgets["zoomToFit"].connect("clicked", self.__imageView.fitToWindow_cb)
+        env.widgets["menubarZoomToFit"].connect("activate", self.__imageView.fitToWindow_cb)
+        env.widgets["zoom100"].connect("clicked", self.__imageView.zoom100_cb)
+        env.widgets["menubarActualSize"].connect("activate", self.__imageView.zoom100_cb)
+        env.widgets["zoomIn"].connect("clicked", self.__imageView.zoomIn_cb)
+        env.widgets["menubarZoomIn"].connect("activate", self.__imageView.zoomIn_cb)
+        env.widgets["zoomOut"].connect("clicked", self.__imageView.zoomOut_cb)
+        env.widgets["menubarZoomOut"].connect("activate", self.__imageView.zoomOut_cb)
+        env.widgets["mainWindow"].connect("key_press_event", self._key_pressed_cb)
         env.widgets["menubarViewDetailsPane"].set_sensitive(True)
         self.__loadedObject = False
         self.__selectionLocked = False
@@ -194,7 +196,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.mainwindow.getImagePreloader().preloadImages(
             filenames, maxWidth, maxHeight)
 
-    def _key_pressed(self, unused, event):
+    def _key_pressed_cb(self, unused, event):
         # TODO use UiManager instead of this...
         if event.state & gtk.gdk.CONTROL_MASK:
             if (event.keyval == gtk.gdk.keyval_from_name("space") and

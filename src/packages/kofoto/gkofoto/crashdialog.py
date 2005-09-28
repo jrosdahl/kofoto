@@ -1,4 +1,5 @@
-import pygtk
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 import pango
 import linecache
@@ -25,7 +26,7 @@ class CrashDialog(gtk.Dialog):
 
         button = gtk.Button(stock=gtk.STOCK_SAVE)
         button.show()
-        button.connect("clicked", self._save)
+        button.connect("clicked", self._save_cb)
         self.action_area.pack_start(button)
         self.action_area.reorder_child(button, 0)
 
@@ -65,7 +66,7 @@ class CrashDialog(gtk.Dialog):
         sw.add(textview)
         textview.show()
 
-    def _save(self, widget):
+    def _save_cb(self, widget):
         filechooser = gtk.FileChooserDialog(
             "Save crash log",
             self,

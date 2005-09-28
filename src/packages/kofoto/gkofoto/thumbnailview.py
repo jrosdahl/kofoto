@@ -1,7 +1,7 @@
 import gtk
-from kofoto.gkofoto.objectcollectionview import *
-from kofoto.gkofoto.objectcollection import *
-from environment import env
+from kofoto.gkofoto.objectcollectionview import ObjectCollectionView
+from kofoto.gkofoto.objectcollection import ObjectCollection
+from kofoto.gkofoto.environment import env
 
 class ThumbnailView(ObjectCollectionView):
 
@@ -16,9 +16,8 @@ class ThumbnailView(ObjectCollectionView):
                                       env.widgets["thumbnailView"])
         self.__currentMaxWidth = env.thumbnailSize[0]
         self.__selectionLocked = False
-        return
-        self._viewWidget.connect("select_icon", self._widgetIconSelected)
-        self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
+##        self._viewWidget.connect("select_icon", self._widgetIconSelected)
+##        self._viewWidget.connect("unselect_icon", self._widgetIconUnselected)
 
     def importSelection(self, objectSelection):
         if not self.__selectionLocked:
@@ -63,16 +62,16 @@ class ThumbnailView(ObjectCollectionView):
         model = self._objectCollection.getModel()
         for row in model:
             self.__loadRow(row)
-        self._connect(model, "row_inserted",   self._rowInserted)
-        self._connect(model, "row_deleted",    self._rowDeleted)
-        self._connect(model, "rows_reordered", self._rowsReordered)
-        self._connect(model, "row_changed",    self._rowChanged)
+        self._connect(model, "row_inserted",   self._rowInserted_cb)
+        self._connect(model, "row_deleted",    self._rowDeleted_cb)
+        self._connect(model, "rows_reordered", self._rowsReordered_cb)
+        self._connect(model, "row_changed",    self._rowChanged_cb)
         env.exit("ThumbnailView.thawHelper()")
 
 ###############################################################################
 ### Callback functions registered by this class but invoked from other classes.
 
-    def _rowChanged(self, model, path, iterator):
+    def _rowChanged_cb(self, model, path, iterator):
         env.debug("ThumbnailView row changed.")
         self.__selectionLocked = True
         self._viewWidget.remove(path[0])
@@ -84,11 +83,11 @@ class ThumbnailView(ObjectCollectionView):
             self._viewWidget.select_icon(path[0])
         self.__selectionLocked = False
 
-    def _rowInserted(self, model, path, iterator):
+    def _rowInserted_cb(self, model, path, iterator):
         env.debug("ThumbnailView row inserted.")
         self.__loadRow(model[path])
 
-    def _rowsReordered(self, model, b, c, d):
+    def _rowsReordered_cb(self, model, b, c, d):
         env.debug("ThumbnailView rows reordered.")
         # TODO I Don't know how to parse which rows that has
         #      been reordered. Hence I must reload all rows.
@@ -97,18 +96,18 @@ class ThumbnailView(ObjectCollectionView):
             self.__loadRow(row)
         self.importSelection(self._objectCollection.getObjectSelection())
 
-    def _rowDeleted(self, model, path):
+    def _rowDeleted_cb(self, model, path):
         env.debug("ThumbnailView row deleted.")
         self._viewWidget.remove(path[0])
 
-    def _widgetIconSelected(self, widget, index, event):
+    def _widgetIconSelected_cb(self, widget, index, event):
         if not self.__selectionLocked:
             env.enter("ThumbnailView selection changed")
             self.__selectionLocked = True
             self._objectCollection.getObjectSelection().addSelection(index)
             self.__selectionLocked = False
 
-    def _widgetIconUnselected(self, widget, index, event):
+    def _widgetIconUnselected_cb(self, widget, index, event):
         if not self.__selectionLocked:
             env.enter("ThumbnailView selection changed")
             self.__selectionLocked = True

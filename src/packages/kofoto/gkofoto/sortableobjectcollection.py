@@ -1,7 +1,7 @@
 import gtk
-from environment import env
-from mysortedmodel import *
-from objectcollection import *
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.mysortedmodel import MySortedModel
+from kofoto.gkofoto.objectcollection import ObjectCollection
 
 def attributeSortFunc(model, iterA, iterB, column):
     valueA = model.get_value(iterA, column)

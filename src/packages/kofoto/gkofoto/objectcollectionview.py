@@ -1,7 +1,9 @@
 import gtk
-from environment import env
-from menuhandler import *
-from objectcollection import *
+import os
+from kofoto.gkofoto.environment import env
+from kofoto.gkofoto.menuhandler import MenuGroup
+from kofoto.gkofoto.objectcollection import ObjectCollection
+from kofoto.common import UnimplementedError
 
 class ObjectCollectionView:
 
@@ -15,6 +17,13 @@ class ObjectCollectionView:
         self.__objectCollectionLoaded = False
         self.__hidden = True
         self.__connections = []
+        self.__singleImageMenuGroup = None
+        self.__objectMenuGroup = None
+        self.__multipleImagesMenuGroup = None
+        self.__sortMenuGroup = None
+        self.__albumMenuGroup = None
+        self.__clipboardMenuGroup = None
+        self.__imageMenuGroup = None
 
     def show(self, objectCollection):
         if self.__hidden:
@@ -117,7 +126,31 @@ class ObjectCollectionView:
             return False
 
 ##############################################################################
-### Methods used by and overloaded by subbclasses
+### Methods used by and overloaded by subclasses
+
+    def _hasFocus(self):
+        raise UnimplementedError
+
+    def _showHelper(self):
+        raise UnimplementedError
+
+    def _hideHelper(self):
+        raise UnimplementedError
+
+    def _freezeHelper(self):
+        raise UnimplementedError
+
+    def _thawHelper(self):
+        raise UnimplementedError
+
+    def _connectObjectCollectionHelper(self):
+        raise UnimplementedError
+
+    def _disconnectObjectCollectionHelper(self):
+        raise UnimplementedError
+
+    def importSelection(self, objectCollection):
+        raise UnimplementedError
 
     def _connect(self, obj, signal, function, data=None):
         oid = obj.connect(signal, function, data)
@@ -168,7 +201,7 @@ class ObjectCollectionView:
         self.__multipleImagesMenuGroup = None
         self.__sortMenuGroup = None
 
-    def _updateContextMenu(self, *foo):
+    def _updateContextMenu(self, *unused):
         if not self._hasFocus():
             return
         env.debug("Updating context menu")
@@ -196,7 +229,6 @@ class ObjectCollectionView:
                 else:
                     imagesSelected += 1
 
-            modifiable = mutable and not loading
             self.__clipboardMenuGroup[self._objectCollection.getCutLabel()].set_sensitive(mutable and not loading)
             env.widgets["menubarCut"].set_sensitive(mutable and not loading)
             self.__clipboardMenuGroup[self._objectCollection.getCopyLabel()].set_sensitive(True)

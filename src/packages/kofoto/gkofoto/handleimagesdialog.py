@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import gtk
 import gobject
 import os

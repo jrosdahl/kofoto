@@ -1,3 +1,5 @@
+# pylint: disable-msg=F0203, E0201
+
 import pygtk
 pygtk.require("2.0")
 import gtk

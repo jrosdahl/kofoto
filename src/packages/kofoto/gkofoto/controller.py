@@ -1,4 +1,3 @@
-import sys
 import gtk
 from kofoto.shelf import ShelfLockedError, UnsupportedShelfError
 from kofoto.gkofoto.mainwindow import MainWindow
@@ -7,6 +6,7 @@ from kofoto.gkofoto.environment import env
 class Controller:
     def __init__(self):
         self.__clipboard = None
+        self.__mainWindow = None
 
     def start(self, setupOk):
         if setupOk:
@@ -66,11 +66,11 @@ class Controller:
             dialog.run()
         if setupOk:
             self.__mainWindow = MainWindow()
-            env.widgets["mainWindow"].connect("destroy", self.quit, False)
+            env.widgets["mainWindow"].connect("destroy", self.quit_cb, False)
             env.widgets["mainWindow"].show()
             gtk.main()
 
-    def quit(self, app, cancelButton=True):
+    def quit_cb(self, app, cancelButton=True):
         if env.shelf.isModified():
             widgets = gtk.glade.XML(env.gladeFile, "quitDialog")
             quitDialog = widgets.get_widget("quitDialog")
@@ -90,11 +90,11 @@ class Controller:
             env.shelf.rollback()
             self._doQuit()
 
-    def save(self, app):
+    def save_cb(self, app):
         env.shelf.commit()
         env.shelf.begin()
 
-    def revert(self, app):
+    def revert_cb(self, app):
         dialog = gtk.MessageDialog(
             type=gtk.MESSAGE_QUESTION,
             buttons=gtk.BUTTONS_YES_NO,

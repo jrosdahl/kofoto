@@ -1,13 +1,12 @@
-import glob
+import gtk
 import os
 import shutil
 
-import gtk
-
-from environment import env
+from kofoto.gkofoto.environment import env
 
 class DuplicateAndOpenImageDialog:
     def __init__(self):
+        self._imageversion = None
         self._widgets = gtk.glade.XML(
             env.gladeFile, "duplicateAndOpenImageDialog")
         self._dialog = self._widgets.get_widget("duplicateAndOpenImageDialog")
