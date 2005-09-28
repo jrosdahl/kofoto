@@ -14,7 +14,34 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(sys.argv[0]), "..", "packages")))
     os.chdir(libdir)
     sys.path.insert(0, libdir)
-from kofoto.shelf import *
+from kofoto.shelf import \
+    Shelf, \
+    computeImageHash, \
+    makeValidTag, \
+    verifyValidAlbumTag, \
+    verifyValidCategoryTag
+from kofoto.albumtype import AlbumType
+from kofoto.imageversiontype import ImageVersionType
+from kofoto.shelfexceptions import \
+    AlbumDoesNotExistError, \
+    AlbumExistsError, \
+    BadAlbumTagError, \
+    BadCategoryTagError, \
+    CategoriesAlreadyConnectedError, \
+    CategoryDoesNotExistError, \
+    CategoryExistsError, \
+    CategoryLoopError, \
+    CategoryPresentError, \
+    FailedWritingError, \
+    ImageDoesNotExistError, \
+    ImageVersionDoesNotExistError, \
+    ImageVersionExistsError, \
+    ShelfLockedError, \
+    ShelfNotFoundError, \
+    UndeletableAlbumError, \
+    UndeletableAlbumError, \
+    UnsettableChildrenError, \
+    UnsupportedShelfError
 
 PICDIR = unicode(os.path.realpath(
     os.path.join("..", "reference_pictures", "working")))

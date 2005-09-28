@@ -3,15 +3,17 @@
 __all__ = ["isUpgradable", "upgradeShelf"]
 
 import os
-import kofoto.shelf
 import sqlite as sql
 import time
+import kofoto.shelfschema
+from kofoto.shelfexceptions import \
+    ShelfNotFoundError, ShelfLockedError, ShelfNotFoundError
 
 def isUpgradable(location):
     """Check whether a shelf is upgradable, i.e. not the latest version."""
 
     if not os.path.exists(location):
-        raise kofoto.shelf.ShelfNotFoundError, location
+        raise ShelfNotFoundError, location
     try:
         connection = sql.connect(location)
         cursor = connection.cursor()
@@ -22,9 +24,9 @@ def isUpgradable(location):
         else:
             return False
     except sql.OperationalError:
-        raise kofoto.shelf.ShelfLockedError, location
+        raise ShelfLockedError, location
     except sql.DatabaseError:
-        raise kofoto.shelf.ShelfNotFoundError, location
+        raise ShelfNotFoundError, location
 
 def tryUpgrade(location, toVersion):
     """Upgrade the database format.
@@ -47,7 +49,7 @@ def tryUpgrade(location, toVersion):
             location, time.strftime("%Y%m%d-%H%M%S"))
         connection = sql.connect(new_location, client_encoding="UTF-8")
         cursor = connection.cursor()
-        cursor.execute(kofoto.shelf.schema)
+        cursor.execute(kofoto.shelfschema.schema)
         cursor.execute("attach '%s' as old" % (location,))
         for tablename in ["dbinfo", "object", "album", "member",
                           "attribute", "category", "category_child",

@@ -44,7 +44,7 @@ __all__ = [
 
 import re
 from kofoto.common import KofotoError, UnimplementedError
-import kofoto.shelf
+from kofoto.albumtype import AlbumType
 
 class ParseError(KofotoError):
     """Base class for parse error exceptions related to search expressions."""
@@ -77,10 +77,10 @@ class SearchNodeFactory:
 
         tag_or_album -- A tag string or Album instance.
         """
-        if isinstance(tag_or_album, kofoto.shelf.Album):
-            album = tag_or_album
-        else:
+        if isinstance(tag_or_album, basestring):
             album = self._shelf.getAlbumByTag(tag_or_album)
+        else:
+            album = tag_or_album
         return AlbumSearchNode(self._shelf, album)
 
     def andNode(self, subnodes):
@@ -111,10 +111,10 @@ class SearchNodeFactory:
 
         tag_or_category -- A tag string or Category instance.
         """
-        if isinstance(tag_or_category, kofoto.shelf.Category):
-            category = tag_or_category
-        else:
+        if isinstance(tag_or_category, basestring):
             category = self._shelf.getCategoryByTag(tag_or_category)
+        else:
+            category = tag_or_category
         if recursive:
             catids = list(self._shelf.categorydag.get().getDescendants(
                 category.getId()))
@@ -282,17 +282,17 @@ class AlbumSearchNode(SearchNode):
     def getQuery(self):
         """Return the SQL expression for the node."""
         t = self._album.getType()
-        if t == kofoto.shelf.AlbumType.Orphans:
+        if t == AlbumType.Orphans:
             return (" select i.id"
                     " from   image as i left join attribute as a"
                     " on     i.id = a.object and a.name = 'captured'"
                     " where  i.id not in (select object from member)"
                     " order by a.lcvalue")
-        elif t == kofoto.shelf.AlbumType.Plain:
+        elif t == AlbumType.Plain:
             return (" select distinct object"
                     " from   member"
                     " where  album = %s" % self._album.getId())
-        elif t == kofoto.shelf.AlbumType.Search:
+        elif t == AlbumType.Search:
             query = self._album.getAttribute(u"query")
             if not query:
                 return ""
