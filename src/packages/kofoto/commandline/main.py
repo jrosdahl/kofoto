@@ -68,7 +68,7 @@ optionDefinitionList = [
      " configuration file)."),
     ("    --gencharenc ENCODING",
      "Generate HTML pages with character encoding ENCODING instead of the"
-     " default (taken from locale settings)."),
+     " default (utf-8)."),
     ("-h, --help",
      "Display this help."),
     ("    --identify-by-hash",
@@ -231,8 +231,7 @@ parameterSemanticsDefinitionList = [
     ("DESCRIPTION",
      "An arbitrary string."),
     ("ENCODING",
-     "An encoding parsable by Python, e.g. \"utf-8\", \"latin1\" or"
-     " \"iso-8859-1\"."),
+     "An encoding parsable by Python, e.g. utf-8, latin1 or iso-8859-1."),
     ("FILE",
      "A path to a file."),
     ("IMAGE",
@@ -1171,7 +1170,7 @@ def main(argv):
     # Other defaults:
     shelfLocation = None
     configFileLocation = None
-    genCharEnc = env.codeset
+    genCharEnc = "utf-8"
 
     for opt, optarg in optlist:
         if opt == "--configfile":
