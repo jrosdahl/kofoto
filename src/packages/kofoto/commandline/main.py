@@ -3,6 +3,8 @@
 
 """Main Kofoto commandline client code."""
 
+__all__ = ["main"]
+
 import getopt
 import os
 from sets import Set
