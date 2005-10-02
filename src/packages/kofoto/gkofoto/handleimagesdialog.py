@@ -50,11 +50,11 @@ class HandleImagesDialog(gtk.FileChooserDialog):
         investigatedFiles = 0
         modifiedImages = []
         movedImages = []
-        for filepath in walk_files([self.get_filename()]):
-            try:
-                filepath = filepath.decode(env.codeset)
-            except UnicodeDecodeError:
-                filepath = filepath.decode("latin1")
+        try:
+            directory = self.get_filename().decode("utf-8")
+        except UnicodeDecodeError:
+            directory = self.get_filename().decode("latin1")
+        for filepath in walk_files([directory]):
             try:
                 imageversion = env.shelf.getImageVersionByHash(
                     computeImageHash(filepath))

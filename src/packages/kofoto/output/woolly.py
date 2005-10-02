@@ -6,7 +6,7 @@ import os
 import re
 from kofoto.outputengine import OutputEngine
 
-css = '''
+css = u'''
 html {
     color: #000000;
     background: #dddddd;
@@ -132,7 +132,7 @@ nextalbum_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00
 
 previousalbum_png = '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x18\x00\x00\x00\x11\x08\x03\x00\x00\x00\xf0\xa6\x9c\x02\x00\x00\x01;PLTE\x00\x00\xd3\x00\x00\x00\x04\x00\x07\x10\x00\x1d\x17\x03&CCn\x1b\x134 \x0e-ov\xa6P_\x91\x16\x112\x06\x00\t\x1f\x0b*#\x10/#\x101$\x1107+J\x85\x8a\xba\x83\x92\xcaGZ\x8f\x13\x0f2uq\x9c\x88\x88\xb9\x89\x89\xba\x8b\x8b\xba\x8a\x8a\xbb\x8c\x8c\xbb\x8d\x8e\xc0\x97\x9d\xd4\x97\xa0\xd8~\x8e\xc9GY\x92\x16\x0f> \r.}}\xb2\x98\x9f\xd7\x98\xa1\xd7\x99\xa0\xd8\x96\x9f\xd7\x97\x9e\xd6\x92\x9d\xd5\x7f\x8e\xc8PY\x91\x17\x0e3\x1a\n+lp\xa9\x84\x90\xcf\x84\x92\xcf\x83\x93\xce\x85\x93\xd0\x84\x94\xcf\x86\x95\xcf\x86\x94\xcf\x87\x95\xd0n\x7f\xbf7I\x84\n\x04)\x11\x00)BM\x95Jd\xb1If\xb2Ic\xb0Jh\xb3Db\xaf1M\x96\x0e\x17O\x00\x00\r\r\x00%/>\x8a0J\x9f.H\x9f-H\x9e.K\x9f-J\x9c&?\x91\x12"c\x03\x00!\x0b\x00#,;\x87+B\x9a(B\x99)D\x9a+E\x9a*D\x99";\x8d\x10\x1ea\x08\x00\x1d!,n\x1d/|\x19+z\x1c.\x7f%=\x94\x00\x00\x03\x07\x00\x19\x04\x00\x1b\x08\x030\x1a/}!9\x8a\x04\x00\x19\x13"n\x0e\x1c_\x01\x00\x11\t\x10F\x03\x00\x1f\x00\x00\x01\x8b\x8fZv\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x01bKGD\x00\x88\x05\x1dH\x00\x00\x00\tpHYs\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd~\xfc\x00\x00\x00\x07tIME\x07\xd4\x01\x02\x137\r"\xc4\xd4\x02\x00\x00\x00\xf4IDATx\x9cc`\x80\x02F\x06\xec\x80\x99\t\xbb8\x1b+\x0bVq.N\x0evl\xe2"\xc2B\x82\x02\xfc\xfc||\xbc\xbc\xfc@\x0c\x04<\xdc q\x05y9Y\x19i))Iq1\t0!.&\xca\x03\x14\xd7\xd6\xd2\xd4\x90UWSVQQQ\x05\x13**\xcaJ\x8a\x0c\x0c\x16\xe6f\xfa\xa6\xa6\xa6&\xc6F\x06\xfa\x86`\xc2@_ER\x87\xc1\xc9\xd1\xc1\xde\xc6\x0e\x08l\x80\xc0\x16\x0cl\x8cT$\xf9\x19\x18|\xbc\xbd<= \xc0\xcd\x1d\x0cl\x0cT$\xf9\x80v\xf8\x84\x86\x04\x07\x05\x06\xc0\x81\x9b\x8d\xbe\x8a8/\x03D& :*\x12\n\x02\xdcm\rU\xc5\xc0\x12@\x99\xc4\x84\xf88\x08\x88\x04\xea0P\x91\x80H0\xf8\xa4$\'AX`\t\x98Q@\x90\x9e\x96\n\x95\x88\xf0w\xb5\xd6S\x16\x83I08e@\xe8\xd8p?\x17+]%\xb0\xcfQ\xe2#&\xcc\xd7\xd9RG\x91\x87\x1b\x00\xe4\xb53\x1e\x96h\xda\xbf\x00\x00\x00\x00IEND\xaeB`\x82'
 
-album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+album_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -172,7 +172,7 @@ album_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 </html>
 '''
 
-thumbnails_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+thumbnails_frame_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -189,14 +189,14 @@ thumbnails_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
 
 # At least Opera 6.12 behaves strangely with "text-align: center;" in
 # stylesheet, so use align="center" instead.
-thumbnails_frame_entry_template = '''<a name="%(number)s"></a>
+thumbnails_frame_entry_template = u'''<a name="%(number)s"></a>
 <a href="%(htmlref)s" class="toc" target="main">
 <div align="center">
 <img src="%(thumbimgref)s" class="toc" alt="" /></div>
 </a>
 '''
 
-subalbum_entry_template = '''<td align="center" valign="top">
+subalbum_entry_template = u'''<td align="center" valign="top">
 <p>%(title)s</p>
 <table border="0" cellspacing="0" cellpadding="0">
 <tr>
@@ -220,14 +220,14 @@ subalbum_entry_template = '''<td align="center" valign="top">
 </td>
 '''
 
-image_entry_template = '''<td align="left" valign="bottom">
+image_entry_template = u'''<td align="left" valign="bottom">
 <a href="%(frameref)s">
 <img class="thinborder" src="%(thumbimgref)s" alt="" />
 </a>
 </td>
 '''
 
-image_frameset_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+image_frameset_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
@@ -252,7 +252,7 @@ This album needs frames. Sorry.
 </html>
 '''
 
-image_frame_template = '''<?xml version="1.0" encoding="%(charenc)s"?>
+image_frame_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -331,7 +331,7 @@ class OutputGenerator(OutputEngine):
                 tmpl = env.config.get("woolly", "auto_descriptions_template")
                 self.autoImageDescTags = re.findall("<(.*?)>", tmpl)
                 self.autoImageDescTemplate = re.sub(
-                    "<(.*?)>", r"%(\1)s", tmpl).encode(self.charEnc)
+                    "<(.*?)>", r"%(\1)s", tmpl)
         except ValueError:
             pass
 
@@ -347,9 +347,9 @@ class OutputGenerator(OutputEngine):
         if self.env.verbose:
             self.env.out("Generating index page, style sheet and icons...\n")
         self.symlinkFile(
-            "%s.html" % root.getTag().encode(self.charEnc),
+            "%s.html" % root.getTag(),
             "index.html")
-        self.writeFile("woolly.css", css)
+        self.writeFile("woolly.css", css, self.charEnc)
         for data, filename in [
                 (transparent_1x1_png, "1x1.png"),
                 (previous_png, "previous.png"),
@@ -372,7 +372,7 @@ class OutputGenerator(OutputEngine):
                 (frame_toprightlower_png, "frame-toprightlower.png"),
                 (frame_toprightupper_png, "frame-toprightupper.png")]:
             self.writeFile(
-                os.path.join(self.iconsdir, filename), data, 1)
+                os.path.join(self.iconsdir, filename), data, binary=True)
 
 
     def generateAlbum(self, album, subalbums, images, paths):
@@ -395,7 +395,7 @@ class OutputGenerator(OutputEngine):
             # Create uplink.
             if len(paths[0]) > 1:
                 uplink = '<link rel="up" href="%s-%dx%d.html" />' % (
-                    paths[0][-2].getTag().encode(self.charEnc),
+                    paths[0][-2].getTag(),
                     wlim,
                     hlim)
             else:
@@ -426,7 +426,7 @@ class OutputGenerator(OutputEngine):
                     subalbumtextElements.append(subalbum_entry_template % {
                         "iconsdir": self.iconsdir,
                         "htmlref": "%s-%dx%d.html" % (
-                            subalbum.getTag().encode(self.charEnc),
+                            subalbum.getTag(),
                             wlim,
                             hlim),
                         "thumbheight": thumbheight,
@@ -434,7 +434,7 @@ class OutputGenerator(OutputEngine):
                         "thumbimgref": thumbimgref,
                         "thumbwidth": thumbwidth,
                         "thumbwidth_minus_6": thumbwidth - 6,
-                        "title": title.encode(self.charEnc),
+                        "title": title,
                         })
                     number += 1
                 subalbumtextElements.append("</tr>\n")
@@ -468,13 +468,9 @@ class OutputGenerator(OutputEngine):
 
             # Album overview.
             desc = album.getAttribute(u"description") or u""
-            desc = desc.encode(self.charEnc)
             title = album.getAttribute(u"title") or album.getTag()
-            title = title.encode(self.charEnc)
 
-            filename = "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
-                                          wlim,
-                                          hlim)
+            filename = "%s-%dx%d.html" % (album.getTag(), wlim, hlim)
             self.writeFile(
                 filename,
                 album_template % {
@@ -487,7 +483,8 @@ class OutputGenerator(OutputEngine):
                     "thishref": filename,
                     "title": title,
                     "uplink": uplink,
-                })
+                },
+                self.charEnc)
             self._maybeMakeUTF8Symlink("%s-%dx%d.html" % (album.getTag(),
                                                           wlim,
                                                           hlim))
@@ -522,7 +519,8 @@ class OutputGenerator(OutputEngine):
                              "thumbnails-%dx%d.html" % (wlim, hlim)),
                 thumbnails_frame_template % {
                     "charenc": self.charEnc,
-                    "entries": thumbnailstext})
+                    "entries": thumbnailstext},
+                self.charEnc)
             self._maybeMakeUTF8Symlink(
                 os.path.join(str(album.getId()),
                              "thumbnails-%dx%d.html" % (wlim, hlim)))
@@ -532,10 +530,10 @@ class OutputGenerator(OutputEngine):
         # ------------------------------------------------------------
 
         self.symlinkFile(
-            "%s-%dx%d.html" % (album.getTag().encode(self.charEnc),
+            "%s-%dx%d.html" % (album.getTag(),
                                self.env.defaultsizelimit[0],
                                self.env.defaultsizelimit[1]),
-            "%s.html" % album.getTag().encode(self.charEnc))
+            "%s.html" % album.getTag())
         self._maybeMakeUTF8Symlink("%s.html" % album.getTag())
 
 
@@ -558,7 +556,7 @@ class OutputGenerator(OutputEngine):
             pathtext = self._generatePathText(wlim, hlim, paths, "../")
             uplink = \
                 '<link rel="up" href="../%s-%dx%d.html" target="_top" />' % (
-                    paths[0][-1].getTag().encode(self.charEnc),
+                    paths[0][-1].getTag(),
                     wlim,
                     hlim)
 
@@ -638,9 +636,7 @@ class OutputGenerator(OutputEngine):
                 image.getAttribute(u"description") or
                 image.getAttribute(u"title") or
                 u"")
-            desc = desc.encode(self.charEnc)
             title = image.getAttribute(u"title") or u""
-            title = title.encode(self.charEnc)
 
             imageCategories = list(image.getCategories())
             infotextElements = []
@@ -656,8 +652,7 @@ class OutputGenerator(OutputEngine):
                             if cat.isParentOf(imgcat, True):
                                 catlist.append(imgcat)
                         catdict[tag] = ", ".join(
-                            [x.getDescription().encode(self.charEnc)
-                             for x in catlist])
+                            [x.getDescription() for x in catlist])
                     descElement = self.autoImageDescTemplate % catdict
                 else:
                     descElement = ""
@@ -667,7 +662,7 @@ class OutputGenerator(OutputEngine):
                 ' width="100%">\n<tr>')
             firstrow = True
             for dispcat in self.displayCategories:
-                matching = [x.getDescription().encode(self.charEnc)
+                matching = [x.getDescription()
                             for x in imageCategories
                             if dispcat.isParentOf(x, True)]
                 if matching:
@@ -679,14 +674,13 @@ class OutputGenerator(OutputEngine):
                     infotextElements.append(
                         '<td align="left"><small><b>%s</b>:'
                         ' %s</small></td>' % (
-                            dispcat.getDescription().encode(self.charEnc),
+                            dispcat.getDescription(),
                             ", ".join(matching)))
             infotextElements.append('</td><td align="right">')
             timestamp = image.getAttribute(u"captured")
             if timestamp:
                 infotextElements.append(
-                    "<small>%s</small><br />" % (
-                    timestamp.encode(self.charEnc)))
+                    "<small>%s</small><br />" % timestamp)
             infotextElements.append("</td></tr></table>")
             infotext = "".join(infotextElements)
 
@@ -709,7 +703,8 @@ class OutputGenerator(OutputEngine):
                     "thumbnailsframewidth": \
                         self.env.thumbnailsizelimit[0] + 70,
                     "uplink": uplink,
-                    })
+                    },
+                self.charEnc)
 
             imgref, imgwidth, imgheight = self.getImageReference(
                 image, wlim, hlim)
@@ -735,7 +730,8 @@ class OutputGenerator(OutputEngine):
                     "smaller": smallertext,
                     "thumbnailsanchor": str(number),
                     "title": title,
-                    })
+                    },
+                self.charEnc)
 
 
     def _generatePathText(self, wlim, hlim, paths, pathprefix):
@@ -753,14 +749,13 @@ class OutputGenerator(OutputEngine):
                     '''<a href="%(pathprefix)s%(htmlref)s" target="_top">'''
                     '''%(title)s</a>''' % {
                         "htmlref": "%s-%dx%d.html" % (
-                            node.getTag().encode(self.charEnc),
+                            node.getTag(),
                             wlim,
                             hlim),
                         "pathprefix": pathprefix,
-                        "title": title.encode(self.charEnc),
+                        "title": title,
                         })
-            pathtextElements.append(
-                u" \xbb ".encode(self.charEnc).join(els))
+            pathtextElements.append(u" \xbb ".join(els))
             pathtextElements.append("</td>\n")
             pathtextElements.append(
                 "<td width=\"40%\" align=\"right\" style=\"text-align:"
@@ -786,13 +781,12 @@ class OutputGenerator(OutputEngine):
                         '&nbsp;<a href="%(pathprefix)s%(htmlref)s"'
                         ' target="_top">%(title)s</a>' % {
                             "htmlref": "%s-%dx%d.html" % (
-                                sibling.getTag().encode(self.charEnc),
+                                sibling.getTag(),
                                 wlim,
                                 hlim),
                             "iconsdir": self.iconsdir,
                             "pathprefix": pathprefix,
-                            "title": title.replace(" ", "&nbsp;").encode(
-                                self.charEnc)
+                            "title": title.replace(" ", "&nbsp;")
                             })
                 if thispos == len(children) - 1:
                     # No next sibling.
@@ -808,13 +802,12 @@ class OutputGenerator(OutputEngine):
                         '&nbsp;<a href="%(pathprefix)s%(htmlref)s"'
                         ' target="_top">%(title)s</a>' % {
                             "htmlref": "%s-%dx%d.html" % (
-                                sibling.getTag().encode(self.charEnc),
+                                sibling.getTag(),
                                 wlim,
                                 hlim),
                             "iconsdir": self.iconsdir,
                             "pathprefix": pathprefix,
-                            "title": title.replace(" ", "&nbsp;").encode(
-                                self.charEnc),
+                            "title": title.replace(" ", "&nbsp;"),
                             })
                 pathtextElements.append(prevalbumtext)
                 pathtextElements.append("\n")

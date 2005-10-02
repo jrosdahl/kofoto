@@ -74,7 +74,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             thumbnail = gtk.Image()
             try:
                 thumbnailLocation = env.imageCache.get(iv, 128, 128)[0]
-                thumbnail.set_from_file(thumbnailLocation.encode(env.codeset))
+                thumbnail.set_from_file(thumbnailLocation)
             except OSError:
                 thumbnail.set_from_pixbuf(env.unknownImageIconPixbuf)
             alignment = gtk.Alignment(0.5, 0.5, 0.5, 0.5)
@@ -265,7 +265,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             self.__imageWidgetToImageVersion[x].getLocation()
             for x in self.__selectedImageWidgets]
         command = env.openCommand % {"locations": " ".join(locations)}
-        result = os.system(command.encode(env.codeset) + " &")
+        result = os.system(command.encode(env.localeEncoding) + " &")
         if result != 0:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
@@ -314,8 +314,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 imageVersion = self.__imageWidgetToImageVersion[widget]
                 if deleteFiles:
                     try:
-                        os.remove(
-                            imageVersion.getLocation().encode(env.codeset))
+                        os.remove(imageVersion.getLocation())
                         # TODO: Delete from image cache too?
                     except OSError:
                         pass
@@ -348,7 +347,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 # Can't happen.
                 assert True
             command = rotateCommand % {"location": imageVersion.getLocation()}
-            result = os.system(command.encode(env.codeset))
+            result = os.system(command.encode(env.localeEncoding))
             if result == 0:
                 imageVersion.contentChanged()
             else:

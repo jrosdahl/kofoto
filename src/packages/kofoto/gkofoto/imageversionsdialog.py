@@ -65,8 +65,9 @@ class ImageVersionsDialog:
     def _onOk(self, *unused):
         for data in self._versionDataList:
             tb = data.commentTextBuffer
-            comment = tb.get_text(tb.get_start_iter(), tb.get_end_iter())
-            data.imageVersion.setComment(comment.decode("utf-8"))
+            comment = tb.get_text(
+                tb.get_start_iter(), tb.get_end_iter()).decode("utf-8")
+            data.imageVersion.setComment(comment)
             if data.primaryButton.get_active():
                 data.imageVersion.makePrimary()
             if data.importantButton.get_active():
@@ -159,8 +160,8 @@ class ImageVersionsDialog:
         image = gtk.Image()
         try:
             thumbnailLocation, _, _ = env.imageCache.get(
-                imageVersion.getLocation().encode(env.codeset), 128, 128)
-            image.set_from_file(thumbnailLocation.decode(env.codeset))
+                imageVersion.getLocation(), 128, 128)
+            image.set_from_file(thumbnailLocation)
         except OSError:
             image.set_from_pixbuf(env.unknownImageIconPixbuf)
         table.attach(

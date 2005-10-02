@@ -61,7 +61,7 @@ class GenerateHTMLDialog:
                 r"Creating album (\S+) \((\d+) of (\d+)\)",
                 string)
             if m:
-                progressBar.set_text(m.group(1).decode(env.codeset))
+                progressBar.set_text(m.group(1).decode(env.localeEncoding))
                 progressBar.set_fraction(
                     (int(m.group(2)) - 1) / float(m.group(3)))
                 while gtk.events_pending():

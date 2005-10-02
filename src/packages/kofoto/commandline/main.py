@@ -5,6 +5,7 @@
 
 __all__ = ["main"]
 
+import codecs
 import getopt
 import os
 from sets import Set
@@ -12,7 +13,11 @@ import sys
 import time
 
 from kofoto.clientenvironment import ClientEnvironment, ClientEnvironmentError
-from kofoto.clientutils import DIRECTORIES_TO_IGNORE, walk_files
+from kofoto.clientutils import \
+    DIRECTORIES_TO_IGNORE, \
+    expanduser, \
+    get_file_encoding, \
+    walk_files
 from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
 from kofoto.search import \
     BadTokenError, ParseError, Parser, UnterminatedStringError
@@ -492,8 +497,10 @@ class CommandlineClientEnvironment(ClientEnvironment):
         self.type = None
         self.verbose = False
 
-    to_l = ClientEnvironment.unicodeToLocalizedString
-    to_u = ClientEnvironment.localizedStringToUnicode
+
+    def _writeInfo(self, infoString):
+        sys.stdout.write(infoString)
+        sys.stdout.flush()
 
 ######################################################################
 ### Commands.
@@ -619,7 +626,7 @@ def cmdFindMissingImageVersions(env, args):
     badchecksums = []
     missingfiles = []
     for iv in env.shelf.getAllImageVersions():
-        location = env.to_l(iv.getLocation())
+        location = iv.getLocation()
         if env.verbose:
             env.out("Checking %s ...\n" % location)
         try:
@@ -657,7 +664,7 @@ def cmdGenerate(env, args):
         generator = kofoto.generate.Generator(otype, env)
         generator.generate(root, subalbums, dest, env.gencharenc)
     except kofoto.generate.OutputTypeError, x:
-        env.errexit("No such output module: %s\n" % env.to_l(x))
+        env.errexit("No such output module: %s\n" % x)
 
 
 def cmdGetAttribute(env, args):
@@ -667,7 +674,7 @@ def cmdGetAttribute(env, args):
     obj = sloppyGetObject(env, args[1])
     value = obj.getAttribute(args[0])
     if value:
-        env.out(env.to_l(value) + "\n")
+        env.out(value + "\n")
 
 
 def cmdGetAttributes(env, args):
@@ -676,9 +683,7 @@ def cmdGetAttributes(env, args):
         raise ArgumentError
     obj = sloppyGetObject(env, args[0])
     for name in obj.getAttributeNames():
-        env.out("%s: %s\n" % (
-            env.to_l(name),
-            env.to_l(obj.getAttribute(name))))
+        env.out("%s: %s\n" % (name, obj.getAttribute(name)))
 
 
 def cmdGetCategories(env, args):
@@ -688,8 +693,8 @@ def cmdGetCategories(env, args):
     obj = sloppyGetObject(env, args[0])
     for category in obj.getCategories():
         env.out("%s (%s) <%s>\n" % (
-            env.to_l(category.getDescription()),
-            env.to_l(category.getTag()),
+            category.getDescription(),
+            category.getTag(),
             category.getId()))
 
 
@@ -703,13 +708,13 @@ def cmdGetImageVersions(env, args):
             env.out("%s\n" % iv.getId())
         elif env.verbose:
             env.out("%s\n  %s%s\n" % (
-                env.to_l(iv.getLocation()),
+                iv.getLocation(),
                 iv.isPrimary() and "Primary, " or "",
                 iv.getType()))
             if iv.getComment():
-                env.out("  %s\n" % env.to_l(iv.getComment()))
+                env.out("  %s\n" % iv.getComment())
         else:
-            env.out("%s\n" % env.to_l(iv.getLocation()))
+            env.out("%s\n" % iv.getLocation())
 
 
 def cmdInspectPath(env, args):
@@ -722,22 +727,22 @@ def cmdInspectPath(env, args):
             imageversion = env.shelf.getImageVersionByHash(
                 computeImageHash(filepath))
             if imageversion.getLocation() == os.path.realpath(filepath):
-                env.out("[Registered]   %s\n" % env.to_l(filepath))
+                env.out("[Registered]   %s\n" % filepath)
             else:
-                env.out("[Moved]        %s\n" % env.to_l(filepath))
+                env.out("[Moved]        %s\n" % filepath)
         except ImageVersionDoesNotExistError:
             try:
                 imageversion = env.shelf.getImageVersionByLocation(filepath)
-                env.out("[Modified]     %s\n" % env.to_l(filepath))
+                env.out("[Modified]     %s\n" % filepath)
             except MultipleImageVersionsAtOneLocationError:
-                env.out("[Multiple]     %s\n" % env.to_l(filepath))
+                env.out("[Multiple]     %s\n" % filepath)
             except ImageVersionDoesNotExistError:
                 try:
-                    PILImage.open(env.to_l(filepath))
-                    env.out("[Unregistered] %s\n" % env.to_l(filepath))
+                    PILImage.open(filepath)
+                    env.out("[Unregistered] %s\n" % filepath)
 #                except IOError:
                 except: # Work-around for buggy PIL.
-                    env.out("[Non-image]    %s\n" % env.to_l(filepath))
+                    env.out("[Non-image]    %s\n" % filepath)
 
 
 def cmdMakePrimary(env, args):
@@ -770,10 +775,10 @@ def printAlbumsHelper(env, obj, position, level, visited):
         tag = obj.getTag()
         env.out(albtmpl % {
             "indent": level * indentspaces,
-            "name": env.to_l(tag),
+            "name": tag,
             "position": position,
             "id": obj.getId(),
-            "type": env.to_l(obj.getType()),
+            "type": obj.getType(),
             })
         if tag in visited:
             env.out("%s[...]\n" % ((level + 1) * indentspaces))
@@ -801,7 +806,7 @@ def printAlbumsHelper(env, obj, position, level, visited):
             env.out(imgvertmpl % {
                 "indent": (level + 1) * indentspaces,
                 "id": iv.getId(),
-                "location": env.to_l(iv.getLocation()),
+                "location": iv.getLocation(),
                 "primary": iv.isPrimary() and "Primary " or "",
                 "type": iv.getType(),
                 })
@@ -811,8 +816,8 @@ def printAlbumsHelper(env, obj, position, level, visited):
         for name in names:
             env.out(attrtmpl % {
                 "indent": (level + 1) * indentspaces,
-                "key": env.to_l(name),
-                "value": env.to_l(obj.getAttribute(name)),
+                "key": name,
+                "value": obj.getAttribute(name),
                 })
 
 
@@ -829,8 +834,8 @@ def printCategoriesHelper(env, category, level):
     indentspaces = PRINT_ALBUMS_INDENT * " "
     env.out("%s%s (%s) <%s>\n" % (
         level * indentspaces,
-        env.to_l(category.getDescription()),
-        env.to_l(category.getTag()),
+        category.getDescription(),
+        category.getTag(),
         category.getId()))
     for child in category.getChildren():
         printCategoriesHelper(env, child, level + 1)
@@ -854,7 +859,7 @@ def cmdRegister(env, args):
         env,
         destalbum,
         registrationTimeString,
-        [env.to_l(x) for x in args[1:]])
+        args[1:])
 
 
 def registerHelper(env, destalbum, registrationTimeString, paths):
@@ -873,7 +878,7 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
             tag = makeValidTag(tag)
             while True:
                 try:
-                    album = env.shelf.createAlbum(env.to_u(tag))
+                    album = env.shelf.createAlbum(tag)
                     break
                 except AlbumExistsError:
                     tag += "_"
@@ -890,7 +895,7 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
             try:
                 image = env.shelf.createImage()
                 env.shelf.createImageVersion(
-                    image, env.to_u(path), ImageVersionType.Original)
+                    image, path, ImageVersionType.Original)
                 image.setAttribute(u"registered", registrationTimeString)
                 newchildren.append(image)
                 if env.verbose:
@@ -914,7 +919,7 @@ def cmdRemove(env, args):
         try:
             positions.append(int(pos))
         except ValueError:
-            env.errexit("Bad position: %s.\n" % env.to_l(pos))
+            env.errexit("Bad position: %s.\n" % pos)
     positions.sort()
     positions.reverse()
     children = list(album.getChildren())
@@ -973,7 +978,7 @@ def cmdSearch(env, args):
                 (env.includeOriginal and t == ImageVersionType.Original) or
                 (env.includeOther and t == ImageVersionType.Other) or
                 (env.includePrimary and iv.isPrimary())):
-                output.append(env.to_l(iv.getLocation()))
+                output.append(iv.getLocation())
         output.sort()
     if output:
         env.out("%s\n" % "\n".join(output))
@@ -1048,18 +1053,18 @@ def cmdUpdateContents(env, args):
             oldhash = imageversion.getHash()
             imageversion.contentChanged()
             if imageversion.getHash() != oldhash:
-                env.out("New checksum: %s\n" % env.to_l(filepath))
+                env.out("New checksum: %s\n" % filepath)
             else:
                 if env.verbose:
                     env.out(
-                        "Same checksum as before: %s\n" % env.to_l(filepath))
+                        "Same checksum as before: %s\n" % filepath)
         except ImageVersionDoesNotExistError:
             if env.verbose:
-                env.out("Unregistered image/file: %s\n" % env.to_l(filepath))
+                env.out("Unregistered image/file: %s\n" % filepath)
         except MultipleImageVersionsAtOneLocationError:
             env.errexit(
                 "Multiple known image versions at this location: %s\n" % (
-                env.to_l(filepath)))
+                filepath))
 
 
 def cmdUpdateLocations(env, args):
@@ -1074,20 +1079,20 @@ def cmdUpdateLocations(env, args):
             if oldlocation != os.path.realpath(filepath):
                 imageversion.locationChanged(filepath)
                 env.out("New location: %s --> %s\n" % (
-                    env.to_l(oldlocation),
-                    env.to_l(imageversion.getLocation())))
+                    oldlocation,
+                    imageversion.getLocation()))
             else:
                 if env.verbose:
                     env.out(
-                        "Same location as before: %s\n" % env.to_l(filepath))
+                        "Same location as before: %s\n" % filepath)
         except IOError, x:
             if env.verbose:
                 env.out("Failed to read: %s (%s)\n" % (
-                    env.to_l(filepath),
+                    filepath,
                     x))
         except ImageVersionDoesNotExistError:
             if env.verbose:
-                env.out("Unregistered image/file: %s\n" % env.to_l(filepath))
+                env.out("Unregistered image/file: %s\n" % filepath)
 
 
 commandTable = {
@@ -1142,7 +1147,12 @@ def main(argv):
     """
     env = CommandlineClientEnvironment()
 
-    argv = [env.to_u(x) for x in argv]
+    argv = [x.decode(env.localeEncoding) for x in argv]
+
+    sys.stdin = codecs.getreader(get_file_encoding(sys.stdin))(sys.stdin)
+    sys.stdout = codecs.getwriter(get_file_encoding(sys.stdout))(sys.stdout)
+    sys.stderr = codecs.getwriter(get_file_encoding(sys.stderr))(sys.stderr)
+
     try:
         optlist, args = getopt.gnu_getopt(
             argv[1:],
@@ -1174,9 +1184,9 @@ def main(argv):
 
     for opt, optarg in optlist:
         if opt == "--configfile":
-            configFileLocation = os.path.expanduser(env.to_l(optarg))
+            configFileLocation = expanduser(optarg)
         elif opt == "--database":
-            shelfLocation = env.to_l(optarg)
+            shelfLocation = optarg
         elif opt == "--gencharenc":
             genCharEnc = str(optarg)
         elif opt in ("-h", "--help"):
@@ -1209,8 +1219,7 @@ def main(argv):
                 try:
                     env.position = int(optarg)
                 except ValueError:
-                    printErrorAndExit(
-                        "Invalid position: \"%s\"\n" % env.to_l(optarg))
+                    printErrorAndExit("Invalid position: \"%s\"\n" % optarg)
         elif opt in ("-t", "--type"):
             env.type = optarg
         elif opt in ("-v", "--verbose"):
@@ -1235,7 +1244,7 @@ def main(argv):
     if not commandTable.has_key(args[0]):
         printErrorAndExit(
             "Unknown command \"%s\". See \"kofoto --help\" for help.\n" % (
-            env.to_l(args[0])))
+            args[0]))
 
     try:
         if env.shelf.isUpgradable():
@@ -1288,54 +1297,52 @@ def main(argv):
         printErrorAndExit(
             "Bad arguments to command. See \"kofoto --help\" for help.\n")
     except UndeletableAlbumError, x:
-        printError("Undeletable album: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Undeletable album: \"%s\".\n" % x.args[0])
     except BadAlbumTagError, x:
-        printError("Bad album tag: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Bad album tag: \"%s\".\n" % x.args[0])
     except AlbumExistsError, x:
-        printError("Album already exists: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Album already exists: \"%s\".\n" % x.args[0])
     except ImageDoesNotExistError, x:
-        printError("Image does not exist: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Image does not exist: \"%s\".\n" % x.args[0])
     except AlbumDoesNotExistError, x:
-        printError("Album does not exist: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Album does not exist: \"%s\".\n" % x.args[0])
     except ObjectDoesNotExistError, x:
-        printError("Object does not exist: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Object does not exist: \"%s\".\n" % x.args[0])
     except UnknownAlbumTypeError, x:
-        printError("Unknown album type: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Unknown album type: \"%s\".\n" % x.args[0])
     except UnsettableChildrenError, x:
         printError(
             "Cannot modify children of \"%s\" (children are created"
-            " virtually).\n" % (
-            env.to_l(x.args[0])))
+            " virtually).\n" % x.args[0])
     except CategoryExistsError, x:
-        printError("Category already exists: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Category already exists: \"%s\".\n" % x.args[0])
     except CategoryDoesNotExistError, x:
-        printError("Category does not exist: \"%s\".\n" % env.to_l(x.args[0]))
+        printError("Category does not exist: \"%s\".\n" % x.args[0])
     except BadCategoryTagError, x:
-        printError("Bad category tag: %s.\n" % env.to_l(x.args[0]))
+        printError("Bad category tag: %s.\n" % x.args[0])
     except CategoryPresentError, x:
         printError("Object %s is already associated with category %s.\n" % (
-            env.to_l(x.args[0]), env.to_l(x.args[1])))
+            x.args[0], x.args[1]))
     except CategoriesAlreadyConnectedError, x:
         printError("Categories %s and %s are already connected.\n" % (
-            env.to_l(x.args[0]), env.to_l(x.args[1])))
+            x.args[0], x.args[1]))
     except CategoryLoopError, x:
         printError(
             "Connecting %s to %s would make a loop in the categories.\n" % (
-            env.to_l(x.args[0]), env.to_l(x.args[1])))
+            x.args[0], x.args[1]))
     except ParseError, x:
         printError(
-            "While parsing search expression: %s.\n" % env.to_l(x.args[0]))
+            "While parsing search expression: %s.\n" % x.args[0])
     except UnterminatedStringError, x:
         printError(
             "While scanning search expression: unterminated string starting at"
-            " character %d.\n" % env.to_l(x.args[0]))
+            " character %d.\n" % x.args[0])
     except BadTokenError, x:
         printError(
             "While scanning search expression: bad token starting at character"
-            " %d.\n" % env.to_l(x.args[0]))
+            " %d.\n" % x.args[0])
     except UnknownImageVersionTypeError, x:
-        printError("Unknown image version type: \"%s\".\n" % (
-            env.to_l(x.args[0])))
+        printError("Unknown image version type: \"%s\".\n" % x.args[0])
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     except IOError, e:

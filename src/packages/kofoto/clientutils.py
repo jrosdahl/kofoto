@@ -5,13 +5,17 @@
 
 __all__ = [
     "DIRECTORIES_TO_IGNORE",
+    "expanduser",
+    "get_file_encoding",
     "walk_files",
     ]
 
 ######################################################################
 ### Libraries.
 
+import locale
 import os
+import sys
 
 ######################################################################
 ### Implementation.
@@ -26,6 +30,23 @@ DIRECTORIES_TO_IGNORE = [
     "_darcs",
     "{arch}",
     ]
+
+def expanduser(path):
+    """Expand ~ and ~user constructions.
+
+    If user or $HOME is unknown, do nothing.
+
+    Unlike os.path.expanduser in Python 2.4.1, this function takes and
+    returns Unicode strings correctly.
+    """
+    fs_encoding = sys.getfilesystemencoding()
+    return os.path.expanduser(path.encode(fs_encoding)).decode(fs_encoding)
+
+def get_file_encoding(f):
+    if hasattr(f, "encoding") and f.encoding:
+        return f.encoding
+    else:
+        return locale.getpreferredencoding()
 
 def walk_files(paths, directories_to_ignore=None):
     """Traverse paths and return filename while ignoring some directories.

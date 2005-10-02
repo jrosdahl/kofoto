@@ -132,15 +132,12 @@ class Shelf:
     ##############################
     # Public methods.
 
-    def __init__(self, location, codeset):
+    def __init__(self, location):
         """Constructor.
 
-        Location is where the database is located. Codeset is the
-        character encoding to use when encoding filenames stored in
-        the database. (Thus, the codeset parameter does not specify
-        how data is stored in the database.)"""
+        Location is where the database is located.
+        """
         self.location = location
-        self.codeset = codeset
         self.transactionLock = threading.Lock()
         self.inTransaction = False
         self.objectcache = {}
@@ -592,10 +589,9 @@ class Shelf:
         except: # Work-around for buggy PIL.
             raise NotAnImageFileError, location
         width, height = pilimg.size
-        location = unicode(
-            os.path.realpath(location.encode(self.codeset)), self.codeset)
+        location = os.path.realpath(location)
         mtime = os.path.getmtime(location)
-        ivhash = computeImageHash(location.encode(self.codeset))
+        ivhash = computeImageHash(location)
         cursor = self.connection.cursor()
         try:
             cursor.execute(
@@ -1949,8 +1945,7 @@ class ImageVersion:
         """
         from kofoto import EXIF
         image = self.getImage()
-        tags = EXIF.process_file(
-            file(self.getLocation().encode(self.shelf.codeset), "rb"))
+        tags = EXIF.process_file(file(self.getLocation(), "rb"))
 
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",

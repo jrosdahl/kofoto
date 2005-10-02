@@ -49,7 +49,6 @@ PICDIR = unicode(os.path.realpath(
 ######################################################################
 
 db = "shelf.tmp"
-codeset = "latin1"
 
 def removeTmpDb():
     for x in [db, db + "-journal"]:
@@ -63,7 +62,7 @@ class LockerThread(threading.Thread):
         self.ltContinue = ltContinue
 
     def run(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         self.mContinue.set()
@@ -131,7 +130,7 @@ class TestNegativeShelfOpens(unittest.TestCase):
 
     def test_NonexistingShelf(self):
         try:
-            s = Shelf(db, codeset)
+            s = Shelf(db)
             s.begin()
         except ShelfNotFoundError:
             pass
@@ -142,7 +141,7 @@ class TestNegativeShelfOpens(unittest.TestCase):
     def test_BadShelf(self):
         file(db, "w") # Create empty file.
         try:
-            s = Shelf(db, codeset)
+            s = Shelf(db)
             s.begin()
         except UnsupportedShelfError:
             pass
@@ -157,7 +156,7 @@ class TestNegativeShelfOpens(unittest.TestCase):
         mContinue.wait()
         try:
             try:
-                s = Shelf(db, codeset)
+                s = Shelf(db)
                 s.begin()
             except ShelfLockedError:
                 pass
@@ -172,13 +171,13 @@ class TestShelfCreation(unittest.TestCase):
         removeTmpDb()
 
     def test_CreateShelf1(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         assert os.path.exists(db)
 
     def test_CreateShelf2(self):
         file(db, "w") # Create empty file.
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         try:
             s.create()
         except FailedWritingError:
@@ -191,12 +190,12 @@ class TestShelfMemoryLeakage(unittest.TestCase):
         removeTmpDb()
 
     def test_MemoryLeak1(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         assert gc.collect() == 0
 
     def test_MemoryLeak2(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         s.getObject(0)
@@ -204,7 +203,7 @@ class TestShelfMemoryLeakage(unittest.TestCase):
         assert gc.collect() == 0
 
     def test_MemoryLeak3(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         s.getObject(0)
@@ -216,19 +215,19 @@ class TestShelfTransactions(unittest.TestCase):
         removeTmpDb()
 
     def test_commit(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         s.createAlbum(u"foo")
         assert s.getAlbumByTag(u"foo")
         s.commit()
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.begin()
         assert s.getAlbumByTag(u"foo")
         s.rollback()
 
     def test_rollback(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         s.createAlbum(u"foo")
@@ -242,7 +241,7 @@ class TestShelfTransactions(unittest.TestCase):
             assert False
 
     def test_isModified(self):
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         assert not s.isModified()
@@ -257,7 +256,7 @@ class TestShelfTransactions(unittest.TestCase):
         res = [False]
         def f(x):
             res[0] = True
-        s = Shelf(db, codeset)
+        s = Shelf(db)
         s.create()
         s.begin()
         s.registerModificationCallback(f)
@@ -275,7 +274,7 @@ class TestShelfTransactions(unittest.TestCase):
 
 class TestShelfFixture(unittest.TestCase):
     def setUp(self):
-        self.shelf = Shelf(db, codeset)
+        self.shelf = Shelf(db)
         self.shelf.create()
         self.shelf.begin()
         root = self.shelf.getRootAlbum()

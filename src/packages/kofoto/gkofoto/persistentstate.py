@@ -1,30 +1,34 @@
-import ConfigParser
+import codecs
 import os
 import sys
+from kofoto.clientutils import expanduser
+from kofoto.config import Config
 
 class PersistentState(object):
-    def __init__(self):
-        self.__configParser = ConfigParser.ConfigParser()
+    def __init__(self, env):
+        self.__configParser = Config(env.localeEncoding)
+        self.__env = env
         cp = self.__configParser
 
         # Defaults:
         cp.add_section("state")
         cp.set("state", "filter-text", "")
 
-        home = os.path.expanduser("~")
+        home = expanduser("~")
         if sys.platform.startswith("win"):
             self.__stateFile = os.path.join(
-                home, "KofotoData", "state", "gkofoto.ini")
+                home, u"KofotoData", u"state", u"gkofoto.ini")
         else:
             self.__stateFile = os.path.join(
-                home, ".kofoto", "state", "gkofoto")
+                home, u".kofoto", u"state", u"gkofoto")
         if not os.path.isdir(os.path.dirname(self.__stateFile)):
             os.mkdir(os.path.dirname(self.__stateFile))
         if os.path.isfile(self.__stateFile):
-            self.__configParser.read(self.__stateFile)
+            cp.read(self.__stateFile)
 
     def save(self):
-        self.__configParser.write(open(self.__stateFile, "w"))
+        fp = codecs.open(self.__stateFile, "w", self.__env.localeEncoding)
+        self.__configParser.write(fp)
 
     def getFilterText(self):
         return self.__configParser.get("state", "filter-text")

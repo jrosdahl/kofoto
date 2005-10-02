@@ -16,13 +16,13 @@ class _MyPixbufLoader(gtk.gdk.PixbufLoader):
             self.__closed = True
 
 class _PreloadState:
-    def __init__(self, filename, fileSystemCodeset):
+    def __init__(self, filename):
         self.fullsizePixbuf = None
         self.pixbufLoader = _MyPixbufLoader()
         self.loadFinished = False # Whether loading of fullsizePixbuf is ready.
         self.scaledPixbuf = None
         try:
-            self.fp = open(filename.encode(fileSystemCodeset), "rb")
+            self.fp = open(filename, "rb")
         except (IOError, OSError):
             self.loadFinished = True
             self.pixbufLoader = None
@@ -32,8 +32,7 @@ class _PreloadState:
             self.pixbufLoader.close()
 
 class ImagePreloader(object):
-    def __init__(self, fileSystemCodeset, debugPrintFunction=None):
-        self._fileSystemCodeset = fileSystemCodeset
+    def __init__(self, debugPrintFunction=None):
         if debugPrintFunction:
             self._debugPrint = debugPrintFunction
         else:
@@ -89,8 +88,7 @@ class ImagePreloader(object):
         The pixbuf may be None if the image was unloadable.
         """
         if not self.__preloadStates.has_key(filename):
-            self.__preloadStates[filename] = _PreloadState(
-                filename, self._fileSystemCodeset)
+            self.__preloadStates[filename] = _PreloadState(filename)
         ps = self.__preloadStates[filename]
         if not ps.loadFinished:
             try:
@@ -136,8 +134,7 @@ class ImagePreloader(object):
         # Preload the new images.
         for filename in filenames:
             if not self.__preloadStates.has_key(filename):
-                self.__preloadStates[filename] = _PreloadState(
-                    filename, self._fileSystemCodeset)
+                self.__preloadStates[filename] = _PreloadState(filename)
             ps = self.__preloadStates[filename]
             try:
                 self._debugPrint("Preloading %s" % filename)

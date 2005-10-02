@@ -9,12 +9,16 @@ __all__ = [
     "MissingShelfError",
 ]
 
+import codecs
 import locale
 import os
 import sys
+from kofoto.clientutils import expanduser
+from kofoto.common import UnimplementedError
 from kofoto.config import \
     BadConfigurationValueError, \
     Config, \
+    DEFAULT_CONFIGFILE_LOCATION, \
     MissingConfigurationKeyError, \
     MissingSectionHeaderError, \
     createConfigTemplate
@@ -71,32 +75,27 @@ class ClientEnvironment(object):
     A properly initialized ClientEnvironment instance has the
     following available attributes:
 
-    codeset            -- The codeset to use for encoding to and decoding from
-                          the current locale.
     config             -- A kofoto.config.Config instance.
     configFileLocation -- Location of the configuration file.
+    filesystemEncoding -- The codeset to use for encoding to and decoding from
+                          paths in the file system.
+    imageCache         -- A kofoto.imagecache.ImageCache instance.
+    localeEncoding     -- The codeset to use for encoding to and decoding from
+                          the current locale.
     shelf              -- A kofoto.shelf.Shelf instance.
     shelfLocation      -- Location of the shelf.
-    imageCache         -- A kofoto.imagecache.ImageCache instance.
     version            -- Kofoto version (a string).
     """
 
-    def __init__(self, localCodeset=None):
+    def __init__(self):
         """Initialize the client environment instance.
-
-        If localCodeset is None, the preferred character set encoding
-        is read from the environment and used as the local codeset.
-        Otherwise, localCodeset is used.
 
         Note that the setup method must be called to further
         initialize the instance.
         """
 
-        if localCodeset == None:
-            locale.setlocale(locale.LC_ALL, "")
-            self.__codeset = locale.getpreferredencoding()
-        else:
-            self.__codeset = localCodeset
+        self.__localeEncoding = locale.getpreferredencoding()
+        self.__filesystemEncoding = sys.getfilesystemencoding()
 
         # These are initiazlied in the setup method.
         self.__config = None
@@ -121,12 +120,7 @@ class ClientEnvironment(object):
         """
 
         if configFileLocation == None:
-            if sys.platform.startswith("win"):
-                self.__configFileLocation = os.path.expanduser(
-                    os.path.join("~", "KofotoData", "config.ini"))
-            else:
-                self.__configFileLocation = os.path.expanduser(
-                    os.path.join("~", ".kofoto", "config"))
+            self.__configFileLocation = expanduser(DEFAULT_CONFIGFILE_LOCATION)
         else:
             self.__configFileLocation = configFileLocation
 
@@ -134,17 +128,19 @@ class ClientEnvironment(object):
             confdir = os.path.dirname(self.configFileLocation)
             if confdir and not os.path.exists(confdir):
                 os.mkdir(confdir)
-                self._writeInfo("Created directory \"%s\".\n" % confdir)
+                self._writeInfo(u"Created directory \"%s\".\n" % confdir)
             if createMissingConfigFile:
-                createConfigTemplate(self.configFileLocation)
-                self._writeInfo("Created configuration file \"%s\".\n" %
+                f = codecs.open(
+                    self.configFileLocation, "w", self.localeEncoding)
+                createConfigTemplate(f)
+                self._writeInfo(u"Created configuration file \"%s\".\n" %
                                 self.configFileLocation)
             else:
                 raise MissingConfigFileError, \
-                    ("Missing configuration file: \"%s\"\n" %
+                    (u"Missing configuration file: \"%s\"\n" %
                          self.configFileLocation,
                      self.configFileLocation)
-        self.__config = Config(self.codeset)
+        self.__config = Config(self.localeEncoding)
 
         try:
             self.config.read(self.configFileLocation)
@@ -165,14 +161,12 @@ class ClientEnvironment(object):
                    self.configFileLocation)
 
         if shelfLocation == None:
-            self.__shelfLocation = \
-                os.path.expanduser(
-                    self.unicodeToLocalizedString(
-                        self.config.get("database", "location")))
+            location = self.config.get("database", "location")
+            self.__shelfLocation = expanduser(location)
         else:
             self.__shelfLocation = shelfLocation
 
-        self.__shelf = Shelf(self.shelfLocation, self.codeset)
+        self.__shelf = Shelf(self.shelfLocation)
 
         if not os.path.exists(self.shelfLocation):
             if createMissingShelf:
@@ -192,15 +186,18 @@ class ClientEnvironment(object):
                      self.shelfLocation)
 
         self.__imageCache = ImageCache(
-            os.path.expanduser(
-                self.unicodeToLocalizedString(
-                    self.config.get("image cache", "location"))),
+            expanduser(self.config.get("image cache", "location")),
             self.config.getboolean("image cache", "use_orientation_attribute"))
 
-    def getCodeset(self):
-        """Get codeset."""
-        return self.__codeset
-    codeset = property(getCodeset)
+    def getLocaleEncoding(self):
+        """Get encoding of the locale."""
+        return self.__localeEncoding
+    localeEncoding = property(getLocaleEncoding)
+
+    def getFilesystemEncoding(self):
+        """Get encoding of the filesystem."""
+        return self.__filesystemEncoding
+    filesystemEncoding = property(getFilesystemEncoding)
 
     def getConfig(self):
         """Get the Config instance."""
@@ -232,28 +229,9 @@ class ClientEnvironment(object):
         return kofotoVersion
     version = property(getVersion)
 
-    def unicodeToLocalizedString(self, unicodeString):
-        """Convert a Unicode string to a localized string.
-
-        If unicodeString is a Unicode string, convert it to a
-        localized string. Otherwise, unicodeString is returned without
-        any conversion.
-        """
-        if isinstance(unicodeString, unicode):
-            return unicodeString.encode(self.codeset)
-        else:
-            return unicodeString
-
-    def localizedStringToUnicode(self, localizedString):
-        """Convert a localized string to a Unicode string."""
-        return localizedString.decode(self.codeset)
-
     def _writeInfo(self, infoString):
         """Write an informational string to a suitable place.
 
-        This is the default implementation: write to standard output. 
-        Subclasses should override this method if they want to handle
-        the output themselves.
+        Should be overridden by subclasses.
         """
-        sys.stdout.write(self.unicodeToLocalizedString(infoString))
-        sys.stdout.flush()
+        raise UnimplementedError

@@ -24,8 +24,7 @@ class Generator:
         self.env = env
         try:
             outputmodule = getattr(
-                __import__("kofoto.output.%s" %
-                           outputtype.encode(env.codeset)).output,
+                __import__("kofoto.output.%s" % outputtype).output,
                 outputtype)
         except ImportError:
             raise OutputTypeError, outputtype

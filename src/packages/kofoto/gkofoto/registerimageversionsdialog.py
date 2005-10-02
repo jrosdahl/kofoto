@@ -42,7 +42,7 @@ class RegisterImageVersionsDialog:
             base, filename = os.path.split(imageversion.getLocation())
             prefix, _ = os.path.splitext(filename)
             for candidateFilename in os.listdir(base):
-                if (re.match("%s[^a-zA-Z0-9].*" % prefix, candidateFilename)):
+                if re.match("%s[^a-zA-Z0-9].*" % prefix, candidateFilename):
                     candidatePath = os.path.join(base, candidateFilename)
                     if os.path.isfile(candidatePath):
                         try:
@@ -61,7 +61,8 @@ class RegisterImageVersionsDialog:
         changed = False
         for path in selectedRows:
             treeiter = self._fileListStore.get_iter(path)
-            location = self._fileListStore.get_value(treeiter, 0)
+            location = \
+                self._fileListStore.get_value(treeiter, 0).decode("utf-8")
             try:
                 imageVersion = env.shelf.createImageVersion(
                     self._image, location, ImageVersionType.Other)
@@ -98,7 +99,8 @@ class RegisterImageVersionsDialog:
              gtk.STOCK_OK, gtk.RESPONSE_OK))
         dialog.set_select_multiple(True)
         if dialog.run() == gtk.RESPONSE_OK:
-            self.__setFiles(dialog.get_filenames())
+            filenames = [x.decode("utf-8") for x in dialog.get_filenames()]
+            self.__setFiles(filenames)
         dialog.destroy()
 
     def __setFiles(self, filenames):

@@ -220,7 +220,7 @@ class ObjectCollection(object):
                 if deleteFiles and not obj.isAlbum():
                     for iv in obj.getImageVersions():
                         try:
-                            os.remove(iv.getLocation().encode(env.codeset))
+                            os.remove(iv.getLocation())
                             # TODO: Delete from image cache too?
                         except OSError:
                             pass
@@ -519,7 +519,7 @@ class ObjectCollection(object):
                 else:
                     commandString = env.rotateLeftCommand
                 command = commandString % { "location":location }
-                result = os.system(command.encode(env.codeset))
+                result = os.system(command.encode(env.localeEncoding))
                 if result == 0:
                     imageversion.contentChanged()
                     model = self.getUnsortedModel()
@@ -552,7 +552,7 @@ class ObjectCollection(object):
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
-            result = os.system(command.encode(env.codeset) + " &")
+            result = os.system(command.encode(env.localeEncoding) + " &")
             if result != 0:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,
@@ -591,7 +591,7 @@ class ObjectCollection(object):
                     obj.getPrimaryVersion(),
                     env.thumbnailSize[0],
                     env.thumbnailSize[1])[0]
-                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation.encode(env.codeset))
+                pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnailLocation)
                 # TODO Set and use COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
             except IOError:
                 pixbuf = env.unknownImageIconPixbuf

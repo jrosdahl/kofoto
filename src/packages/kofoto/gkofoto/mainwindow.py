@@ -25,8 +25,8 @@ class MainWindow(gtk.Window):
         self._toggleLock = False
         self.__currentObjectCollection = None
         self._currentView = None
-        self.__persistentState = PersistentState()
-        self.__imagePreloader = ImagePreloader(env.codeset, env.debug)
+        self.__persistentState = PersistentState(env)
+        self.__imagePreloader = ImagePreloader(env.debug)
         self.__sourceEntry = env.widgets["sourceEntry"]
         self.__filterEntry = env.widgets["filterEntry"]
         self.__filterEntry.set_text(self.__persistentState.filterText)

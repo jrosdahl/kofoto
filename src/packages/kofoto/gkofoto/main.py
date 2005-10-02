@@ -1,5 +1,6 @@
 import os
 import sys
+from kofoto.clientutils import expanduser
 from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.controller import Controller
@@ -7,7 +8,7 @@ from optparse import OptionParser
 
 def setupWindowsEnvironment():
     # Allow (default) datafile location to be determined under Windows 98.
-    if os.path.expanduser("~") == "~":
+    if expanduser("~") == "~":
         # Probably running under Windows 98 or similar OS where the
         # environment variables HOMEPATH and HOMEDRIVE (and HOME) are not
         # set. We have to fake it instead.

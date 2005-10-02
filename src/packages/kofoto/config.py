@@ -1,5 +1,3 @@
-# pylint: disable-msg=C0301, W0221
-
 """Configuration module for Kofoto."""
 
 __all__ = [
@@ -17,6 +15,7 @@ __all__ = [
 from ConfigParser import ConfigParser
 from ConfigParser import MissingSectionHeaderError as \
     ConfigParserMissingSectionHeaderError
+import codecs
 import os
 import re
 import sys
@@ -24,18 +23,18 @@ from kofoto.common import KofotoError
 
 if sys.platform.startswith("win"):
     DEFAULT_CONFIGFILE_LOCATION = os.path.join(
-        "~", "KofotoData", "config.ini")
+        u"~", u"KofotoData", u"config.ini")
     DEFAULT_SHELF_LOCATION = os.path.join(
-        "~", "KofotoData", "metadata.db")
+        u"~", u"KofotoData", u"metadata.db")
     DEFAULT_IMAGECACHE_LOCATION = os.path.join(
-        "~", "KofotoData", "ImageCache")
+        u"~", u"KofotoData", u"ImageCache")
 else:
     DEFAULT_CONFIGFILE_LOCATION = os.path.join(
-        "~", ".kofoto", "config")
+        u"~", u".kofoto", u"config")
     DEFAULT_SHELF_LOCATION = os.path.join(
-        "~", ".kofoto", "metadata.db")
+        u"~", u".kofoto", u"metadata.db")
     DEFAULT_IMAGECACHE_LOCATION = os.path.join(
-        "~", ".kofoto", "imagecache")
+        u"~", u".kofoto", u"imagecache")
 
 class ConfigError(KofotoError):
     """Configuration error."""
@@ -61,26 +60,26 @@ class Config(ConfigParser):
 
         Arguments:
 
-        encoding -- The encoding to use when translating between Unicode and
-                    byte strings.
+        encoding -- The encoding of the configuration files.
         """
         ConfigParser.__init__(self)
         self.encoding = encoding
 
     def read(self, filenames):
         """Read configuration files."""
-        try:
-            ConfigParser.read(self, filenames)
-        except ConfigParserMissingSectionHeaderError:
-            raise MissingSectionHeaderError
-
-    def get(self, *args, **kwargs):
-        """Get a configuration item.
-
-        This method wraps ConfigReader.read and decodes the value into
-        Unicode according to the chosen encoding.
-        """
-        return unicode(ConfigParser.get(self, *args, **kwargs), self.encoding)
+        if isinstance(filenames, basestring):
+            filenames = [filenames]
+        for filename in filenames:
+            try:
+                fp = codecs.open(filename, "r", self.encoding)
+                self.readfp(fp, filename)
+            except ConfigParserMissingSectionHeaderError:
+                raise MissingSectionHeaderError
+            except IOError:
+                # From ConfigParser.read documentation: "If a file
+                # named in filenames cannot be opened, that file will
+                # be ignored."
+                pass
 
     def getcoordlist(self, section, option):
         """Get a coordinate list.
@@ -131,11 +130,16 @@ class Config(ConfigParser):
             "album generation", "other_image_size_limits", None)
 
 
-def createConfigTemplate(filename):
-    """Write a Kofoto configuration template to a file."""
+def createConfigTemplate(fileobject):
+    """Write a Kofoto configuration template to a file.
 
-    file(filename, "w").write(
-        """### Configuration file for Kofoto.
+    Arguments:
+
+    fileobject -- File object to write the template to.
+    """
+
+    fileobject.write(
+        u'''### Configuration file for Kofoto.
 
 ######################################################################
 ## General configuration
@@ -207,4 +211,4 @@ enable_auto_descriptions = no
 # image has several matching subcategories, they are delimited with
 # commas.
 auto_descriptions_template = <depicted> (<location>)
-""" % (DEFAULT_SHELF_LOCATION, DEFAULT_IMAGECACHE_LOCATION))
+''' % (DEFAULT_SHELF_LOCATION, DEFAULT_IMAGECACHE_LOCATION))

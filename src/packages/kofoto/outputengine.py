@@ -2,6 +2,7 @@
 
 __all__ = ["OutputEngine"]
 
+import codecs
 import os
 import re
 import time
@@ -69,7 +70,7 @@ class OutputEngine:
             year = "undated"
             captured = image.getAttribute(u"captured")
             if captured:
-                m = re.match("^(\d{4})-?(\d{0,2})", captured)
+                m = re.match(u"^(\d{4})-?(\d{0,2})", captured)
                 if m:
                     year = m.group(1)
                     month = m.group(2)
@@ -102,7 +103,7 @@ class OutputEngine:
             htmlimgloc = os.path.join(
                 "@images",
                 "%sx%s" % (widthlimit, heightlimit),
-                helper(ext).encode(self.env.codeset))
+                helper(ext))
             # Generate a unique htmlimgloc/imgloc.
             i = 1
             while True:
@@ -127,20 +128,25 @@ class OutputEngine:
         return self.__imgrefMap[key]
 
 
-    def writeFile(self, filename, text, binary=False):
+    def writeFile(self, filename, text, encoding=None, binary=False):
         """Write a text to a file in the generated directory.
 
         Arguments:
 
         filename -- A location in the generated directory.
-        text     -- The text to write.
+        text     -- The text to write. If binary is true, text must be a
+                    byte string (str), otherwise unicode.
+        encoding -- How to encode the text. Only used for non-binary text.
         binary   -- Whether the text is to be treated as binary.
         """
+        path = os.path.join(self.__dest, filename)
         if binary:
-            mode = "wb"
+            assert isinstance(text, str)
+            f = open(path, "wb")
         else:
-            mode = "w"
-        file(os.path.join(self.__dest, filename), mode).write(text)
+            assert isinstance(text, unicode)
+            f = codecs.open(path, "w", encoding)
+        f.write(text)
 
 
     def symlinkFile(self, source, destination):
@@ -178,7 +184,7 @@ class OutputEngine:
                 for child in album.getAlbumChildren():
                     addDescendants(albumset, child)
 
-        self.__dest = dest.encode(self.env.codeset)
+        self.__dest = dest
         try:
             os.mkdir(self.__dest)
         except OSError:
@@ -208,8 +214,8 @@ class OutputEngine:
                     childrentext = "1 child"
                 else:
                     childrentext = "%d children" % nchildren
-                self.env.out("Creating album %s (%d of %d) with %s...\n" % (
-                    album.getTag().encode(self.env.codeset),
+                self.env.out(u"Creating album %s (%d of %d) with %s...\n" % (
+                    album.getTag(),
                     i,
                     len(albumsToGenerate),
                     childrentext))
@@ -221,8 +227,7 @@ class OutputEngine:
     def _generateAlbumHelper(self, album, paths):
         """Internal helper function."""
         if self.env.verbose:
-            self.env.out("Generating album page for %s...\n" %
-                         album.getTag().encode(self.env.codeset))
+            self.env.out(u"Generating album page for %s...\n" % album.getTag())
 
         # Design choice: This output engine sorts subalbums before
         # images.
@@ -237,9 +242,9 @@ class OutputEngine:
             child = imagechildren[ix]
             if self.env.verbose:
                 self.env.out(
-                    "Generating image page for image %d in album %s...\n" % (
+                    u"Generating image page for image %d in album %s...\n" % (
                         child.getId(),
-                        album.getTag().encode(self.env.codeset)))
+                        album.getTag()))
             self.generateImage(album, child, imagechildren, ix, paths)
 
 

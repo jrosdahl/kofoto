@@ -76,9 +76,10 @@ class Albums:
         destroyMenuItem = self.__menuGroup[self.__destroyAlbumLabel]
         editMenuItem = self.__menuGroup[self.__editAlbumLabel]
         if iterator:
-            albumTag = albumModel.get_value(iterator, self.__COLUMN_TAG)
+            albumTag = albumModel.get_value(
+                iterator, self.__COLUMN_TAG).decode("utf-8")
             if load:
-                self.__mainWindow.loadQuery("/" + albumTag.decode("utf-8"))
+                self.__mainWindow.loadQuery(u"/" + albumTag)
             album = env.shelf.getAlbum(
                 albumModel.get_value(iterator, self.__COLUMN_ALBUM_ID))
             createMenuItem.set_sensitive(album.isMutable())
