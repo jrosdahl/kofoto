@@ -1,6 +1,7 @@
+import codecs
 import os
 import sys
-from kofoto.clientutils import expanduser
+from kofoto.clientutils import expanduser, get_file_encoding
 from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.controller import Controller
@@ -37,6 +38,12 @@ def setupWindowsEnvironment():
         # the change.
 
 def main(bindir, argv):
+    argv = [x.decode(env.filesystemEncoding) for x in argv]
+
+    sys.stdin = codecs.getreader(get_file_encoding(sys.stdin))(sys.stdin)
+    sys.stdout = codecs.getwriter(get_file_encoding(sys.stdout))(sys.stdout)
+    sys.stderr = codecs.getwriter(get_file_encoding(sys.stderr))(sys.stderr)
+
     parser = OptionParser(version=env.version)
     parser.add_option(
         "--configfile",

@@ -1147,7 +1147,7 @@ def main(argv):
     """
     env = CommandlineClientEnvironment()
 
-    argv = [x.decode(env.localeEncoding) for x in argv]
+    argv = [x.decode(env.filesystemEncoding) for x in argv]
 
     sys.stdin = codecs.getreader(get_file_encoding(sys.stdin))(sys.stdin)
     sys.stdout = codecs.getwriter(get_file_encoding(sys.stdout))(sys.stdout)
