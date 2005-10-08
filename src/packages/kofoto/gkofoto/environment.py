@@ -5,8 +5,7 @@ import os
 import re
 
 import pygtk
-if sys.platform != "win32":
-    pygtk.require("2.0")
+pygtk.require("2.0")
 import gtk
 import gtk.gdk
 import gtk.glade
