@@ -1954,7 +1954,6 @@ class ImageVersion:
         image = self.getImage()
         try:
             tags = EXIF.process_file(file(self.getLocation(), "rb"))
-            1/0
         except: # Work-around for buggy EXIF library.
             raise ExifImportError(self.getLocation())
 
