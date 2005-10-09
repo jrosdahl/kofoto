@@ -10,6 +10,13 @@ import _winreg
 import msvcrt
 from os.path import join, isdir, basename
 
+def zap(glob_pattern):
+    for entry in glob.glob(glob_pattern):
+        if os.path.isdir(entry):
+            shutil.rmtree(entry)
+        else:
+            os.remove(entry)
+
 options = {
     "py2exe": {
         "includes": "pango,atk,gobject",
@@ -26,13 +33,17 @@ sys.argv = [sys.argv[0], "py2exe"]
 
 setup.run(options=options, console=console, windows=windows)
 
-os.unlink("kofoto.py")
-os.unlink("gkofoto.py")
-os.unlink("plugin-modules-to-ship.py")
-os.unlink("dist/plugin-modules-to-ship.exe")
-shutil.rmtree(glob.glob("dist/tcl")[0])
-os.remove(glob.glob("dist/tcl*.dll")[0])
-os.remove(glob.glob("dist/tk*.dll")[0])
+zap("kofoto.py")
+zap("gkofoto.py")
+zap("plugin-modules-to-ship.py")
+zap("dist/plugin-modules-to-ship.exe")
+zap("dist/tcl")
+zap("dist/tcl*.dll")
+zap("dist/tk*.dll")
+
+# py2exe doesn't find these libraries needed by libpixbufloader-*.dll plugins:
+for libname in ["libpng12.dll", "jpeg62.dll"]:
+    shutil.copy(join(os.environ["GTK_BASEPATH"], "bin", libname), "dist")
 
 k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
 gtkdir = _winreg.QueryValueEx(k, "Path")[0]
@@ -44,7 +55,7 @@ for dir in ["bin", "etc", "lib", "share"]:
         for filename in filenames:
             print "copying %s --> %s" % (join(dirpath, filename), destdir)
             shutil.copy(join(dirpath, filename), destdir)
-shutil.rmtree(glob.glob("dist/share/gtk-*/demo")[0])
+zap("dist/share/gtk-*/demo")
 
 shutil.copy("COPYING.txt", "dist/license.txt")
 license_file = open("dist/license.txt", "a")
@@ -64,3 +75,7 @@ template = \
         .replace("%distdir%", join(os.getcwd(), "dist"))
 issfile = open("kofoto.iss", "w")
 issfile.write(template)
+
+print "Finished successfully."
+print "Press enter."
+sys.stdin.readline()
