@@ -37,7 +37,7 @@ A. Unix
 
            http://www.pythonware.com/products/pil/
 
-     * PySQLite for SQLite 2.8. Found at:
+     * PySQLite 1.0.x (not 1.1.x or 2.x) for SQLite 2.8. Found at:
 
            http://www.pysqlite.org
 
@@ -73,23 +73,23 @@ C. Windows with separately installed dependencies
 
    Kofoto depends on the following third-party softwares:
 
-     * Python 2.3 or newer. Found at:
+     * Python 2.3 (or newer). Found at:
 
            http://www.python.org
 
-     * GTK+ 2.4 or newer (including Glade) for Windows. Found at:
+     * GTK+ 2.4 (or newer) runtime environment. Found at:
 
-            http://gladewin32.sourceforge.net
+           http://gladewin32.sourceforge.net
 
-     * PyGTK for GTK+ 2.4 (including Glade bindings) for Windows. Found at:
+     * PyGTK for GTK+ 2.4 (or newer). Found at:
 
-            http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
+           http://www.mapr.ucl.ac.be/~gustin/win32_ports/pygtk.html
 
      * Python Imaging Library. Found at:
 
            http://www.pythonware.com/products/pil/
 
-     * PySQLite. Found at:
+     * PySQLite 1.0.x (not 1.1.x or 2.x). Found at:
 
            http://www.pysqlite.org
 
