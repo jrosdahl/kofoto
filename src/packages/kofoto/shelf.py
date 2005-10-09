@@ -118,9 +118,9 @@ def makeValidTag(tag):
     tag = tag.lstrip("@")
     tag = re.sub(r"\s", "", tag)
     if re.match("^\d+$", tag):
-        tag += "_"
+        tag += u"_"
     if not tag:
-        tag = "_"
+        tag = u"_"
     return tag
 
 
