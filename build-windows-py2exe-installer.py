@@ -41,6 +41,10 @@ zap("dist/tcl")
 zap("dist/tcl*.dll")
 zap("dist/tk*.dll")
 
+# py2exe doesn't find these libraries needed by libpixbufloader-*.dll plugins:
+for libname in ["libpng12.dll", "jpeg62.dll"]:
+    shutil.copy(join(os.environ["GTK_BASEPATH"], "bin", libname), "dist")
+
 k = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, "Software\\GTK\\2.0")
 gtkdir = _winreg.QueryValueEx(k, "Path")[0]
 for dir in ["bin", "etc", "lib", "share"]:
@@ -71,3 +75,7 @@ template = \
         .replace("%distdir%", join(os.getcwd(), "dist"))
 issfile = open("kofoto.iss", "w")
 issfile.write(template)
+
+print "Finished successfully."
+print "Press enter."
+sys.stdin.readline()
