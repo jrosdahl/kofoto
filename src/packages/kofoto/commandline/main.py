@@ -101,6 +101,10 @@ optionDefinitionList = [
     ("    --no-act",
      "Do everything which is supposed to be done, but don't commit any changes"
      " to the database."),
+    ("-0, --null",
+     "Use null characters instead of newlines when printing image version"
+     " locations. This is mainly useful in combination with \"xargs"
+     " --null\"."),
     ("    --position POSITION",
      "Add/register to position POSITION. Default: last."),
     ("-t, --type TYPE",
@@ -128,6 +132,7 @@ albumAndImageCommandsDefinitionList = [
     ("search SEARCHEXPRESSION",
      "Search for images matching an expression and print image version"
      " locations on standard output (or image IDs if the --ids option is"
+     " given) separated by newlines (or by null characters if --null is"
      " given). By default, only primary image versions are printed, but other"
      " versions can be printed by supplying one or several of the options"
      " --include-all, --include-important, --include-original and"
@@ -494,6 +499,7 @@ class CommandlineClientEnvironment(ClientEnvironment):
         self.includeOther = False
         self.includePrimary = False
         self.noAct = False
+        self.useNullCharacters = False
         self.position = -1
         self.printIDs = False
         self.type = None
@@ -983,7 +989,11 @@ def cmdSearch(env, args):
                 output.append(iv.getLocation())
         output.sort()
     if output:
-        env.out("%s\n" % "\n".join(output))
+        if env.useNullCharacters:
+            terminator = u"\0"
+        else:
+            terminator = u"\n"
+        env.out(u"%s%s" % (terminator.join(output), terminator))
 
 
 def cmdSetAttribute(env, args):
@@ -1158,7 +1168,7 @@ def main(argv):
     try:
         optlist, args = getopt.gnu_getopt(
             argv[1:],
-            "ht:v",
+            "0ht:v",
             ["configfile=",
              "database=",
              "gencharenc=",
@@ -1172,6 +1182,7 @@ def main(argv):
              "include-other",
              "include-primary",
              "no-act",
+             "null",
              "position=",
              "type=",
              "verbose",
@@ -1214,6 +1225,8 @@ def main(argv):
             printNotice(
                 "no-act: No changes will be commited to the database!\n")
             env.noAct = True
+        elif opt in ("-0", "--null"):
+            env.useNullCharacters = True
         elif opt == "--position":
             if optarg == "last":
                 env.position = -1
