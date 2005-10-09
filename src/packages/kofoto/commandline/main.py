@@ -195,6 +195,8 @@ imageversionCommandsDefinitionList = [
      " non-image."),
     ("make-primary IMAGEVERSION [IMAGEVERSION ...]",
      "Make an image version the primary version."),
+    ("reread-exif IMAGEVERSION [IMAGEVERSION ...]",
+     "Reread EXIF information for the given image versions."),
     ("set-imageversion-comment VALUE IMAGEVERSION [IMAGEVERSION ...]",
      "Set comment of the given image versions."),
     ("set-imageversion-image IMAGE IMAGEVERSION [IMAGEVERSION ...]",
@@ -961,6 +963,14 @@ def cmdRenameCategory(env, args):
     env.shelf.getCategoryByTag(args[0]).setTag(args[1])
 
 
+def cmdRereadExif(env, args):
+    """Handler for the reread-exif command."""
+    if len(args) == 0:
+        raise ArgumentError
+    for iv in args:
+        sloppyGetImageVersion(env, iv).importExifTags(True)
+
+
 def cmdSearch(env, args):
     """Handler for the search command."""
     if len(args) != 1:
@@ -1136,6 +1146,7 @@ commandTable = {
     "remove-category": cmdRemoveCategory,
     "rename-album": cmdRenameAlbum,
     "rename-category": cmdRenameCategory,
+    "reread-exif": cmdRereadExif,
     "search": cmdSearch,
     "set-attribute": cmdSetAttribute,
     "set-category-description": cmdSetCategoryDescription,
