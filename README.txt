@@ -16,6 +16,7 @@ With Kofoto, you can:
 
     * Organize images by use of categories (AKA "tags").
     * Organize images in an album tree.
+    * Keep track of different versions of images.
     * Associate images with attributes.
     * Search for images matching a search expression.
     * View images.
@@ -36,5 +37,5 @@ http://www.opensource.org).
 CONTACT
 =======
 
-Email: kofoto@rosdahl.net
 Web page: http://kofoto.rosdahl.net
+Mailing lists: http://kofoto.rosdahl.net/mailman/listinfo

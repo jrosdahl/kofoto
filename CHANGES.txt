@@ -8,6 +8,31 @@
 VERSION HISTORY
 ===============
 
+0.4 (2005-10-09)
+
+    New features:
+
+      * Support for handling image versions (ticket #15).
+      * Internal errors in gkofoto are now shown a message dialog
+        instead of printed to the console (ticket #37).
+      * New commandline option -0/--null that makes the search command
+        terminate file paths with null characters instead of newlines. 
+        Mainly useful when piping "kofoto search" output to GNU xargs.
+      * New commandline command: reread-exif (ticket #18).
+
+    Fixed bugs:
+
+      * Better handling of Unicode (tickets #99, #104 and #108).
+      * Reload album tree if an album is destroyed in the table view
+        (ticket #93).
+      * Hide file chooser dialog when processing files in the image
+        registration dialog (ticket #103).
+      * Set toolbar icons correctly (ticket #109).
+      * Removed bad key bindings for going to next and previous image
+        (ticket #102).
+      * Added work-around for buggy EXIF library.
+      * Fixed problem when registering directories with strange names.
+
 0.3.3 (2005-05-14)
 
     Fixed bugs:
