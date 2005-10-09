@@ -5,7 +5,11 @@ import os
 import re
 
 import pygtk
-pygtk.require("2.0")
+try:
+    pygtk.require("2.0")
+except AssertionError:
+    # pygtk.require("2.0") fails in the py2exe installer. Don't know why.
+    pass
 import gtk
 import gtk.gdk
 import gtk.glade
