@@ -18,13 +18,17 @@ from kofoto.clientutils import \
     expanduser, \
     get_file_encoding, \
     walk_files
+from kofoto.albumtype import AlbumType
 from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
+from kofoto.imageversiontype import ImageVersionType
 from kofoto.search import \
     BadTokenError, ParseError, Parser, UnterminatedStringError
 from kofoto.shelf import \
+    computeImageHash, \
+    makeValidTag
+from kofoto.shelfexceptions import \
     AlbumDoesNotExistError, \
     AlbumExistsError, \
-    AlbumType, \
     BadAlbumTagError, \
     BadCategoryTagError, \
     CategoriesAlreadyConnectedError, \
@@ -36,7 +40,6 @@ from kofoto.shelf import \
     ImageDoesNotExistError, \
     ImageVersionDoesNotExistError, \
     ImageVersionExistsError, \
-    ImageVersionType, \
     MultipleImageVersionsAtOneLocationError, \
     NotAnImageFileError, \
     ObjectDoesNotExistError, \
@@ -46,9 +49,7 @@ from kofoto.shelf import \
     UnknownAlbumTypeError, \
     UnknownImageVersionTypeError, \
     UnsettableChildrenError, \
-    UnsupportedShelfError, \
-    computeImageHash, \
-    makeValidTag
+    UnsupportedShelfError
 
 ######################################################################
 ### Constants.
