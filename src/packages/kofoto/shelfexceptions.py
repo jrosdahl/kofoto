@@ -10,6 +10,7 @@ __all__ = [
     "CategoryExistsError",
     "CategoryLoopError",
     "CategoryPresentError",
+    "ExifImportError",
     "FailedWritingError",
     "ImageDoesNotExistError",
     "ImageVersionDoesNotExistError",
@@ -57,6 +58,9 @@ class CategoryLoopError(KofotoError):
 
 class CategoryPresentError(KofotoError):
     """The object is already associated with this category."""
+
+class ExifImportError(KofotoError):
+    """Failed to import EXIF information."""
 
 class FailedWritingError(KofotoError):
     """Kofoto shelf already exists."""

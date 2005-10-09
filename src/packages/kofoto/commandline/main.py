@@ -32,6 +32,7 @@ from kofoto.shelf import \
     CategoryExistsError, \
     CategoryLoopError, \
     CategoryPresentError, \
+    ExifImportError, \
     ImageDoesNotExistError, \
     ImageVersionDoesNotExistError, \
     ImageVersionExistsError, \
@@ -1343,6 +1344,9 @@ def main(argv):
             " %d.\n" % x.args[0])
     except UnknownImageVersionTypeError, x:
         printError("Unknown image version type: \"%s\".\n" % x.args[0])
+    except ExifImportError, x:
+        printError("Failed to import EXIF information from \"%s\".\n" % (
+            x.args[0]))
     except KeyboardInterrupt:
         printOutput("Interrupted.\n")
     except IOError, e:

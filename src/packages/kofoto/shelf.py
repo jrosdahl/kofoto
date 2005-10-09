@@ -36,6 +36,7 @@ from kofoto.shelfexceptions import \
     CategoryExistsError, \
     CategoryLoopError, \
     CategoryPresentError, \
+    ExifImportError, \
     FailedWritingError, \
     ImageDoesNotExistError, \
     ImageVersionDoesNotExistError, \
@@ -614,7 +615,11 @@ class Shelf:
         imageversion = self._imageVersionFactory(
             ivid, image.getId(), ivtype, ivhash, location, mtime,
             width, height, u"")
-        imageversion.importExifTags(False)
+        try:
+            imageversion.importExifTags(False)
+        except ExifImportError:
+            # Ignore exceptions from buggy EXIF library for now.
+            pass
         if image.getPrimaryVersion() == None:
             image._makeNewPrimaryVersion()
         self._setModified()
@@ -1942,10 +1947,16 @@ class ImageVersion:
 
         Iff overwrite is true, existing attributes will be
         overwritten.
+
+        Raises kofoto.shelfexceptions.ExifImportError on error.
         """
         from kofoto import EXIF
         image = self.getImage()
-        tags = EXIF.process_file(file(self.getLocation(), "rb"))
+        try:
+            tags = EXIF.process_file(file(self.getLocation(), "rb"))
+            1/0
+        except: # Work-around for buggy EXIF library.
+            raise ExifImportError(self.getLocation())
 
         for tag in ["Image DateTime",
                     "EXIF DateTimeOriginal",
