@@ -16,7 +16,7 @@ VERSION HISTORY
       * Internal errors in gkofoto are now shown a message dialog
         instead of printed to the console (ticket #37).
       * New commandline option -0/--null that makes the search command
-        terminate file paths with null characters instead of newlines. 
+        terminate file paths with null characters instead of newlines.
         Mainly useful when piping "kofoto search" output to GNU xargs.
       * New commandline command: reread-exif (ticket #18).
 

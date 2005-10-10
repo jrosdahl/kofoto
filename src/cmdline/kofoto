@@ -17,4 +17,3 @@ sys.path.insert(0, os.path.join(bindir, "..", "packages"))
 
 from kofoto.commandline.main import main
 main(sys.argv)
-
