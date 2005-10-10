@@ -8,6 +8,12 @@
 VERSION HISTORY
 ===============
 
+0.4.1 (2005-10-10)
+
+    Fixed bugs:    
+
+      * Made cut and paste in gkofoto work again (ticket #113).
+
 0.4 (2005-10-09)
 
     New features:
