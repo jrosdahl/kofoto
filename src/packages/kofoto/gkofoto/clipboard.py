@@ -25,7 +25,7 @@ class Clipboard:
         self.__types = Clipboard.OBJECTS
         for obj in iterable:
             if (isinstance(obj, Image) or isinstance(obj, Album)):
-                self.__objects.append(object)
+                self.__objects.append(obj)
             else:
                 self.clear()
                 raise Exception("Object is not an Image nor an Album") # TODO
