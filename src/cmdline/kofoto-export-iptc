@@ -1,0 +1,190 @@
+#! /usr/bin/env python
+
+# kofoto-export-iptc is used to export jpeg images registered in your
+# kofoto database. Some kofoto attributes from the images can be
+# inserted as IPTC and EXIF meta data in the exported files.
+#
+# The meta data may for example be used by other photo management
+# software or online photo sharing sites like www.flickr.com.
+#
+# The following meta can can be inserted:
+#
+#  - EXIF Date and time (parsed by flickr)
+#  - IPTC Caption (parsed by flickr)
+#  - IPTC Headline (parsed by flickr)
+#  - IPTC Copyright notice
+# 
+
+
+###############################################################################
+# You may want to change the following parameters:
+
+MAX_IMAGE_SIZE = 900
+JPEG_QUALITY = 95
+IPTC_COPYRIGHT_NOTICE = ""
+KOFOTO_IMAGE_ID_IN_IPTC_HEADLINE = True
+IPTC_COMMAND = "/usr/local/bin/iptc" # from: http://libiptcdata.sourceforge.net
+EXIV2_COMMAND = "/usr/bin/exiv2"     # from: http://home.arcor.de/ahuggel/exiv2
+
+###############################################################################
+
+
+import sys
+import os
+import re
+import codecs
+import locale
+import Image as PILImage
+
+def get_file_encoding(f):
+    if hasattr(f, "encoding") and f.encoding:
+        return f.encoding
+    else:
+        return locale.getpreferredencoding()
+sys.stdin = codecs.getreader(get_file_encoding(sys.stdin))(sys.stdin)
+sys.stdout = codecs.getwriter(get_file_encoding(sys.stdout))(sys.stdout)
+sys.stderr = codecs.getwriter(get_file_encoding(sys.stderr))(sys.stderr)
+sys.argv = [x.decode(sys.getfilesystemencoding()) for x in sys.argv]
+
+# Find bindir when started via a symlink.
+if os.path.islink(sys.argv[0]):
+    link = os.readlink(sys.argv[0])
+    absloc = os.path.normpath(
+        os.path.join(os.path.dirname(sys.argv[0]), link))
+    bindir = os.path.dirname(absloc)
+else:
+    bindir = os.path.dirname(sys.argv[0])
+
+# Find libraries if run from the source tree.
+sys.path.insert(0, os.path.join(bindir, "..", "packages"))
+
+from kofoto.clientenvironment import ClientEnvironment
+from kofoto.search import \
+    BadTokenError, ParseError, Parser, UnterminatedStringError
+from kofoto.shelf import CategoryDoesNotExistError
+from kofoto.common import calculateDownscaledDimensions
+
+
+def print_error(errorString):
+    """Print an error to standard error."""
+    sys.stderr.write("Error: " + errorString + "\n")
+
+
+def generate_exif_date(date):
+    """Convert a timestamp to the the format YYYY:MM:DD HH:MM:SS
+
+    Is able to parse input strings with the following formats:
+      YYYY
+      YYYY-MM
+      YYYY-MM-DD
+      YYYY-MM-DD HH:MM
+      YYYY-MM-DD HH:MM:SS
+
+    Extra trailing characters are ignored. Hence it is possible
+    to parse strings like: '2005-02-10 +/- 3 days'.
+
+    Returns None if the input string can not be parsed as a date."""
+    def parse_number(value, default="00"):
+        if len(value) > 1:
+            return value
+        elif len(value) == 1:
+            return "0" + value
+        else:
+            return default
+    if date:
+        m = re.match("^(\d{4})-?(\d{0,2})-?(\d{0,2}) ?(\d{0,2}):?(\d{0,2}):?(\d{0,2})(.*)",
+                     date)
+        if m:
+            year = m.group(1)
+            month = parse_number(m.group(2))
+            day = parse_number(m.group(3))
+            hour = parse_number(m.group(4))
+            minute = parse_number(m.group(5))
+            second = parse_number(m.group(6))
+            return "%s:%s:%s %s:%s:%s" \
+                   % (year, month, day, hour, minute, second)
+    print_error("Failed to generate EXIF-date from the string: " + date)
+    return None
+
+
+def execute_command(command):
+    """Execute a shell command"""
+    command = command.encode(sys.getfilesystemencoding())
+    result = os.system(command)
+    if result != 0:
+        print_error("Failed to execute command: " + command)
+
+        
+def export_file(image, path):
+    """Export kofoto image to JPEG file."""
+    pilimg = PILImage.open(image.getPrimaryVersion().getLocation())
+    if not pilimg.mode in ("L", "RGB", "CMYK"):
+        pilimg = pilimg.convert("RGB")
+    full_width, full_height = image.getPrimaryVersion().getSize()
+    w, h = calculateDownscaledDimensions(full_width,
+                                         full_height,
+                                         MAX_IMAGE_SIZE,
+                                         MAX_IMAGE_SIZE)
+    pilimg.thumbnail((w, h), PILImage.ANTIALIAS)
+    pilimg.save(path, "JPEG", quality=JPEG_QUALITY)
+
+    
+def add_meta_data(image, path):
+    """Add IPTC and EXIF metadata from a kofoto image to a JPEG file"""
+    iptc_command = ""
+    description = image.getAttribute(u"description")
+    title = image.getAttribute(u"title")
+    if description:
+        iptc_command += ' -a Caption -v "%s"' % description
+    elif title and KOFOTO_IMAGE_ID_IN_IPTC_HEADLINE:
+        # Since there are no description available and we are not going
+        # to use the title in the headline, we set the title
+        # and description.
+        iptc_command += ' -a Caption -v "%s"' % title
+    if KOFOTO_IMAGE_ID_IN_IPTC_HEADLINE:
+        iptc_command += ' -a Headline -v "%s"' \
+                        % image.getPrimaryVersion().getId()
+    elif title:
+        iptc_command += ' -a Headline -v "%s"' % title
+    if IPTC_COPYRIGHT_NOTICE:
+        iptc_command += ' -a CopyrightNotice -v "%s"' \
+                         % IPTC_COPYRIGHT_NOTICE
+    if iptc_command:
+        execute_command("%s %s %s" % (IPTC_COMMAND, iptc_command, path))
+    exif_date = generate_exif_date(image.getAttribute(u"captured"))        
+    if exif_date:
+        execute_command('%s -v -M"set Exif.Image.DateTime Ascii %s" %s' \
+                        % (EXIV2_COMMAND, exif_date, path))
+
+
+def main():
+    if len(sys.argv) < 2:
+        print_error("Usage: kofoto-export-iptc <export-directory> <search-expression>\n")
+        sys.exit(1)
+    directory = sys.argv[1]
+    query = sys.argv[2]
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    env = ClientEnvironment()
+    env.setup(createMissingConfigFile=False,
+              createMissingShelf=False)
+    parser = Parser(env.shelf)
+    env.shelf.begin()
+    try:
+        objects = env.shelf.search(parser.parse(query))
+        images = [x for x in objects if not x.isAlbum()]
+        for image in images:
+            path = "%s/%s.jpg" % (directory, image.getId())
+            if os.path.exists(path):
+                print_error("File already exists: " + path)
+            else:
+                export_file(image, path)
+                add_meta_data(image, path)
+    except ParseError, x:
+        print_error("Invalid search-expression: " + str(x))
+    except CategoryDoesNotExistError, x:
+        print_error("Category does not exist: " + str(x))
+
+
+if __name__ == "__main__":
+    main()
