@@ -3,6 +3,7 @@ import gtk
 import gobject
 import gc
 from sets import Set
+from kofoto.timer import Timer
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.objectselection import ObjectSelection
 from kofoto.gkofoto.albumdialog import AlbumDialog
@@ -294,6 +295,7 @@ class ObjectCollection(object):
         self.__insertionPseudoThread.start()
 
     def __insertionWorker(self, objectList, location):
+        timer = Timer()
         for obj in objectList:
             self._freezeViews()
 
@@ -339,7 +341,9 @@ class ObjectCollection(object):
             self.__loadThumbnail(self.__treeModel, iterator)
             location += 1
             self.__updateObjectCount(True)
-            yield True
+            if timer.get() > 0.05:
+                yield True
+                timer.reset()
 
         self._handleNrOfObjectsUpdate()
         self.__loadingFinished()
