@@ -12,6 +12,7 @@ from kofoto.gkofoto.registerimageversionsdialog import \
     RegisterImageVersionsDialog
 from kofoto.gkofoto.duplicateandopenimagedialog import \
     DuplicateAndOpenImageDialog
+from kofoto.gkofoto.pseudothread import PseudoThread
 
 class ObjectCollection(object):
 
@@ -21,7 +22,7 @@ class ObjectCollection(object):
     def __init__(self):
         env.debug("Init ObjectCollection")
         self.__objectSelection = ObjectSelection(self)
-        self.__insertionWorkerTag = None
+        self.__insertionPseudoThread = None
         self.__registeredViews = []
         self.__disabledFields = Set()
         self.__rowInsertedCallbacks = []
@@ -64,7 +65,8 @@ class ObjectCollection(object):
 
     # Return true if object collection has not finished loading.
     def isLoading(self):
-        return self.__insertionWorkerTag != None
+        ipt = self.__insertionPseudoThread
+        return ipt and ipt.is_running()
 
     def getCutLabel(self):
         return "Cut reference"
@@ -161,7 +163,10 @@ class ObjectCollection(object):
         env.debug("Clearing object collection")
         if freeze:
             self._freezeViews()
-        self.__stopInsertionWorker()
+        if self.isLoading():
+            self.__loadingFinished()
+            self.__insertionPseudoThread.stop()
+            self.__insertionPseudoThread = None
         self.__treeModel.clear()
         gc.collect()
         self.__nrOfAlbums = 0
@@ -284,8 +289,9 @@ class ObjectCollection(object):
 
         if location == None:
             location = len(self.__treeModel)
-        self.__insertionWorkerTag = gobject.idle_add(
-            self.__insertionWorker(objectList, location).next)
+        self.__insertionPseudoThread = PseudoThread(
+            self.__insertionWorker(objectList, location))
+        self.__insertionPseudoThread.start()
 
     def __insertionWorker(self, objectList, location):
         for obj in objectList:
@@ -336,16 +342,10 @@ class ObjectCollection(object):
             yield True
 
         self._handleNrOfObjectsUpdate()
-        self.__insertionWorkerFinished()
+        self.__loadingFinished()
         yield False
 
-    def __stopInsertionWorker(self):
-        if self.__insertionWorkerTag:
-            gobject.source_remove(self.__insertionWorkerTag)
-            self.__insertionWorkerFinished()
-
-    def __insertionWorkerFinished(self):
-        self.__insertionWorkerTag = None
+    def __loadingFinished(self):
         self.__updateObjectCount(False)
         for view in self.__registeredViews:
             view.loadingFinished()
