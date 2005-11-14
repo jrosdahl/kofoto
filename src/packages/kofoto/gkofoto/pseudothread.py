@@ -20,13 +20,13 @@ class PseudoThread:
     object ("the target") to the constructor, or by overriding the
     _run() method (which must be a generator) in a subclass.
 
-    Once a PseudoThread instance is created, its activity must be
-    started by calling the start() method. After that, the target's
+    Once a PseudoThread instance has been created, its activity must
+    be started by calling the start() method. After that, the target's
     next() method will be called repeatedly as long it returns a true
     value. If it returns a false value (or throws an exception), the
     activity is stopped.
 
-    Do get a thread-like behaviour, the activity should not do
+    To get a thread-like behaviour, the activity should not do
     anything that takes a long time before returning. If the activity
     needs to sleep, the sleep() method can be called, though.
 
@@ -81,7 +81,7 @@ class PseudoThread:
         target   -- The generator object to be run. If None, the
                     generator object returned by the _run() method is
                     run instead.
-        error_fp -- File object to write exceptions to.
+        error_fp -- File object to write tracebacks to.
         """
 
         self.__idle_tag = None
@@ -120,6 +120,7 @@ class PseudoThread:
         self.__idle_tag = None
 
     def is_running(self):
+        """Check whether the pseudo thread is running."""
         return (
             (self.__idle_tag is not None) or
             (self.__timeout_tag is not None))
