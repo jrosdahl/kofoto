@@ -24,7 +24,7 @@ class PseudoThread:
     be started by calling the start() method. After that, the target's
     next() method will be called repeatedly as long it returns a true
     value. If it returns a false value (or throws an exception), the
-    activity is stopped.
+    activity is stopped (and will never be started again).
 
     To get a thread-like behaviour, the activity should not do
     anything that takes a long time before returning. If the activity
@@ -40,8 +40,8 @@ class PseudoThread:
     ...     for i in range(5):
     ...         print x, i
     ...         yield True
-    >>> pt = PseudoThread(f("a"))
-    >>> pt.start()
+    >>> pt1 = PseudoThread(f("a"))
+    >>> pt1.start()
     >>> pt2 = PseudoThread(f("b"))
     >>> pt2.start()
     >>> gtk.main()
@@ -105,14 +105,24 @@ class PseudoThread:
         self.__timeout_tag = gobject.timeout_add(ms, self.__timeout_cb)
 
     def start(self):
-        """Start the pseudo thread."""
+        """Start the pseudo thread.
+
+        It's okay to call this method even if the pseudo thread
+        already is running. Note though that if the pseudo thread has
+        reached the end (i.e. the target has returned false or thrown
+        an exception), the activity will not be restarted.
+        """
 
         if self.__idle_tag is not None:
             return
         self.__idle_tag = gobject.idle_add(self.__idle_cb)
 
     def stop(self):
-        """Stop the pseudo thread."""
+        """Stop the pseudo thread.
+
+        It's okay to call this method even if the pseudo thread
+        is not running.
+        """
 
         if self.__idle_tag is None:
             return
@@ -121,6 +131,7 @@ class PseudoThread:
 
     def is_running(self):
         """Check whether the pseudo thread is running."""
+
         return (
             (self.__idle_tag is not None) or
             (self.__timeout_tag is not None))

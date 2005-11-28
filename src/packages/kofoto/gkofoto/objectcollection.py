@@ -166,8 +166,6 @@ class ObjectCollection(object):
             self._freezeViews()
         if self.isLoading():
             self.__loadingFinished()
-            self.__insertionPseudoThread.stop()
-            self.__insertionPseudoThread = None
         self.__treeModel.clear()
         gc.collect()
         self.__nrOfAlbums = 0
@@ -353,6 +351,8 @@ class ObjectCollection(object):
         self.__updateObjectCount(False)
         for view in self.__registeredViews:
             view.loadingFinished()
+        self.__insertionPseudoThread.stop()
+        self.__insertionPseudoThread = None
 
     def __updateObjectCount(self, loadingInProgress):
         env.widgets["statusbarLoadedObjects"].pop(1)
