@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 
-testModules = ["dagtests", "shelftests", "searchtests"]
+testModules = ["dagtests", "iomtests", "shelftests", "searchtests"]
 
 cwd = os.getcwd()
 libdir = unicode(os.path.realpath(
