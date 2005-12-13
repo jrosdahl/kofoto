@@ -5,7 +5,7 @@ import gtk.gdk
 import math
 import gc
 from kofoto.gkofoto.environment import env
-from kofoto.common import calculateDownscaledDimensions
+from kofoto.common import calculate_downscaled_size
 
 class ImageView(gtk.ScrolledWindow):
     # TODO: Read from configuration file?
@@ -94,7 +94,7 @@ class ImageView(gtk.ScrolledWindow):
         else:
             if self.__fitToWindowMode:
                 maxWidth, maxHeight = tuple(self.get_allocation())[2:4]
-                wantedWidth, wantedHeight = calculateDownscaledDimensions(
+                wantedWidth, wantedHeight = calculate_downscaled_size(
                     self.__pixBuf.get_width(),
                     self.__pixBuf.get_height(),
                     maxWidth,

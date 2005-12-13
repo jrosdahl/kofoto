@@ -7,7 +7,7 @@ import os
 import re
 import time
 from sets import Set
-from kofoto.common import symlinkOrCopyFile, UnimplementedError
+from kofoto.common import symlink_or_copy_file, UnimplementedError
 
 class OutputEngine:
     """An abstract base class for output generators of an album tree."""
@@ -118,7 +118,7 @@ class OutputEngine:
                 os.makedirs(os.path.dirname(imgloc))
             except OSError:
                 pass
-            symlinkOrCopyFile(imgabsloc, imgloc)
+            symlink_or_copy_file(imgabsloc, imgloc)
             self.__imgrefMap[key] = (
                 "/".join(htmlimgloc.split(os.sep)),
                 width,
@@ -157,7 +157,7 @@ class OutputEngine:
         source      -- A location in the filesystem.
         destination -- A location in the generated directory.
         """
-        symlinkOrCopyFile(source, os.path.join(self.__dest, destination))
+        symlink_or_copy_file(source, os.path.join(self.__dest, destination))
 
 
     def makeDirectory(self, directory):

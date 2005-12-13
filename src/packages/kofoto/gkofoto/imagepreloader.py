@@ -3,7 +3,7 @@
 import gobject
 import gtk
 from kofoto.timer import Timer
-from kofoto.common import calculateDownscaledDimensions
+from kofoto.common import calculate_downscaled_size
 
 class _MyPixbufLoader(gtk.gdk.PixbufLoader):
     def __init__(self, *args, **kwargs):
@@ -178,7 +178,7 @@ class ImagePreloader(object):
                   scaledPixbuf.get_height() <= maxHeight and
                   (scaledPixbuf.get_width() == maxWidth or
                    scaledPixbuf.get_height() == maxHeight)):
-            scaledWidth, scaledHeight = calculateDownscaledDimensions(
+            scaledWidth, scaledHeight = calculate_downscaled_size(
                 fullsizePixbuf.get_width(),
                 fullsizePixbuf.get_height(),
                 maxWidth,
