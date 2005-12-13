@@ -35,7 +35,11 @@ class _KeyListNode:
         self.next = None
 
 class InsertionOrderedMapping:
-    """A mapping datatype with keys sorted in insertion order."""
+    """A mapping datatype with keys sorted in insertion order.
+
+    The newest insertion appears first in the key list and the oldest
+    last.
+    """
 
     def __init__(self, items=None):
         self._map = {} # key --> (keylistnode, value)
