@@ -79,9 +79,11 @@ class TestInsertionOrderedMapping(unittest.TestCase):
 
     def test___setitem__(self):
         self.iom[0] = "-"
-        assert self.iom.keys() == [0, 2, 3, 1]
+        assert self.iom.items() == [
+            (0, "-"), (2, "b"), (3, "c"), (1, "a")]
         self.iom[4] = "d"
-        assert self.iom.keys() == [4, 0, 2, 3, 1]
+        assert self.iom.items() == [
+            (4, "d"), (0, "-"), (2, "b"), (3, "c"), (1, "a")]
 
     def test_clear(self):
         self.iom.clear()
@@ -105,6 +107,60 @@ class TestInsertionOrderedMapping(unittest.TestCase):
         assert self.iom.has_key(1)
         assert self.iom.has_key(2)
         assert self.iom.has_key(3)
+
+    def test_insert_after(self):
+        self.iom.insert_after(1, 1, "z")
+        assert self.iom.items() == [(2, "b"), (3, "c"), (1, "z")]
+        assert len(self.iom) == 3
+        self.iom.insert_after(2, 0, "x")
+        assert self.iom.items() == [(2, "b"), (0, "x"), (3, "c"), (1, "z")]
+        assert len(self.iom) == 4
+        self.iom.insert_after(1, 0, "y")
+        assert self.iom.items() == [(2, "b"), (3, "c"), (1, "z"), (0, "y")]
+        assert len(self.iom) == 4
+        try:
+            self.iom.insert_after(5, 1, "a")
+        except KeyError:
+            pass
+        else:
+            assert False
+        assert self.iom.items() == [(2, "b"), (3, "c"), (1, "z"), (0, "y")]
+        assert len(self.iom) == 4
+
+    def test_insert_before(self):
+        self.iom.insert_before(1, 1, "z")
+        assert self.iom.items() == [(2, "b"), (3, "c"), (1, "z")]
+        assert len(self.iom) == 3
+        self.iom.insert_before(2, 0, "x")
+        assert self.iom.items() == [(0, "x"), (2, "b"), (3, "c"), (1, "z")]
+        assert len(self.iom) == 4
+        self.iom.insert_before(1, 0, "y")
+        assert self.iom.items() == [(2, "b"), (3, "c"), (0, "y"), (1, "z")]
+        assert len(self.iom) == 4
+        try:
+            self.iom.insert_before(5, 1, "a")
+        except KeyError:
+            pass
+        else:
+            assert False
+        assert self.iom.items() == [(2, "b"), (3, "c"), (0, "y"), (1, "z")]
+        assert len(self.iom) == 4
+
+    def test_insert_first(self):
+        self.iom.insert_first(0, "-")
+        assert self.iom.items() == [
+            (0, "-"), (2, "b"), (3, "c"), (1, "a")]
+        self.iom.insert_first(4, "d")
+        assert self.iom.items() == [
+            (4, "d"), (0, "-"), (2, "b"), (3, "c"), (1, "a")]
+
+    def test_insert_last(self):
+        self.iom.insert_last(0, "-")
+        assert self.iom.items() == [
+            (2, "b"), (3, "c"), (1, "a"), (0, "-")]
+        self.iom.insert_last(4, "d")
+        assert self.iom.items() == [
+            (2, "b"), (3, "c"), (1, "a"), (0, "-"), (4, "d")]
 
     def test_items(self):
         assert self.iom.items() == [(2, "b"), (3, "c"), (1, "a")]

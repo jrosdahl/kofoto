@@ -122,6 +122,24 @@ class InsertionOrderedMapping:
     def has_key(self, key):
         return self._map.has_key(key)
 
+    def insert_after(self, refkey, key, value):
+        self._insert_after_or_before(refkey, key, value, True)
+
+    def insert_before(self, refkey, key, value):
+        self._insert_after_or_before(refkey, key, value, False)
+
+    def insert_first(self, key, value):
+        self[key] = value
+
+    def insert_last(self, key, value):
+        if key in self._map:
+            node = self._map[key][0]
+            node.unlink()
+        else:
+            node = _KeyListNode(key)
+        self._map[key] = (node, value)
+        node.insert_before(self._keylist_tail)
+
     def items(self):
         return list(self.iteritems())
 
@@ -196,3 +214,17 @@ class InsertionOrderedMapping:
 
     def values(self):
         return list(self.itervalues())
+
+    def _insert_after_or_before(self, refkey, key, value, after):
+        refnode = self._map[refkey][0]
+        if refkey == key:
+            self._map[refkey] = (refnode, value)
+        else:
+            if key in self._map:
+                del self[key]
+            node = _KeyListNode(key)
+            self._map[key] = (node, value)
+            if after:
+                node.insert_after(refnode)
+            else:
+                node.insert_before(refnode)
