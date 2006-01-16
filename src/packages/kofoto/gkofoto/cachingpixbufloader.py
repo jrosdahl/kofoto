@@ -2,6 +2,7 @@
 
 __all__ = ["CachingPixbufLoader"]
 
+import gc
 import os
 from sets import Set as set
 if __name__ == "__main__":
@@ -551,17 +552,21 @@ class CachingPixbufLoader(object):
             return
         requests_to_prune = []
         load_requests = set(self._load_queue)
+        pixels_after_pruning = self._pixels_in_cache
         for (key, request) in self._request_queue.reviteritems():
-            if self._pixels_in_cache <= self._pixel_limit:
+            if pixels_after_pruning <= self._pixel_limit:
+                # Enough pruning.
                 break
             if request not in load_requests:
                 requests_to_prune.append((key, request))
+                pixels_after_pruning -= request.get_number_of_loaded_pixels()
         if len(requests_to_prune) > 0:
             self._load_loop_reeval = True
             for (key, request) in requests_to_prune:
                 if self._debug_mode:
                     print "PRUNING", key
                 self._remove_request(key)
+            gc.collect()
 
     def _remove_erroneous_request(self, key):
         self._remove_request(key)
