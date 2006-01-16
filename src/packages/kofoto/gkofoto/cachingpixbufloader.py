@@ -166,6 +166,12 @@ class _Request(object):
 
     # ----------------------------------
 
+    def get_key(self):
+        return (self._path, self._size_limit)
+    key = property(get_key)
+
+    # ----------------------------------
+
     def add_callback(self, load_callback, error_callback):
         return self._state.add_callback(load_callback, error_callback)
 
@@ -274,6 +280,9 @@ class CachingPixbufLoader(object):
         # self._request_queue.values() (except order). Newest requests
         # are last and oldest are first.
         self._load_queue = []
+
+        # Maps path to set(_Request)
+        self._path_to_requests = {}
 
     def cancel_load(self, handle):
         """Cancel a load.
@@ -406,6 +415,8 @@ class CachingPixbufLoader(object):
             request = self._request_queue[key]
         else:
             request = _Request(self, path, size_limit, persistence_size_limit)
+            request_set = self._path_to_requests.setdefault(path, set())
+            request_set.add(request)
         self._request_queue.insert_first(key, request)
         self._load_loop_reeval = True
         self._load_thread.start()
@@ -439,6 +450,24 @@ class CachingPixbufLoader(object):
             request = self._request_queue[key]
             if request not in self._load_queue:
                 self._remove_request(key)
+
+    def unload_all(self, path):
+        """Remove all cached sizes of a pixbuf from the cache.
+
+        This method is a hint to the cache that it's not interesting
+        to keep a cached pixbuf anymore. If no pixbufs for the given
+        path exist, nothing will happen.
+
+        Arguments:
+
+        path         -- Path given to load/preload.
+        """
+
+        if path not in self._path_to_requests:
+            return
+        for request in self._path_to_requests[path].copy():
+            if request not in self._load_queue:
+                self._remove_request(request.key)
 
     def _calculate_size_limit(self, path, size_limit):
         if size_limit is None:
@@ -512,6 +541,10 @@ class CachingPixbufLoader(object):
         for request in self._load_queue:
             print "    Request:"
             request._print_state(verbose)
+        print "Path to requests:"
+        for (path, requests) in self._path_to_requests.iteritems():
+            print "    Path:", path
+            print "    Requests:", requests
 
     def _prune_queue(self):
         if self._pixels_in_cache <= self._pixel_limit:
@@ -544,6 +577,11 @@ class CachingPixbufLoader(object):
             # OK, it wasn't a load.
             pass
         del self._request_queue[key]
+        path = key[0]
+        request_set = self._path_to_requests[path]
+        request_set.remove(request)
+        if len(request_set) == 0:
+            del self._path_to_requests[path]
 
 ######################################################################
 
