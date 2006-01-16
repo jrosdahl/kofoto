@@ -11,7 +11,7 @@ class _KeyListNode:
     def insert_after(self, node):
         assert self.prev is None
         assert self.next is None
-        if node.next:
+        if node.next is not None:
             node.next.prev = self
             self.next = node.next
         self.prev = node
@@ -20,16 +20,16 @@ class _KeyListNode:
     def insert_before(self, node):
         assert self.prev is None
         assert self.next is None
-        if node.prev:
+        if node.prev is not None:
             node.prev.next = self
             self.prev = node.prev
         self.next = node
         node.prev = self
 
     def unlink(self):
-        if self.prev:
+        if self.prev is not None:
             self.prev.next = self.next
-        if self.next:
+        if self.next is not None:
             self.next.prev = self.prev
         self.prev = None
         self.next = None
@@ -65,8 +65,9 @@ class InsertionOrderedMapping:
             else:
                 sval = self._map[snode.key][1]
                 oval = other._map[onode.key][1]
-                if sval != oval:
-                    return cmp(sval, oval)
+                cmpval = cmp(sval, oval)
+                if cmpval != 0:
+                    return cmpval
             snode = snode.next
             onode = onode.next
 
