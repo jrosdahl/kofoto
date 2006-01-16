@@ -9,6 +9,22 @@ import gtk
 import gobject
 from kofoto.rectangle import Rectangle
 
+def get_pixbuf_size(path):
+    """Get size of image at a given path.
+
+    Returns (width, height) or None on error.
+    """
+
+    pbl = PixbufLoader()
+    pbl.prepare(path, None)
+    while True:
+        loaded_bytes = pbl.load_some_more()
+        size = pbl.get_original_size()
+        if size is not None or loaded_bytes == 0:
+            break
+    pbl.cancel()
+    return size
+
 class PixbufLoader:
     """A pixbuf loader.
 
@@ -34,8 +50,7 @@ class PixbufLoader:
     def get_original_size(self):
         """Get the on-disk size.
 
-        Returns a tuple (width, height) if loading has finished
-        successfully, otherwise None.
+        Returns a tuple (width, height) if known, otherwise None.
         """
 
         return self._original_size
@@ -72,7 +87,7 @@ class PixbufLoader:
                     # The loader has already been closed, so make sure
                     # that it isn't closed again in _clean_up().
                     self._pixbuf_loader = None
-        except Exception:
+        except (IOError, gobject.GError):
             self._pixbuf = None
             self._original_size = None
         self._clean_up()
@@ -106,7 +121,7 @@ class PixbufLoader:
             self._loading_finished = True
             return
         self._loading_finished = False
-        self._limit = limit
+        self._size_limit = limit
         self._pixbuf_loader = gtk.gdk.PixbufLoader()
         self._pixbuf_loader.connect("size-prepared", self._size_prepared_cb)
 
@@ -121,13 +136,13 @@ class PixbufLoader:
             self._fp.close()
             self._fp = None
 
-    def _size_prepared_cb(self, loader, full_width, full_height):
+    def _size_prepared_cb(self, pbloader, full_width, full_height):
         self._original_size = (full_width, full_height)
-        if self._limit is None:
+        if self._size_limit is None:
             # Load full-sized image.
             return
         size = Rectangle(full_width, full_height).downscaled_to(
-            Rectangle(self._limit[0], self._limit[1]))
+            Rectangle(*self._size_limit))
         self._pixbuf_loader.set_size(size.width, size.height)
 
 ######################################################################
@@ -137,13 +152,13 @@ if __name__ == "__main__":
 
     loader = PixbufLoader()
     loader.prepare(sys.argv[1], (300, 200))
-    while loader.load_some_more():
+    while loader.load_some_more() > 0:
         pass
     pixbuf = loader.get_pixbuf()
     if pixbuf:
-        size = loader.get_original_size()
+        (owidth, oheight) = loader.get_original_size()
         print "Loaded %dx%d pixbuf (original size: %dx%d)" % (
-            pixbuf.get_width(), pixbuf.get_height(), size[0], size[1])
+            pixbuf.get_width(), pixbuf.get_height(), owidth, oheight)
     else:
         print "Error while loading pixbuf."
     gtk.main()
