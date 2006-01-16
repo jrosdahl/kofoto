@@ -148,7 +148,7 @@ class PseudoThread:
         if x:
             return True
         else:
-            self._idle_tag = None
+            self.__idle_tag = None
             return False
 
     def __timeout_cb(self):
