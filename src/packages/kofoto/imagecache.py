@@ -4,7 +4,7 @@ __all__ = ["ImageCache"]
 
 import os
 import Image as PILImage
-from kofoto.common import calculate_downscaled_size
+from kofoto.rectangle import Rectangle
 
 class ImageCache:
     """A class representing the Kofoto image cache."""
@@ -95,8 +95,9 @@ class ImageCache:
              heightlimit, orientation):
         """Internal helper method."""
         # Scale image to fit within limits.
-        w, h = calculate_downscaled_size(
-            width, height, widthlimit, heightlimit)
+        w, h = tuple(
+            Rectangle(width, height).downscaled_to(
+                Rectangle(widthlimit, heightlimit)))
         if orientation in ["left", "right"]:
             w, h = h, w
 
