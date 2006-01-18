@@ -8,6 +8,7 @@ from sets import Set as set
 if __name__ == "__main__":
     import pygtk
     pygtk.require("2.0")
+import gobject
 from kofoto.common import UnimplementedError
 from kofoto.gkofoto.pixbufloader import PixbufLoader, get_pixbuf_size
 from kofoto.gkofoto.pseudothread import PseudoThread
@@ -491,12 +492,14 @@ class CachingPixbufLoader(object):
         while True:
             request = None
             self._load_loop_reeval = False
+            found_a_load = False
             while len(self._load_queue) > 0:
                 if self._load_queue[0].is_finished():
                     # The load request has finished, so remove it.
                     del self._load_queue[0]
                 else:
                     request = self._load_queue[0]
+                    found_a_load = True
                     break
             if request is None:
                 # No loads. Find a preload, if any.
@@ -521,6 +524,11 @@ class CachingPixbufLoader(object):
             else:
                 if self._debug_mode:
                     print "LOAD LOOP SELECTED TO LOAD", request._path
+                if found_a_load:
+                    priority = gobject.PRIORITY_HIGH_IDLE
+                else:
+                    priority = gobject.PRIORITY_DEFAULT_IDLE
+                self._load_thread.set_priority(priority)
                 while not (self._load_loop_reeval or request.is_finished()):
                     loaded_pixels = request.load_some_more()
                     self._pixels_in_cache += loaded_pixels
