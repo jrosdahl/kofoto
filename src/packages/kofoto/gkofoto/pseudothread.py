@@ -85,7 +85,7 @@ class PseudoThread:
         target   -- The generator object to be run. If None, the
                     generator object returned by the _run() method is
                     run instead.
-        priority -- Priority of the thread; preferable one of the
+        priority -- Priority of the thread; preferably one of the
                     gobject.PRIORITY_* constants.
         error_fp -- File object to write tracebacks to.
         """
@@ -103,6 +103,11 @@ class PseudoThread:
 
         The priority is changed immediately, even if the thread is
         running.
+
+        Arguments:
+
+        priority -- Priority of the thread; preferably one of the
+                    gobject.PRIORITY_* constants.
         """
 
         if priority == self.__priority:
