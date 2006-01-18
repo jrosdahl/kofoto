@@ -1,7 +1,7 @@
 Kofoto (except bundled software, described below) has the following
 copyright and license terms:
 
---- [begin]-----------------------------------------------------------
+--- [begin] ----------------------------------------------------------
 Copyright (c) Joel Rosdahl and Ulrik Svensson
 All rights reserved.
 
