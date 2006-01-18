@@ -598,9 +598,8 @@ class CachingPixbufLoader(object):
 
 ######################################################################
 
-if __name__ == "__main__":
+def main(argv):
     import gtk
-    import sys
 
     def pixbuf_loaded_cb(pixbuf, full_size):
         print "Received pixbuf of %dx%d pixels (full size: %dx%d)." % (
@@ -614,7 +613,7 @@ if __name__ == "__main__":
     print "INITIAL:"
     loader._print_state(False)
 
-    for path in sys.argv[1:]:
+    for path in argv[1:]:
         loader.load(path, (300, 200), pixbuf_loaded_cb, pixbuf_error_cb)
 
     print
@@ -622,3 +621,7 @@ if __name__ == "__main__":
     loader._print_state(False)
 
     gtk.main()
+
+if __name__ == "__main__":
+    import sys
+    main(sys.argv)
