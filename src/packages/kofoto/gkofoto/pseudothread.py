@@ -3,6 +3,9 @@
 __all__ = ["PseudoThread"]
 
 import sys
+if __name__ == "__main__":
+    import pygtk
+    pygtk.require("2.0")
 import gobject
 
 class PseudoThread:
@@ -73,7 +76,8 @@ class PseudoThread:
     done.
     """
 
-    def __init__(self, target=None, error_fp=sys.stderr):
+    def __init__(self, target=None, priority=gobject.PRIORITY_DEFAULT_IDLE,
+                 error_fp=sys.stderr):
         """Constructor.
 
         Arguments:
@@ -81,6 +85,8 @@ class PseudoThread:
         target   -- The generator object to be run. If None, the
                     generator object returned by the _run() method is
                     run instead.
+        priority -- Priority of the thread; preferable one of the
+                    gobject.PRIORITY_* constants.
         error_fp -- File object to write tracebacks to.
         """
 
@@ -90,6 +96,21 @@ class PseudoThread:
             target = self._run()
         self.__target = target
         self.__error_fp = error_fp
+        self.__priority = priority
+
+    def set_priority(self, priority):
+        """Set priority of the thread.
+
+        The priority is changed immediately, even if the thread is
+        running.
+        """
+
+        if priority == self.__priority:
+            return
+        self.__priority = priority
+        if self.__idle_tag is not None:
+            self.stop()
+            self.start()
 
     def sleep(self, ms):
         """Delay execution of the next iteration of the pseudo thread.
@@ -115,7 +136,8 @@ class PseudoThread:
 
         if self.__idle_tag is not None:
             return
-        self.__idle_tag = gobject.idle_add(self.__idle_cb)
+        self.__idle_tag = gobject.idle_add(
+            self.__idle_cb, priority=self.__priority)
 
     def stop(self):
         """Stop the pseudo thread.
@@ -157,3 +179,20 @@ class PseudoThread:
 
     def _run(self):
         raise Exception("not overridden")
+
+######################################################################
+
+if __name__ == "__main__":
+    import gtk
+
+    def f(x):
+        for i in range(5):
+            print x, i
+            yield True
+    pt1 = PseudoThread(f("a"))
+    pt1.start()
+    pt2 = PseudoThread(f("b"))
+    pt2.start()
+    pt3 = PseudoThread(f("c"), gobject.PRIORITY_HIGH_IDLE)
+    pt3.start()
+    gtk.main()
