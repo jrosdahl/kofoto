@@ -510,7 +510,6 @@ class ObjectCollection(object):
         dialog.runMergeImages(selectedObjects)
 
     def rotateImage(self, unused, angle):
-        env.mainwindow.getImagePreloader().clearCache()
         for (rowNr, obj) in self.__objectSelection.getMap().items():
             if not obj.isAlbum():
                 imageversion = obj.getPrimaryVersion()
@@ -518,6 +517,7 @@ class ObjectCollection(object):
                     # Image has no versions. Skip it for now.
                     continue
                 location = imageversion.getLocation()
+                env.pixbufLoader.unload_all(location)
                 if angle == 90:
                     commandString = env.rotateRightCommand
                 else:
@@ -528,7 +528,6 @@ class ObjectCollection(object):
                     imageversion.contentChanged()
                     model = self.getUnsortedModel()
                     self.__loadThumbnail(model, model.get_iter(rowNr))
-                    env.mainwindow.getImagePreloader().clearCache()
                 else:
                     dialog = gtk.MessageDialog(
                         type=gtk.MESSAGE_ERROR,

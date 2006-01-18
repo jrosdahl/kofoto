@@ -6,6 +6,11 @@ from kofoto.gkofoto.imageview import ImageView
 from kofoto.gkofoto.objectcollectionview import ObjectCollectionView
 from kofoto.gkofoto.imageversionslist import ImageVersionsList
 
+def _make_callback_wrapper(fn):
+    def f(*unused):
+        fn()
+    return f
+
 class SingleObjectView(ObjectCollectionView, gtk.HPaned):
 
 ###############################################################################
@@ -22,7 +27,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self.__imageVersionsFrame = gtk.Frame("Image versions")
         self.__imageVersionsFrame.set_size_request(162, -1)
         self.__imageVersionsWindow = gtk.ScrolledWindow()
-        self.__imageVersionsList = ImageVersionsList(self, self.__imageView)
+        self.__imageVersionsList = ImageVersionsList(self)
         self.__imageVersionsFrame.add(self.__imageVersionsList)
         self.pack2(self.__imageVersionsFrame, resize=False)
         self.show_all()
@@ -30,18 +35,29 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         env.widgets["menubarNextImage"].connect("activate", self._goto, 1)
         env.widgets["previousButton"].connect("clicked", self._goto, -1)
         env.widgets["menubarPreviousImage"].connect("activate", self._goto, -1)
-        env.widgets["zoomToFit"].connect("clicked", self.__imageView.fitToWindow_cb)
-        env.widgets["menubarZoomToFit"].connect("activate", self.__imageView.fitToWindow_cb)
-        env.widgets["zoom100"].connect("clicked", self.__imageView.zoom100_cb)
-        env.widgets["menubarActualSize"].connect("activate", self.__imageView.zoom100_cb)
-        env.widgets["zoomIn"].connect("clicked", self.__imageView.zoomIn_cb)
-        env.widgets["menubarZoomIn"].connect("activate", self.__imageView.zoomIn_cb)
-        env.widgets["zoomOut"].connect("clicked", self.__imageView.zoomOut_cb)
-        env.widgets["menubarZoomOut"].connect("activate", self.__imageView.zoomOut_cb)
+        env.widgets["zoomToFit"].connect(
+            "clicked", _make_callback_wrapper(self.__imageView.zoom_to_fit))
+        env.widgets["menubarZoomToFit"].connect(
+            "activate", _make_callback_wrapper(self.__imageView.zoom_to_fit))
+        env.widgets["zoom100"].connect(
+            "clicked", _make_callback_wrapper(self.__imageView.zoom_to_actual))
+        env.widgets["menubarActualSize"].connect(
+            "activate", _make_callback_wrapper(self.__imageView.zoom_to_actual))
+        env.widgets["zoomIn"].connect(
+            "clicked", _make_callback_wrapper(self.__imageView.zoom_in))
+        env.widgets["menubarZoomIn"].connect(
+            "activate", _make_callback_wrapper(self.__imageView.zoom_in))
+        env.widgets["zoomOut"].connect(
+            "clicked", _make_callback_wrapper(self.__imageView.zoom_out))
+        env.widgets["menubarZoomOut"].connect(
+            "activate", _make_callback_wrapper(self.__imageView.zoom_out))
         env.widgets["menubarViewDetailsPane"].set_sensitive(True)
         self.__loadedObject = False
         self.__selectionLocked = False
         self.__selectedRowNr = None
+        self.__currentImageLocation = None
+        self.__latestLoadPixbufHandle = None
+        self.__latestPixbufLoadKey = None
 
     def showDetailsPane(self):
         self.__imageVersionsFrame.show()
@@ -100,15 +116,33 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def __loadObject(self, obj):
         self.__imageVersionsList.clear()
         if obj == None:
-            filename = env.unknownImageIconFileName
+            location = env.unknownImageIconFileName
         elif obj.isAlbum():
-            filename = env.albumIconFileName
+            location = env.albumIconFileName
         elif obj.getPrimaryVersion():
-            filename = obj.getPrimaryVersion().getLocation()
+            location = obj.getPrimaryVersion().getLocation()
             self.__imageVersionsList.loadImage(obj)
         else:
-            filename = env.unknownImageIconFileName
-        self.__imageView.loadFile(filename)
+            location = env.unknownImageIconFileName
+        self._loadImageAtLocation(location)
+
+    def _loadImageAtLocation(self, location):
+        if location == self.__currentImageLocation:
+            return
+        self.__currentImageLocation = location
+        self.__imageView.set_image(self.__loadPixbuf_cb)
+
+    def __loadPixbuf_cb(self, size_limit):
+        if self.__latestLoadPixbufHandle is not None:
+            env.pixbufLoader.cancel_load(self.__latestLoadPixbufHandle)
+            if self.__currentImageLocation == self.__latestPixbufLoadKey[0]:
+                env.pixbufLoader.unload(*self.__latestPixbufLoadKey)
+        self.__latestLoadPixbufHandle = env.pixbufLoader.load(
+            self.__currentImageLocation,
+            size_limit,
+            self.__imageView.set_from_pixbuf,
+            self.__imageView.set_error)
+        self.__latestPixbufLoadKey = (self.__currentImageLocation, size_limit)
 
     def _reloadSingleObjectView(self):
         self.reload()
@@ -161,7 +195,6 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def _freezeHelper(self):
         env.enter("SingleObjectView.freezeHelper()")
         self._clearAllConnections()
-        self.__imageView.clear()
         self._objectCollection.removeInsertedRowCallback(self._modelUpdated)
         env.exit("SingleObjectView.freezeHelper()")
 
@@ -186,14 +219,9 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def _preloadImages(self):
         objectSelection = self._objectCollection.getObjectSelection()
         filenames = objectSelection.getImageFilenamesToPreload()
-        maxWidth, maxHeight = self.__imageView.getAvailableSpace()
-
-        # Work-around for bug in GTK. (pixbuf.scale_iter(1, 1) crashes.)
-        if maxWidth < 10 and maxHeight < 10:
-            return
-
-        env.mainwindow.getImagePreloader().preloadImages(
-            filenames, maxWidth, maxHeight)
+        size_limit = self.__imageView.get_wanted_image_size()
+        for filename in filenames:
+            env.pixbufLoader.preload(filename, size_limit)
 
     def _hasFocus(self):
         return True

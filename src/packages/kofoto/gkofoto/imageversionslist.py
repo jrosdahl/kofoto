@@ -19,14 +19,13 @@ _imageVersionTypeToStringMap = {
 _rotationDirection = Alternative("Left", "Right")
 
 class ImageVersionsList(gtk.ScrolledWindow):
-    def __init__(self, singleObjectView, imageView):
+    def __init__(self, singleObjectView):
         gtk.ScrolledWindow.__init__(self)
         self.__menuGroup = None
         self.__imageWidgetToImageVersion = None
         self.__imageWidgetList = None
         self.__selectedImageWidgets = None
         self.__singleObjectView = singleObjectView
-        self.__imageView = imageView
         self.__vbox = gtk.VBox()
         self.__vbox.set_border_width(5)
         self.__vbox.set_spacing(10)
@@ -247,7 +246,8 @@ class ImageVersionsList(gtk.ScrolledWindow):
         assert len(self.__selectedImageWidgets) == 1
         widget = list(self.__selectedImageWidgets)[0]
         imageVersion = self.__imageWidgetToImageVersion[widget]
-        self.__imageView.loadFile(imageVersion.getLocation())
+        location = imageVersion.getLocation()
+        self.__singleObjectView._loadImageAtLocation(location)
 
     def __copyImageLocation_cb(self, widget, param):
         assert len(self.__selectedImageWidgets) > 0
@@ -345,8 +345,10 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 rotateCommand = env.rotateRightCommand
             else:
                 # Can't happen.
-                assert True
-            command = rotateCommand % {"location": imageVersion.getLocation()}
+                assert False
+            location = imageVersion.getLocation()
+            env.pixbufLoader.unload_all(location)
+            command = rotateCommand % {"location": location}
             result = os.system(command.encode(env.localeEncoding))
             if result == 0:
                 imageVersion.contentChanged()
@@ -357,5 +359,4 @@ class ImageVersionsList(gtk.ScrolledWindow):
                     message_format="Failed to execute command: \"%s\"" % command)
                 dialog.run()
                 dialog.destroy()
-        env.mainwindow.getImagePreloader().clearCache()
         self.__singleObjectView.reload()

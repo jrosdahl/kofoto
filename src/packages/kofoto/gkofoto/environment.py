@@ -17,6 +17,7 @@ from kofoto.gkofoto import crashdialog
 sys.excepthook = crashdialog.show
 
 from kofoto.clientenvironment import ClientEnvironment, ClientEnvironmentError
+from kofoto.gkofoto.cachingpixbufloader import CachingPixbufLoader
 
 class WidgetsWrapper:
     def __init__(self):
@@ -45,6 +46,8 @@ class Environment(ClientEnvironment):
         self.widgets = None
         self.rotateRightCommand = None
         self.rotateLeftCommand = None
+        self.pixbufLoader = CachingPixbufLoader()
+        self.pixbufLoader.set_pixel_limit(10**7)
 
     def setup(self, bindir, isDebug=False, configFileLocation=None,
               shelfLocation=None):
