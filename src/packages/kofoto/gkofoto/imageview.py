@@ -142,7 +142,11 @@ class ImageView(gtk.ScrolledWindow):
         set_image.
         """
 
-        return tuple(self._calculate_wanted_image_size())
+        size = self._calculate_wanted_image_size()
+        if size is None:
+            return None
+        else:
+            return tuple(size)
 
     def get_zoom_level(self):
         """Get current zoom level."""
