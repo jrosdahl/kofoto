@@ -1006,6 +1006,23 @@
 		      </child>
 		    </widget>
 		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator11">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="menubarFullScreen">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Full Screen</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_menubarFullScreen_activate" last_modification_time="Mon, 23 Jan 2006 17:47:59 GMT"/>
+		      <accelerator key="F11" modifiers="0" signal="activate"/>
+		    </widget>
+		  </child>
+
 		</widget>
 	      </child>
 	    </widget>

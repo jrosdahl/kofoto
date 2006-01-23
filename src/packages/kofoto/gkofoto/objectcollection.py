@@ -13,6 +13,7 @@ from kofoto.gkofoto.registerimageversionsdialog import \
     RegisterImageVersionsDialog
 from kofoto.gkofoto.duplicateandopenimagedialog import \
     DuplicateAndOpenImageDialog
+from kofoto.gkofoto.fullscreenwindow import FullScreenWindow
 from kofoto.gkofoto.pseudothread import PseudoThread
 
 class ObjectCollection(object):
@@ -570,6 +571,31 @@ class ObjectCollection(object):
         assert not selectedObjects[0].isAlbum()
         dialog = DuplicateAndOpenImageDialog()
         dialog.run(selectedObjects[0].getPrimaryVersion())
+
+    def fullScreen(self):
+        imageVersions = []
+        if len(self.__objectSelection) > 1:
+            for object in self.__objectSelection.getSelectedObjects():
+                if not object.isAlbum():
+                    imageVersions.append(object.getPrimaryVersion())
+            window = FullScreenWindow(imageVersions)
+        else:
+            index = self.__objectSelection.getLowestSelectedRowNr()
+            if index is None:
+                index = 0
+            current_row = 0
+            nr_of_albums_before_index = 0
+            for row in self.getModel():
+                objectId = row[self.COLUMN_OBJECT_ID]
+                object = env.getShelf().getObject(objectId)
+                if not object.isAlbum():
+                    imageVersions.append(object.getPrimaryVersion())
+                elif index > current_row:
+                    nr_of_albums_before_index += 1
+                current_row += 1
+            window = FullScreenWindow(imageVersions,
+                                      index - nr_of_albums_before_index)
+        window.show_all()
 
 ######################################################################
 ### Private

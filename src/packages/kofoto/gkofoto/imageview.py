@@ -162,6 +162,12 @@ class ImageView(gtk.ScrolledWindow):
                 float(self._displayed_pixbuf.get_width()) /
                 self._available_size.width)
 
+    def modify_bg(self, state, color):
+        """ Sets the background color. See gtk.Widget.modify_bg"""
+        gtk.ScrolledWindow.modify_bg(self, state, color)
+        self._image_widget.modify_bg(state, color)
+        self.get_child().modify_bg(state, color)
+
     def set_error(self):
         """Indicate that loading of the image failed.
 

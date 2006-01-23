@@ -60,6 +60,8 @@ class MainWindow(gtk.Window):
         env.widgets["menubarPreviousImage"].set_sensitive(False)
         env.widgets["menubarZoom"].set_sensitive(False)
 
+        env.widgets["menubarFullScreen"].connect("activate", self._fullScreen)
+
         env.widgets["menubarRegisterImages"].connect("activate", self.registerImages, None)
         env.widgets["menubarHandleModifiedOrRenamedImages"].connect(
             "activate", self.handleModifiedOrRenamedImages, None)
@@ -175,6 +177,10 @@ class MainWindow(gtk.Window):
         self._currentView = self.__singleObjectView
         self._hiddenViews = [self.__tableView, self.__thumbnailView]
         self._viewChanged()
+
+    def _fullScreen(self, *unused):
+        if self.__currentObjectCollection is not None:
+            self.__currentObjectCollection.fullScreen()
 
     def _toggleTree(self, button):
         if button.get_active():
