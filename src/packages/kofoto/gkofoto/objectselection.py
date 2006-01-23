@@ -74,7 +74,7 @@ class ObjectSelection:
             rowNumbers.sort()
             rowNr = rowNumbers[0]
         filenames = []
-        for x in [rowNr, rowNr + 1, rowNr - 1, rowNr + 2]: # TODO: Make configurable.
+        for x in [rowNr - 2, rowNr + 2, rowNr - 1, rowNr + 1]: # TODO: Make configurable.
             if 0 <= x < len(model):
                 ux = oc.convertToUnsortedRowNr(x)
                 obj = self.__getObject(ux)
