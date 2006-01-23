@@ -47,7 +47,7 @@ class Environment(ClientEnvironment):
         self.rotateRightCommand = None
         self.rotateLeftCommand = None
         self.pixbufLoader = CachingPixbufLoader()
-        self.pixbufLoader.set_pixel_limit(10**7)
+        self.pixbufLoader.set_pixel_limit(2 * 10**7) # TODO: Make configurable.
 
     def setup(self, bindir, isDebug=False, configFileLocation=None,
               shelfLocation=None):
