@@ -89,7 +89,7 @@ class MainWindow(gtk.Window):
         self.__thumbnailView = ThumbnailView()
         self.__tableView = TableView()
         self.__singleObjectView = SingleObjectView()
-        self.__showTableView()
+        self.showTableView()
 
     def saveState(self):
         self.__persistentState.save()
@@ -161,17 +161,17 @@ class MainWindow(gtk.Window):
             hiddenView.hide()
         self._currentView.show(self.__currentObjectCollection)
 
-    def __showTableView(self):
+    def showTableView(self):
         self._currentView = self.__tableView
         self._hiddenViews = [self.__thumbnailView, self.__singleObjectView]
         self._viewChanged()
 
-    def __showThumbnailView(self):
+    def showThumbnailView(self):
         self._currentView = self.__thumbnailView
         self._hiddenViews = [self.__tableView, self.__singleObjectView]
         self._viewChanged()
 
-    def __showSingleObjectView(self):
+    def showSingleObjectView(self):
         self._currentView = self.__singleObjectView
         self._hiddenViews = [self.__tableView, self.__thumbnailView]
         self._viewChanged()
@@ -198,7 +198,7 @@ class MainWindow(gtk.Window):
             env.widgets["menubarThumbnailsView"].set_active(True)
             env.widgets["menubarObjectView"].set_active(False)
             env.widgets["menubarTableView"].set_active(False)
-            self.__showThumbnailView()
+            self.showThumbnailView()
             self._toggleLock = False
 
     def _toggleObjectView(self, button):
@@ -211,7 +211,7 @@ class MainWindow(gtk.Window):
             env.widgets["menubarThumbnailsView"].set_active(False)
             env.widgets["menubarObjectView"].set_active(True)
             env.widgets["menubarTableView"].set_active(False)
-            self.__showSingleObjectView()
+            self.showSingleObjectView()
             self._toggleLock = False
 
     def _toggleTableView(self, button):
@@ -224,7 +224,7 @@ class MainWindow(gtk.Window):
             env.widgets["menubarThumbnailsView"].set_active(False)
             env.widgets["menubarObjectView"].set_active(False)
             env.widgets["menubarTableView"].set_active(True)
-            self.__showTableView()
+            self.showTableView()
             self._toggleLock = False
 
     def _shelfModificationChangedCallback(self, modified):

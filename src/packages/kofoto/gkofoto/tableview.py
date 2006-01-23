@@ -19,6 +19,7 @@ class TableView(ObjectCollectionView):
         self.__selectionLocked = False
         self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
         self._viewWidget.connect("drag-data-get", self._onDragDataGet)
+        self._viewWidget.connect("row-activated", self._onRowActivated)
         self.__userChosenColumns = {}
         self.__createdColumns = {}
         self.__editedCallbacks = {}
@@ -300,6 +301,12 @@ class TableView(ObjectCollectionView):
                 # http://bugzilla.gnome.org/show_bug.cgi?id=134997
                 removeSourceRowAutomatically = False
                 dragContext.finish(True, removeSourceRowAutomatically, eventtime)
+
+    def _onRowActivated(self, widget, path, view_column):
+        model = self._objectCollection.getModel()
+        row = model[path]
+        if not row[ObjectCollection.COLUMN_IS_ALBUM]:
+            env.mainwindow.showSingleObjectView()
 
     def _viewColumnToggled(self, checkMenuItem, columnName):
         if checkMenuItem.get_active():
