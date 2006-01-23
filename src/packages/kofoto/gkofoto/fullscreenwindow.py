@@ -88,6 +88,12 @@ class FullScreenWindow(gtk.Window):
         if event.keyval == gtk.gdk.keyval_from_name("Left"):
             self.previous()
             return True
+        if event.keyval == 65366: # PageDown
+            self.next()
+            return True
+        if event.keyval == 65365: # PageUp
+            self.previous()
+            return True
         if event.keyval == gtk.gdk.keyval_from_name("Escape"):
             self.destroy()
             return True
