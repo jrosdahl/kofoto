@@ -21,6 +21,7 @@ class FullScreenWindow(gtk.Window):
         self.set_keep_above(True)
         self.set_default_size(400, 400)
         self.fullscreen()
+        self.connect_after("map-event", self._hideCursor)
         self._goto()
 
     def destroy(self):
@@ -53,6 +54,23 @@ class FullScreenWindow(gtk.Window):
             self._current_index = new_index
             self._preload()
             self._image_view.set_image(self.get_image_async_cb)
+
+    def _hideCursor(self, *unused):
+        pix_data = """/* XPM */
+        static char * invisible_xpm[] = {
+        "1 1 1 1",
+        "       c None",
+        " "};"""
+        color = gtk.gdk.Color()
+        pix = gtk.gdk.pixmap_create_from_data(None,
+                                              pix_data,
+                                              1,
+                                              1,
+                                              1,
+                                              color,
+                                              color)
+        invisible_cursor = gtk.gdk.Cursor(pix, pix, color, color, 0, 0)
+        self.window.set_cursor(invisible_cursor)
 
     def _is_valid_index(self, index):
         return index >= 0 and index < len(self._image_versions)
