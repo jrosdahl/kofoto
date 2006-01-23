@@ -306,7 +306,7 @@ class TableView(ObjectCollectionView):
         model = self._objectCollection.getModel()
         row = model[path]
         if not row[ObjectCollection.COLUMN_IS_ALBUM]:
-            env.mainwindow.showSingleObjectView()
+            env.widgets["objectViewToggleButton"].set_active(True)
 
     def _viewColumnToggled(self, checkMenuItem, columnName):
         if checkMenuItem.get_active():
