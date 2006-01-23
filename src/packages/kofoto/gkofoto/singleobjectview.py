@@ -225,3 +225,9 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
 
     def _hasFocus(self):
         return True
+
+    def _mouse_button_pressed(self, widget, event):
+        if event.button == 1 and event.type == gtk.gdk._2BUTTON_PRESS:
+            env.mainwindow._fullScreen()
+        else:
+            ObjectCollectionView._mouse_button_pressed(self, widget, event)
