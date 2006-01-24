@@ -107,6 +107,12 @@ class FullScreenWindow(gtk.Window):
         if event.keyval == gtk.gdk.keyval_from_name("Left"):
             self.previous()
             return True
+        if event.keyval == gtk.gdk.keyval_from_name("Down"):
+            self.next()
+            return True
+        if event.keyval == gtk.gdk.keyval_from_name("Up"):
+            self.previous()
+            return True
         if event.keyval == 65366: # PageDown
             self.next()
             return True
