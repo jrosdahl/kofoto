@@ -163,7 +163,11 @@ class ImageView(gtk.ScrolledWindow):
                 self._available_size.width)
 
     def modify_bg(self, state, color):
-        """ Sets the background color. See gtk.Widget.modify_bg"""
+        """Set the background color.
+
+        See gtk.Widget.modify_bg.
+        """
+
         gtk.ScrolledWindow.modify_bg(self, state, color)
         self._image_widget.modify_bg(state, color)
         self.get_child().modify_bg(state, color)
@@ -475,7 +479,7 @@ if __name__ == "__main__":
     def toggle_prescale_mode(widget):
         imageview.set_prescale_mode(widget.get_active())
 
-    state = State()
+    appstate = State()
 
     window = gtk.Window()
     window.set_default_size(300, 200)
@@ -511,7 +515,7 @@ if __name__ == "__main__":
 
     next_button = gtk.Button(stock=gtk.STOCK_GO_FORWARD)
     control_box.add(next_button)
-    next_button.connect("clicked", state.next_image)
+    next_button.connect("clicked", appstate.next_image)
 
     prescale_checkbutton = gtk.CheckButton("Prescale mode")
     prescale_checkbutton.set_active(True)
@@ -523,5 +527,5 @@ if __name__ == "__main__":
 
     control_window.show_all()
 
-    state.next_image()
+    appstate.next_image()
     gtk.main()

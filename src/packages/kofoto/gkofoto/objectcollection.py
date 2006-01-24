@@ -575,9 +575,9 @@ class ObjectCollection(object):
     def fullScreen(self):
         imageVersions = []
         if len(self.__objectSelection) > 1:
-            for object in self.__objectSelection.getSelectedObjects():
-                if not object.isAlbum():
-                    imageVersions.append(object.getPrimaryVersion())
+            for obj in self.__objectSelection.getSelectedObjects():
+                if not obj.isAlbum():
+                    imageVersions.append(obj.getPrimaryVersion())
             window = FullScreenWindow(imageVersions)
         else:
             index = self.__objectSelection.getLowestSelectedRowNr()
@@ -587,9 +587,9 @@ class ObjectCollection(object):
             nr_of_albums_before_index = 0
             for row in self.getModel():
                 objectId = row[self.COLUMN_OBJECT_ID]
-                object = env.getShelf().getObject(objectId)
-                if not object.isAlbum():
-                    imageVersions.append(object.getPrimaryVersion())
+                obj = env.getShelf().getObject(objectId)
+                if not obj.isAlbum():
+                    imageVersions.append(obj.getPrimaryVersion())
                 elif index > current_row:
                     nr_of_albums_before_index += 1
                 current_row += 1

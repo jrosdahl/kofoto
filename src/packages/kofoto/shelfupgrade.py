@@ -6,8 +6,7 @@ import os
 import sqlite as sql
 import time
 import kofoto.shelfschema
-from kofoto.shelfexceptions import \
-    ShelfNotFoundError, ShelfLockedError, ShelfNotFoundError
+from kofoto.shelfexceptions import ShelfLockedError, ShelfNotFoundError
 
 def isUpgradable(location):
     """Check whether a shelf is upgradable, i.e. not the latest version."""

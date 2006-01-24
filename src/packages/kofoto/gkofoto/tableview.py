@@ -19,7 +19,7 @@ class TableView(ObjectCollectionView):
         self.__selectionLocked = False
         self._viewWidget.connect("drag_data_received", self._onDragDataReceived)
         self._viewWidget.connect("drag-data-get", self._onDragDataGet)
-        self._viewWidget.connect("row-activated", self._onRowActivated)
+        self._viewWidget.connect("row-activated", self._onRowActivated_cb)
         self.__userChosenColumns = {}
         self.__createdColumns = {}
         self.__editedCallbacks = {}
@@ -302,7 +302,7 @@ class TableView(ObjectCollectionView):
                 removeSourceRowAutomatically = False
                 dragContext.finish(True, removeSourceRowAutomatically, eventtime)
 
-    def _onRowActivated(self, widget, path, view_column):
+    def _onRowActivated_cb(self, widget, path, view_column):
         model = self._objectCollection.getModel()
         row = model[path]
         if not row[ObjectCollection.COLUMN_IS_ALBUM]:
