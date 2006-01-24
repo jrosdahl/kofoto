@@ -18,7 +18,6 @@ class FullScreenWindow(gtk.Window):
         self._image_view.modify_bg(gtk.STATE_NORMAL, bg_color)
         self.add(self._image_view)
         self.set_modal(True)
-        self.set_keep_above(True)
         self.set_default_size(400, 400)
         self.fullscreen()
         self.connect_after("map-event", self._hideCursor)
