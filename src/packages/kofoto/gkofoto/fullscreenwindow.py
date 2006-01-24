@@ -71,7 +71,7 @@ class FullScreenWindow(gtk.Window):
             self._image_view.set_error)
         self._latest_key = (path, size)
 
-    def _goto(self, direction = 0):
+    def _goto(self, direction=0):
         new_index = self._current_index + direction
         if self._is_valid_index(new_index):
             self._current_index = new_index
