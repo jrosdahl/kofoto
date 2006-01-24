@@ -59,26 +59,15 @@ class FullScreenWindow(gtk.Window):
 
     # ----------------------------------------
 
+    def _after_map_event(self, *unused):
+        self._hide_cursor()
+
     def _after_size_allocate(self, widget, rect):
         if (rect[2], rect[3]) == (400, 400):
             # Wait until the fullscreen size is allocated, otherwise a
             # small version of the image is loaded too early.
             return
         self._goto()
-
-    def _after_map_event(self, *unused):
-        # Hide cursor.
-        pix_data = """/* XPM */
-            static char * invisible_xpm[] = {
-            "1 1 1 1",
-            "       c None",
-            " "};
-            """
-        color = gtk.gdk.Color()
-        pix = gtk.gdk.pixmap_create_from_data(
-            None, pix_data, 1, 1, 1, color, color)
-        invisible_cursor = gtk.gdk.Cursor(pix, pix, color, color, 0, 0)
-        self.window.set_cursor(invisible_cursor)
 
     def _get_image_async_cb(self, size):
         path = self._image_versions[self._current_index].getLocation()
@@ -99,6 +88,19 @@ class FullScreenWindow(gtk.Window):
             self._current_index = new_index
             self._preload()
             self._image_view.set_image(self._get_image_async_cb)
+
+    def _hide_cursor(self):
+        pix_data = """/* XPM */
+            static char * invisible_xpm[] = {
+            "1 1 1 1",
+            "       c None",
+            " "};
+            """
+        color = gtk.gdk.Color()
+        pix = gtk.gdk.pixmap_create_from_data(
+            None, pix_data, 1, 1, 1, color, color)
+        invisible_cursor = gtk.gdk.Cursor(pix, pix, color, color, 0, 0)
+        self.window.set_cursor(invisible_cursor)
 
     def _is_valid_index(self, index):
         return 0 <= index < len(self._image_versions)
