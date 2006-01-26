@@ -23,70 +23,91 @@ class FullScreenWindow(gtk.Window):
 
         self.__gobject_init__() # TODO: Use gtk.Window.__init__ in PyGTK 2.8.
 
+        self._last_allocated_size = None
         self._image_versions = image_versions
         self._current_index = current_index
         self._latest_handle = None
-        self._latest_key = None
+        self._latest_size = (0, 0)
 
-        self.connect("key_press_event", self._key_pressed_cb)
-        self._image_view = ImageView()
         bg_color = gtk.gdk.color_parse("#000000")
+        fg_color = gtk.gdk.color_parse("#999999")
+
+        eventbox = gtk.EventBox()
+        vbox = gtk.VBox()
+        eventbox.add(vbox)
+        self._image_view = ImageView()
+        vbox.pack_start(self._image_view)
+        self._info_label = gtk.Label()
+        self._info_label.set_text(
+            "No more images.\nPress escape to get back to GKofoto.")
+        self._info_label.set_justify(gtk.JUSTIFY_CENTER)
+        self._info_label.hide()
+        vbox.pack_start(self._info_label)
+
         self.modify_bg(gtk.STATE_NORMAL, bg_color)
+        eventbox.modify_bg(gtk.STATE_NORMAL, bg_color)
         self._image_view.modify_bg(gtk.STATE_NORMAL, bg_color)
-        self.add(self._image_view)
+        self._info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
+        self.add(eventbox)
         self.set_modal(True)
         self.set_default_size(400, 400)
         self.fullscreen()
-        self.connect_after("map-event", self._after_map_event)
-        self.connect_after("size-allocate", self._after_size_allocate)
+        self.connect_after("map-event", self._after_map_event_cb)
+        self.connect_after("size-allocate", self._after_size_allocate_cb)
+        eventbox.connect("button-press-event", self._button_press_event_cb)
+        self.connect("key-press-event", self._key_press_event_cb)
 
     def destroy(self):
         """Destroy the widget."""
 
-        if self._latest_handle is not None:
-            env.pixbufLoader.cancel_load(self._latest_handle)
+        self._maybe_cancel_load()
         gtk.Window.destroy(self)
-
-    def next(self, *unused):
-        """Show next image."""
-
-        self._goto(1)
-
-    def previous(self, *unused):
-        """Show previous image."""
-
-        self._goto(-1)
 
     # ----------------------------------------
 
-    def _after_map_event(self, *unused):
+    def _after_map_event_cb(self, *unused):
         self._hide_cursor()
 
-    def _after_size_allocate(self, widget, rect):
-        if (rect[2], rect[3]) == (400, 400):
-            # Wait until the fullscreen size is allocated, otherwise a
-            # small version of the image is loaded too early.
+    def _after_size_allocate_cb(self, widget, rect):
+        allocated_size = (rect.width, rect.height)
+        if allocated_size == self._last_allocated_size:
             return
-        self._goto()
+        self._last_allocated_size = allocated_size
+        self._goto(self._current_index)
+
+    def _button_press_event_cb(self, widget, event):
+        if event.button == 1:
+            self._goto(self._current_index + 1)
+
+    def _display_end_screen(self):
+        self._maybe_cancel_load()
+        self._image_view.hide()
+        self._info_label.show()
 
     def _get_image_async_cb(self, size):
         path = self._image_versions[self._current_index].getLocation()
-        if self._latest_handle is not None:
-            env.pixbufLoader.cancel_load(self._latest_handle)
-            if path == self._latest_key[0]:
-                env.pixbufLoader.unload(*self._latest_key)
+        self._maybe_cancel_load()
         self._latest_handle = env.pixbufLoader.load(
             path,
             size,
             self._image_view.set_from_pixbuf,
             self._image_view.set_error)
-        self._latest_key = (path, size)
+        if size != self._latest_size:
+            self._unload(self._latest_size)
+        self._preload(size)
+        self._latest_size = size
 
-    def _goto(self, direction=0):
-        new_index = self._current_index + direction
-        if self._is_valid_index(new_index):
+    def _goto(self, new_index):
+        if new_index < 0:
+            self._current_index = -1
+            self._display_end_screen()
+        elif new_index >= len(self._image_versions):
+            self._current_index = len(self._image_versions)
+            self._display_end_screen()
+        else:
             self._current_index = new_index
-            self._preload()
+            self._image_view.show()
+            self._info_label.hide()
             self._image_view.set_image(self._get_image_async_cb)
 
     def _hide_cursor(self):
@@ -105,42 +126,48 @@ class FullScreenWindow(gtk.Window):
     def _is_valid_index(self, index):
         return 0 <= index < len(self._image_versions)
 
-    def _key_pressed_cb(self, unused, event):
-        if event.keyval == gtk.gdk.keyval_from_name("space"):
-            self.next()
+    def _key_press_event_cb(self, unused, event):
+        k = gtk.gdk.keyval_from_name
+        pagedown = 65366
+        pageup = 65365
+        if event.keyval in [k("space"), k("Right"), k("Down"), pagedown]:
+            self._goto(self._current_index + 1)
             return True
-        if event.keyval == gtk.gdk.keyval_from_name("BackSpace"):
-            self.previous()
+        if event.keyval in [k("BackSpace"), k("Left"), k("Up"), pageup]:
+            self._goto(self._current_index - 1)
             return True
-        if event.keyval == gtk.gdk.keyval_from_name("Right"):
-            self.next()
+        if event.keyval == k("Home"):
+            self._goto(0)
             return True
-        if event.keyval == gtk.gdk.keyval_from_name("Left"):
-            self.previous()
+        if event.keyval == k("End"):
+            self._goto(len(self._image_versions) - 1)
             return True
-        if event.keyval == gtk.gdk.keyval_from_name("Down"):
-            self.next()
-            return True
-        if event.keyval == gtk.gdk.keyval_from_name("Up"):
-            self.previous()
-            return True
-        if event.keyval == 65366: # PageDown
-            self.next()
-            return True
-        if event.keyval == 65365: # PageUp
-            self.previous()
-            return True
-        if event.keyval == gtk.gdk.keyval_from_name("Escape"):
+        if event.keyval == k("Escape"):
             self.destroy()
             return True
         return False
 
-    def _preload(self):
+    def _maybe_cancel_load(self):
+        if self._latest_handle is None:
+            # Nothing to cancel.
+            return
+        env.pixbufLoader.cancel_load(self._latest_handle)
+        self._latest_handle = None
+
+    def _preload(self, size):
+        self._preload_or_unload(size, True)
+
+    def _preload_or_unload(self, size, preload):
         index = self._current_index
-        size = self._image_view.get_wanted_image_size()
         for x in [index + 2, index - 1, index + 1]:
             if self._is_valid_index(x):
-                filename = self._image_versions[x].getLocation()
-                env.pixbufLoader.preload(filename, size)
+                location = self._image_versions[x].getLocation()
+                if preload:
+                    env.pixbufLoader.preload(location, size)
+                else:
+                    env.pixbufLoader.unload(location, size)
+
+    def _unload(self, size):
+        self._preload_or_unload(size, False)
 
 gobject.type_register(FullScreenWindow) # TODO: Not needed in PyGTK 2.8.
