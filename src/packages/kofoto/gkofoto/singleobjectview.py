@@ -57,7 +57,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self.__selectedRowNr = None
         self.__currentImageLocation = None
         self.__latestLoadPixbufHandle = None
-        self.__latestPixbufLoadKey = None
+        self.__latestSize = (0, 0)
 
     def showDetailsPane(self):
         self.__imageVersionsFrame.show()
@@ -96,7 +96,6 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
                                 self.__selectedRowNr < len(model) - 1)
             env.widgets["nextButton"].set_sensitive(enableNextButton)
             env.widgets["menubarNextImage"].set_sensitive(enableNextButton)
-            self._preloadImages()
             self.__selectionLocked = False
         self._updateContextMenu()
 
@@ -135,14 +134,15 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
     def __loadPixbuf_cb(self, size_limit):
         if self.__latestLoadPixbufHandle is not None:
             env.pixbufLoader.cancel_load(self.__latestLoadPixbufHandle)
-            if self.__currentImageLocation == self.__latestPixbufLoadKey[0]:
-                env.pixbufLoader.unload(*self.__latestPixbufLoadKey)
         self.__latestLoadPixbufHandle = env.pixbufLoader.load(
             self.__currentImageLocation,
             size_limit,
             self.__imageView.set_from_pixbuf,
             self.__imageView.set_error)
-        self.__latestPixbufLoadKey = (self.__currentImageLocation, size_limit)
+        if size_limit != self.__latestSize:
+            self._unloadImages(self.__latestSize)
+        self._preloadImages(size_limit)
+        self.__latestSize = size_limit
 
     def _reloadSingleObjectView(self):
         self.reload()
@@ -216,12 +216,19 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         objectSelection = self._objectCollection.getObjectSelection()
         objectSelection.setSelection([self.__selectedRowNr + direction])
 
-    def _preloadImages(self):
+    def _preloadImages(self, size):
+        self._preloadOrUnloadImages(size, True)
+
+    def _preloadOrUnloadImages(self, size, preload):
         objectSelection = self._objectCollection.getObjectSelection()
-        filenames = objectSelection.getImageFilenamesToPreload()
-        size_limit = self.__imageView.get_wanted_image_size()
-        for filename in filenames:
-            env.pixbufLoader.preload(filename, size_limit)
+        for location in objectSelection.getImageFilenamesToPreload():
+            if preload:
+                env.pixbufLoader.preload(location, size)
+            else:
+                env.pixbufLoader.unload(location, size)
+
+    def _unloadImages(self, size):
+        self._preloadOrUnloadImages(size, False)
 
     def _hasFocus(self):
         return True
