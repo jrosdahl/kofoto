@@ -4,6 +4,7 @@ __all__ = ["CachingPixbufLoader"]
 
 import gc
 import os
+import time
 from sets import Set as set
 if __name__ == "__main__":
     import pygtk
@@ -114,6 +115,9 @@ class _RequestStateFinished(_RequestStateBase):
     def __init__(self, request):
         _RequestStateBase.__init__(self, request)
         for (load_cb, _) in request._callbacks:
+            if request._cpb_loader._debug_level > 0:
+                print "%.3f callback(%s, %s)" % (
+                    time.time(), request._path, request._size_limit)
             load_cb(request._pixbuf, request._original_size)
         request._callbacks = []
         # TODO: Store in disk cache here if
@@ -122,6 +126,9 @@ class _RequestStateFinished(_RequestStateBase):
 
     def add_callback(self, load_callback, _):
         req = self._request
+        if req._cpb_loader._debug_level > 0:
+            print "%.3f callback(%s, %s)" % (
+                time.time(), req._path, req._size_limit)
         load_callback(req._pixbuf, req._original_size)
 
     def is_finished(self):
@@ -261,7 +268,7 @@ class CachingPixbufLoader(object):
         self._pixel_limit = pixel_limit
         self._cache_directory = cache_directory
         self._load_thread = PseudoThread(self._load_loop())
-        self._debug_mode = False
+        self._debug_level = 0
 
         # Cached value of the sum of loaded pixels of all requests in
         # the queue.
@@ -297,6 +304,8 @@ class CachingPixbufLoader(object):
         If the handle represents a load that already has finished,
         nothing will happen and no exception will be raised.
         """
+        if self._debug_level > 0:
+            print "%.3f cancel_load(%r)" % (time.time(), handle)
 
         (path, size_limit, load_callback, error_callback) = handle
         key = (path, size_limit)
@@ -350,6 +359,8 @@ class CachingPixbufLoader(object):
 
         The method returns a handle that can be passed to cancel_load.
         """
+        if self._debug_level > 0:
+            print "%.3f load(%s, %s)" % (time.time(), path, size_limit)
 
         if size_limit is not None:
             size_limit = tuple(size_limit)
@@ -406,6 +417,9 @@ class CachingPixbufLoader(object):
                         not be used.
         """
 
+        if self._debug_level > 0:
+            print "%.3f preload(%s, %s)" % (time.time(), path, size_limit)
+
         if size_limit is not None:
             size_limit = tuple(size_limit)
             if persistence_size_limit is not None:
@@ -447,6 +461,9 @@ class CachingPixbufLoader(object):
         size_limit   -- Size limit given to load/preload.
         """
 
+        if self._debug_level > 0:
+            print "%.3f unload(%s, %s)" % (time.time(), path, size_limit)
+
         key = (path, size_limit)
         if key in self._request_queue:
             request = self._request_queue[key]
@@ -464,6 +481,9 @@ class CachingPixbufLoader(object):
 
         path         -- Path given to load/preload.
         """
+
+        if self._debug_level > 0:
+            print "%.3f unload_all(%s)" % (time.time(), path)
 
         if path not in self._path_to_requests:
             return
@@ -515,14 +535,14 @@ class CachingPixbufLoader(object):
 
                 # No loads or preloads left. Pause until
                 # self._load_thread.start() is called.
-                if self._debug_mode:
+                if self._debug_level > 1:
                     print
                     print "LOAD LOOP FINISHED:"
                     self._print_state(False)
                 self._load_thread.stop()
                 yield True
             else:
-                if self._debug_mode:
+                if self._debug_level > 1:
                     print "LOAD LOOP SELECTED TO LOAD", request._path
                 if found_a_load:
                     priority = gobject.PRIORITY_HIGH_IDLE
@@ -571,7 +591,7 @@ class CachingPixbufLoader(object):
         if len(requests_to_prune) > 0:
             self._load_loop_reeval = True
             for (key, request) in requests_to_prune:
-                if self._debug_mode:
+                if self._debug_level > 1:
                     print "PRUNING", key
                 self._remove_request(key)
             gc.collect()
@@ -608,7 +628,7 @@ def main(argv):
         print "Error while loading pixbuf."
 
     loader = CachingPixbufLoader()
-    loader._debug_mode = True
+    loader._debug_level = 2
     loader.set_pixel_limit(10000000000)
     print "INITIAL:"
     loader._print_state(False)
