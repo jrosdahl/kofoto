@@ -45,7 +45,10 @@ class Rectangle:
         return self.__class__(self._width / factor, self._height / factor)
 
     def __eq__(self, other):
-        return self._width == other[0] and self._height == other[1]
+        try:
+            return self._width == other[0] and self._height == other[1]
+        except (TypeError, IndexError):
+            return False
 
     def __ne__(self, other):
         return not (self == other)
