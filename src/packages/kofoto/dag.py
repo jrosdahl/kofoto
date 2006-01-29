@@ -43,7 +43,7 @@ class DAG:
     def connect(self, parent, child):
         """Add an element to another element."""
         if self.reachable(child, parent):
-            raise LoopError, (parent, child)
+            raise LoopError(parent, child)
         self.parents[child].add(parent)
         self.children[parent].add(child)
         self.roots.discard(child)

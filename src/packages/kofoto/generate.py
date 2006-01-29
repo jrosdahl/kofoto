@@ -27,7 +27,7 @@ class Generator:
                 __import__("kofoto.output.%s" % outputtype).output,
                 outputtype)
         except ImportError:
-            raise OutputTypeError, outputtype
+            raise OutputTypeError(outputtype)
         self.ogclass = outputmodule.OutputGenerator
 
 

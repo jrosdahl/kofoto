@@ -12,7 +12,7 @@ def isUpgradable(location):
     """Check whether a shelf is upgradable, i.e. not the latest version."""
 
     if not os.path.exists(location):
-        raise ShelfNotFoundError, location
+        raise ShelfNotFoundError(location)
     try:
         connection = sql.connect(location)
         cursor = connection.cursor()
@@ -23,9 +23,9 @@ def isUpgradable(location):
         else:
             return False
     except sql.OperationalError:
-        raise ShelfLockedError, location
+        raise ShelfLockedError(location)
     except sql.DatabaseError:
-        raise ShelfNotFoundError, location
+        raise ShelfNotFoundError(location)
 
 def tryUpgrade(location, toVersion):
     """Upgrade the database format.

@@ -430,7 +430,7 @@ def sloppyGetImage(env, idOrLocation):
                     computeImageHash(idOrLocation))
             return imageversion.getImage()
         except ImageVersionDoesNotExistError:
-            raise ImageDoesNotExistError, idOrLocation
+            raise ImageDoesNotExistError(idOrLocation)
 
 def sloppyGetImageVersion(env, idOrLocation):
     """Get an image version by ID number or location."""
@@ -451,7 +451,7 @@ def sloppyGetObject(env, idOrTagOrLocation):
         try:
             return sloppyGetImage(env, idOrTagOrLocation)
         except (ImageDoesNotExistError, ImageVersionDoesNotExistError), x:
-            raise ObjectDoesNotExistError, x
+            raise ObjectDoesNotExistError(x)
 
 def parseAlbumType(atype):
     """Parse an album type.
@@ -467,7 +467,7 @@ def parseAlbumType(atype):
             u"search": AlbumType.Search,
             }[atype]
     except KeyError:
-        raise UnknownAlbumTypeError, atype
+        raise UnknownAlbumTypeError(atype)
 
 def parseImageVersionType(ivtype):
     """Parse an image version type.
@@ -483,7 +483,7 @@ def parseImageVersionType(ivtype):
             u"other": ImageVersionType.Other,
             }[ivtype]
     except KeyError:
-        raise UnknownImageVersionTypeError, ivtype
+        raise UnknownImageVersionTypeError(ivtype)
 
 ######################################################################
 ### Helper classes.

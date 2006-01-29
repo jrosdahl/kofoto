@@ -136,29 +136,29 @@ class ClientEnvironment(object):
                 self._writeInfo(u"Created configuration file \"%s\".\n" %
                                 self.configFileLocation)
             else:
-                raise MissingConfigFileError, \
-                    (u"Missing configuration file: \"%s\"\n" %
+                raise MissingConfigFileError(
+                    u"Missing configuration file: \"%s\"\n" %
                          self.configFileLocation,
-                     self.configFileLocation)
+                    self.configFileLocation)
         self.__config = Config(self.localeEncoding)
 
         try:
             self.config.read(self.configFileLocation)
             self.config.verify()
         except MissingSectionHeaderError:
-            raise BadConfigFileError, \
-                  ("Bad configuration (missing section headers).\n",
-                   self.configFileLocation)
+            raise BadConfigFileError(
+                  "Bad configuration (missing section headers).\n",
+                  self.configFileLocation)
         except MissingConfigurationKeyError, (section, key):
-            raise BadConfigFileError, \
-                  ("Missing configuration key in %s section: %s.\n" % (
-                       section, key),
-                   self.configFileLocation)
+            raise BadConfigFileError(
+                  "Missing configuration key in %s section: %s.\n" % (
+                      section, key),
+                  self.configFileLocation)
         except BadConfigurationValueError, (section, key, value):
-            raise BadConfigFileError, \
-                  ("Bad configuration value for %s in %s section: %s.\n" % (
-                    key, section, value),
-                   self.configFileLocation)
+            raise BadConfigFileError(
+                  "Bad configuration value for %s in %s section: %s.\n" % (
+                      key, section, value),
+                  self.configFileLocation)
 
         if shelfLocation == None:
             location = self.config.get("database", "location")
@@ -172,18 +172,18 @@ class ClientEnvironment(object):
             if createMissingShelf:
                 try:
                     self.shelf.create()
-                except FailedWritingError, self.shelfLocation:
-                    raise BadShelfError, \
-                        ("Could not create metadata database \"%s\".\n" % (
-                             self.shelfLocation),
-                         self.shelfLocation)
+                except FailedWritingError:
+                    raise BadShelfError(
+                        "Could not create metadata database \"%s\".\n" % (
+                            self.shelfLocation),
+                        self.shelfLocation)
                 self._writeInfo(
                     "Created metadata database \"%s\".\n" % self.shelfLocation)
             else:
-                raise MissingShelfError, \
-                    ("Could not open metadata database \"%s\"" % (
+                raise MissingShelfError(
+                    "Could not open metadata database \"%s\"" % (
                         self.shelfLocation),
-                     self.shelfLocation)
+                    self.shelfLocation)
 
         self.__imageCache = ImageCache(
             expanduser(self.config.get("image cache", "location")),

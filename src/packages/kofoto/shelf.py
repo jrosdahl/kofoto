@@ -86,28 +86,28 @@ def computeImageHash(filename):
 def verifyValidAlbumTag(tag):
     """Verify that an album tag is valid."""
     if not isinstance(tag, (str, unicode)):
-        raise BadAlbumTagError, tag
+        raise BadAlbumTagError(tag)
     try:
         int(tag)
     except ValueError:
         if not tag or tag[0] == "@" or re.search(r"\s", tag):
-            raise BadAlbumTagError, tag
+            raise BadAlbumTagError(tag)
     else:
-        raise BadAlbumTagError, tag
+        raise BadAlbumTagError(tag)
 
 
 def verifyValidCategoryTag(tag):
     """Verify that a category tag is valid."""
     if not isinstance(tag, (str, unicode)):
-        raise BadCategoryTagError, tag
+        raise BadCategoryTagError(tag)
     try:
         int(tag)
     except ValueError:
         if (not tag or tag[0] == "@" or re.search(r"\s", tag) or
             tag in ["and", "exactly", "not", "or"]):
-            raise BadCategoryTagError, tag
+            raise BadCategoryTagError(tag)
     else:
-        raise BadCategoryTagError, tag
+        raise BadCategoryTagError(tag)
 
 
 def makeValidTag(tag):
@@ -160,7 +160,7 @@ class Shelf:
         """Create the shelf."""
         assert not self.inTransaction
         if os.path.exists(self.location):
-            raise FailedWritingError, self.location
+            raise FailedWritingError(self.location)
         try:
             self.connection = _UnicodeConnectionDecorator(
                 sql.connect(self.location,
@@ -168,7 +168,7 @@ class Shelf:
                             command_logfile=self.logfile),
                 "UTF-8")
         except sql.DatabaseError:
-            raise FailedWritingError, self.location
+            raise FailedWritingError(self.location)
         self._createShelf()
 
 
@@ -201,7 +201,7 @@ class Shelf:
         self.transactionLock.acquire()
         self.inTransaction = True
         if not os.path.exists(self.location):
-            raise ShelfNotFoundError, self.location
+            raise ShelfNotFoundError(self.location)
         try:
             self.connection = _UnicodeConnectionDecorator(
                 sql.connect(self.location,
@@ -209,9 +209,9 @@ class Shelf:
                             command_logfile=self.logfile),
                 "UTF-8")
         except sql.OperationalError:
-            raise ShelfLockedError, self.location
+            raise ShelfLockedError(self.location)
         except sql.DatabaseError:
-            raise ShelfNotFoundError, self.location
+            raise ShelfNotFoundError(self.location)
         self.categorydag = CachedObject(_createCategoryDAG, (self.connection,))
         try:
             self._openShelf() # Starts the SQLite transaction.
@@ -351,7 +351,7 @@ class Shelf:
                 " delete from object"
                 " where id = %s",
                 cursor.lastrowid)
-            raise AlbumExistsError, tag
+            raise AlbumExistsError(tag)
 
 
     def getAlbum(self, albumid):
@@ -363,7 +363,7 @@ class Shelf:
         if albumid in self.objectcache:
             album = self.objectcache[albumid]
             if not album.isAlbum():
-                raise AlbumDoesNotExistError, albumid
+                raise AlbumDoesNotExistError(albumid)
             return album
         cursor = self.connection.cursor()
         cursor.execute(
@@ -373,7 +373,7 @@ class Shelf:
             albumid)
         row = cursor.fetchone()
         if not row:
-            raise AlbumDoesNotExistError, albumid
+            raise AlbumDoesNotExistError(albumid)
         albumid, tag, albumtype = row
         albumtype = _albumTypeIdentifierToType(albumtype)
         album = self._albumFactory(albumid, tag, albumtype)
@@ -394,7 +394,7 @@ class Shelf:
             tag)
         row = cursor.fetchone()
         if not row:
-            raise AlbumDoesNotExistError, tag
+            raise AlbumDoesNotExistError(tag)
         return self.getAlbum(int(row[0]))
 
 
@@ -499,11 +499,11 @@ class Shelf:
             albumid)
         row = cursor.fetchone()
         if not row:
-            raise AlbumDoesNotExistError, albumid
+            raise AlbumDoesNotExistError(albumid)
         albumid, tag = row
         if albumid == _ROOT_ALBUM_ID:
             # Don't delete the root album!
-            raise UndeletableAlbumError, tag
+            raise UndeletableAlbumError(tag)
         cursor.execute(
             " delete from album"
             " where  id = %s",
@@ -559,7 +559,7 @@ class Shelf:
         if imageid in self.objectcache:
             image = self.objectcache[imageid]
             if image.isAlbum():
-                raise ImageDoesNotExistError, imageid
+                raise ImageDoesNotExistError(imageid)
             return image
         cursor = self.connection.cursor()
         cursor.execute(
@@ -569,7 +569,7 @@ class Shelf:
             imageid)
         row = cursor.fetchone()
         if not row:
-            raise ImageDoesNotExistError, imageid
+            raise ImageDoesNotExistError(imageid)
         imageid, primary_version_id = row
         image = self._imageFactory(imageid, primary_version_id)
         return image
@@ -588,7 +588,7 @@ class Shelf:
                 pilimg = pilimg.convert("RGB")
 #        except IOError:
         except: # Work-around for buggy PIL.
-            raise NotAnImageFileError, location
+            raise NotAnImageFileError(location)
         width, height = pilimg.size
         location = os.path.realpath(location)
         mtime = os.path.getmtime(location)
@@ -610,7 +610,7 @@ class Shelf:
                 width,
                 height)
         except sql.IntegrityError:
-            raise ImageVersionExistsError, location
+            raise ImageVersionExistsError(location)
         ivid = cursor.lastrowid
         imageversion = self._imageVersionFactory(
             ivid, image.getId(), ivtype, ivhash, location, mtime,
@@ -645,7 +645,7 @@ class Shelf:
             ivid)
         row = cursor.fetchone()
         if not row:
-            raise ImageVersionDoesNotExistError, ivid
+            raise ImageVersionDoesNotExistError(ivid)
         ivid, imageid, ivtype, ivhash, directory, filename, mtime, \
             width, height, comment = row
         location = os.path.join(directory, filename)
@@ -670,7 +670,7 @@ class Shelf:
             ivhash)
         row = cursor.fetchone()
         if not row:
-            raise ImageVersionDoesNotExistError, ivhash
+            raise ImageVersionDoesNotExistError(ivhash)
         return self.getImageVersion(row[0])
 
 
@@ -694,10 +694,10 @@ class Shelf:
             os.path.dirname(location),
             os.path.basename(location))
         if cursor.rowcount > 1:
-            raise MultipleImageVersionsAtOneLocationError, location
+            raise MultipleImageVersionsAtOneLocationError(location)
         row = cursor.fetchone()
         if not row:
-            raise ImageVersionDoesNotExistError, location
+            raise ImageVersionDoesNotExistError(location)
         return self.getImageVersion(row[0])
 
 
@@ -712,7 +712,7 @@ class Shelf:
             " where  id = %s",
             imageid)
         if cursor.rowcount == 0:
-            raise ImageDoesNotExistError, imageid
+            raise ImageDoesNotExistError(imageid)
         cursor.execute(
             " select id"
             " from   image_version"
@@ -777,7 +777,7 @@ class Shelf:
             try:
                 return self.getAlbum(objid)
             except AlbumDoesNotExistError:
-                raise ObjectDoesNotExistError, objid
+                raise ObjectDoesNotExistError(objid)
 
 
     def deleteObject(self, objid):
@@ -789,7 +789,7 @@ class Shelf:
             try:
                 self.deleteAlbum(objid)
             except AlbumDoesNotExistError:
-                raise ObjectDoesNotExistError, objid
+                raise ObjectDoesNotExistError(objid)
 
 
     def getAllAttributeNames(self):
@@ -823,7 +823,7 @@ class Shelf:
             self._setModified()
             return self.getCategory(cursor.lastrowid)
         except sql.IntegrityError:
-            raise CategoryExistsError, tag
+            raise CategoryExistsError(tag)
 
 
     def deleteCategory(self, catid):
@@ -838,7 +838,7 @@ class Shelf:
             catid)
         row = cursor.fetchone()
         if not row:
-            raise CategoryDoesNotExistError, catid
+            raise CategoryDoesNotExistError(catid)
         cursor.execute(
             " delete from category_child"
             " where  parent = %s",
@@ -886,7 +886,7 @@ class Shelf:
             catid)
         row = cursor.fetchone()
         if not row:
-            raise CategoryDoesNotExistError, catid
+            raise CategoryDoesNotExistError(catid)
         tag, desc = row
         category = Category(self, catid, tag, desc)
         self.categorycache[catid] = category
@@ -907,7 +907,7 @@ class Shelf:
             tag)
         row = cursor.fetchone()
         if not row:
-            raise CategoryDoesNotExistError, tag
+            raise CategoryDoesNotExistError(tag)
         return self.getCategory(row[0])
 
 
@@ -992,12 +992,12 @@ class Shelf:
                 " select version"
                 " from   dbinfo")
         except sql.OperationalError:
-            raise ShelfLockedError, self.location
+            raise ShelfLockedError(self.location)
         except sql.DatabaseError:
-            raise UnsupportedShelfError, self.location
+            raise UnsupportedShelfError(self.location)
         version = cursor.fetchone()[0]
         if version != _SHELF_FORMAT_VERSION:
-            raise UnsupportedShelfError, self.location
+            raise UnsupportedShelfError(self.location)
 
 
     def _albumFactory(self, albumid, tag, albumtype):
@@ -1240,12 +1240,12 @@ class Category:
         parentid = self.getId()
         childid = category.getId()
         if self.shelf.categorydag.get().connected(parentid, childid):
-            raise CategoriesAlreadyConnectedError, (self.getTag(),
-                                                    category.getTag())
+            raise CategoriesAlreadyConnectedError(
+                self.getTag(), category.getTag())
         try:
             self.shelf.categorydag.get().connect(parentid, childid)
         except LoopError:
-            raise CategoryLoopError, (self.getTag(), category.getTag())
+            raise CategoryLoopError(self.getTag(), category.getTag())
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " insert into category_child (parent, child)"
@@ -1426,7 +1426,7 @@ class _Object:
             self.categories.add(catid)
             self.shelf._setModified()
         except sql.IntegrityError:
-            raise CategoryPresentError, (objid, category.getTag())
+            raise CategoryPresentError(objid, category.getTag())
 
 
     def removeCategory(self, category):
@@ -1904,7 +1904,7 @@ class ImageVersion:
         try:
             pilimg = PILImage.open(self.location)
         except IOError:
-            raise NotAnImageFileError, self.location
+            raise NotAnImageFileError(self.location)
         self.size = pilimg.size
         self.mtime = os.path.getmtime(self.location)
         cursor = self.shelf._getConnection().cursor()
@@ -2063,7 +2063,7 @@ class MagicAlbum(Album):
 
         children -- A list of Album/Image instances.
         """
-        raise UnsettableChildrenError, self.getTag()
+        raise UnsettableChildrenError(self.getTag())
 
 
 class OrphansAlbum(MagicAlbum):
@@ -2212,7 +2212,7 @@ def _albumTypeIdentifierToType(atid):
             u"search": AlbumType.Search,
             }[atid]
     except KeyError:
-        raise UnknownAlbumTypeError, atid
+        raise UnknownAlbumTypeError(atid)
 
 
 def _albumTypeToIdentifier(atype):
@@ -2224,7 +2224,7 @@ def _albumTypeToIdentifier(atype):
             AlbumType.Search: u"search",
             }[atype]
     except KeyError:
-        raise UnknownAlbumTypeError, atype
+        raise UnknownAlbumTypeError(atype)
 
 
 def _createCategoryDAG(connection):
@@ -2253,7 +2253,7 @@ def _imageVersionTypeIdentifierToType(ivtype):
             u"other": ImageVersionType.Other,
             }[ivtype]
     except KeyError:
-        raise UnknownImageVersionTypeError, ivtype
+        raise UnknownImageVersionTypeError(ivtype)
 
 
 def _imageVersionTypeToIdentifier(ivtype):
@@ -2267,7 +2267,7 @@ def _imageVersionTypeToIdentifier(ivtype):
             ImageVersionType.Other: u"other",
             }[ivtype]
     except KeyError:
-        raise UnknownImageVersionTypeError, ivtype
+        raise UnknownImageVersionTypeError(ivtype)
 
 
 class _UnicodeConnectionDecorator:
@@ -2337,7 +2337,7 @@ class _UnicodeCursorDecorator:
         Lists, tuples and maps are recursively checked.
         """
         if isinstance(obj, str):
-            raise AssertionError, ("non-Unicode string", obj)
+            raise AssertionError("non-Unicode string", obj)
         elif isinstance(obj, (list, tuple)):
             for elem in obj:
                 self._assertUnicode(elem)

@@ -90,7 +90,7 @@ class OutputEngine:
         imageversion = image.getPrimaryVersion()
         if not imageversion:
             # TODO: Handle this in a better way.
-            raise Exception, "No image versions for image %d" % image.getid()
+            raise Exception("No image versions for image %d" % image.getid())
 
         key = (imageversion.getHash(), widthlimit, heightlimit)
         if not self.__imgrefMap.has_key(key):

@@ -96,14 +96,14 @@ class Config(ConfigParser):
         for coord in coords:
             parts = coord.split("x")
             if len(parts) > 2:
-                raise BadConfigurationValueError, (section, option, val)
+                raise BadConfigurationValueError(section, option, val)
             if len(parts) == 1:
                 parts.append(parts[0])
             try:
                 x = int(parts[0])
                 y = int(parts[1])
             except ValueError:
-                raise BadConfigurationValueError, (section, option, val)
+                raise BadConfigurationValueError(section, option, val)
             ret.append((x, y))
         return ret
 
@@ -113,10 +113,10 @@ class Config(ConfigParser):
         def checkConfigurationItem(section, key, function):
             """Internal helper."""
             if not self.has_option(section, key):
-                raise MissingConfigurationKeyError, (section, key)
+                raise MissingConfigurationKeyError(section, key)
             value = self.get(section, key)
             if function and not function(value):
-                raise BadConfigurationValueError, (section, key, value)
+                raise BadConfigurationValueError(section, key, value)
 
         checkConfigurationItem("database", "location", None)
         checkConfigurationItem("image cache", "location", None)
