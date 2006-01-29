@@ -8,7 +8,6 @@ from kofoto.gkofoto.categories import Categories
 from kofoto.gkofoto.albums import Albums
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.tableview import TableView
-from kofoto.gkofoto.thumbnailview import ThumbnailView
 from kofoto.gkofoto.singleobjectview import SingleObjectView
 from kofoto.gkofoto.objectcollectionfactory import ObjectCollectionFactory
 from kofoto.gkofoto.registerimagesdialog import RegisterImagesDialog
@@ -29,18 +28,22 @@ class MainWindow(gtk.Window):
         self.__filterEntry = env.widgets["filterEntry"]
         self.__filterEntry.set_text(self.__persistentState.filterText)
         self.__isFilterEnabledCheckbox = env.widgets["isFilterEnabledCheckbox"]
+
         env.widgets["menubarViewTreePane"].connect("toggled", self._toggleTree)
         env.widgets["menubarViewDetailsPane"].connect("toggled", self._toggleDetails)
-#        env.widgets["thumbnailsViewToggleButton"].connect("clicked", self._toggleThumbnailsView)
-        env.widgets["thumbnailsViewToggleButton"].hide()
-        env.widgets["thumbnailsViewToggleButton"].set_sensitive(False)
-        env.widgets["thumbnailsViewToggleButton"].set_icon_widget(self.getIconImage("thumbnailsview.png"))
-        env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
-        env.widgets["objectViewToggleButton"].set_icon_widget(self.getIconImage("objectview.png"))
-        env.widgets["menubarObjectView"].connect("activate", self._toggleObjectView)
+
         env.widgets["tableViewToggleButton"].connect("clicked", self._toggleTableView)
         env.widgets["tableViewToggleButton"].set_icon_widget(self.getIconImage("tableview.png"))
         env.widgets["menubarTableView"].connect("activate", self._toggleTableView)
+
+        env.widgets["objectViewToggleButton"].connect("clicked", self._toggleObjectView)
+        env.widgets["objectViewToggleButton"].set_icon_widget(self.getIconImage("objectview.png"))
+        env.widgets["menubarObjectView"].connect("activate", self._toggleObjectView)
+
+        env.widgets["fullScreenViewButton"].connect("clicked", self._fullScreen)
+        env.widgets["fullScreenViewButton"].set_icon_widget(self.getIconImage("fullscreen-24.png"))
+        env.widgets["menubarFullScreenView"].connect("activate", self._fullScreen)
+
         env.widgets["previousButton"].set_sensitive(False)
         env.widgets["nextButton"].set_sensitive(False)
         env.widgets["zoom100"].set_sensitive(False)
@@ -54,13 +57,9 @@ class MainWindow(gtk.Window):
         env.widgets["menubarRevert"].set_sensitive(False)
         env.widgets["menubarQuit"].connect("activate", env.controller.quit_cb)
 
-        env.widgets["menubarThumbnailsView"].hide()
-
         env.widgets["menubarNextImage"].set_sensitive(False)
         env.widgets["menubarPreviousImage"].set_sensitive(False)
         env.widgets["menubarZoom"].set_sensitive(False)
-
-        env.widgets["menubarFullScreen"].connect("activate", self._fullScreen)
 
         env.widgets["menubarRegisterImages"].connect("activate", self.registerImages, None)
         env.widgets["menubarHandleModifiedOrRenamedImages"].connect(
@@ -88,7 +87,6 @@ class MainWindow(gtk.Window):
         self.__factory = ObjectCollectionFactory()
         self.__categories = Categories(self)
         self.__albums = Albums(self)
-        self.__thumbnailView = ThumbnailView()
         self.__tableView = TableView()
         self.__singleObjectView = SingleObjectView()
         self.showTableView()
@@ -165,17 +163,12 @@ class MainWindow(gtk.Window):
 
     def showTableView(self):
         self._currentView = self.__tableView
-        self._hiddenViews = [self.__thumbnailView, self.__singleObjectView]
-        self._viewChanged()
-
-    def showThumbnailView(self):
-        self._currentView = self.__thumbnailView
-        self._hiddenViews = [self.__tableView, self.__singleObjectView]
+        self._hiddenViews = [self.__singleObjectView]
         self._viewChanged()
 
     def showSingleObjectView(self):
         self._currentView = self.__singleObjectView
-        self._hiddenViews = [self.__tableView, self.__thumbnailView]
+        self._hiddenViews = [self.__tableView]
         self._viewChanged()
 
     def _fullScreen(self, *unused):
@@ -194,27 +187,12 @@ class MainWindow(gtk.Window):
         else:
             self.__singleObjectView.hideDetailsPane()
 
-    def _toggleThumbnailsView(self, button):
-        if not self._toggleLock:
-            self._toggleLock = True
-            button.set_active(True)
-            env.widgets["thumbnailsViewToggleButton"].set_active(True)
-            env.widgets["objectViewToggleButton"].set_active(False)
-            env.widgets["tableViewToggleButton"].set_active(False)
-            env.widgets["menubarThumbnailsView"].set_active(True)
-            env.widgets["menubarObjectView"].set_active(False)
-            env.widgets["menubarTableView"].set_active(False)
-            self.showThumbnailView()
-            self._toggleLock = False
-
     def _toggleObjectView(self, button):
         if not self._toggleLock:
             self._toggleLock = True
             button.set_active(True)
-            env.widgets["thumbnailsViewToggleButton"].set_active(False)
             env.widgets["objectViewToggleButton"].set_active(True)
             env.widgets["tableViewToggleButton"].set_active(False)
-            env.widgets["menubarThumbnailsView"].set_active(False)
             env.widgets["menubarObjectView"].set_active(True)
             env.widgets["menubarTableView"].set_active(False)
             self.showSingleObjectView()
@@ -224,10 +202,8 @@ class MainWindow(gtk.Window):
         if not self._toggleLock:
             self._toggleLock = True
             button.set_active(True)
-            env.widgets["thumbnailsViewToggleButton"].set_active(False)
             env.widgets["objectViewToggleButton"].set_active(False)
             env.widgets["tableViewToggleButton"].set_active(True)
-            env.widgets["menubarThumbnailsView"].set_active(False)
             env.widgets["menubarObjectView"].set_active(False)
             env.widgets["menubarTableView"].set_active(True)
             self.showTableView()
