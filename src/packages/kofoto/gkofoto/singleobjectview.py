@@ -22,6 +22,8 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         gtk.HPaned.__init__(self)
         self._viewWidget.add(self)
         self.__imageView = ImageView()
+        self.__imageView.set_error_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(env.unknownImageIconFileName))
         self.__imageView.connect("button_press_event", self._mouse_button_pressed)
         self.pack1(self.__imageView, resize=True)
         self.__imageVersionsFrame = gtk.Frame("Image versions")
