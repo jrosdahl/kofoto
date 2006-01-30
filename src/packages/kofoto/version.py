@@ -1,3 +1,3 @@
 """This module contains the Kofoto version."""
 
-version = "0.5"
+version = "pre-0.6"
