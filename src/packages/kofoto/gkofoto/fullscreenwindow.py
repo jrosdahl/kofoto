@@ -36,6 +36,8 @@ class FullScreenWindow(gtk.Window):
         vbox = gtk.VBox()
         eventbox.add(vbox)
         self._image_view = ImageView()
+        self._image_view.set_error_pixbuf(
+            gtk.gdk.pixbuf_new_from_file(env.unknownImageIconFileName))
         vbox.pack_start(self._image_view)
         self._info_label = gtk.Label()
         self._info_label.set_text(

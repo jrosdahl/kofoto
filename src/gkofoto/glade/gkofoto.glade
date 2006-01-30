@@ -801,7 +801,7 @@
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Image</property>
 		      <property name="use_underline">True</property>
-		      <property name="active">True</property>
+		      <property name="active">False</property>
 		      <property name="group">menubarTableView</property>
 		      <signal name="activate" handler="on_image_view_activate" last_modification_time="Sun, 11 Jul 2004 19:28:48 GMT"/>
 		    </widget>

@@ -8,6 +8,19 @@
 VERSION HISTORY
 ===============
 
+0.5 (2006-01-30)
+
+    New features:
+
+      * Full screen view (ticket #33).
+      * Improved image display speed.
+      * Improved caching of images (ticket #86).
+      * Improved load speed of the table view.
+      * Double-click on a table view row switches to single image
+        view.
+      * Double-click on the image in the single image view switches to
+        full screen view.
+
 0.4.1 (2005-10-10)
 
     Fixed bugs:    

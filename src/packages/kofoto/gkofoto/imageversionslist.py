@@ -74,7 +74,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             try:
                 thumbnailLocation = env.imageCache.get(iv, 128, 128)[0]
                 thumbnail.set_from_file(thumbnailLocation)
-            except OSError:
+            except (IOError, OSError):
                 thumbnail.set_from_pixbuf(env.unknownImageIconPixbuf)
             alignment = gtk.Alignment(0.5, 0.5, 0.5, 0.5)
             alignment.add(thumbnail)
