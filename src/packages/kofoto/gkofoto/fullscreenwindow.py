@@ -129,22 +129,20 @@ class FullScreenWindow(gtk.Window):
         return 0 <= index < len(self._image_versions)
 
     def _key_press_event_cb(self, unused, event):
-        k = gtk.gdk.keyval_from_name
-        pagedown = 65366
-        pageup = 65365
-        if event.keyval in [k("space"), k("Right"), k("Down"), pagedown]:
+        k = gtk.keysyms
+        if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
             self._goto(self._current_index + 1)
             return True
-        if event.keyval in [k("BackSpace"), k("Left"), k("Up"), pageup]:
+        if event.keyval in [k.BackSpace, k.Left, k.Up, k.Page_Up]:
             self._goto(self._current_index - 1)
             return True
-        if event.keyval == k("Home"):
+        if event.keyval == k.Home:
             self._goto(0)
             return True
-        if event.keyval == k("End"):
+        if event.keyval == k.End:
             self._goto(len(self._image_versions) - 1)
             return True
-        if event.keyval == k("Escape"):
+        if event.keyval == k.Escape:
             self.destroy()
             return True
         return False
