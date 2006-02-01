@@ -178,8 +178,6 @@ imageCommandsDefinitionList = [
     ("destroy-image IMAGE [IMAGE ...]",
      "Destroy the given images permanently. All metadata and image versions"
      " are also destroyed (but not the image files on disk)."),
-    ("find-missing-imageversions",
-     "Find missing image versions and print them to standard output."),
     ("get-imageversions IMAGE",
      "Print image versions for an image. If -v/--verbose is given, print more"
      " information."),
@@ -189,6 +187,8 @@ imageversionCommandsDefinitionList = [
     ("destroy-imageversion IMAGEVERSION [IMAGEVERSION ...]",
      "Destroy the given image versions permanently. All metadata is also"
      " destroyed (but not the image files on disk)."),
+    ("find-missing-imageversions",
+     "Find missing image versions and print them to standard output."),
     ("inspect-path PATH [PATH ...]",
      "Traverse the given paths and print whether each found file is a"
      " registered, modified, moved or unregistered image version or a"
@@ -252,7 +252,7 @@ parameterSemanticsDefinitionList = [
      "An integer ID or a path to an image version file. If it's a path to an"
      " image version, its corresponding image is selected. If"
      " --identify-by-path is given, the path is used for identifying the image"
-     " version; otherwise the file's content used for identification."),
+     " version; otherwise the file's content is used for identification."),
     ("IMAGEVERSION",
      "An integer ID or a path to an image version file. If --identify-by-path"
      " is given, the path is used for identifying the image version; otherwise"
