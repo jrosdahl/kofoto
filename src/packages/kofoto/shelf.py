@@ -301,6 +301,7 @@ class Shelf:
         The returned value is a mapping with the following keys:
 
         nalbums        -- Number of albums.
+        ncategories    -- Number of categories.
         nimages        -- Number of images.
         nimageversions -- Number of image versions.
         """
@@ -312,6 +313,10 @@ class Shelf:
         nalbums = int(cursor.fetchone()[0])
         cursor.execute(
             " select count(*)"
+            " from   category")
+        ncategories = int(cursor.fetchone()[0])
+        cursor.execute(
+            " select count(*)"
             " from   image")
         nimages = int(cursor.fetchone()[0])
         cursor.execute(
@@ -320,6 +325,7 @@ class Shelf:
         nimageversions = int(cursor.fetchone()[0])
         return {
             "nalbums": nalbums,
+            "ncategories": ncategories,
             "nimages": nimages,
             "nimageversions": nimageversions,
             }

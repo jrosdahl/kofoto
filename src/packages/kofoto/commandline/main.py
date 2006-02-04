@@ -855,6 +855,7 @@ def cmdPrintStatistics(env, dummy):
     """Handler for the print-statistics command."""
     stats = env.shelf.getStatistics()
     env.out("Number of albums: %d\n" % stats["nalbums"])
+    env.out("Number of categories: %d\n" % stats["ncategories"])
     env.out("Number of images: %d\n" % stats["nimages"])
     env.out("Number of image versions: %d\n" % stats["nimageversions"])
 
