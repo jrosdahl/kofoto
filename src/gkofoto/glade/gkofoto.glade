@@ -1201,6 +1201,14 @@
 		  </child>
 
 		  <child>
+		    <widget class="GtkMenuItem" id="menubarViewImageVersionsFullScreen">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">View in _full screen</property>
+		      <property name="use_underline">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
 		    <widget class="GtkMenuItem" id="menubarCopyImageVersionLocations">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Copy image version location(s)</property>

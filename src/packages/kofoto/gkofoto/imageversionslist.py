@@ -9,6 +9,7 @@ from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.menuhandler import MenuGroup
 from kofoto.gkofoto.imageversionsdialog import ImageVersionsDialog
 from kofoto.gkofoto.duplicateandopenimagedialog import DuplicateAndOpenImageDialog
+from kofoto.gkofoto.fullscreenwindow import FullScreenWindow
 
 _imageVersionTypeToStringMap = {
     ImageVersionType.Important: "Important",
@@ -42,6 +43,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
 
         callbacks = [
             ("menubarViewImageVersion", self.__view_cb),
+            ("menubarViewImageVersionsFullScreen", self.__view_full_screen_cb),
             ("menubarCopyImageVersionLocations", self.__copyImageLocation_cb),
             ("menubarOpenImageVersions", self.__open_cb),
             ("menubarDuplicateAndOpenImageVersion", self.__duplicateAndOpen_cb),
@@ -107,6 +109,9 @@ class ImageVersionsList(gtk.ScrolledWindow):
             "View",
             self.__view_cb)
         menugroup.addMenuItem(
+            "View in full screen mode",
+            self.__view_full_screen_cb)
+        menugroup.addMenuItem(
             "Copy image version location(s)",
             self.__copyImageLocation_cb)
         menugroup.addStockImageMenuItem(
@@ -151,6 +156,8 @@ class ImageVersionsList(gtk.ScrolledWindow):
 
         env.widgets["menubarViewImageVersion"].set_sensitive(
             oneSelected)
+        env.widgets["menubarViewImageVersionsFullScreen"].set_sensitive(
+            not zeroSelected)
         env.widgets["menubarCopyImageVersionLocations"].set_sensitive(
             not zeroSelected)
         env.widgets["menubarOpenImageVersions"].set_sensitive(
@@ -248,6 +255,21 @@ class ImageVersionsList(gtk.ScrolledWindow):
         imageVersion = self.__imageWidgetToImageVersion[widget]
         location = imageVersion.getLocation()
         self.__singleObjectView._loadImageAtLocation(location)
+
+    def __view_full_screen_cb(self, *args):
+        assert len(self.__selectedImageWidgets) > 0
+        widgets = self.__getSelectedImageVersionsInOrder()
+        if len(widgets) > 1:
+            imageVersions = [
+                self.__imageWidgetToImageVersion[x] for x in widgets]
+            window = FullScreenWindow(imageVersions)
+        else:
+            imageVersions = [
+                self.__imageWidgetToImageVersion[x]
+                for x in self.__imageWidgetList]
+            index = self.__imageWidgetList.index(widgets[0])
+            window = FullScreenWindow(imageVersions, index)
+        window.show_all()
 
     def __copyImageLocation_cb(self, widget, param):
         assert len(self.__selectedImageWidgets) > 0
