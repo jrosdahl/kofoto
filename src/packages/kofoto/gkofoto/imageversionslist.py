@@ -255,7 +255,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         primary = gtk.clipboard_get(gtk.gdk.SELECTION_PRIMARY)
         location = "\n".join(
             [self.__imageWidgetToImageVersion[x].getLocation()
-             for x in self.__selectedImageWidgets])
+             for x in self.__getSelectedImageVersionsInOrder()])
         clipboard.set_text(location)
         primary.set_text(location)
 
@@ -263,7 +263,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         assert len(self.__selectedImageWidgets) > 0
         locations = [
             self.__imageWidgetToImageVersion[x].getLocation()
-            for x in self.__selectedImageWidgets]
+            for x in self.__getSelectedImageVersionsInOrder()]
         command = env.openCommand % {"locations": " ".join(locations)}
         result = os.system(command.encode(env.localeEncoding) + " &")
         if result != 0:
@@ -360,3 +360,9 @@ class ImageVersionsList(gtk.ScrolledWindow):
                 dialog.run()
                 dialog.destroy()
         self.__singleObjectView.reload()
+
+    def __getSelectedImageVersionsInOrder(self):
+        return [
+            x
+            for x in self.__imageWidgetList
+            if x in self.__selectedImageWidgets]
