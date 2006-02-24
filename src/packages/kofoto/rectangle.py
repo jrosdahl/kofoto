@@ -110,6 +110,8 @@ class Rectangle:
         if h > limit[1]:
             w = limit[1] * w // h
             h = limit[1]
+        w = max(1, w)
+        h = max(1, h)
         return self.__class__(w, h)
 
     def fits_within(self, limit):
@@ -143,4 +145,6 @@ class Rectangle:
         if h > limit[1]:
             w = limit[1] * w // h
             h = limit[1]
+        w = max(1, w)
+        h = max(1, h)
         return self.__class__(w, h)
