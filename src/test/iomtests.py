@@ -24,21 +24,21 @@ class TestInsertionOrderedMapping(unittest.TestCase):
         del self.iom
 
     def test___cmp__(self):
-        assert(cmp(self.iom, self.iom) == 0)
+        assert cmp(self.iom, self.iom) == 0
         iom2 = self.iom.copy()
-        assert(cmp(self.iom, iom2) == 0)
+        assert cmp(self.iom, iom2) == 0
         del iom2[3]
-        assert(cmp(self.iom, iom2) == 1)
+        assert cmp(self.iom, iom2) == 1
         del self.iom[2]
         del self.iom[3]
-        assert(cmp(self.iom, iom2) == -1)
+        assert cmp(self.iom, iom2) == -1
 
     def test___contains__(self):
-        assert(0 not in self.iom)
-        assert("a" not in self.iom)
-        assert(1 in self.iom)
-        assert(2 in self.iom)
-        assert(3 in self.iom)
+        assert 0 not in self.iom
+        assert "a" not in self.iom
+        assert 1 in self.iom
+        assert 2 in self.iom
+        assert 3 in self.iom
 
     def test___delitem__(self):
         try:
