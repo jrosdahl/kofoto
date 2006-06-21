@@ -1,5 +1,3 @@
-# pylint: disable-msg=F0203, E0201
-
 import gtk
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.imageview import ImageView

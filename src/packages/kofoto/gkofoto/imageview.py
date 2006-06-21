@@ -1,5 +1,3 @@
-# pylint: disable-msg=F0203, E0201
-
 """
 This module contains the ImageView class.
 """

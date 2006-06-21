@@ -1,4 +1,4 @@
-# pylint: disable-msg=W0311, W0302, W0622, C0103, W0131, W0402, C0322, W0141
+# pylint: disable-msg=W0311, W0622, C0103, W0402, C0322, W0141, C0302
 # pylint: disable-msg=R0913, W0621, W0612, R0914, W0102, W0702, R0912, R0915
 # pylint: disable-msg=W0702
 

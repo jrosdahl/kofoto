@@ -11,8 +11,6 @@ def disable_message(arguments, message_id):
 
 ######################################################################
 
-warnings.filterwarnings("ignore", "logilab.common.compat.Set is deprecated")
-
 option_parser = OptionParser()
 option_parser.add_option(
     "--all",
@@ -35,16 +33,17 @@ else:
     modules = ["kofoto"]
 
 normally_disabled_tests = [
-    "C0101", # "Too short variable name."
+    "C0103", # "Invalid name"
+    "C0111", # "Missing docstring"
     "I0011", # "Locally disabling ..."
     "R0801", # "Similar lines ..."
-    "W0131", # "Missing docstring."
     "W0142", # "Used * or ** magic."
     "W0511", # "TODO ..."
     "W0704", # "Except doesn't do anything."
 ]
 
 normally_disabled_complexity_tests = [
+    "C0302", # "Too many lines in module"
     "R0901", # "Too many parent classes."
     "R0902", # "Too many instance attributes."
     "R0903", # "Not enough public methods."
@@ -54,7 +53,6 @@ normally_disabled_complexity_tests = [
     "R0913", # "Too many arguments."
     "R0914", # "Too many local variables."
     "R0915", # "Too many statements."
-    "W0302", # "Too many lines in module."
     "C0301", # "Line too long."
 ]
 
