@@ -189,6 +189,8 @@ imageversionCommandsDefinitionList = [
      " destroyed (but not the image files on disk)."),
     ("find-missing-imageversions",
      "Find missing image versions and print them to standard output."),
+    ("find-modified-imageversions",
+     "Find modified image versions and print them to standard output."),
     ("inspect-path PATH [PATH ...]",
      "Traverse the given paths and print whether each found file is a"
      " registered, modified, moved or unregistered image version or a"
@@ -633,8 +635,22 @@ def cmdFindMissingImageVersions(env, args):
     """Handler for the find-missing-imageversions command."""
     if len(args) != 0:
         raise ArgumentError
-    badchecksums = []
-    missingfiles = []
+    paths = []
+    for iv in env.shelf.getAllImageVersions():
+        location = iv.getLocation()
+        if env.verbose:
+            env.out("Checking %s ...\n" % location)
+        if not os.path.exists(location):
+            paths.append(location)
+    for path in paths:
+        env.out("%s\n" % path)
+
+
+def cmdFindModifiedImageVersions(env, args):
+    """Handler for the find-modified-imageversions command."""
+    if len(args) != 0:
+        raise ArgumentError
+    paths = []
     for iv in env.shelf.getAllImageVersions():
         location = iv.getLocation()
         if env.verbose:
@@ -643,19 +659,11 @@ def cmdFindMissingImageVersions(env, args):
             realId = computeImageHash(location)
             storedId = iv.getHash()
             if realId != storedId:
-                badchecksums.append(location)
+                paths.append(location)
         except IOError:
-            missingfiles.append(location)
-
-    env.out("Missing image versions:")
-    if badchecksums or missingfiles:
-        for path in badchecksums:
-            env.out("\n    (bad checksum) %s" % path)
-        for path in missingfiles:
-            env.out("\n    (missing) %s" % path)
-        env.out("\n")
-    else:
-        env.out(" none\n")
+            pass
+    for path in paths:
+        env.out("%s\n" % path)
 
 
 def cmdGenerate(env, args):
@@ -1132,6 +1140,7 @@ commandTable = {
     "destroy-imageversion": cmdDestroyImageVersion,
     "disconnect-category": cmdDisconnectCategory,
     "find-missing-imageversions": cmdFindMissingImageVersions,
+    "find-modified-imageversions": cmdFindModifiedImageVersions,
     "generate": cmdGenerate,
     "get-attribute": cmdGetAttribute,
     "get-attributes": cmdGetAttributes,
