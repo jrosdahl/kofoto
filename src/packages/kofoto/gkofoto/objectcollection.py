@@ -3,6 +3,7 @@ import gtk
 import gobject
 import gc
 from sets import Set
+from kofoto.shelfexceptions import BadAlbumTagError
 from kofoto.timer import Timer
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.objectselection import ObjectSelection
@@ -424,8 +425,16 @@ class ObjectCollection(object):
             # TODO Show dialog and ask for confirmation?
             objectId = model.get_value(iterator, self.COLUMN_OBJECT_ID)
             obj = env.shelf.getAlbum(objectId)
-            obj.setTag(value)
-            # TODO Handle invalid album tag?
+            try:
+                obj.setTag(value)
+            except BadAlbumTagError:
+                dialog = gtk.MessageDialog(
+                    type=gtk.MESSAGE_ERROR,
+                    buttons=gtk.BUTTONS_OK,
+                    message_format="Bad album tag: \"%s\"" % value)
+                dialog.run()
+                dialog.destroy()
+                value = oldValue
             model.set_value(iterator, columnNumber, value)
             # TODO Update the album tree widget.
             env.debug("Album tag edited")
