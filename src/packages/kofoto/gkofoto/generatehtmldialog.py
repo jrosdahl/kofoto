@@ -4,6 +4,7 @@ import re
 from sets import Set
 from kofoto.gkofoto.environment import env
 import kofoto.generate
+import kofoto.shelfexceptions
 
 class GenerateHTMLDialog:
     def __init__(self, album):
@@ -92,7 +93,7 @@ class GenerateHTMLDialog:
             progressBar.set_fraction(1)
             while gtk.events_pending():
                 gtk.main_iteration()
-        except (IOError, kofoto.shelf.KofotoError), e:
+        except (IOError, kofoto.shelfexceptions.KofotoError), e:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
                 buttons=gtk.BUTTONS_OK,

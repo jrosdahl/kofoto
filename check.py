@@ -36,8 +36,10 @@ normally_disabled_tests = [
     "C0103", # "Invalid name"
     "C0111", # "Missing docstring"
     "I0011", # "Locally disabling ..."
+    "R0201", # "Method could be a function"
     "R0801", # "Similar lines ..."
     "W0142", # "Used * or ** magic."
+    "W0212", # "Access to a protected member foo of a client class"
     "W0511", # "TODO ..."
     "W0704", # "Except doesn't do anything."
 ]

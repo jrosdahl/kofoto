@@ -429,13 +429,13 @@ class AttributeConditionSearchNode(SearchNode):
 class CategorySearchNode(SearchNode):
     """A node representing the search for a category."""
     def __init__(self, ids):
-        SearchNode.__init__(self)
         """Constructor.
 
         Arguments:
 
         ids -- A list of category IDs this node represents.
         """
+        SearchNode.__init__(self)
         self._ids = ids
 
     def __repr__(self):

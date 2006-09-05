@@ -18,7 +18,7 @@ class ObjectCollectionFactory:
         self.__albumMembers = AlbumMembers()
 
     def getObjectCollection(self, query, filterText=""):
-        env.debug("Object collection factory loading query: " + query);
+        env.debug("Object collection factory loading query: " + query)
         self.__clear()
         validAlbumTag = False
         if query and query[0] == "/":

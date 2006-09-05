@@ -1366,9 +1366,6 @@ def main(argv):
         printError(
             "Connecting %s to %s would make a loop in the categories.\n" % (
             x.args[0], x.args[1]))
-    except ParseError, x:
-        printError(
-            "While parsing search expression: %s.\n" % x.args[0])
     except UnterminatedStringError, x:
         printError(
             "While scanning search expression: unterminated string starting at"
@@ -1377,6 +1374,9 @@ def main(argv):
         printError(
             "While scanning search expression: bad token starting at character"
             " %d.\n" % x.args[0])
+    except ParseError, x:
+        printError(
+            "While parsing search expression: %s.\n" % x.args[0])
     except UnknownImageVersionTypeError, x:
         printError("Unknown image version type: \"%s\".\n" % x.args[0])
     except ExifImportError, x:

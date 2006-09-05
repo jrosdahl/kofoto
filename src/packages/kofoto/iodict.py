@@ -284,8 +284,6 @@ class InsertionOrderedDict:
 
 
 class _KeyListNode:
-    __slots__ = ["key", "next", "prev"]
-
     def __init__(self, key=None):
         self.key = key
         self.prev = None
