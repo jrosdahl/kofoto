@@ -13,7 +13,7 @@ import gobject
 from kofoto.common import UnimplementedError
 from kofoto.gkofoto.pixbufloader import PixbufLoader, get_pixbuf_size
 from kofoto.gkofoto.pseudothread import PseudoThread
-from kofoto.insertionorderedmapping import InsertionOrderedMapping
+from kofoto.iodict import InsertionOrderedDict
 from kofoto.rectangle import Rectangle
 
 class _RequestStateBase(object):
@@ -283,7 +283,7 @@ class CachingPixbufLoader(object):
 
         # Maps (path, (width_limit, height_limit)) to _Request
         # instances. Newest requests are first and oldest are last.
-        self._request_queue = InsertionOrderedMapping()
+        self._request_queue = InsertionOrderedDict()
 
         # List of _Request instances. Always a subset of
         # self._request_queue.values() (except order). Newest requests
