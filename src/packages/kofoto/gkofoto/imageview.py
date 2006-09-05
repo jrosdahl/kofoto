@@ -126,6 +126,14 @@ class ImageView(gtk.ScrolledWindow):
         self._image_widget.queue_draw()
         gc.collect() # Help GTK to get rid of the old pixbuf.
 
+    def get_image_widget(self):
+        """Get the wrapped image widget.
+
+        Returns the wrapped image widget. This widget is the widget to
+        which mouse event handlers should be connected.
+        """
+        return self._eventbox_widget
+
     def get_prescale_mode(self):
         """Whether the widget should prescale a resized image."""
 
