@@ -4,11 +4,6 @@ This module contains the ImageView class.
 
 # TODO:
 #
-# * Let the picture stay centered when zooming in/out. (This seems to
-#   be harder than it, eh, seems; the signalling between
-#   ScrolledWindow and the adjustments is kind of puzzling. Probably
-#   need to get rid of ScrolledWindow and make something out of a
-#   table, two scrollbars and two adjustments or so.)
 # * Drag to scroll if the image is larger than displayed.
 # * Only draw visible image parts on expose-event.
 # * Bind mouse wheel to zoom in/out.
@@ -104,6 +99,14 @@ class ImageView(gtk.ScrolledWindow):
         self._error_pixbuf = self.render_icon(
             gtk.STOCK_DIALOG_ERROR, gtk.ICON_SIZE_DIALOG, "kofoto")
 
+        # Current position of the horizontal adjustment as a number
+        # between 0 and 1.
+        self._hadj_center = 0.5
+
+        # Current position of the vertical adjustment as a number
+        # between 0 and 1.
+        self._vadj_center = 0.5
+
         # Subwidgets.
         self._eventbox_widget = gtk.EventBox()
         self._image_widget = gtk.DrawingArea()
@@ -116,6 +119,15 @@ class ImageView(gtk.ScrolledWindow):
         iw.connect_after("size-allocate", self._image_after_size_allocate_cb)
         iw.connect("expose-event", self._image_expose_event_cb)
         self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
+
+        # Listen for adjustment changes so that we can make
+        # adjustments behave nicely when zooming and resizing.
+        hadj = self.get_hadjustment()
+        hadj.connect("changed", self._hadjustment_changed)
+        hadj.connect("value-changed", self._hadjustment_value_changed)
+        vadj = self.get_vadjustment()
+        vadj.connect("changed", self._vadjustment_changed)
+        vadj.connect("value-changed", self._vadjustment_value_changed)
 
     def clear(self):
         """Make the widget display nothing."""
@@ -337,6 +349,14 @@ class ImageView(gtk.ScrolledWindow):
     def _displayed_pixbuf_is_current(self):
         return self._available_size is not None
 
+    def _hadjustment_changed(self, adj):
+        adj.set_value(
+            self._hadj_center * (adj.upper - adj.lower) - adj.page_size / 2)
+
+    def _hadjustment_value_changed(self, adj):
+        self._hadj_center = \
+            (adj.value + adj.page_size / 2) / (adj.upper - adj.lower)
+
     def _image_after_size_allocate_cb(self, widget, rect):
         if not (self._is_realized() and self._image_is_set()):
             return
@@ -420,6 +440,14 @@ class ImageView(gtk.ScrolledWindow):
     def _set_zoom_size_from_widget_allocation(self):
         allocation = self._image_widget.allocation
         self._zoom_size = float(max(allocation.width, allocation.height))
+
+    def _vadjustment_changed(self, adj):
+        adj.set_value(
+            self._vadj_center * (adj.upper - adj.lower) - adj.page_size / 2)
+
+    def _vadjustment_value_changed(self, adj):
+        self._vadj_center = \
+            (adj.value + adj.page_size / 2) / (adj.upper - adj.lower)
 
     def _zoom_changed(self):
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
