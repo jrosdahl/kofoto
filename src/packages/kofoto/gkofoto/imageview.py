@@ -2,26 +2,24 @@
 This module contains the ImageView class.
 """
 
-# TODO:
-#
-# * Drag to scroll if the image is larger than displayed.
-# * Only draw visible image parts on expose-event.
-# * Bind mouse wheel to zoom in/out.
-# * Bind arrow keys.
-
 __all__ = ["ImageView"]
 
 if __name__ == "__main__":
     import pygtk
     pygtk.require("2.0")
+import gc
 import gtk
 import gobject
-import gc
 import operator
+import os
+from kofoto.gkofoto.environment import env
 from kofoto.rectangle import Rectangle
 
 def _pixbuf_size(pixbuf):
     return Rectangle(pixbuf.get_width(), pixbuf.get_height())
+
+def _gdk_rectangle_size(gdk_rectangle):
+    return Rectangle(gdk_rectangle.width, gdk_rectangle.height)
 
 def _safely_downscale_pixbuf(pixbuf, limit):
     size = _pixbuf_size(pixbuf)
@@ -55,16 +53,19 @@ def _safely_scale_pixbuf(pixbuf, size):
         pixbuf = scale_pixbuf(pixbuf, psize)
     return scale_pixbuf(pixbuf, size)
 
-class ImageView(gtk.ScrolledWindow):
-    """A reasonably quick image view widget supporting zooming."""
+class ImageView(gtk.Table):
+    """A quick image view widget supporting zooming."""
 
-    # Possible values of self._zoom_mode
+    # Possible values of self._zoom_mode.
     _ZOOM_MODE_BEST_FIT = object()
     _ZOOM_MODE_ACTUAL_SIZE = object()
     _ZOOM_MODE_ZOOM = object()
 
+    # Hard-coded for now.
+    _MOUSE_WHEEL_ZOOM_FACTOR = 1.2
+
     def __init__(self):
-        self.__gobject_init__() # TODO: Use gtk.ScrolledWindow.__init__ in PyGTK 2.8.
+        self.__gobject_init__() # TODO: Use gtk.Table.__init__ in PyGTK 2.8.
 
         # Displayed pixbuf; None if not available.
         self._displayed_pixbuf = None
@@ -87,54 +88,81 @@ class ImageView(gtk.ScrolledWindow):
         # ImageView.set_image has not yet been called.
         self._request_pixbuf_func = None
 
-        # The original image as a Rectangle instance. None if not yet
-        # known.
+        # The size of the original image as a Rectangle instance. None
+        # if not yet known.
         self._available_size = None
 
-        # Remember requested image size (a Rectangle instance or None)
-        # to avoid unnecessary reloading.
-        self._previously_requested_image_size = None
+        # Remember requested pixbuf size (a Rectangle instance or
+        # None) to avoid unnecessary reloading.
+        self._previously_requested_pixbuf_size = None
+
+        # Whether scrolling by mouse dragging is enabled, i.e.,
+        # whether there is at least one visible scroll bar.
+        self._mouse_dragging_enabled = False
+
+        # Used to remember reference coordinates for mouse dragging.
+        self._last_mouse_drag_reference_x = None
+        self._last_mouse_drag_reference_y = None
 
         # Pixbuf to display on errors.
         self._error_pixbuf = self.render_icon(
             gtk.STOCK_DIALOG_ERROR, gtk.ICON_SIZE_DIALOG, "kofoto")
 
-        # Current position of the horizontal adjustment as a number
-        # between 0 and 1.
-        self._hadj_center = 0.5
-
-        # Current position of the vertical adjustment as a number
-        # between 0 and 1.
-        self._vadj_center = 0.5
+        # Mouse cursors.
+        display = gtk.gdk.display_get_default()
+        pixbuf = gtk.gdk.pixbuf_new_from_file(
+            os.path.join(env.iconDir, "hand-open.png"))
+        self._open_hand_cursor = gtk.gdk.Cursor(display, pixbuf, 13, 13)
+        pixbuf = gtk.gdk.pixbuf_new_from_file(
+            os.path.join(env.iconDir, "hand-closed.png"))
+        self._closed_hand_cursor = gtk.gdk.Cursor(display, pixbuf, 13, 13)
 
         # Subwidgets.
+        self.resize(2, 2)
         self._eventbox_widget = gtk.EventBox()
         self._image_widget = gtk.DrawingArea()
         ew = self._eventbox_widget
         iw = self._image_widget
-        self.add_with_viewport(ew)
+        options = gtk.FILL | gtk.EXPAND | gtk.SHRINK
+        self.attach(ew, 0, 1, 0, 1, options, options)
         ew.add(iw)
         iw.connect_after("realize", self._image_realize_cb)
         iw.connect_after("unrealize", self._image_unrealize_cb)
-        iw.connect_after("size-allocate", self._image_after_size_allocate_cb)
+        self.connect_after("size-allocate", self._after_size_allocate_cb)
         iw.connect("expose-event", self._image_expose_event_cb)
-        self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
+        ew.connect("button-press-event", self._image_button_press_event_cb)
+        ew.connect("button-release-event", self._image_button_release_event_cb)
+        ew.connect("motion-notify-event", self._image_motion_notify_event_cb)
+        ew.connect("scroll-event", self._image_scroll_event_cb)
+
+        self._width_adjustment = gtk.Adjustment()
+        wadj = self._width_adjustment
+        self._width_scrollbar = gtk.HScrollbar(wadj)
+        wscrollbar = self._width_scrollbar
+        self.attach(wscrollbar, 0, 1, 1, 2, gtk.FILL, gtk.FILL)
+
+        self._height_adjustment = gtk.Adjustment()
+        hadj = self._height_adjustment
+        self._height_scrollbar = gtk.VScrollbar(hadj)
+        hscrollbar = self._height_scrollbar
+        self.attach(hscrollbar, 1, 2, 0, 1, gtk.FILL, gtk.FILL)
 
         # Listen for adjustment changes so that we can make
         # adjustments behave nicely when zooming and resizing.
-        hadj = self.get_hadjustment()
-        hadj.connect("changed", self._hadjustment_changed)
-        hadj.connect("value-changed", self._hadjustment_value_changed)
-        vadj = self.get_vadjustment()
-        vadj.connect("changed", self._vadjustment_changed)
-        vadj.connect("value-changed", self._vadjustment_value_changed)
+        wadj.connect("value-changed", self._width_adjustment_value_changed)
+        hadj.connect("value-changed", self._height_adjustment_value_changed)
+
+        self._image_widget.show()
+        self._eventbox_widget.show()
 
     def clear(self):
         """Make the widget display nothing."""
 
         assert self._is_realized()
         self._available_size = None
+        self._request_pixbuf_func = None
         self._displayed_pixbuf = None
+        self._update_scroll_bars()
         self._image_widget.queue_draw()
         gc.collect() # Help GTK to get rid of the old pixbuf.
 
@@ -142,7 +170,9 @@ class ImageView(gtk.ScrolledWindow):
         """Get the wrapped image widget.
 
         Returns the wrapped image widget. This widget is the widget to
-        which mouse event handlers should be connected.
+        which mouse event handlers should be connected. (The return
+        value is actually an eventbox in which the image widget is
+        wrapped.)
         """
         return self._eventbox_widget
 
@@ -160,11 +190,10 @@ class ImageView(gtk.ScrolledWindow):
         set_image.
         """
 
-        size = self._calculate_wanted_image_size()
-        if size is None:
+        if self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
             return None
         else:
-            return tuple(size)
+            return tuple(self._calculate_wanted_image_size())
 
     def get_zoom_level(self):
         """Get current zoom level."""
@@ -186,9 +215,8 @@ class ImageView(gtk.ScrolledWindow):
         See gtk.Widget.modify_bg.
         """
 
-        gtk.ScrolledWindow.modify_bg(self, state, color)
+        gtk.Table.modify_bg(self, state, color)
         self._image_widget.modify_bg(state, color)
-        self.get_child().modify_bg(state, color)
 
     def set_error(self):
         """Indicate that loading of the image failed.
@@ -201,6 +229,7 @@ class ImageView(gtk.ScrolledWindow):
         assert self._is_realized() and self._image_is_set()
         self._available_size = _pixbuf_size(self._error_pixbuf)
         self._displayed_pixbuf = self._error_pixbuf
+        self._update_scroll_bars()
         self._image_widget.queue_draw()
         gc.collect() # Help GTK to get rid of the old pixbuf.
 
@@ -221,15 +250,18 @@ class ImageView(gtk.ScrolledWindow):
         available_size   -- Tuple (width, height) of the full-size image.
         """
 
-        assert self._is_realized() and self._image_is_set()
-        if self._available_size is not None:
-            if not Rectangle(*available_size).fits_within(self._available_size):
+        if not (self._is_realized() and self._image_is_set()):
+            return
+        if self._displayed_pixbuf_is_current():
+            if not Rectangle(*available_size).fits_within(
+                    self._available_size):
                 # The original has grown on disk, so we might want a
                 # larger pixbuf if available.
-                self._load_pixbuf()
+                self._request_pixbuf_and_prescale()
                 return
         self._available_size = Rectangle(*available_size)
         self._create_displayed_pixbuf(pixbuf)
+        self._update_scroll_bars()
         self._image_widget.queue_draw()
         gc.collect() # Help GTK to get rid of the old pixbuf.
 
@@ -262,7 +294,7 @@ class ImageView(gtk.ScrolledWindow):
         self._request_pixbuf_func = load_pixbuf_func
         self._available_size = None
         if self._is_realized():
-            self._load_pixbuf()
+            self._request_pixbuf_and_prescale()
 
     def set_prescale_mode(self, mode):
         """Set whether the widget should prescale a resized image."""
@@ -315,8 +347,14 @@ class ImageView(gtk.ScrolledWindow):
 
         assert self._is_realized() and self._image_is_set()
         self._zoom_mode = ImageView._ZOOM_MODE_BEST_FIT
-        self.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
-        self._resize_image_widget()
+        self._zoom_changed()
+
+    def _after_size_allocate_cb(self, widget, rect):
+        if not (self._is_realized() and self._image_is_set()):
+            return
+        self._maybe_request_new_pixbuf_and_prescale()
+        self._update_scroll_bars()
+        self._image_widget.queue_draw()
 
     def _calculate_best_fit_image_size(self):
         allocation = self._image_widget.allocation
@@ -324,15 +362,14 @@ class ImageView(gtk.ScrolledWindow):
 
     def _calculate_wanted_image_size(self):
         if self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
-            return None
+            return self._available_size
         else:
             if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
-                size = self._calculate_best_fit_image_size()
+                return self._calculate_best_fit_image_size()
             else:
-                size = self._calculate_zoomed_image_size()
-            return size
+                return self._calculate_zoomed_image_boundary()
 
-    def _calculate_zoomed_image_size(self):
+    def _calculate_zoomed_image_boundary(self):
         zsize = int(round(self._zoom_size))
         return Rectangle(zsize, zsize)
 
@@ -344,53 +381,93 @@ class ImageView(gtk.ScrolledWindow):
             self._displayed_pixbuf = pixbuf
         else:
             self._displayed_pixbuf = _safely_downscale_pixbuf(pixbuf, size)
-        self._resize_image_widget()
+
+    def _disable_mouse_dragging(self):
+        self._mouse_dragging_enabled = False
+        self._image_widget.window.set_cursor(None)
 
     def _displayed_pixbuf_is_current(self):
         return self._available_size is not None
 
-    def _hadjustment_changed(self, adj):
-        adj.set_value(
-            self._hadj_center * (adj.upper - adj.lower) - adj.page_size / 2)
-
-    def _hadjustment_value_changed(self, adj):
-        self._hadj_center = \
-            (adj.value + adj.page_size / 2) / (adj.upper - adj.lower)
-
-    def _image_after_size_allocate_cb(self, widget, rect):
-        if not (self._is_realized() and self._image_is_set()):
-            return
-        if self._zoom_mode != ImageView._ZOOM_MODE_BEST_FIT:
-            return
-        wanted_size = self._calculate_best_fit_image_size()
-        if self._displayed_pixbuf_is_current():
-            # We now know that self._available_size is available. 
-            # Also see comment in _load_pixbuf.
-            limited_wanted_size = wanted_size.downscaled_to(
-                self._available_size)
-        else:
-            limited_wanted_size = wanted_size
-        psize = self._previously_requested_image_size
-        if psize is not None and limited_wanted_size != psize:
-            self._load_pixbuf()
-
-    def _image_expose_event_cb(self, widget, event):
+    def _draw_pixbuf(self):
         if not self._displayed_pixbuf:
             return
-        allocation = self._image_widget.allocation
-        pb = self._displayed_pixbuf
-        x = max(allocation.width - pb.get_width(), 0) / 2
-        y = max(allocation.height - pb.get_height(), 0) / 2
-        gcontext = self._image_widget.style.fg_gc[gtk.STATE_NORMAL]
-        dp = self._displayed_pixbuf
-        self._image_widget.window.draw_pixbuf(gcontext, dp, 0, 0, x, y, -1, -1)
 
-    def _image_realize_cb(self, widget):
-        if self._image_is_set():
-            self._load_pixbuf()
+        # The rectangle <source_x, source_y> to <source_x + width,
+        # source_y + height> defines which part of the pixbuf to draw
+        # and the rectangle <target_x, target_y> to <target_x + width,
+        # target_y + height> defines where to draw it on the image
+        # widget.
+        source_x = int(round(self._width_adjustment.value))
+        width = int(round(self._width_adjustment.page_size))
+        source_y = int(round(self._height_adjustment.value))
+        height = int(round(self._height_adjustment.page_size))
+
+        # Draw the pixbuf in the center if it is smaller than the
+        # image widget.
+        allocation = self._image_widget.allocation
+        target_x = max(allocation.width - width, 0) / 2
+        target_y = max(allocation.height - height, 0) / 2
+
+        dp = self._displayed_pixbuf
+        gcontext = self._image_widget.style.fg_gc[gtk.STATE_NORMAL]
+        self._image_widget.window.draw_pixbuf(
+            gcontext, dp,
+            source_x, source_y,
+            target_x, target_y,
+            width, height)
+
+    def _enable_mouse_dragging(self):
+        self._mouse_dragging_enabled = True
+        self._image_widget.window.set_cursor(self._open_hand_cursor)
+
+    def _height_adjustment_value_changed(self, adj):
+        self._image_widget.queue_draw()
+
+    def _image_button_press_event_cb(self, widget, event):
+        if self._mouse_dragging_enabled and event.button == 1:
+            self._image_widget.window.set_cursor(self._closed_hand_cursor)
+            self._last_mouse_drag_reference_x = event.x
+            self._last_mouse_drag_reference_y = event.y
+
+    def _image_button_release_event_cb(self, widget, event):
+        if self._mouse_dragging_enabled and event.button == 1:
+            self._image_widget.window.set_cursor(self._open_hand_cursor)
+
+    def _image_expose_event_cb(self, widget, event):
+        self._draw_pixbuf()
 
     def _image_is_set(self):
         return self._request_pixbuf_func is not None
+
+    def _image_motion_notify_event_cb(self, widget, event):
+        if self._mouse_dragging_enabled:
+            wa = self._width_adjustment
+            ha = self._height_adjustment
+
+            dx = event.x - self._last_mouse_drag_reference_x
+            dy = event.y - self._last_mouse_drag_reference_y
+            new_w_value = max(0, min(wa.upper - wa.page_size, wa.value - dx))
+            new_h_value = max(0, min(ha.upper - ha.page_size, ha.value - dy))
+            self._last_mouse_drag_reference_x -= new_w_value - wa.value
+            self._last_mouse_drag_reference_y -= new_h_value - ha.value
+            wa.value = new_w_value
+            ha.value = new_h_value
+
+    def _image_realize_cb(self, widget):
+        if self._image_is_set():
+            self._request_pixbuf_and_prescale()
+
+    def _image_scroll_event_cb(self, widget, event):
+        allocation = self._image_widget.allocation
+        center_x = float(event.x) / allocation.width
+        center_y = float(event.y) / allocation.height
+        if event.direction == gtk.gdk.SCROLL_DOWN:
+            self._zoom_inout(
+                1 / ImageView._MOUSE_WHEEL_ZOOM_FACTOR, center_x, center_y)
+        elif event.direction == gtk.gdk.SCROLL_UP:
+            self._zoom_inout(
+                ImageView._MOUSE_WHEEL_ZOOM_FACTOR, center_x, center_y)
 
     def _image_unrealize_cb(self, widget):
         self._displayed_pixbuf = None
@@ -405,70 +482,172 @@ class ImageView(gtk.ScrolledWindow):
                 self._zoom_size,
                 max(self._available_size.width, self._available_size.height)))
 
-    def _load_pixbuf(self):
+    def _maybe_request_new_pixbuf_and_prescale(self):
+        if self._zoom_mode != ImageView._ZOOM_MODE_BEST_FIT:
+            # We already have (requested) a pixbuf of the correct
+            # size.
+            return
+        wanted_size = self._calculate_best_fit_image_size()
+        if self._displayed_pixbuf_is_current():
+            # See comment in _request_pixbuf_and_prescale.
+            limited_wanted_size = wanted_size.downscaled_to(
+                self._available_size)
+        else:
+            limited_wanted_size = wanted_size
+        psize = self._previously_requested_pixbuf_size
+        if psize is not None and limited_wanted_size != psize:
+            self._request_pixbuf_and_prescale()
+
+    def _request_pixbuf_and_prescale(self, center_x=0.5, center_y=0.5):
+        # Remember/guess the actual size of the pixbuf to be
+        # loaded by _request_pixbuf_func. This is done to
+        # avoid _request_pixbuf_and_prescale being called when
+        # we expect that the currently displayed image already
+        # is of the correct (full) size.
         size = self._calculate_wanted_image_size()
-        if self._zoom_mode != ImageView._ZOOM_MODE_ACTUAL_SIZE:
-            dp = self._displayed_pixbuf
-            if (self._prescale_mode and
-                self._displayed_pixbuf_is_current() and
-                size.fits_within(self._available_size)):
-                # Don't prescale to a pixbuf larger than the full-size
-                # image.
-                self._displayed_pixbuf = _safely_rescale_pixbuf(dp, size)
-                self._resize_image_widget()
-            if self._displayed_pixbuf_is_current():
-                # Remember/guess the actual size of the pixbuf to be
-                # loaded by _request_pixbuf_func. This is done to
-                # avoid _load_pixbuf being called when we expect that
-                # the currently displayed already is of the correct
-                # (full) size.
-                self._previously_requested_image_size = size.downscaled_to(
-                    self._available_size)
-            else:
-                self._previously_requested_image_size = size
+        self._previously_requested_pixbuf_size = size
+
+        if self._prescale_mode and self._displayed_pixbuf_is_current():
+            self._displayed_pixbuf = _safely_rescale_pixbuf(
+                self._displayed_pixbuf, size)
+            if self._zoom_mode == ImageView._ZOOM_MODE_ZOOM:
+                self._update_scroll_bars(center_x, center_y)
+                self._draw_pixbuf()
         self._request_pixbuf_func(size)
 
-    def _resize_image_widget(self):
-        # The signal size-allocate is emitted when set_size_request is
-        # called.
+    def _update_scroll_bars(self, center_w=0.5, center_h=0.5):
+        if self._displayed_pixbuf is None:
+            self._width_scrollbar.hide()
+            self._height_scrollbar.hide()
+            self._disable_mouse_dragging()
+            return
+
+        old_pb_width = self._width_adjustment.upper
+        old_pb_height = self._height_adjustment.upper
+        new_pb_width = self._displayed_pixbuf.get_width()
+        new_pb_height = self._displayed_pixbuf.get_height()
+
         if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
-            self._image_widget.set_size_request(-1, -1)
+            self._width_scrollbar.hide()
+            self._height_scrollbar.hide()
+            self._width_adjustment.set_all(
+                value=0, page_size=new_pb_width, upper=new_pb_width)
+            self._height_adjustment.set_all(
+                value=0, page_size=new_pb_height, upper=new_pb_height)
+            self._disable_mouse_dragging()
+            return
+
+        allocated_table_size = _gdk_rectangle_size(self.get_allocation())
+
+        # The size to allocate to the image widget. Start out with an
+        # image size equal to the whole table, i.e., no scroll bars.
+        size = Rectangle(*allocated_table_size)
+
+        h_sb_height = self._width_scrollbar.size_request()[1]
+        v_sb_width = self._height_scrollbar.size_request()[0]
+        show_h_scroll_bar = False
+        show_v_scroll_bar = False
+        for i in range(2): # Two loops are enough to stabilize the result.
+            if not show_h_scroll_bar and \
+                    new_pb_width > size.width:
+                show_h_scroll_bar = True
+                size.height -= h_sb_height
+            if not show_v_scroll_bar and \
+                    new_pb_height > size.height:
+                show_v_scroll_bar = True
+                size.width -= v_sb_width
+
+        # If the image widget allocation is larger than the displayed
+        # pixbuf, make it not larger than the pixbuf.
+        size.width = min(size.width, new_pb_width)
+        size.height = min(size.height, new_pb_height)
+
+        old_w_page_size = self._width_adjustment.page_size
+        old_h_page_size = self._height_adjustment.page_size
+
+        self._width_adjustment.set_all(
+            upper=new_pb_width,
+            page_size=size.width,
+            page_increment=size.width,
+            step_increment=size.width / 10.0)
+        self._height_adjustment.set_all(
+            upper=new_pb_height,
+            page_size=size.height,
+            page_increment=size.height,
+            step_increment=size.height / 10.0)
+
+        w_value = self._width_adjustment.value
+        h_value = self._height_adjustment.value
+
+        # Adjust adjustment values so that we zoom relative to the
+        # chosen center point.
+        w_value = \
+            (new_pb_width / old_pb_width) \
+            * (w_value + center_w * old_w_page_size) \
+            - center_w * size.width
+        h_value = \
+            (new_pb_height / old_pb_height) \
+            * (h_value + center_h * old_h_page_size) \
+            - center_h * size.height
+
+        # Adjust adjustment values so that they aren't smaller or
+        # larger than allowed (which they may be after a zoom).
+        w_value = min(
+            max(w_value, 0),
+            self._width_adjustment.upper - self._width_adjustment.page_size)
+        h_value = min(
+            max(h_value, 0),
+            self._height_adjustment.upper - self._height_adjustment.page_size)
+
+        self._width_adjustment.value = w_value
+        self._height_adjustment.value = h_value
+
+        if show_h_scroll_bar:
+            self._width_scrollbar.show()
         else:
-            size = _pixbuf_size(self._displayed_pixbuf)
-            self._image_widget.set_size_request(size.width, size.height)
+            self._width_scrollbar.hide()
+        if show_v_scroll_bar:
+            self._height_scrollbar.show()
+        else:
+            self._height_scrollbar.hide()
 
-    def _set_zoom_size_from_widget_allocation(self):
-        allocation = self._image_widget.allocation
-        self._zoom_size = float(max(allocation.width, allocation.height))
+        if show_h_scroll_bar or show_v_scroll_bar:
+            self._enable_mouse_dragging()
+        else:
+            self._disable_mouse_dragging()
 
-    def _vadjustment_changed(self, adj):
-        adj.set_value(
-            self._vadj_center * (adj.upper - adj.lower) - adj.page_size / 2)
+    def _update_zoom_size_to_current(self):
+        if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
+            allocation = self._image_widget.allocation
+            self._zoom_size = float(max(allocation.width, allocation.height))
+        elif self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
+            self._zoom_size = max(
+                self._available_size.width, self._available_size.height)
 
-    def _vadjustment_value_changed(self, adj):
-        self._vadj_center = \
-            (adj.value + adj.page_size / 2) / (adj.upper - adj.lower)
+    def _width_adjustment_value_changed(self, adj):
+        self._image_widget.queue_draw()
 
-    def _zoom_changed(self):
-        self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self._load_pixbuf()
+    def _zoom_changed(self, center_x=0.5, center_y=0.5):
+        self._request_pixbuf_and_prescale(center_x, center_y)
+        self._update_scroll_bars(center_x, center_y)
+        self._image_widget.queue_draw()
 
-    def _zoom_inout(self, factor):
-        if self._zoom_mode != ImageView._ZOOM_MODE_ZOOM:
-            self._zoom_mode = ImageView._ZOOM_MODE_ZOOM
-            self._set_zoom_size_from_widget_allocation()
+    def _zoom_inout(self, factor, center_x=0.5, center_y=0.5):
+        self._update_zoom_size_to_current()
+        self._zoom_mode = ImageView._ZOOM_MODE_ZOOM
         # The two calls to _limit_zoom_size_to_available_size below
-        # make the zooming feel right in the following two cases:
+        # make the zooming feel right in the following two cases (A
+        # and B):
         #
-        # 1. Both cases: Enter zoom mode on a large image with a
+        # 1. Both A & B: Enter zoom mode on a large image with a
         #    sufficiently large zoom size.
-        # 2. Both cases: Change to an image that is smaller than the
+        # 2. Both A & B: Change to an image that is smaller than the
         #    current zoom size.
-        # 3. Case 1: Zoom in and then zoom out. Case 2: Zoom out.
+        # 3. Case A: Zoom in and then zoom out. Case B: Zoom out.
         self._limit_zoom_size_to_available_size()
         self._zoom_size *= factor
         self._limit_zoom_size_to_available_size()
-        self._zoom_changed()
+        self._zoom_changed(center_x, center_y)
 
 gobject.type_register(ImageView) # TODO: Not needed in PyGTK 2.8.
 
@@ -477,6 +656,8 @@ gobject.type_register(ImageView) # TODO: Not needed in PyGTK 2.8.
 if __name__ == "__main__":
     from kofoto.gkofoto.cachingpixbufloader import CachingPixbufLoader
     import sys
+
+    env.iconDir = "%s/../../../gkofoto/icons" % os.path.dirname(sys.argv[0])
 
     caching_pixbuf_loader = CachingPixbufLoader()
 
