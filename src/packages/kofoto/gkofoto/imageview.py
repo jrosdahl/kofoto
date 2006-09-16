@@ -15,11 +15,11 @@ import os
 from kofoto.gkofoto.environment import env
 from kofoto.rectangle import Rectangle
 
-def _pixbuf_size(pixbuf):
-    return Rectangle(pixbuf.get_width(), pixbuf.get_height())
-
 def _gdk_rectangle_size(gdk_rectangle):
     return Rectangle(gdk_rectangle.width, gdk_rectangle.height)
+
+def _pixbuf_size(pixbuf):
+    return Rectangle(pixbuf.get_width(), pixbuf.get_height())
 
 def _safely_downscale_pixbuf(pixbuf, limit):
     size = _pixbuf_size(pixbuf)
@@ -545,16 +545,16 @@ class ImageView(gtk.Table):
 
         h_sb_height = self._width_scrollbar.size_request()[1]
         v_sb_width = self._height_scrollbar.size_request()[0]
+        show_w_scroll_bar = False
         show_h_scroll_bar = False
-        show_v_scroll_bar = False
         for i in range(2): # Two loops are enough to stabilize the result.
-            if not show_h_scroll_bar and \
+            if not show_w_scroll_bar and \
                     new_pb_width > size.width:
-                show_h_scroll_bar = True
+                show_w_scroll_bar = True
                 size.height -= h_sb_height
-            if not show_v_scroll_bar and \
+            if not show_h_scroll_bar and \
                     new_pb_height > size.height:
-                show_v_scroll_bar = True
+                show_h_scroll_bar = True
                 size.width -= v_sb_width
 
         # If the image widget allocation is larger than the displayed
@@ -602,16 +602,16 @@ class ImageView(gtk.Table):
         self._width_adjustment.value = w_value
         self._height_adjustment.value = h_value
 
-        if show_h_scroll_bar:
+        if show_w_scroll_bar:
             self._width_scrollbar.show()
         else:
             self._width_scrollbar.hide()
-        if show_v_scroll_bar:
+        if show_h_scroll_bar:
             self._height_scrollbar.show()
         else:
             self._height_scrollbar.hide()
 
-        if show_h_scroll_bar or show_v_scroll_bar:
+        if show_w_scroll_bar or show_h_scroll_bar:
             self._enable_mouse_dragging()
         else:
             self._disable_mouse_dragging()
