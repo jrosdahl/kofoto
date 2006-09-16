@@ -111,16 +111,9 @@ class FullScreenWindow(gtk.Window):
             self._image_view.set_image(self._get_image_async_cb)
 
     def _hide_cursor(self):
-        pix_data = """/* XPM */
-            static char * invisible_xpm[] = {
-            "1 1 1 1",
-            "       c None",
-            " "};
-            """
+        pixmap = gtk.gdk.Pixmap(None, 1, 1, 1)
         color = gtk.gdk.Color()
-        pix = gtk.gdk.pixmap_create_from_data(
-            None, pix_data, 1, 1, 1, color, color)
-        invisible_cursor = gtk.gdk.Cursor(pix, pix, color, color, 0, 0)
+        invisible_cursor = gtk.gdk.Cursor(pixmap, pixmap, color, color, 0, 0)
         self.window.set_cursor(invisible_cursor)
 
     def _is_valid_index(self, index):
