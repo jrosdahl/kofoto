@@ -76,7 +76,8 @@ class FullScreenWindow(gtk.Window):
         self._goto(self._current_index)
 
     def _button_press_event_cb(self, widget, event):
-        if event.button == 1:
+        iv = self._image_view
+        if event.button == 1 and iv.get_zoom_mode() == iv.ZoomMode.BestFit:
             self._goto(self._current_index + 1)
 
     def _display_end_screen(self):
