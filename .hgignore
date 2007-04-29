@@ -1,0 +1,12 @@
+syntax: glob
+
+*.pyc
+*.bak
+*.orig
+*.rej
+*~
+
+syntax: regexp
+
+^build/
+^dist/
