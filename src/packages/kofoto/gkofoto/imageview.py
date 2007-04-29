@@ -12,6 +12,7 @@ import gtk
 import gobject
 import operator
 import os
+from kofoto.alternative import Alternative
 from kofoto.gkofoto.environment import env
 from kofoto.rectangle import Rectangle
 
@@ -57,9 +58,7 @@ class ImageView(gtk.Table):
     """A quick image view widget supporting zooming."""
 
     # Possible values of self._zoom_mode.
-    _ZOOM_MODE_BEST_FIT = object()
-    _ZOOM_MODE_ACTUAL_SIZE = object()
-    _ZOOM_MODE_ZOOM = object()
+    ZoomMode = Alternative("BestFit", "ActualSize", "Zoom")
 
     # Hard-coded for now.
     _MOUSE_WHEEL_ZOOM_FACTOR = 1.2
@@ -78,7 +77,7 @@ class ImageView(gtk.Table):
         self._zoom_size = 0.0
 
         # Zoom mode.
-        self._zoom_mode = ImageView._ZOOM_MODE_BEST_FIT
+        self._zoom_mode = ImageView.ZoomMode.BestFit
 
         # Whether the widget should prescale resized images while
         # waiting for the real thing.
@@ -190,7 +189,7 @@ class ImageView(gtk.Table):
         set_image.
         """
 
-        if self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
+        if self._zoom_mode == ImageView.ZoomMode.ActualSize:
             return None
         else:
             return tuple(self._calculate_wanted_image_size())
@@ -328,7 +327,7 @@ class ImageView(gtk.Table):
         """
 
         assert self._is_realized() and self._image_is_set()
-        self._zoom_mode = ImageView._ZOOM_MODE_ZOOM
+        self._zoom_mode = ImageView.ZoomMode.Zoom
         level = min(level, 1.0)
         max_avail = max(
             self._available_size.width, self._available_size.height)
@@ -339,14 +338,14 @@ class ImageView(gtk.Table):
         """Zoom to actual (pixel-wise) image size."""
 
         assert self._is_realized() and self._image_is_set()
-        self._zoom_mode = ImageView._ZOOM_MODE_ACTUAL_SIZE
+        self._zoom_mode = ImageView.ZoomMode.ActualSize
         self._zoom_changed()
 
     def zoom_to_fit(self):
         """Zoom image to fit the current widget size."""
 
         assert self._is_realized() and self._image_is_set()
-        self._zoom_mode = ImageView._ZOOM_MODE_BEST_FIT
+        self._zoom_mode = ImageView.ZoomMode.BestFit
         self._zoom_changed()
 
     def _after_size_allocate_cb(self, widget, rect):
@@ -361,10 +360,10 @@ class ImageView(gtk.Table):
         return Rectangle(allocation.width, allocation.height)
 
     def _calculate_wanted_image_size(self):
-        if self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
+        if self._zoom_mode == ImageView.ZoomMode.ActualSize:
             return self._available_size
         else:
-            if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
+            if self._zoom_mode == ImageView.ZoomMode.BestFit:
                 return self._calculate_best_fit_image_size()
             else:
                 return self._calculate_zoomed_image_boundary()
@@ -375,7 +374,7 @@ class ImageView(gtk.Table):
 
     def _create_displayed_pixbuf(self, pixbuf):
         size = self._calculate_wanted_image_size()
-        if self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
+        if self._zoom_mode == ImageView.ZoomMode.ActualSize:
             self._displayed_pixbuf = pixbuf
         elif size == _pixbuf_size(pixbuf):
             self._displayed_pixbuf = pixbuf
@@ -483,7 +482,7 @@ class ImageView(gtk.Table):
                 max(self._available_size.width, self._available_size.height)))
 
     def _maybe_request_new_pixbuf_and_prescale(self):
-        if self._zoom_mode != ImageView._ZOOM_MODE_BEST_FIT:
+        if self._zoom_mode != ImageView.ZoomMode.BestFit:
             # We already have (requested) a pixbuf of the correct
             # size.
             return
@@ -510,7 +509,7 @@ class ImageView(gtk.Table):
         if self._prescale_mode and self._displayed_pixbuf_is_current():
             self._displayed_pixbuf = _safely_rescale_pixbuf(
                 self._displayed_pixbuf, size)
-            if self._zoom_mode == ImageView._ZOOM_MODE_ZOOM:
+            if self._zoom_mode == ImageView.ZoomMode.Zoom:
                 self._update_scroll_bars(center_x, center_y)
                 self._draw_pixbuf()
         self._request_pixbuf_func(size)
@@ -527,7 +526,7 @@ class ImageView(gtk.Table):
         new_pb_width = self._displayed_pixbuf.get_width()
         new_pb_height = self._displayed_pixbuf.get_height()
 
-        if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
+        if self._zoom_mode == ImageView.ZoomMode.BestFit:
             self._width_scrollbar.hide()
             self._height_scrollbar.hide()
             self._width_adjustment.set_all(
@@ -617,10 +616,10 @@ class ImageView(gtk.Table):
             self._disable_mouse_dragging()
 
     def _update_zoom_size_to_current(self):
-        if self._zoom_mode == ImageView._ZOOM_MODE_BEST_FIT:
+        if self._zoom_mode == ImageView.ZoomMode.BestFit:
             allocation = self._image_widget.allocation
             self._zoom_size = float(max(allocation.width, allocation.height))
-        elif self._zoom_mode == ImageView._ZOOM_MODE_ACTUAL_SIZE:
+        elif self._zoom_mode == ImageView.ZoomMode.ActualSize:
             self._zoom_size = max(
                 self._available_size.width, self._available_size.height)
 
@@ -634,7 +633,7 @@ class ImageView(gtk.Table):
 
     def _zoom_inout(self, factor, center_x=0.5, center_y=0.5):
         self._update_zoom_size_to_current()
-        self._zoom_mode = ImageView._ZOOM_MODE_ZOOM
+        self._zoom_mode = ImageView.ZoomMode.Zoom
         # The two calls to _limit_zoom_size_to_available_size below
         # make the zooming feel right in the following two cases (A
         # and B):
