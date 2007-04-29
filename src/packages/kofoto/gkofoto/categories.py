@@ -55,6 +55,8 @@ class Categories:
         #
         # Category quick select view
         #
+        env.widgets["menubarSetUnsetCategory"].connect(
+            "activate", self._setUnsetCategory_cb)
         self.__categoryQSModel = gtk.ListStore(
             gobject.TYPE_INT,      # CATEGORY_ID
             gobject.TYPE_STRING,   # DESCRIPTION
@@ -456,6 +458,11 @@ class Categories:
         self.__expandAndCollapseRows(
             env.widgets["autoExpand"].get_active(),
             env.widgets["autoCollapse"].get_active())
+
+    def _setUnsetCategory_cb(self, item):
+        env.widgets["sourceNotebook"].set_current_page(1)
+        env.widgets["categoriesNotebook"].set_current_page(1)
+        self.__categoryQSEntry.grab_focus()
 
 ######################################################################
 ### Private
