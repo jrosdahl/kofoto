@@ -208,6 +208,11 @@ class ImageView(gtk.Table):
                 float(self._displayed_pixbuf.get_width()) /
                 self._available_size.width)
 
+    def get_zoom_mode(self):
+        """Get current zoom mode."""
+
+        return self._zoom_mode
+
     def modify_bg(self, state, color):
         """Set the background color.
 
