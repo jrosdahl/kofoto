@@ -137,6 +137,18 @@ class FullScreenWindow(gtk.Window):
         if event.keyval == k.Escape:
             self.destroy()
             return True
+        if event.keyval == k.plus:
+            self._image_view.zoom_in()
+            return
+        if event.keyval == k.minus:
+            self._image_view.zoom_out()
+            return
+        if event.keyval == k._0:
+            self._image_view.zoom_to_actual()
+            return
+        if event.keyval == k.equal:
+            self._image_view.zoom_to_fit()
+            return
         return False
 
     def _maybe_cancel_load(self):
