@@ -122,33 +122,34 @@ class FullScreenWindow(gtk.Window):
 
     def _key_press_event_cb(self, unused, event):
         k = gtk.keysyms
-        if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
-            self._goto(self._current_index + 1)
-            return True
-        if event.keyval in [k.BackSpace, k.Left, k.Up, k.Page_Up]:
-            self._goto(self._current_index - 1)
-            return True
-        if event.keyval == k.Home:
-            self._goto(0)
-            return True
-        if event.keyval == k.End:
-            self._goto(len(self._image_versions) - 1)
-            return True
-        if event.keyval == k.Escape:
-            self.destroy()
-            return True
-        if event.keyval == k.plus:
-            self._image_view.zoom_in()
-            return
-        if event.keyval == k.minus:
-            self._image_view.zoom_out()
-            return
-        if event.keyval == k._0:
-            self._image_view.zoom_to_actual()
-            return
-        if event.keyval == k.equal:
-            self._image_view.zoom_to_fit()
-            return
+        if event.state == 0:
+            if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
+                self._goto(self._current_index + 1)
+                return True
+            if event.keyval in [k.BackSpace, k.Left, k.Up, k.Page_Up]:
+                self._goto(self._current_index - 1)
+                return True
+            if event.keyval == k.Home:
+                self._goto(0)
+                return True
+            if event.keyval == k.End:
+                self._goto(len(self._image_versions) - 1)
+                return True
+            if event.keyval == k.Escape:
+                self.destroy()
+                return True
+            if event.keyval == k.plus:
+                self._image_view.zoom_in()
+                return
+            if event.keyval == k.minus:
+                self._image_view.zoom_out()
+                return
+            if event.keyval == k._0:
+                self._image_view.zoom_to_actual()
+                return
+            if event.keyval == k.equal:
+                self._image_view.zoom_to_fit()
+                return
         return False
 
     def _maybe_cancel_load(self):
