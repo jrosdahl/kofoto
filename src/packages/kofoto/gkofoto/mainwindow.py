@@ -42,6 +42,8 @@ class MainWindow(gtk.Window):
         env.widgets["fullScreenViewButton"].set_icon_widget(self.getIconImage("fullscreen-24.png"))
         env.widgets["menubarFullScreenView"].connect("activate", self._fullScreen)
 
+        env.widgets["menubarSearch"].connect("activate", self._search)
+
         env.widgets["previousButton"].set_sensitive(False)
         env.widgets["nextButton"].set_sensitive(False)
         env.widgets["zoom100"].set_sensitive(False)
@@ -172,6 +174,9 @@ class MainWindow(gtk.Window):
     def _fullScreen(self, *unused):
         if self.__currentObjectCollection is not None:
             self.__currentObjectCollection.fullScreen()
+
+    def _search(self, *unused):
+        self.__sourceEntry.grab_focus()
 
     def _toggleTree(self, button):
         if button.get_active():
