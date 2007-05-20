@@ -82,8 +82,8 @@ class GenerateHTMLDialog:
         defaultlimit = env.config.getcoordlist(
             "album generation", "default_image_size_limit")[0]
         imgsizesset.add(defaultlimit)
-        imgsizes = list(imgsizesset)
-        imgsizes.sort(lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
+        imgsizes = sorted(
+            imgsizesset, key=lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
         env.imagesizelimits = imgsizes
 
         try:

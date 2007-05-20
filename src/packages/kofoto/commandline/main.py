@@ -1066,8 +1066,7 @@ def cmdSortAlbum(env, args):
     else:
         attr = u"captured"
     album = sloppyGetAlbum(env, args[0])
-    children = list(album.getChildren())
-    children.sort(key=lambda x: x.getAttribute(attr))
+    children = sorted(album.getChildren(), key=lambda x: x.getAttribute(attr))
     album.setChildren(children)
 
 
@@ -1314,8 +1313,8 @@ def main(argv):
         defaultlimit = env.config.getcoordlist(
             "album generation", "default_image_size_limit")[0]
         imgsizesset.add(defaultlimit)
-        imgsizes = list(imgsizesset)
-        imgsizes.sort(lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
+        imgsizes = sorted(
+            imgsizesset, key=lambda x, y: cmp(x[0] * x[1], y[0] * y[1]))
         env.imagesizelimits = imgsizes
 
         commandTable[args[0]](env, args[1:])

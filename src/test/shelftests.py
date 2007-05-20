@@ -555,8 +555,7 @@ class TestShelfMethods(TestShelfFixture):
             assert False
 
     def test_getAllAttributeNames(self):
-        attrnames = list(self.shelf.getAllAttributeNames())
-        attrnames.sort()
+        attrnames = sorted(self.shelf.getAllAttributeNames())
         assert attrnames == [
             "cameramake", "cameramodel", "captured", "description",
             "digitalzoom", "exposurebias", "exposureprogram", "exposuretime",
@@ -593,12 +592,12 @@ class TestShelfMethods(TestShelfFixture):
             assert False
 
     def test_getRootCategories(self):
-        categories = list(self.shelf.getRootCategories())
+        categories = sorted(
+            self.shelf.getRootCategories(), key=lambda x: x.getTag())
         cat_a = self.shelf.getCategoryByTag(u"a")
         cat_events = self.shelf.getCategoryByTag(u"events")
         cat_locations = self.shelf.getCategoryByTag(u"locations")
         cat_people = self.shelf.getCategoryByTag(u"people")
-        categories.sort(key=lambda x: x.getTag())
         assert categories == [cat_a, cat_events, cat_locations, cat_people], \
                categories
 
@@ -617,8 +616,7 @@ class TestCategory(TestShelfFixture):
         cat_a.setDescription(u"foo")
         assert cat_a.getDescription() == "foo"
 
-        a_children = list(cat_a.getChildren())
-        a_children.sort(key=lambda x: x.getId())
+        a_children = sorted(cat_a.getChildren(), key=lambda x: x.getId())
         assert a_children == [cat_b, cat_c]
         b_children = list(cat_b.getChildren())
         assert b_children == [cat_d]
@@ -629,8 +627,7 @@ class TestCategory(TestShelfFixture):
         assert a_parents == []
         b_parents = list(cat_b.getParents())
         assert b_parents == [cat_a]
-        d_parents = list(cat_d.getParents())
-        d_parents.sort(key=lambda x: x.getTag())
+        d_parents = sorted(cat_d.getParents(), key=lambda x: x.getTag())
         assert d_parents == [cat_b, cat_c]
 
         assert not cat_a.isChildOf(cat_a)
@@ -683,8 +680,7 @@ class TestObject(TestShelfFixture):
         root = self.shelf.getRootAlbum()
         alpha = self.shelf.getAlbumByTag(u"alpha")
         beta = self.shelf.getAlbumByTag(u"beta")
-        parents = list(beta.getParents())
-        parents.sort(key=lambda x: x.getTag())
+        parents = sorted(beta.getParents(), key=lambda x: x.getTag())
         assert parents == [alpha, root]
 
     def test_getAttribute(self):
@@ -703,8 +699,7 @@ class TestObject(TestShelfFixture):
 
     def test_getAttributeNames(self):
         orphans = self.shelf.getAlbumByTag(u"orphans")
-        names = list(orphans.getAttributeNames())
-        names.sort()
+        names = sorted(orphans.getAttributeNames())
         assert names == ["description", "title"]
 
     def test_setAttribute(self):
@@ -781,8 +776,7 @@ class TestAlbum(TestShelfFixture):
     def test_getAlbumParents(self):
         root = self.shelf.getRootAlbum()
         alpha = self.shelf.getAlbumByTag(u"alpha")
-        parents = list(alpha.getAlbumParents())
-        parents.sort(key=lambda x: x.getTag())
+        parents = sorted(alpha.getAlbumParents(), key=lambda x: x.getTag())
         assert parents == [root]
 
     def test_isAlbum(self):

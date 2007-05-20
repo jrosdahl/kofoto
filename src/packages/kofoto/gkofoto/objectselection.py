@@ -53,9 +53,8 @@ class ObjectSelection:
         return [x[1] for x in items]
 
     def getLowestSelectedRowNr(self):
-        rowNrs = list(self)
+        rowNrs = sorted(self)
         if (len(rowNrs) > 0):
-            rowNrs.sort()
             return rowNrs[0]
         else:
             return None
@@ -69,8 +68,7 @@ class ObjectSelection:
         if len(self) == 0:
             rowNr = 0
         else:
-            rowNumbers = list(self)
-            rowNumbers.sort()
+            rowNumbers = sorted(self)
             rowNr = rowNumbers[0]
         filenames = []
         for x in [rowNr - 2, rowNr + 2, rowNr - 1, rowNr + 1]: # TODO: Make configurable.

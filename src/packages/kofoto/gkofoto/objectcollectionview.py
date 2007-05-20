@@ -361,8 +361,7 @@ class ObjectCollectionView:
                                        gtk.SORT_DESCENDING)
             menuGroup.addSeparator()
             objectMetadataMap = objectCollection.getObjectMetadataMap()
-            columnNames = list(objectMetadataMap.keys())
-            columnNames.sort()
+            columnNames = sorted(objectMetadataMap)
             for columnName in columnNames:
                 if objectMetadataMap[columnName][ObjectCollection.TYPE] != gtk.gdk.Pixbuf:
                     menuGroup.addRadioMenuItem(columnName,

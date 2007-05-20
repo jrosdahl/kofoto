@@ -413,8 +413,9 @@ class Categories:
             return
 
         regexp = re.compile(".*%s.*" % re.escape(text.lower()))
-        categories = list(env.shelf.getMatchingCategories(regexp))
-        categories.sort(self.__compareCategories)
+        categories = sorted(
+            env.shelf.getMatchingCategories(regexp),
+            cmp=self.__compareCategories)
         exactMatches = []
         for category in categories:
             iterator = self.__categoryQSModel.append()
@@ -687,8 +688,7 @@ class Categories:
             categoryRow[self.__COLUMN_DESCRIPTION] = category.getDescription()
 
     def __sortCategories(self, categoryIter):
-        categories = list(categoryIter)
-        categories.sort(self.__compareCategories)
+        categories = sorted(categoryIter, cmp=self.__compareCategories)
         return categories
 
     def __compareCategories(self, x, y):

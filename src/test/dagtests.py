@@ -15,11 +15,6 @@ from kofoto.dag import *
 PICDIR = unicode(os.path.realpath(
     os.path.join("..", "reference_pictures", "working")))
 
-def sorted(x):
-    y = x[:]
-    y.sort()
-    return y
-
 class TestDAG(unittest.TestCase):
     def setUp(self):
         self.dag = DAG()
