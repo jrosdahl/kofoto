@@ -2,7 +2,6 @@
 
 __all__ = ["DAG", "LoopError"]
 
-from sets import Set
 from kofoto.common import KofotoError
 
 class LoopError(KofotoError):
@@ -19,8 +18,8 @@ class DAG:
         initlist -- A list of elements to add to the DAG. The element
                     will be unconnected.
         """
-        self.roots = Set()
-        self.elements = Set()
+        self.roots = set()
+        self.elements = set()
         self.parents = {}
         self.children = {}
         if initlist:
@@ -37,8 +36,8 @@ class DAG:
         """Add an element to the DAG."""
         self.roots.add(element)
         self.elements.add(element)
-        self.parents[element] = Set()
-        self.children[element] = Set()
+        self.parents[element] = set()
+        self.children[element] = set()
 
     def connect(self, parent, child):
         """Add an element to another element."""
@@ -67,7 +66,7 @@ class DAG:
 
         An iterable is returned.
         """
-        visited = Set()
+        visited = set()
         stack = [element]
         while stack:
             el = stack.pop()
@@ -89,7 +88,7 @@ class DAG:
 
         An iterable is returned.
         """
-        visited = Set()
+        visited = set()
         stack = [element]
         while stack:
             el = stack.pop()

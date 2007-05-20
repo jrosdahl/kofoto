@@ -1,6 +1,5 @@
 import os
 import re
-import sets
 
 import gtk
 
@@ -37,7 +36,7 @@ class RegisterImageVersionsDialog:
 
     def run(self, image):
         self._image = image
-        files = sets.Set()
+        files = set()
         for imageversion in image.getImageVersions():
             base, filename = os.path.split(imageversion.getLocation())
             prefix, _ = os.path.splitext(filename)

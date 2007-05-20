@@ -18,7 +18,6 @@ import os
 import re
 import threading
 import sqlite as sql
-from sets import Set
 from kofoto.common import UnimplementedError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
@@ -1458,12 +1457,12 @@ class _Object:
                 " select category from object_category"
                 " where  object = %s",
                 self.getId())
-            self.categories = Set([x[0] for x in cursor])
+            self.categories = set([x[0] for x in cursor])
             self.allCategoriesFetched = True
         if recursive:
-            allcategories = Set()
+            allcategories = set()
             for catid in self.categories:
-                allcategories |= Set(
+                allcategories |= set(
                     self.shelf.categorydag.get().getAncestors(catid))
         else:
             allcategories = self.categories
@@ -1479,7 +1478,7 @@ class _Object:
         self.objid = objid
         self.attributes = {}
         self.allAttributesFetched = False
-        self.categories = Set()
+        self.categories = set()
         self.allCategoriesFetched = False
 
     def _categoriesDirty(self):

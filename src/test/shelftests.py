@@ -6,7 +6,6 @@ import shutil
 import sys
 import threading
 import unittest
-from sets import Set as set
 
 if __name__ == "__main__":
     cwd = os.getcwd()

@@ -8,7 +8,6 @@ __all__ = ["main"]
 import codecs
 import getopt
 import os
-from sets import Set
 import sys
 import time
 
@@ -992,7 +991,7 @@ def cmdSearch(env, args):
         for iv in o.getImageVersions():
             ivs.append(iv)
     if env.printIDs:
-        ids = Set()
+        ids = set()
         for iv in ivs:
             ids.add(iv.getImage().getId())
         output = [str(x) for x in ids]
@@ -1313,7 +1312,7 @@ def main(argv):
 
         imgsizesval = env.config.getcoordlist(
             "album generation", "other_image_size_limits")
-        imgsizesset = Set(imgsizesval) # Get rid of duplicates.
+        imgsizesset = set(imgsizesval) # Get rid of duplicates.
         defaultlimit = env.config.getcoordlist(
             "album generation", "default_image_size_limit")[0]
         imgsizesset.add(defaultlimit)

@@ -2,7 +2,6 @@ import os
 import gtk
 import gobject
 import gc
-from sets import Set
 from kofoto.shelfexceptions import BadAlbumTagError
 from kofoto.timer import Timer
 from kofoto.gkofoto.environment import env
@@ -27,7 +26,7 @@ class ObjectCollection(object):
         self.__objectSelection = ObjectSelection(self)
         self.__insertionPseudoThread = None
         self.__registeredViews = []
-        self.__disabledFields = Set()
+        self.__disabledFields = set()
         self.__rowInsertedCallbacks = []
         self.__columnsType = [ gobject.TYPE_BOOLEAN,  # COLUMN_VALID_LOCATION
                                gobject.TYPE_BOOLEAN,  # COLUMN_VALID_CHECKSUM
@@ -220,9 +219,9 @@ class ObjectCollection(object):
             else:
                 checkbutton = widgets.get_widget("deleteImageFilesCheckbutton")
                 deleteFiles = checkbutton.get_active()
-            objectIds = Set()
+            objectIds = set()
             # Create a Set to avoid duplicated objects.
-            for obj in Set(self.__objectSelection.getSelectedObjects()):
+            for obj in set(self.__objectSelection.getSelectedObjects()):
                 if deleteFiles and not obj.isAlbum():
                     for iv in obj.getImageVersions():
                         try:
@@ -365,7 +364,7 @@ class ObjectCollection(object):
         env.widgets["statusbarLoadedObjects"].push(1, text)
 
     def _handleNrOfObjectsUpdate(self):
-        updatedDisabledFields = Set()
+        updatedDisabledFields = set()
         if self.__nrOfAlbums == 0:
             updatedDisabledFields.add(u"albumtag")
         if self.__nrOfImages == 0:

@@ -2,11 +2,6 @@
 
 __all__ = ["Alternative"]
 
-try:
-    set
-except NameError:
-    from sets import Set as set
-
 class Alternative:
     """A simple variant record (AKA discriminated union) class.
 

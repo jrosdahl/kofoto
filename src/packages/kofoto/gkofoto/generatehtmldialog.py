@@ -1,7 +1,6 @@
 import gtk
 import os
 import re
-from sets import Set
 from kofoto.gkofoto.environment import env
 import kofoto.generate
 import kofoto.shelfexceptions
@@ -79,7 +78,7 @@ class GenerateHTMLDialog:
 
         imgsizesval = env.config.getcoordlist(
             "album generation", "other_image_size_limits")
-        imgsizesset = Set(imgsizesval) # Get rid of duplicates.
+        imgsizesset = set(imgsizesval) # Get rid of duplicates.
         defaultlimit = env.config.getcoordlist(
             "album generation", "default_image_size_limit")[0]
         imgsizesset.add(defaultlimit)

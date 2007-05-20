@@ -5,7 +5,6 @@ __all__ = ["CachingPixbufLoader"]
 import gc
 import os
 import time
-from sets import Set as set
 if __name__ == "__main__":
     import pygtk
     pygtk.require("2.0")

@@ -1,5 +1,4 @@
 from kofoto.gkofoto.environment import env
-from sets import Set
 
 class ObjectSelection:
     def __init__(self, objectCollection):
@@ -13,7 +12,7 @@ class ObjectSelection:
         # This class must know about each object's row to be able to distinguish
         # individual objects in an album that contains multiple instances
         # of the same image or album.
-        self.__changedCallbacks = Set()
+        self.__changedCallbacks = set()
         self.__objectCollection = objectCollection
         self.addChangedCallback(self._nrOfSelectedObjectsChanged)
 

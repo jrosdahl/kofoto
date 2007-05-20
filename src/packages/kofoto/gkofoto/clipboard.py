@@ -1,4 +1,3 @@
-from sets import Set
 from kofoto.shelf import Album, Image
 from kofoto.gkofoto.categories import ClipboardCategories
 
@@ -11,7 +10,7 @@ class Clipboard:
     def __init__(self):
         self.__objects = None
         self.__types = None
-        self.__changedCallbacks = Set()
+        self.__changedCallbacks = set()
         self.clear()
 
     def addChangedCallback(self, callback):

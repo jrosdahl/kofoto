@@ -1,6 +1,5 @@
 import os
 import gtk
-from sets import Set as set
 from kofoto.alternative import Alternative
 from kofoto.shelf import ImageVersionType
 from kofoto.gkofoto.environment import env
