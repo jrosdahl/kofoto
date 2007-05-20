@@ -1,6 +1,7 @@
 import gtk
 import os
 import shutil
+import subprocess
 
 from kofoto.gkofoto.environment import env
 
@@ -47,8 +48,9 @@ class DuplicateAndOpenImageDialog:
                 self._imageversion.getLocation(),
                 duplicateLocation)
             command = env.openCommand % {"locations": duplicateLocation}
-            result = os.system(command.encode(env.localeEncoding) + " &")
-            if result != 0:
+            try:
+                subprocess.Popen(command, shell=True)
+            except OSError:
                 dialog = gtk.MessageDialog(
                     self._dialog,
                     gtk.DIALOG_MODAL,

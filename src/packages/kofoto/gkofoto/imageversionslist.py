@@ -1,4 +1,5 @@
 import os
+import subprocess
 import gtk
 from kofoto.alternative import Alternative
 from kofoto.shelf import ImageVersionType
@@ -284,8 +285,9 @@ class ImageVersionsList(gtk.ScrolledWindow):
             self.__imageWidgetToImageVersion[x].getLocation()
             for x in self.__getSelectedImageVersionsInOrder()]
         command = env.openCommand % {"locations": " ".join(locations)}
-        result = os.system(command.encode(env.localeEncoding) + " &")
-        if result != 0:
+        try:
+            subprocess.Popen(command, shell=True)
+        except OSError:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
                 buttons=gtk.BUTTONS_OK,
@@ -368,16 +370,18 @@ class ImageVersionsList(gtk.ScrolledWindow):
             location = imageVersion.getLocation()
             env.pixbufLoader.unload_all(location)
             command = rotateCommand % {"location": location}
-            result = os.system(command.encode(env.localeEncoding))
-            if result == 0:
-                imageVersion.contentChanged()
-            else:
+            try:
+                subprocess.Popen(command, shell=True)
+            except OSError:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,
                     buttons=gtk.BUTTONS_OK,
-                    message_format="Failed to execute command: \"%s\"" % command)
+                    message_format=
+                        "Failed to execute command: \"%s\"" % command)
                 dialog.run()
                 dialog.destroy()
+            else:
+                imageVersion.contentChanged()
         self.__singleObjectView.reload()
 
     def __getSelectedImageVersionsInOrder(self):

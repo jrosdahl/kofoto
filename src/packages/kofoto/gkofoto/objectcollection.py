@@ -2,6 +2,7 @@ import os
 import gtk
 import gobject
 import gc
+import subprocess
 from kofoto.shelfexceptions import BadAlbumTagError
 from kofoto.timer import Timer
 from kofoto.gkofoto.environment import env
@@ -530,18 +531,19 @@ class ObjectCollection(object):
                 else:
                     commandString = env.rotateLeftCommand
                 command = commandString % { "location":location }
-                result = os.system(command.encode(env.localeEncoding))
-                if result == 0:
-                    imageversion.contentChanged()
-                    model = self.getUnsortedModel()
-                    self.__loadThumbnail(model, model.get_iter(rowNr))
-                else:
+                try:
+                    subprocess.Popen(command, shell=True)
+                except OSError:
                     dialog = gtk.MessageDialog(
                         type=gtk.MESSAGE_ERROR,
                         buttons=gtk.BUTTONS_OK,
                         message_format="Failed to execute command: \"%s\"" % command)
                     dialog.run()
                     dialog.destroy()
+                else:
+                    imageversion.contentChanged()
+                    model = self.getUnsortedModel()
+                    self.__loadThumbnail(model, model.get_iter(rowNr))
         self.reloadSingleObjectView()
 
     def rotateImageLeft(self, widget, *unused):
@@ -562,8 +564,9 @@ class ObjectCollection(object):
                 locations += location + " "
         if locations != "":
             command = env.openCommand % { "locations":locations }
-            result = os.system(command.encode(env.localeEncoding) + " &")
-            if result != 0:
+            try:
+                subprocess.Popen(command, shell=True)
+            except OSError:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,
                     buttons=gtk.BUTTONS_OK,
