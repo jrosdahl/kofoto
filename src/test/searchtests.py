@@ -76,7 +76,7 @@ class TestSearch(TestShelfFixture):
         for expression, expectedResult in tests:
             parseTree = parser.parse(expression)
             result = list(self.shelf.search(parseTree))
-            result.sort(lambda x, y: cmp(x.getId(), y.getId()))
+            result.sort(key=lambda x: x.getId())
             assert result == expectedResult, (expression, expectedResult, result)
 
     def test_parseErrors(self):

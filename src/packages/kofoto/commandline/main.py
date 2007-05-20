@@ -938,8 +938,7 @@ def cmdRemove(env, args):
             positions.append(int(pos))
         except ValueError:
             env.errexit("Bad position: %s.\n" % pos)
-    positions.sort()
-    positions.reverse()
+    positions.sort(reverse=True)
     children = list(album.getChildren())
     if not (0 <= positions[0] < len(children)):
         env.errexit("Bad position: %d.\n" % positions[0])
@@ -1068,8 +1067,7 @@ def cmdSortAlbum(env, args):
         attr = u"captured"
     album = sloppyGetAlbum(env, args[0])
     children = list(album.getChildren())
-    children.sort(
-        lambda x, y: cmp(x.getAttribute(attr), y.getAttribute(attr)))
+    children.sort(key=lambda x: x.getAttribute(attr))
     album.setChildren(children)
 
 

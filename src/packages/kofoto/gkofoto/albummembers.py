@@ -65,11 +65,8 @@ class AlbumMembers(ObjectCollection):
         model = self.getModel()
         self._freezeViews()
         albumMembers = list(self.__album.getChildren())
-        locations = list(self.getObjectSelection())
-        locations.sort()
-        locations.reverse()
         albumDeleted = False
-        for loc in locations:
+        for loc in sorted(self.getObjectSelection(), reverse=True):
             if albumMembers[loc].isAlbum():
                 albumDeleted = True
             albumMembers.pop(loc)

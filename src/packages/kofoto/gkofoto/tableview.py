@@ -1,5 +1,6 @@
 import gtk
 import gobject
+import operator
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.objectcollectionview import ObjectCollectionView
 from kofoto.gkofoto.objectcollection import ObjectCollection
@@ -84,7 +85,7 @@ class TableView(ObjectCollectionView):
         objectMetadataMap = self._objectCollection.getObjectMetadataMap()
         disabledFields = self._objectCollection.getDisabledFields()
         columnLocationList = self.__userChosenColumns.items()
-        columnLocationList.sort(lambda x, y: cmp(x[1], y[1]))
+        columnLocationList.sort(key=operator.itemgetter(1))
         env.debug("Column locations: " + str(columnLocationList))
         for (columnName, _) in columnLocationList:
             if (columnName in objectMetadataMap and

@@ -238,9 +238,7 @@ class ObjectCollection(object):
             unsortedModel = self.getUnsortedModel()
             locations = [row.path for row in unsortedModel
                          if row[ObjectCollection.COLUMN_OBJECT_ID] in objectIds]
-            locations.sort()
-            locations.reverse()
-            for loc in locations:
+            for loc in sorted(locations, reverse=True):
                 del unsortedModel[loc]
         dialog.destroy()
         if albumDestroyed:

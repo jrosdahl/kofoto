@@ -205,7 +205,7 @@ class OutputEngine:
         self.preGeneration(root)
         i = 1
         items = albummap.items()
-        items.sort(lambda x, y: cmp(x[0].getTag(), y[0].getTag()))
+        items.sort(key=lambda x: x[0].getTag())
         for album, paths in items:
             if album in albumsToGenerate:
                 nchildren = len(list(album.getChildren()))

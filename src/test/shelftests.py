@@ -598,7 +598,7 @@ class TestShelfMethods(TestShelfFixture):
         cat_events = self.shelf.getCategoryByTag(u"events")
         cat_locations = self.shelf.getCategoryByTag(u"locations")
         cat_people = self.shelf.getCategoryByTag(u"people")
-        categories.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
+        categories.sort(key=lambda x: x.getTag())
         assert categories == [cat_a, cat_events, cat_locations, cat_people], \
                categories
 
@@ -618,7 +618,7 @@ class TestCategory(TestShelfFixture):
         assert cat_a.getDescription() == "foo"
 
         a_children = list(cat_a.getChildren())
-        a_children.sort(lambda x, y: cmp(x.getId(), y.getId()))
+        a_children.sort(key=lambda x: x.getId())
         assert a_children == [cat_b, cat_c]
         b_children = list(cat_b.getChildren())
         assert b_children == [cat_d]
@@ -630,7 +630,7 @@ class TestCategory(TestShelfFixture):
         b_parents = list(cat_b.getParents())
         assert b_parents == [cat_a]
         d_parents = list(cat_d.getParents())
-        d_parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
+        d_parents.sort(key=lambda x: x.getTag())
         assert d_parents == [cat_b, cat_c]
 
         assert not cat_a.isChildOf(cat_a)
@@ -684,7 +684,7 @@ class TestObject(TestShelfFixture):
         alpha = self.shelf.getAlbumByTag(u"alpha")
         beta = self.shelf.getAlbumByTag(u"beta")
         parents = list(beta.getParents())
-        parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
+        parents.sort(key=lambda x: x.getTag())
         assert parents == [alpha, root]
 
     def test_getAttribute(self):
@@ -782,7 +782,7 @@ class TestAlbum(TestShelfFixture):
         root = self.shelf.getRootAlbum()
         alpha = self.shelf.getAlbumByTag(u"alpha")
         parents = list(alpha.getAlbumParents())
-        parents.sort(lambda x, y: cmp(x.getTag(), y.getTag()))
+        parents.sort(key=lambda x: x.getTag())
         assert parents == [root]
 
     def test_isAlbum(self):

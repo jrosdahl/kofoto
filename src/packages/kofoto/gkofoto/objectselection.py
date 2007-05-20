@@ -49,7 +49,7 @@ class ObjectSelection:
     def getSelectedObjects(self):
         conv = self.__objectCollection.convertFromUnsortedRowNr
         items = self.__selectedObjects.items()
-        items.sort(lambda x, y: cmp(conv(x[0]), conv(y[0])))
+        items.sort(key=lambda x: conv(x[0]))
         return [x[1] for x in items]
 
     def getLowestSelectedRowNr(self):
