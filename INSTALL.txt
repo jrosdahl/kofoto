@@ -16,7 +16,7 @@ A. Unix
 
    Kofoto depends on the following third-party softwares:
 
-     * Python 2.3 or newer. Found at:
+     * Python 2.4 or newer. Found at:
 
            http://www.python.org
 
@@ -73,7 +73,7 @@ C. Windows with separately installed dependencies
 
    Kofoto depends on the following third-party softwares:
 
-     * Python 2.3 (or newer). Found at:
+     * Python 2.4 (or newer). Found at:
 
            http://www.python.org
 
