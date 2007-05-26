@@ -185,6 +185,10 @@ class TestShelfCreation(unittest.TestCase):
             assert False
 
 class TestShelfMemoryLeakage(unittest.TestCase):
+    def setUp(self):
+        # Ignore any previous leaks.
+        gc.collect()
+
     def tearDown(self):
         removeTmpDb()
 

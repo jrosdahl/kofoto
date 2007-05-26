@@ -26,7 +26,7 @@ def removeTmpDb():
         if os.path.exists(x):
             os.unlink(x)
 
-from shelftests import TestShelfFixture
+from test_shelf import TestShelfFixture
 
 class TestSearch(TestShelfFixture):
     def setUp(self):
