@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 
-testModules = ["dagtests", "kofoto.iodict", "shelftests", "searchtests"]
+tests = ["dagtests", "searchtests", "shelftests", "test_iodict"]
 
 cwd = os.getcwd()
 libdir = unicode(os.path.realpath(
@@ -12,7 +12,7 @@ sys.path.insert(0, libdir)
 
 def suite():
     alltests = unittest.TestSuite()
-    for module in [__import__(x) for x in testModules]:
+    for module in [__import__(x) for x in tests]:
         alltests.addTest(unittest.findTestCases(module))
     return alltests
 
