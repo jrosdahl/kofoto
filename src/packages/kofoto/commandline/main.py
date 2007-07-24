@@ -910,8 +910,8 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
                 registrationTimeString,
                 [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
+            image = env.shelf.createImage()
             try:
-                image = env.shelf.createImage()
                 env.shelf.createImageVersion(
                     image, path, ImageVersionType.Original)
                 image.setAttribute(u"registered", registrationTimeString)
@@ -920,8 +920,10 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
                     env.out("Registered image: %s\n" % path)
             except NotAnImageFileError, x:
                 env.out("Ignoring non-image file: %s\n" % path)
+                env.shelf.deleteImage(image.getId())
             except ImageVersionExistsError, x:
                 env.err("Ignoring already registered image version: %s\n" % path)
+                env.shelf.deleteImage(image.getId())
         else:
             env.err("No such file or directory (ignored): %s\n" % path)
     addHelper(env, destalbum, newchildren)
