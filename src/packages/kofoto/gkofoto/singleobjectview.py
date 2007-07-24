@@ -113,7 +113,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
                 ]:
             env.widgets[widgetName].set_sensitive(False)
 
-    def __loadObject(self, obj):
+    def __loadObject(self, obj, force=False):
         self.__imageVersionsList.clear()
         if obj == None:
             location = env.unknownImageIconFileName
@@ -124,10 +124,10 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
             self.__imageVersionsList.loadImage(obj)
         else:
             location = env.unknownImageIconFileName
-        self._loadImageAtLocation(location)
+        self._loadImageAtLocation(location, force)
 
-    def _loadImageAtLocation(self, location):
-        if location == self.__currentImageLocation:
+    def _loadImageAtLocation(self, location, force):
+        if not force and location == self.__currentImageLocation:
             return
         self.__currentImageLocation = location
         self.__imageView.set_image(self.__loadPixbuf_cb)
@@ -149,7 +149,7 @@ class SingleObjectView(ObjectCollectionView, gtk.HPaned):
         self.reload()
 
     def reload(self):
-        self.__loadObject(self.__loadedObject)
+        self.__loadObject(self.__loadedObject, True)
         self.__imageVersionsList.reload()
         self._objectCollection.reloadSelectedRows()
 
