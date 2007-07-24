@@ -532,8 +532,10 @@ class ObjectCollection(object):
                     commandString = env.rotateLeftCommand
                 command = commandString % { "location":location }
                 try:
-                    subprocess.Popen(command, shell=True)
+                    result = subprocess.call(command, shell=True)
                 except OSError:
+                    result = 1
+                if result != 0:
                     dialog = gtk.MessageDialog(
                         type=gtk.MESSAGE_ERROR,
                         buttons=gtk.BUTTONS_OK,
@@ -565,8 +567,10 @@ class ObjectCollection(object):
         if locations != "":
             command = env.openCommand % { "locations":locations }
             try:
-                subprocess.Popen(command, shell=True)
+                result = subprocess.call(command, shell=True)
             except OSError:
+                result = 1
+            if result != 0:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,
                     buttons=gtk.BUTTONS_OK,

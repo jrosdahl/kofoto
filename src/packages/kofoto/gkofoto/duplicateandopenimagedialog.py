@@ -49,8 +49,10 @@ class DuplicateAndOpenImageDialog:
                 duplicateLocation)
             command = env.openCommand % {"locations": duplicateLocation}
             try:
-                subprocess.Popen(command, shell=True)
+                result = subprocess.call(command, shell=True)
             except OSError:
+                result = 1
+            if result != 0:
                 dialog = gtk.MessageDialog(
                     self._dialog,
                     gtk.DIALOG_MODAL,

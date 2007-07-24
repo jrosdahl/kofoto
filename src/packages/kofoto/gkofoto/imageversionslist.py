@@ -286,8 +286,10 @@ class ImageVersionsList(gtk.ScrolledWindow):
             for x in self.__getSelectedImageVersionsInOrder()]
         command = env.openCommand % {"locations": " ".join(locations)}
         try:
-            subprocess.Popen(command, shell=True)
+            result = subprocess.call(command, shell=True)
         except OSError:
+            result = 1
+        if result != 0:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
                 buttons=gtk.BUTTONS_OK,
@@ -371,8 +373,10 @@ class ImageVersionsList(gtk.ScrolledWindow):
             env.pixbufLoader.unload_all(location)
             command = rotateCommand % {"location": location}
             try:
-                subprocess.Popen(command, shell=True)
+                result = subprocess.call(command, shell=True)
             except OSError:
+                result = 1
+            if result != 0:
                 dialog = gtk.MessageDialog(
                     type=gtk.MESSAGE_ERROR,
                     buttons=gtk.BUTTONS_OK,
