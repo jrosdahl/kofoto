@@ -562,9 +562,8 @@ class TestShelfMethods(TestShelfFixture):
         attrnames = sorted(self.shelf.getAllAttributeNames())
         assert attrnames == [
             "cameramake", "cameramodel", "captured", "description",
-            "digitalzoom", "exposurebias", "exposureprogram", "exposuretime",
-            "flash", "fnumber", "focallength", "iso", "orientation", "query",
-            "title"
+            "exposurebias", "exposureprogram", "exposuretime", "flash",
+            "fnumber", "focallength", "iso", "orientation", "query", "title"
             ], attrnames
 
     def test_getCategory(self):

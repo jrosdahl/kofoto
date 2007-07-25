@@ -1957,8 +1957,9 @@ class ImageVersion:
         """
         from kofoto import EXIF
         image = self.getImage()
+        fp = open(self.getLocation(), "rb")
         try:
-            tags = EXIF.process_file(file(self.getLocation(), "rb"))
+            tags = EXIF.process_file(fp, details=False)
         except: # Work-around for buggy EXIF library.
             raise ExifImportError(self.getLocation())
 
@@ -2018,18 +2019,6 @@ class ImageVersion:
         value = tags.get("EXIF ExposureBiasValue")
         if value:
             image.setAttribute(u"exposurebias", unicode(value), overwrite)
-        value = tags.get("MakerNote SpecialMode")
-        if value:
-            image.setAttribute(u"specialmode", unicode(value), overwrite)
-        value = tags.get("MakerNote JPEGQual")
-        if value:
-            image.setAttribute(u"jpegquality", unicode(value), overwrite)
-        value = tags.get("MakerNote Macro")
-        if value:
-            image.setAttribute(u"macro", unicode(value), overwrite)
-        value = tags.get("MakerNote DigitalZoom")
-        if value:
-            image.setAttribute(u"digitalzoom", unicode(value), overwrite)
         self.shelf._setModified()
 
     ##############################
