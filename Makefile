@@ -58,7 +58,7 @@ dist_debian:
 	cd dist/debian && dpkg-scansources . /dev/null 2>/dev/null | gzip -9c >Sources.gz
 	rm -rf dist/debiantmp
 
-check:
-	python src/test/alltests.py
+test:
+	python src/test/test_all.py
 
 .PHONY: help clean install dist check
