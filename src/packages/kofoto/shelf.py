@@ -1996,17 +1996,17 @@ class ImageVersion:
         value = tags.get("Image Orientation")
         if value:
             try:
-                m = {"1": "up",
-                     "2": "up",
-                     "3": "down",
-                     "4": "up",
-                     "5": "up",
-                     "6": "left",
-                     "7": "up",
-                     "8": "right",
+                m = {1: "up",
+                     2: "up",
+                     3: "down",
+                     4: "up",
+                     5: "up",
+                     6: "left",
+                     7: "up",
+                     8: "right",
                      }
                 image.setAttribute(
-                    u"orientation", unicode(m[str(value)]), overwrite)
+                    u"orientation", unicode(m[value.values[0]]), overwrite)
             except KeyError:
                 pass
         value = tags.get("EXIF ExposureProgram")
