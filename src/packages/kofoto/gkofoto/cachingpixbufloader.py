@@ -70,7 +70,8 @@ class _RequestStateWaitingForSize(_RequestStateBase):
 
     def load_some_more(self):
         req = self._request
-        req._unreported_bytes += req._pb_loader.load_some_more()
+        loaded_bytes = req._pb_loader.load_some_more()
+        req._unreported_bytes += loaded_bytes
         original_size = req._pb_loader.get_original_size()
         if original_size is not None:
             req._state = _RequestStateLoading(req)
@@ -80,6 +81,9 @@ class _RequestStateWaitingForSize(_RequestStateBase):
             else:
                 req._size_to_load = Rectangle(*original_size).downscaled_to(
                     req._size_limit)
+        elif loaded_bytes == 0:
+            # Could not parse image size.
+            req._state = _RequestStateError(req)
         return 0
 
 class _RequestStateLoading(_RequestStateBase):
