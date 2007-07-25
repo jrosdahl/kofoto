@@ -23,6 +23,7 @@ from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
 from kofoto.albumtype import AlbumType
 from kofoto.imageversiontype import ImageVersionType
+import kofoto.exifthumbsupport
 import kofoto.shelfupgrade
 import kofoto.shelfschema
 from kofoto.shelfexceptions import \
