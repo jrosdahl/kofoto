@@ -16,6 +16,7 @@ from kofoto.clientutils import \
     DIRECTORIES_TO_IGNORE, \
     expanduser, \
     get_file_encoding, \
+    group_image_versions, \
     walk_files
 from kofoto.albumtype import AlbumType
 from kofoto.config import DEFAULT_CONFIGFILE_LOCATION
@@ -884,6 +885,7 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
     """Helper function for cmdRegister."""
     paths.sort()
     newchildren = []
+    filepaths = []
     for path in paths:
         if env.verbose:
             env.out("Processing %s ...\n" % path)
@@ -910,22 +912,36 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
                 registrationTimeString,
                 [os.path.join(path, x) for x in os.listdir(path)])
         elif os.path.isfile(path):
-            image = env.shelf.createImage()
-            try:
-                env.shelf.createImageVersion(
-                    image, path, ImageVersionType.Original)
-                image.setAttribute(u"registered", registrationTimeString)
-                newchildren.append(image)
-                if env.verbose:
-                    env.out("Registered image: %s\n" % path)
-            except NotAnImageFileError, x:
-                env.out("Ignoring non-image file: %s\n" % path)
-                env.shelf.deleteImage(image.getId())
-            except ImageVersionExistsError, x:
-                env.err("Ignoring already registered image version: %s\n" % path)
-                env.shelf.deleteImage(image.getId())
+            filepaths.append(path)
         else:
             env.err("No such file or directory (ignored): %s\n" % path)
+    for vpaths in group_image_versions(filepaths):
+        image = env.shelf.createImage()
+        validVersions = 0
+        for (i, vpath) in enumerate(vpaths):
+            if i == 0:
+                versiontype = ImageVersionType.Original
+            else:
+                versiontype = ImageVersionType.Other
+            try:
+                env.shelf.createImageVersion(image, vpath, versiontype)
+                image.setAttribute(u"registered", registrationTimeString)
+                if env.verbose:
+                    if i == 0:
+                        tstr = "original image"
+                    else:
+                        tstr = "version of above original"
+                    env.out("Registered %s: %s\n" % (tstr, vpath))
+            except NotAnImageFileError, x:
+                env.out("Ignoring non-image file: %s\n" % vpath)
+            except ImageVersionExistsError, x:
+                env.err("Ignoring already registered image: %s\n" % vpath)
+            else:
+                validVersions += 1
+        if validVersions > 0:
+            newchildren.append(image)
+        else:
+            env.shelf.deleteImage(image.getId())
     addHelper(env, destalbum, newchildren)
 
 

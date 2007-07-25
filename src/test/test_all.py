@@ -4,7 +4,7 @@ import os
 import sys
 import unittest
 
-tests = ["dag", "iodict", "searching", "shelf"]
+tests = ["dag", "clientutils", "iodict", "searching", "shelf"]
 
 cwd = os.getcwd()
 libdir = unicode(os.path.realpath(

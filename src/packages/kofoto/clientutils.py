@@ -15,6 +15,7 @@ __all__ = [
 
 import locale
 import os
+import re
 import sys
 
 ######################################################################
@@ -47,6 +48,45 @@ def get_file_encoding(f):
         return f.encoding
     else:
         return locale.getpreferredencoding()
+
+def group_image_versions(paths):
+    original_extensions = [
+        ".cr2", ".crw", ".dcr", ".k25", ".kdc", ".mos", ".mrw", ".nef", ".orf",
+        ".pef", ".raf", ".raw", ".srf"]
+    def order_extension(ext):
+        try:
+            return original_extensions.index(ext.lower())
+        except ValueError:
+            # Not a known original extension. Sort it after originals.
+            return len(original_extensions)
+
+    def compare_paths(path1, path2):
+        (root1, ext1) = os.path.splitext(path1)
+        (root2, ext2) = os.path.splitext(path2)
+        extcmp = cmp(order_extension(ext1), order_extension(ext2))
+        if extcmp != 0:
+            return extcmp
+        # The extensions are equal. Sort shorter paths before longer,
+        # since originals probably have shorter names.
+        lencmp = cmp(len(root1), len(root2))
+        if lencmp != 0:
+            return lencmp
+        return cmp(root1, root2)
+
+    pat = re.compile(r"(\w+)", re.UNICODE)
+    bins = {}
+    for path in paths:
+        (head, tail) = os.path.split(path)
+        m = pat.match(tail)
+        if m:
+            key = os.path.join(head, m.group(1))
+        else:
+            key = path
+        bins.setdefault(key, []).append(path)
+    for key in sorted(bins):
+        vpaths = bins[key]
+        vpaths.sort(cmp=compare_paths)
+        yield vpaths
 
 def walk_files(paths, directories_to_ignore=None):
     """Traverse paths and return filename while ignoring some directories.
