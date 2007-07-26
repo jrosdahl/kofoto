@@ -924,7 +924,8 @@ def registerHelper(env, destalbum, registrationTimeString, paths):
             else:
                 versiontype = ImageVersionType.Other
             try:
-                env.shelf.createImageVersion(image, vpath, versiontype)
+                iv = env.shelf.createImageVersion(image, vpath, versiontype)
+                iv.makePrimary()
                 image.setAttribute(u"registered", registrationTimeString)
                 if env.verbose:
                     if i == 0:
