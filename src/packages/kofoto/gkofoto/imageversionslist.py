@@ -252,7 +252,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
         widget = list(self.__selectedImageWidgets)[0]
         imageVersion = self.__imageWidgetToImageVersion[widget]
         location = imageVersion.getLocation()
-        self.__singleObjectView._loadImageAtLocation(location)
+        self.__singleObjectView._loadImageAtLocation(location, False)
 
     def __view_full_screen_cb(self, *args):
         assert len(self.__selectedImageWidgets) > 0
