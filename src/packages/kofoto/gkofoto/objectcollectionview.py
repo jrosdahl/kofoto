@@ -65,6 +65,10 @@ class ObjectCollectionView:
             env.widgets["menubarMergeImages"],
             "activate",
             self._objectCollection.mergeImages)
+        self._connect(
+            env.widgets["menubarDestroyNonPrimaryImageVersions"],
+            "activate",
+            self._objectCollection.destroyNonPrimaryImageVersions)
 
     def _updateMenubarSortMenu(self):
         sortMenuGroup = self.__createSortMenuGroup(self._objectCollection)
@@ -268,6 +272,7 @@ class ObjectCollectionView:
                 env.widgets["menubarOpenImage"].set_sensitive(True)
                 env.widgets["menubarRotateLeft"].set_sensitive(True)
                 env.widgets["menubarRotateRight"].set_sensitive(True)
+                env.widgets["menubarDestroyNonPrimaryImageVersions"].set_sensitive(True)
                 if imagesSelected == 1:
                     env.widgets["menubarDuplicateAndOpenImage"].set_sensitive(True)
                     self.__singleImageMenuGroup.enable()
@@ -293,6 +298,7 @@ class ObjectCollectionView:
                 env.widgets["menubarRegisterImageVersions"].set_sensitive(False)
                 env.widgets["menubarRotateLeft"].set_sensitive(False)
                 env.widgets["menubarRotateRight"].set_sensitive(False)
+                env.widgets["menubarDestroyNonPrimaryImageVersions"].set_sensitive(False)
         else:
             self.__clipboardMenuGroup.disable()
             env.widgets["menubarCut"].set_sensitive(False)
@@ -313,6 +319,7 @@ class ObjectCollectionView:
             env.widgets["menubarDuplicateAndOpenImage"].set_sensitive(False)
             env.widgets["menubarRotateLeft"].set_sensitive(False)
             env.widgets["menubarRotateRight"].set_sensitive(False)
+            env.widgets["menubarDestroyNonPrimaryImageVersions"].set_sensitive(False)
             self.__singleImageMenuGroup.disable()
             env.widgets["menubarImageVersions"].set_sensitive(False)
             env.widgets["menubarRegisterImageVersions"].set_sensitive(False)
@@ -423,6 +430,10 @@ class ObjectCollectionView:
             oc.getRotateImageRightLabel(),
             os.path.join(env.iconDir, "rotateright.png"),
             oc.rotateImage, 90)
+        menuGroup.addStockImageMenuItem(
+            oc.getDestroyNonPrimaryImageVersionsLabel(),
+            gtk.STOCK_DELETE,
+            oc.destroyNonPrimaryImageVersions)
         menuGroup.addSeparator()
         return menuGroup
 

@@ -119,6 +119,9 @@ class ObjectCollection(object):
     def getMergeImagesLabel(self):
         return "Merge images..."
 
+    def getDestroyNonPrimaryImageVersionsLabel(self):
+        return "Destroy non-primary image versions..."
+
     def getObjectMetadataMap(self):
         return self.__objectMetadataMap
 
@@ -516,6 +519,33 @@ class ObjectCollection(object):
         assert len(selectedObjects) > 1
         dialog = ImageVersionsDialog(self)
         dialog.runMergeImages(selectedObjects)
+
+    def destroyNonPrimaryImageVersions(self, *unused):
+        selectedImages = [
+            x
+            for x in self.__objectSelection.getSelectedObjects()
+            if not x.isAlbum()]
+        assert len(selectedImages) > 0
+        dialogId = "destroyNonPrimaryImageVersionsDialog"
+        widgets = gtk.glade.XML(env.gladeFile, dialogId)
+        dialog = widgets.get_widget(dialogId)
+        result = dialog.run()
+        if result == gtk.RESPONSE_OK:
+            checkbutton = widgets.get_widget("deleteImageFilesCheckbutton")
+            deleteFiles = checkbutton.get_active()
+            for image in selectedImages:
+                for iv in image.getImageVersions():
+                    if not iv.isPrimary():
+                        if deleteFiles:
+                            try:
+                                os.remove(iv.getLocation())
+                                # TODO: Delete from image cache too?
+                            except OSError:
+                                pass
+                        env.shelf.deleteImageVersion(iv.getId())
+            self.reloadSingleObjectView()
+            self.reloadSelectedRows()
+        dialog.destroy()
 
     def rotateImage(self, unused, angle):
         for (rowNr, obj) in self.__objectSelection.getMap().items():
