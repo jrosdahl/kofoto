@@ -122,7 +122,7 @@ class FullScreenWindow(gtk.Window):
 
     def _key_press_event_cb(self, unused, event):
         k = gtk.keysyms
-        if event.state in [0, gtk.gdk.SHIFT_MASK]:
+        if event.state in [0, gtk.gdk.SHIFT_MASK, gtk.gdk.CONTROL_MASK]:
             if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
                 self._goto(self._current_index + 1)
                 return True
