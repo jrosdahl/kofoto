@@ -121,6 +121,10 @@ class FullScreenWindow(gtk.Window):
         return 0 <= index < len(self._image_versions)
 
     def _key_press_event_cb(self, unused, event):
+        # GIMP: 1 --> 100%, C-S-e --> fit
+        # EOG: [1,C-0,C-1] --> 100%
+        # f-spot: [0,1,C-0,C-1] --> fit
+
         k = gtk.keysyms
         if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
             self._goto(self._current_index + 1)
@@ -143,10 +147,10 @@ class FullScreenWindow(gtk.Window):
         if event.keyval == k.minus:
             self._image_view.zoom_out()
             return True
-        if event.keyval == k._0:
+        if event.keyval == k._1:
             self._image_view.zoom_to_actual()
             return True
-        if event.keyval == k.equal:
+        if event.keyval in [k.equal, k._0]:
             self._image_view.zoom_to_fit()
             return True
         return False
