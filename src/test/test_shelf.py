@@ -901,7 +901,7 @@ class TestImageVersion(TestShelfFixture):
         imageversion = self.shelf.getImageVersionByLocation(
             os.path.join(PICDIR, "arlaharen.png"))
         t = imageversion.getModificationTime()
-        assert isinstance(t, int)
+        assert isinstance(t, (int, float))
         assert t > 0
 
     def test_getSize(self):
