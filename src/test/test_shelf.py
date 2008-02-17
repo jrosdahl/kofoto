@@ -38,7 +38,6 @@ from kofoto.shelfexceptions import \
     ShelfLockedError, \
     ShelfNotFoundError, \
     UndeletableAlbumError, \
-    UndeletableAlbumError, \
     UnsettableChildrenError, \
     UnsupportedShelfError
 

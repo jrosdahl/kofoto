@@ -7,8 +7,7 @@ import setup
 import shutil
 import sys
 import _winreg
-import msvcrt
-from os.path import join, isdir, basename
+from os.path import join, isdir
 
 def zap(glob_pattern):
     for entry in glob.glob(glob_pattern):

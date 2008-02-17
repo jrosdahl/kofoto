@@ -10,9 +10,7 @@ try:
 except AssertionError:
     # pygtk.require("2.0") fails in the py2exe installer. Don't know why.
     pass
-import gtk
-import gtk.gdk
-import gtk.glade
+from gtk import glade, gdk
 from kofoto.gkofoto import crashdialog
 sys.excepthook = crashdialog.show
 
@@ -21,7 +19,7 @@ from kofoto.gkofoto.cachingpixbufloader import CachingPixbufLoader
 
 class WidgetsWrapper:
     def __init__(self):
-        self.widgets = gtk.glade.XML(env.gladeFile, "mainWindow")
+        self.widgets = glade.XML(env.gladeFile, "mainWindow")
 
     def __getitem__(self, key):
         return self.widgets.get_widget(key)
@@ -86,10 +84,10 @@ class Environment(ClientEnvironment):
         self.iconDir = os.path.join(dataDir, "icons")
         self.gladeFile = os.path.join(dataDir, "glade", "gkofoto.glade")
         self.albumIconFileName = os.path.join(self.iconDir, "album.png")
-        self.albumIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.albumIconFileName)
+        self.albumIconPixbuf = gdk.pixbuf_new_from_file(self.albumIconFileName)
         self.loadingPixbuf = self.albumIconPixbuf # TODO: create another icon with a hour-glass or something
         self.unknownImageIconFileName = os.path.join(self.iconDir, "unknownimage.png")
-        self.unknownImageIconPixbuf = gtk.gdk.pixbuf_new_from_file(self.unknownImageIconFileName)
+        self.unknownImageIconPixbuf = gdk.pixbuf_new_from_file(self.unknownImageIconFileName)
         from kofoto.gkofoto.clipboard import Clipboard
         self.clipboard = Clipboard()
 

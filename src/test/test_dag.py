@@ -10,7 +10,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(sys.argv[0]), "..", "packages")))
     os.chdir(libdir)
     sys.path.insert(0, libdir)
-from kofoto.dag import *
+from kofoto.dag import DAG, LoopError
 
 PICDIR = unicode(os.path.realpath(
     os.path.join("..", "reference_pictures", "working")))

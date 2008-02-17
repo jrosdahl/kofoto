@@ -3,7 +3,6 @@
 import os
 import sys
 from optparse import OptionParser
-import warnings
 from pylint import lint
 
 def disable_message(arguments, message_id):

@@ -4,7 +4,6 @@ from distutils.core import setup
 import glob
 import os
 import shutil
-import sys
 
 package_dirs = {
     "kofoto": "src/packages/kofoto",

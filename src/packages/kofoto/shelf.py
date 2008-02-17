@@ -24,8 +24,8 @@ from kofoto.cachedobject import CachedObject
 from kofoto.albumtype import AlbumType
 from kofoto.imageversiontype import ImageVersionType
 import kofoto.exifthumbsupport
-import kofoto.shelfupgrade
-import kofoto.shelfschema
+from kofoto import shelfupgrade
+from kofoto import shelfschema
 from kofoto.shelfexceptions import \
     AlbumDoesNotExistError, \
     AlbumExistsError, \
@@ -180,7 +180,7 @@ class Shelf:
         If this method returns True, run Shelf.tryUpgrade.
         """
         assert not self.inTransaction
-        return kofoto.shelfupgrade.isUpgradable(self.location)
+        return shelfupgrade.isUpgradable(self.location)
 
 
     def tryUpgrade(self):
@@ -191,8 +191,7 @@ class Shelf:
         Returns True if upgrade was successful, otherwise False.
         """
         assert not self.inTransaction
-        return kofoto.shelfupgrade.tryUpgrade(
-            self.location, _SHELF_FORMAT_VERSION)
+        return shelfupgrade.tryUpgrade(self.location, _SHELF_FORMAT_VERSION)
 
 
     def begin(self):
@@ -958,7 +957,7 @@ class Shelf:
     def _createShelf(self):
         """Helper method for Shelf.create."""
         cursor = self.connection.cursor()
-        cursor.execute(kofoto.shelfschema.schema)
+        cursor.execute(shelfschema.schema)
         cursor.execute(
             " insert into dbinfo (version)"
             " values (%s)",

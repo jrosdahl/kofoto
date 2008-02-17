@@ -1,5 +1,5 @@
 import gtk
-import gtk.gdk
+from gtk import gdk
 import os
 
 from kofoto.gkofoto.categories import Categories
@@ -66,15 +66,15 @@ class MainWindow(gtk.Window):
             "activate", self.handleModifiedOrRenamedImages, None)
 
         env.widgets["menubarRotateLeft"].get_children()[1].set_from_pixbuf(
-            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
         env.widgets["menubarRotateRight"].get_children()[1].set_from_pixbuf(
-            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
         env.widgets["menubarRotateImageVersionLeft"].get_children()[1].set_from_pixbuf(
-            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
         env.widgets["menubarRotateImageVersionRight"].get_children()[1].set_from_pixbuf(
-            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
         env.widgets["menubarAbout"].get_children()[1].set_from_pixbuf(
-            gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
+            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
 
         env.widgets["menubarAbout"].connect("activate", self.showAboutBox)
 
@@ -150,7 +150,7 @@ class MainWindow(gtk.Window):
         dialog.run()
 
     def getIconImage(self, name):
-        pixbuf = gtk.gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
+        pixbuf = gdk.pixbuf_new_from_file(os.path.join(env.iconDir, name))
         image = gtk.Image()
         image.set_from_pixbuf(pixbuf)
         image.show()

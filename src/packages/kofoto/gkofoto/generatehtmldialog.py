@@ -2,8 +2,8 @@ import gtk
 import os
 import re
 from kofoto.gkofoto.environment import env
-import kofoto.generate
-import kofoto.shelfexceptions
+from kofoto import generate
+from kofoto import shelfexceptions
 
 class GenerateHTMLDialog:
     def __init__(self, album):
@@ -87,12 +87,12 @@ class GenerateHTMLDialog:
         env.imagesizelimits = imgsizes
 
         try:
-            generator = kofoto.generate.Generator(u"woolly", env)
+            generator = generate.Generator(u"woolly", env)
             generator.generate(self.album, None, directoryName, "utf-8")
             progressBar.set_fraction(1)
             while gtk.events_pending():
                 gtk.main_iteration()
-        except (IOError, kofoto.shelfexceptions.KofotoError), e:
+        except (IOError, shelfexceptions.KofotoError), e:
             dialog = gtk.MessageDialog(
                 type=gtk.MESSAGE_ERROR,
                 buttons=gtk.BUTTONS_OK,
