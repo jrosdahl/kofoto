@@ -1,7 +1,6 @@
 import gtk
 import re
 from kofoto.gkofoto.environment import env
-from kofoto.common import UnimplementedError
 
 class TagAndDescriptionDialog:
     def __init__(self, title, tagText=u"", descText=u""):
@@ -37,7 +36,7 @@ class TagAndDescriptionDialog:
             return None
 
     def _isTagOkay(self, tag):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def __generateTagName(self, descText):
         env.assertUnicode(descText)

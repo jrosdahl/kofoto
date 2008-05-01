@@ -14,7 +14,6 @@ import locale
 import os
 import sys
 from kofoto.clientutils import expanduser
-from kofoto.common import UnimplementedError
 from kofoto.config import \
     BadConfigurationValueError, \
     Config, \
@@ -234,4 +233,4 @@ class ClientEnvironment(object):
 
         Should be overridden by subclasses.
         """
-        raise UnimplementedError
+        raise NotImplementedError

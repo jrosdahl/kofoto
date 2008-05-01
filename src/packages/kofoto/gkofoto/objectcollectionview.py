@@ -3,7 +3,6 @@ import os
 from kofoto.gkofoto.environment import env
 from kofoto.gkofoto.menuhandler import MenuGroup
 from kofoto.gkofoto.objectcollection import ObjectCollection
-from kofoto.common import UnimplementedError
 
 class ObjectCollectionView:
 
@@ -133,28 +132,28 @@ class ObjectCollectionView:
 ### Methods used by and overloaded by subclasses
 
     def _hasFocus(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _showHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _hideHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _freezeHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _thawHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _connectObjectCollectionHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _disconnectObjectCollectionHelper(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def importSelection(self, objectCollection):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def _connect(self, obj, signal, function, data=None):
         oid = obj.connect(signal, function, data)

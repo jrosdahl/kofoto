@@ -9,7 +9,6 @@ if __name__ == "__main__":
     import pygtk
     pygtk.require("2.0")
 import gobject
-from kofoto.common import UnimplementedError
 from kofoto.gkofoto.pixbufloader import PixbufLoader, get_pixbuf_size
 from kofoto.gkofoto.pseudothread import PseudoThread
 from kofoto.iodict import InsertionOrderedDict
@@ -33,7 +32,7 @@ class _RequestStateBase(object):
                 self._request._available_bytes)
 
     def is_finished(self):
-        raise UnimplementedError
+        raise NotImplementedError
 
     def load_some_more(self):
         return 0

@@ -43,7 +43,7 @@ __all__ = [
 ]
 
 import re
-from kofoto.common import KofotoError, UnimplementedError
+from kofoto.common import KofotoError
 from kofoto.albumtype import AlbumType
 
 class ParseError(KofotoError):
@@ -264,7 +264,7 @@ class SearchNode:
 
     def getQuery(self):
         """Return the SQL expression for the node."""
-        raise UnimplementedError
+        raise NotImplementedError
 
 class AlbumSearchNode(SearchNode):
     """A node representing the search for an album."""

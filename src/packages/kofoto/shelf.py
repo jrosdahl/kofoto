@@ -18,7 +18,6 @@ import os
 import re
 import threading
 import sqlite as sql
-from kofoto.common import UnimplementedError
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
 from kofoto.albumtype import AlbumType
@@ -1304,7 +1303,7 @@ class _Object:
 
     def isAlbum(self):
         """Return True if this an album, False if this is an image."""
-        raise UnimplementedError
+        raise NotImplementedError
 
     def getId(self):
         """Get the ID of an object."""
@@ -1514,7 +1513,7 @@ class Album(_Object):
 
     def isMutable(self):
         """Whether the album can be modified with setChildren."""
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def getTag(self):
@@ -1541,7 +1540,7 @@ class Album(_Object):
 
         Returns an iterable returning Album/Image instances.
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def getAlbumChildren(self):
@@ -1549,7 +1548,7 @@ class Album(_Object):
 
         Returns an iterable returning Album instances.
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def getAlbumParents(self):
@@ -1575,7 +1574,7 @@ class Album(_Object):
 
         children -- A list of Album/Image instances.
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def isAlbum(self):

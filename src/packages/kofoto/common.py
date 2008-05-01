@@ -5,7 +5,7 @@
 
 __all__ = [
     "KofotoError",
-    "UnimplementedError",
+    "NotImplementedError",
     "symlink_or_copy_file",
     ]
 
@@ -19,9 +19,6 @@ import os
 
 class KofotoError(Exception):
     """Base class for Kofoto exceptions."""
-
-class UnimplementedError(KofotoError):
-    """Unimplemented method."""
 
 ######################################################################
 ### Functions.

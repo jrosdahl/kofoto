@@ -6,7 +6,7 @@ import codecs
 import os
 import re
 import time
-from kofoto.common import symlink_or_copy_file, UnimplementedError
+from kofoto.common import symlink_or_copy_file
 
 class OutputEngine:
     """An abstract base class for output generators of an album tree."""
@@ -24,12 +24,12 @@ class OutputEngine:
 
     def preGeneration(self, root):
         """Method called before generation of the output."""
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def postGeneration(self, root):
         """Method called after generation of the output."""
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def generateAlbum(self, album, subalbums, images, paths):
@@ -41,7 +41,7 @@ class OutputEngine:
         subalbums -- Album children of the album.
         images    -- Image children of the album.
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def generateImage(self, album, image, images, number, paths):
@@ -55,7 +55,7 @@ class OutputEngine:
         number    -- The current image's index in the image list.
         paths     -- A list of lists of Album instances.
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
     def getImageReference(self, image, widthlimit, heightlimit):
@@ -172,7 +172,7 @@ class OutputEngine:
         Arguments:
 
         root      -- Album to generate.
-        subalbums -- If false, generate all descendants of the root. 
+        subalbums -- If false, generate all descendants of the root.
                      Otherwise a list of Album instances to generate.
         """
 
