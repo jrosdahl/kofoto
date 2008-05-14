@@ -188,45 +188,45 @@ class ClientEnvironment(object):
             expanduser(self.config.get("image cache", "location")),
             self.config.getboolean("image cache", "use_orientation_attribute"))
 
-    def getLocaleEncoding(self):
+    @property
+    def localeEncoding(self):
         """Get encoding of the locale."""
         return self.__localeEncoding
-    localeEncoding = property(getLocaleEncoding)
 
-    def getFilesystemEncoding(self):
+    @property
+    def filesystemEncoding(self):
         """Get encoding of the filesystem."""
         return self.__filesystemEncoding
-    filesystemEncoding = property(getFilesystemEncoding)
 
-    def getConfig(self):
+    @property
+    def config(self):
         """Get the Config instance."""
         return self.__config
-    config = property(getConfig)
 
-    def getConfigFileLocation(self):
+    @property
+    def configFileLocation(self):
         """Get the configuration file location."""
         return self.__configFileLocation
-    configFileLocation = property(getConfigFileLocation)
 
-    def getShelf(self):
+    @property
+    def shelf(self):
         """Get the Shelf instance."""
         return self.__shelf
-    shelf = property(getShelf)
 
-    def getShelfLocation(self):
+    @property
+    def shelfLocation(self):
         """Get the shelf location."""
         return self.__shelfLocation
-    shelfLocation = property(getShelfLocation)
 
-    def getImageCache(self):
+    @property
+    def imageCache(self):
         """Get the ImageCache instance."""
         return self.__imageCache
-    imageCache = property(getImageCache)
 
-    def getVersion(self):
+    @property
+    def version(self):
         """Get the Kofoto version (a string)."""
         return kofotoVersion
-    version = property(getVersion)
 
     def _writeInfo(self, infoString):
         """Write an informational string to a suitable place.

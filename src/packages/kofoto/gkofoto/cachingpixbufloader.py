@@ -177,9 +177,9 @@ class _Request(object):
 
     # ----------------------------------
 
-    def get_key(self):
+    @property
+    def key(self):
         return (self._path, self._size_limit)
-    key = property(get_key)
 
     # ----------------------------------
 
@@ -244,7 +244,7 @@ class CachingPixbufLoader(object):
     function to the load() method. The callback function is called
     when the load has finished (or immediately, if the pixbuf already
     exists in the cache). Old load requests have higher priority than
-    new. Load requests have higher priority than preload requests. 
+    new. Load requests have higher priority than preload requests.
     Load requests are never forgotten.
 
     Preload requests are also asynchronous. A preload request is used

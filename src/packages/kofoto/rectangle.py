@@ -81,13 +81,13 @@ class Rectangle:
 
     # ----------------------------------
 
-    def get_width(self):
+    @property
+    def width(self):
         return self._width
-    width = property(get_width)
 
-    def get_height(self):
+    @property
+    def height(self):
         return self._height
-    height = property(get_height)
 
     # ----------------------------------
 

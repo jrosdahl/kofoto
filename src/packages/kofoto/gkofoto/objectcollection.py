@@ -630,7 +630,7 @@ class ObjectCollection(object):
             nr_of_albums_before_index = 0
             for row in self.getModel():
                 objectId = row[self.COLUMN_OBJECT_ID]
-                obj = env.getShelf().getObject(objectId)
+                obj = env.shelf.getObject(objectId)
                 if not obj.isAlbum():
                     imageVersions.append(obj.getPrimaryVersion())
                 elif index > current_row:
