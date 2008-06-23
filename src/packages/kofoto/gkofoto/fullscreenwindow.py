@@ -4,6 +4,7 @@ __all__ = ["FullScreenWindow"]
 
 import gtk
 import gobject
+import re
 from kofoto.gkofoto.imageview import ImageView
 from kofoto.gkofoto.environment import env
 
@@ -26,6 +27,7 @@ class FullScreenWindow(gtk.Window):
         self._current_index = current_index
         self._latest_handle = None
         self._latest_size = (0, 0)
+        self._selected_category = None
 
         bg_color = gtk.gdk.color_parse("#000000")
         fg_color = gtk.gdk.color_parse("#999999")
@@ -33,21 +35,46 @@ class FullScreenWindow(gtk.Window):
         eventbox = gtk.EventBox()
         vbox = gtk.VBox()
         eventbox.add(vbox)
+
+        # Add the image widget.
         self._image_view = ImageView()
         self._image_view.set_error_pixbuf(
             gtk.gdk.pixbuf_new_from_file(env.unknownImageIconFileName))
+        self._image_view.modify_bg(gtk.STATE_NORMAL, bg_color)
         vbox.pack_start(self._image_view)
+
+        # Add informative label.
         self._info_label = gtk.Label()
         self._info_label.set_text(
             "No more images.\nPress escape to get back to GKofoto.")
         self._info_label.set_justify(gtk.JUSTIFY_CENTER)
-        self._info_label.hide()
+        self._info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
         vbox.pack_start(self._info_label)
+
+        # Add category entry.
+        self._category_hbox = gtk.HBox()
+        self._category_hbox.set_spacing(5)
+        vbox.pack_start(self._category_hbox, False)
+        label = gtk.Label("Category:")
+        label.modify_fg(gtk.STATE_NORMAL, fg_color)
+        self._category_hbox.pack_start(label, False)
+        self._category_entry = gtk.Entry()
+        self._category_entry.connect(
+            "activate", self._category_entry_activate_cb)
+        self._category_entry.connect(
+            "changed", self._category_entry_changed_cb)
+        self._category_hbox.pack_start(self._category_entry, False)
+        self._category_indicator_image = gtk.Image()
+        self._category_indicator_image.set_from_stock(
+            gtk.STOCK_CANCEL, gtk.ICON_SIZE_MENU)
+        self._category_hbox.pack_start(self._category_indicator_image, False)
+        self._category_info_label = gtk.Label()
+        self._category_info_label.set_line_wrap(True)
+        self._category_info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
+        self._category_hbox.pack_start(self._category_info_label, True, True)
 
         self.modify_bg(gtk.STATE_NORMAL, bg_color)
         eventbox.modify_bg(gtk.STATE_NORMAL, bg_color)
-        self._image_view.modify_bg(gtk.STATE_NORMAL, bg_color)
-        self._info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
         self.add(eventbox)
         self.set_modal(True)
         self.set_default_size(400, 400)
@@ -80,10 +107,63 @@ class FullScreenWindow(gtk.Window):
         if event.button == 1 and iv.get_zoom_mode() == iv.ZoomMode.BestFit:
             self._goto(self._current_index + 1)
 
+    def _category_entry_activate_cb(self, widget):
+        if self._selected_category is not None:
+            image = self._image_versions[self._current_index].getImage()
+            if self._selected_category in image.getCategories():
+                image.removeCategory(self._selected_category)
+            else:
+                image.addCategory(self._selected_category)
+            self._category_hbox.hide_all()
+            self._category_entry.set_text("")
+            # self._selected_category is set to None implicitly by set_text.
+
+    def _category_entry_changed_cb(self, widget):
+        text = self._category_entry.get_text().decode("utf-8")
+        regexp = re.compile(".*%s.*" % re.escape(text.lower()))
+        if text != "":
+            categories = list(env.shelf.getMatchingCategories(regexp))
+        else:
+            categories = []
+        exact_match = None
+        for category in categories:
+            if category.getTag().lower() == text.lower() \
+                   or category.getDescription().lower() == text.lower():
+                exact_match = category
+                break
+        if len(categories) == 1 or exact_match is not None:
+            image_stock_id = gtk.STOCK_OK
+            if len(categories) == 1:
+                self._selected_category = categories[0]
+            else:
+                self._selected_category = exact_match
+            current_image = \
+                self._image_versions[self._current_index].getImage()
+            image_categories = current_image.getCategories()
+            category_set = self._selected_category in image_categories
+            self._category_info_label.set_markup(
+                u"Press enter to <b>%s</b> category <b>%s</b> [<b>%s</b>]" % (
+                    ["set", "unset"][category_set],
+                    self._selected_category.getDescription(),
+                    self._selected_category.getTag()))
+        else:
+            image_stock_id = gtk.STOCK_CANCEL
+            self._selected_category = None
+            self._category_info_label.set_text("No matching category")
+        self._category_indicator_image.set_from_stock(
+            image_stock_id, gtk.ICON_SIZE_MENU)
+
     def _display_end_screen(self):
         self._maybe_cancel_load()
         self._image_view.hide()
         self._info_label.show()
+        self._category_hbox.hide_all()
+
+    def _display_image(self):
+        self._image_view.set_image(self._get_image_async_cb)
+        self._image_view.show()
+        self._info_label.hide()
+        self._category_hbox.hide_all()
 
     def _get_image_async_cb(self, size):
         path = self._image_versions[self._current_index].getLocation()
@@ -107,9 +187,7 @@ class FullScreenWindow(gtk.Window):
             self._display_end_screen()
         else:
             self._current_index = new_index
-            self._image_view.show()
-            self._info_label.hide()
-            self._image_view.set_image(self._get_image_async_cb)
+            self._display_image()
 
     def _hide_cursor(self):
         pixmap = gtk.gdk.Pixmap(None, 1, 1, 1)
@@ -126,32 +204,44 @@ class FullScreenWindow(gtk.Window):
         # f-spot: [0,1,C-0,C-1] --> fit
 
         k = gtk.keysyms
-        if event.keyval in [k.space, k.Right, k.Down, k.Page_Down]:
+        CTRL = gtk.gdk.CONTROL_MASK
+        e = (event.keyval, event.state & CTRL)
+        if self._category_hbox.props.visible:
+            # Showing category entry -- disable bindings except escape.
+            if e in [(k.Escape, 0), (k.t, CTRL)]:
+                self._toggle_category_field()
+                return True
+            else:
+                return False
+        if e in [(k.space, 0), (k.Right, 0), (k.Down, 0), (k.Page_Down, 0)]:
             self._goto(self._current_index + 1)
             return True
-        if event.keyval in [k.BackSpace, k.Left, k.Up, k.Page_Up]:
+        if e in [(k.BackSpace, 0), (k.Left, 0), (k.Up, 0), (k.Page_Up, 0)]:
             self._goto(self._current_index - 1)
             return True
-        if event.keyval == k.Home:
+        if e == (k.Home, 0):
             self._goto(0)
             return True
-        if event.keyval == k.End:
+        if e == (k.End, 0):
             self._goto(len(self._image_versions) - 1)
             return True
-        if event.keyval == k.Escape:
+        if e == (k.Escape, 0):
             self.destroy()
             return True
-        if event.keyval == k.plus:
+        if e == (k.plus, 0):
             self._image_view.zoom_in()
             return True
-        if event.keyval == k.minus:
+        if e == (k.minus, 0):
             self._image_view.zoom_out()
             return True
-        if event.keyval == k._1:
+        if e == (k._1, 0):
             self._image_view.zoom_to_actual()
             return True
-        if event.keyval in [k.equal, k._0]:
+        if e in [(k.equal, 0), (k._0, 0)]:
             self._image_view.zoom_to_fit()
+            return True
+        if e == (k.t, CTRL):
+            self._toggle_category_field()
             return True
         return False
 
@@ -174,6 +264,16 @@ class FullScreenWindow(gtk.Window):
                     env.pixbufLoader.preload(location, size)
                 else:
                     env.pixbufLoader.unload(location, size)
+
+    def _toggle_category_field(self):
+        if not self._image_view.props.visible:
+            # Display end screen.
+            return
+        if self._category_hbox.props.visible:
+            self._category_hbox.hide_all()
+        else:
+            self._category_hbox.show_all()
+            self._category_entry.grab_focus()
 
     def _unload(self, size):
         self._preload_or_unload(size, False)
