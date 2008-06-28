@@ -51,27 +51,33 @@ class FullScreenWindow(gtk.Window):
         self._info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
         vbox.pack_start(self._info_label)
 
-        # Add category entry.
-        self._category_hbox = gtk.HBox()
-        self._category_hbox.set_spacing(5)
-        vbox.pack_start(self._category_hbox, False)
+        # Add categories display field.
+        self._categories_label = gtk.Label()
+        label = self._categories_label
+        label.modify_fg(gtk.STATE_NORMAL, fg_color)
+        vbox.pack_start(label, False)
+
+        # Add categorization field.
+        self._categorization_hbox = gtk.HBox()
+        self._categorization_hbox.set_spacing(5)
+        vbox.pack_start(self._categorization_hbox, False)
         label = gtk.Label("Category:")
         label.modify_fg(gtk.STATE_NORMAL, fg_color)
-        self._category_hbox.pack_start(label, False)
+        self._categorization_hbox.pack_start(label, False)
         self._category_entry = gtk.Entry()
         self._category_entry.connect(
             "activate", self._category_entry_activate_cb)
         self._category_entry.connect(
             "changed", self._category_entry_changed_cb)
-        self._category_hbox.pack_start(self._category_entry, False)
+        self._categorization_hbox.pack_start(self._category_entry, False)
         self._category_indicator_image = gtk.Image()
         self._category_indicator_image.set_from_stock(
             gtk.STOCK_CANCEL, gtk.ICON_SIZE_MENU)
-        self._category_hbox.pack_start(self._category_indicator_image, False)
+        self._categorization_hbox.pack_start(self._category_indicator_image, False)
         self._category_info_label = gtk.Label()
         self._category_info_label.set_line_wrap(True)
         self._category_info_label.modify_fg(gtk.STATE_NORMAL, fg_color)
-        self._category_hbox.pack_start(self._category_info_label, True, True)
+        self._categorization_hbox.pack_start(self._category_info_label, True, True)
 
         self.modify_bg(gtk.STATE_NORMAL, bg_color)
         eventbox.modify_bg(gtk.STATE_NORMAL, bg_color)
@@ -114,7 +120,7 @@ class FullScreenWindow(gtk.Window):
                 image.removeCategory(self._selected_category)
             else:
                 image.addCategory(self._selected_category)
-            self._category_hbox.hide_all()
+            self._categorization_hbox.hide_all()
             self._category_entry.set_text("")
             # self._selected_category is set to None implicitly by set_text.
 
@@ -157,13 +163,16 @@ class FullScreenWindow(gtk.Window):
         self._maybe_cancel_load()
         self._image_view.hide()
         self._info_label.show()
-        self._category_hbox.hide_all()
+        self._categorization_hbox.hide_all()
+        self._categories_label.hide()
 
     def _display_image(self):
         self._image_view.set_image(self._get_image_async_cb)
         self._image_view.show()
         self._info_label.hide()
-        self._category_hbox.hide_all()
+        self._categorization_hbox.hide_all()
+        self._categories_label.show()
+        self._update_categories_label()
 
     def _get_image_async_cb(self, size):
         path = self._image_versions[self._current_index].getLocation()
@@ -206,13 +215,20 @@ class FullScreenWindow(gtk.Window):
         k = gtk.keysyms
         CTRL = gtk.gdk.CONTROL_MASK
         e = (event.keyval, event.state & CTRL)
-        if self._category_hbox.props.visible:
+
+        if self._categorization_hbox.props.visible:
+            #
             # Showing category entry -- disable bindings except escape.
+            #
             if e in [(k.Escape, 0), (k.t, CTRL)]:
-                self._toggle_category_field()
+                self._toggle_categorization_field()
                 return True
             else:
                 return False
+
+        #
+        # Normal case.
+        #
         if e in [(k.space, 0), (k.Right, 0), (k.Down, 0), (k.Page_Down, 0)]:
             self._goto(self._current_index + 1)
             return True
@@ -240,8 +256,11 @@ class FullScreenWindow(gtk.Window):
         if e in [(k.equal, 0), (k._0, 0)]:
             self._image_view.zoom_to_fit()
             return True
+        if e == (k.c, CTRL):
+            self._toggle_categories_field()
+            return True
         if e == (k.t, CTRL):
-            self._toggle_category_field()
+            self._toggle_categorization_field()
             return True
         return False
 
@@ -265,17 +284,31 @@ class FullScreenWindow(gtk.Window):
                 else:
                     env.pixbufLoader.unload(location, size)
 
-    def _toggle_category_field(self):
+    def _toggle_categories_field(self):
+        cl = self._categories_label
+        if cl.props.visible:
+            cl.hide()
+        else:
+            cl.show()
+
+    def _toggle_categorization_field(self):
         if not self._image_view.props.visible:
             # Display end screen.
             return
-        if self._category_hbox.props.visible:
-            self._category_hbox.hide_all()
+        if self._categorization_hbox.props.visible:
+            self._categorization_hbox.hide_all()
         else:
-            self._category_hbox.show_all()
+            self._categorization_hbox.show_all()
             self._category_entry.grab_focus()
 
     def _unload(self, size):
         self._preload_or_unload(size, False)
+
+    def _update_categories_label(self):
+        image = self._image_versions[self._current_index].getImage()
+        categories = image.getCategories()
+        texts = sorted(x.getTag() for x in categories)
+        markup = u" | ".join(u"<b>%s</b>" % x for x in texts)
+        self._categories_label.set_markup(markup)
 
 gobject.type_register(FullScreenWindow) # TODO: Not needed in PyGTK 2.8.
