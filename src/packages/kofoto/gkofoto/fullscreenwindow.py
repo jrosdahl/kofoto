@@ -407,6 +407,6 @@ class FullScreenWindow(gtk.Window):
         text = u"\n".join(
             u"<b>%s</b>: <b>%s</b>" % (chr(k), v.getTag())
             for (k, v) in self._keysym_to_category_map.items())
-        self._category_keys_info_label.set_markup(u"h \nAssigned keys:\n" + text)
+        self._category_keys_info_label.set_markup(u"Assigned keys:\n" + text)
 
 gobject.type_register(FullScreenWindow) # TODO: Not needed in PyGTK 2.8.
