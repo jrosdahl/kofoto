@@ -65,16 +65,16 @@ class MainWindow(gtk.Window):
         env.widgets["menubarHandleModifiedOrRenamedImages"].connect(
             "activate", self.handleModifiedOrRenamedImages, None)
 
-        env.widgets["menubarRotateLeft"].get_children()[1].set_from_pixbuf(
-            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
-        env.widgets["menubarRotateRight"].get_children()[1].set_from_pixbuf(
-            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
-        env.widgets["menubarRotateImageVersionLeft"].get_children()[1].set_from_pixbuf(
-            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
-        env.widgets["menubarRotateImageVersionRight"].get_children()[1].set_from_pixbuf(
-            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
-        env.widgets["menubarAbout"].get_children()[1].set_from_pixbuf(
-            gdk.pixbuf_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
+        env.widgets["menubarRotateLeft"].set_image(
+            gtk.image_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+        env.widgets["menubarRotateRight"].set_image(
+            gtk.image_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+        env.widgets["menubarRotateImageVersionLeft"].set_image(
+            gtk.image_new_from_file(os.path.join(env.iconDir, "rotateleft.png")))
+        env.widgets["menubarRotateImageVersionRight"].set_image(
+            gtk.image_new_from_file(os.path.join(env.iconDir, "rotateright.png")))
+        env.widgets["menubarAbout"].set_image(
+            gtk.image_new_from_file(os.path.join(env.iconDir, "about-icon.png")))
 
         env.widgets["menubarAbout"].connect("activate", self.showAboutBox)
 
