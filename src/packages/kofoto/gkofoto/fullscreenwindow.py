@@ -8,6 +8,7 @@ import re
 import string
 from kofoto.gkofoto.imageview import ImageView
 from kofoto.gkofoto.environment import env
+from kofoto.shelf import CategoryDoesNotExistError
 
 class FullScreenWindow(gtk.Window):
     """A fullscreen window widget."""
@@ -28,11 +29,10 @@ class FullScreenWindow(gtk.Window):
         self._current_index = current_index
         self._latest_handle = None
         self._latest_size = (0, 0)
-        self._selected_category = None
-        self._last_selected_category = None
+        self._selected_category_tag = None
+        self._last_selected_category_tag = None
         self._show_image_categories = True
         self._show_category_keys_info = False
-        self._keysym_to_category_map = {}
 
         bg_color = gtk.gdk.color_parse("#000000")
         fg_color = gtk.gdk.color_parse("#999999")
@@ -69,6 +69,7 @@ class FullScreenWindow(gtk.Window):
         vbox.pack_start(label, False)
         label.set_text(u"Assigned keys:")
         self._category_keys_info_label = label
+        self._update_key_assignment_info()
 
         # Add key assignment form.
         self._key_assignment_hbox = gtk.HBox()
@@ -123,12 +124,18 @@ class FullScreenWindow(gtk.Window):
 
     # ----------------------------------------
 
-    def _add_or_remove_image_category(self, category):
-        image = self._image_versions[self._current_index].getImage()
-        if category in image.getCategories():
-            image.removeCategory(category)
+    def _add_or_remove_image_category(self, category_tag):
+        try:
+            category = env.shelf.getCategoryByTag(category_tag)
+        except CategoryDoesNotExistError:
+            # Category was removed. Ugly fix for now: ignore.
+            pass
         else:
-            image.addCategory(category)
+            image = self._image_versions[self._current_index].getImage()
+            if category in image.getCategories():
+                image.removeCategory(category)
+            else:
+                image.addCategory(category)
         self._update_image_categories_label()
 
     def _after_map_event_cb(self, *unused):
@@ -147,12 +154,12 @@ class FullScreenWindow(gtk.Window):
             self._goto(self._current_index + 1)
 
     def _category_entry_activate_cb(self, widget):
-        if self._selected_category is not None:
-            self._add_or_remove_image_category(self._selected_category)
+        if self._selected_category_tag is not None:
+            self._add_or_remove_image_category(self._selected_category_tag)
             self._categorization_hbox.hide_all()
-            self._last_selected_category = self._selected_category
+            self._last_selected_category_tag = self._selected_category_tag
             self._category_entry.set_text("")
-            # self._selected_category is set to None implicitly by set_text.
+            # self._selected_category_tag is set to None implicitly by set_text.
 
     def _category_entry_changed_cb(self, widget):
         text = self._category_entry.get_text().decode("utf-8")
@@ -170,21 +177,22 @@ class FullScreenWindow(gtk.Window):
         if len(categories) == 1 or exact_match is not None:
             image_stock_id = gtk.STOCK_OK
             if len(categories) == 1:
-                self._selected_category = categories[0]
+                selected_category = categories[0]
             else:
-                self._selected_category = exact_match
+                selected_category = exact_match
             current_image = \
                 self._image_versions[self._current_index].getImage()
             image_categories = current_image.getCategories()
-            category_set = self._selected_category in image_categories
+            category_set = selected_category in image_categories
             self._matching_category_label.set_markup(
                 u"Press enter to <b>%s</b> category <b>%s</b> [<b>%s</b>]" % (
                     ["set", "unset"][category_set],
-                    self._selected_category.getDescription(),
-                    self._selected_category.getTag()))
+                    selected_category.getDescription(),
+                    selected_category.getTag()))
+            self._selected_category_tag = selected_category.getTag()
         else:
             image_stock_id = gtk.STOCK_CANCEL
-            self._selected_category = None
+            self._selected_category_tag = None
             self._matching_category_label.set_text("No matching category")
         self._category_indicator_image.set_from_stock(
             image_stock_id, gtk.ICON_SIZE_MENU)
@@ -251,13 +259,14 @@ class FullScreenWindow(gtk.Window):
 
     def _key_assignment_entry_activate_cb(self, widget):
         key = self._key_assignment_entry.get_text()
-        if (self._last_selected_category is None
+        if (self._last_selected_category_tag is None
             or len(key) != 1
             or key not in string.lowercase):
             return
 
         keysym = getattr(gtk.keysyms, key)
-        self._keysym_to_category_map[keysym] = self._last_selected_category
+        env.fullScreenKeyAssignmentMap[keysym] = \
+            self._last_selected_category_tag
         self._key_assignment_hbox.hide_all()
         self._key_assignment_entry.set_text("")
         self._update_key_assignment_info()
@@ -294,9 +303,10 @@ class FullScreenWindow(gtk.Window):
         #
         # Normal case.
         #
-        if not (event.state & CTRL) and event.keyval in self._keysym_to_category_map:
-            category = self._keysym_to_category_map[event.keyval]
-            self._add_or_remove_image_category(category)
+        if not (event.state & CTRL) \
+               and event.keyval in env.fullScreenKeyAssignmentMap:
+            category_tag = env.fullScreenKeyAssignmentMap[event.keyval]
+            self._add_or_remove_image_category(category_tag)
             return True
         if e in [(k.space, 0), (k.Right, 0), (k.Down, 0), (k.Page_Down, 0)]:
             self._goto(self._current_index + 1)
@@ -405,8 +415,8 @@ class FullScreenWindow(gtk.Window):
 
     def _update_key_assignment_info(self):
         text = u"\n".join(
-            u"<b>%s</b>: <b>%s</b>" % (chr(k), v.getTag())
-            for (k, v) in self._keysym_to_category_map.iteritems())
+            u"<b>%s</b>: <b>%s</b>" % (chr(k), v)
+            for (k, v) in env.fullScreenKeyAssignmentMap.iteritems())
         self._category_keys_info_label.set_markup(u"Assigned keys:\n" + text)
 
 gobject.type_register(FullScreenWindow) # TODO: Not needed in PyGTK 2.8.
