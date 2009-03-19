@@ -89,13 +89,13 @@ class ObjectSelection:
 
     def __contains__(self, rowNr):
         unsortedRowNr = self.__objectCollection.convertToUnsortedRowNr(rowNr)
-        return unsortedRowNr in self.__selectedObjects.keys()
+        return unsortedRowNr in self.__selectedObjects
 
     def __len__(self):
         return len(self.__selectedObjects)
 
     def __iter__(self):
-        for unsortedRowNr in self.__selectedObjects.keys():
+        for unsortedRowNr in self.__selectedObjects:
             rowNr = self.__objectCollection.convertFromUnsortedRowNr(unsortedRowNr)
             yield rowNr
 

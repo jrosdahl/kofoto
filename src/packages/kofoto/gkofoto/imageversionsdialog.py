@@ -95,7 +95,7 @@ class ImageVersionsDialog:
 
             for image in self._mergeImages:
                 if image != motherImage:
-                    for key, value in image.getAttributeMap().items():
+                    for key, value in image.getAttributeMap().iteritems():
                         motherImage.setAttribute(key, value, overwrite=False)
 
             for data in self._versionDataList:

@@ -332,7 +332,7 @@ class ObjectCollection(object):
                 self.__treeModel.set_value(iterator, self.COLUMN_IMAGE_VERSIONS, imageVersionsText)
                 self.__nrOfImages += 1
                 # TODO Set COLUMN_VALID_LOCATION and COLUMN_VALID_CHECKSUM
-            for attribute, value in obj.getAttributeMap().items():
+            for attribute, value in obj.getAttributeMap().iteritems():
                 if "@" + attribute in self.__objectMetadataMap:
                     column = self.__objectMetadataMap["@" + attribute][self.COLUMN_NR]
                     self.__treeModel.set_value(iterator, column, value)
@@ -442,7 +442,7 @@ class ObjectCollection(object):
 
     def reloadSelectedRows(self):
         model = self.getUnsortedModel()
-        for (rowNr, obj) in self.__objectSelection.getMap().items():
+        for (rowNr, obj) in self.__objectSelection.getMap().iteritems():
             if not obj.isAlbum():
                 self.__loadThumbnail(model, model.get_iter(rowNr))
                 imageVersions = list(obj.getImageVersions())
@@ -548,7 +548,7 @@ class ObjectCollection(object):
         dialog.destroy()
 
     def rotateImage(self, unused, angle):
-        for (rowNr, obj) in self.__objectSelection.getMap().items():
+        for (rowNr, obj) in self.__objectSelection.getMap().iteritems():
             if not obj.isAlbum():
                 imageversion = obj.getPrimaryVersion()
                 if not imageversion:

@@ -1292,7 +1292,7 @@ def main(argv):
     except ClientEnvironmentError, e:
         printErrorAndExit(e[0])
 
-    if not commandTable.has_key(args[0]):
+    if not args[0] in commandTable:
         printErrorAndExit(
             "Unknown command \"%s\". See \"kofoto --help\" for help.\n" % (
             args[0]))

@@ -92,7 +92,7 @@ class OutputEngine:
             raise Exception("No image versions for image %d" % image.getid())
 
         key = (imageversion.getHash(), widthlimit, heightlimit)
-        if not self.__imgrefMap.has_key(key):
+        if not key in self.__imgrefMap:
             if self.env.verbose:
                 self.env.out("Generating image %d, size limit %dx%d..." % (
                     image.getId(), widthlimit, heightlimit))
@@ -204,8 +204,7 @@ class OutputEngine:
 
         self.preGeneration(root)
         i = 1
-        items = albummap.items()
-        items.sort(key=lambda x: x[0].getTag())
+        items = sorted(albummap.iteritems(), key=lambda x: x[0].getTag())
         for album, paths in items:
             if album in albumsToGenerate:
                 nchildren = len(list(album.getChildren()))
@@ -264,7 +263,7 @@ def _findAlbumPaths(startalbum):
             # Already visited album, so break recursion here.
             return
         path = path[:] + [album]
-        if not albummap.has_key(album):
+        if not album in albummap:
             albummap[album] = []
         albummap[album].append(path)
         for child in album.getChildren():

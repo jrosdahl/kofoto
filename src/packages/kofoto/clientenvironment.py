@@ -148,12 +148,14 @@ class ClientEnvironment(object):
             raise BadConfigFileError(
                   "Bad configuration (missing section headers).\n",
                   self.configFileLocation)
-        except MissingConfigurationKeyError, (section, key):
+        except MissingConfigurationKeyError, e:
+            (section, key) = e
             raise BadConfigFileError(
                   "Missing configuration key in %s section: %s.\n" % (
                       section, key),
                   self.configFileLocation)
-        except BadConfigurationValueError, (section, key, value):
+        except BadConfigurationValueError, e:
+            (section, key, value) = e
             raise BadConfigFileError(
                   "Bad configuration value for %s in %s section: %s.\n" % (
                       key, section, value),

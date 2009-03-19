@@ -298,7 +298,7 @@ class Categories:
         clipboardCategories = env.clipboard[0]
         env.clipboard.clear()
         try:
-            for (categoryId, previousParentIds) in clipboardCategories.categories.items():
+            for (categoryId, previousParentIds) in clipboardCategories.categories.iteritems():
                 for newParentId in self.__selectedCategoriesIds:
                     if clipboardCategories.type == ClipboardCategoriesType.Copy:
                         self.__connectChildToCategory(categoryId, newParentId)
@@ -370,7 +370,7 @@ class Categories:
             self.__categoryModel.remove(categoryRow.iter)
 
     def _disconnectCategory_cb(self, item, data):
-        for (categoryId, parentIds) in self.__selectedCategoriesIds.items():
+        for (categoryId, parentIds) in self.__selectedCategoriesIds.iteritems():
             for parentId in parentIds:
                 if not parentId == None: # Not possible to disconnect root categories
                     self.__disconnectChild(categoryId, parentId)
@@ -569,9 +569,8 @@ class Categories:
             (nrSelectedObjects, nrSelectedObjectsInCategory),
             self.__categoryQSModel)
 
-    def __updateToggleColumnHelper(self,
-                                   categoryRow,
-                                   (nrSelectedObjects, nrSelectedObjectsInCategory)):
+    def __updateToggleColumnHelper(self, categoryRow, args):
+        (nrSelectedObjects, nrSelectedObjectsInCategory) = args
         categoryId = categoryRow[self.__COLUMN_CATEGORY_ID]
         if categoryId in nrSelectedObjectsInCategory:
             if nrSelectedObjectsInCategory[categoryId] < nrSelectedObjects:

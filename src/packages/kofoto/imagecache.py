@@ -69,7 +69,7 @@ class ImageCache:
 
         Returns a tuple of file path, width and height.
         """
-        if isinstance(imageversionOrLocation, (str, unicode)):
+        if isinstance(imageversionOrLocation, basestring):
             location = imageversionOrLocation
             mtime = os.path.getmtime(location)
             width, height = PILImage.open(location).size

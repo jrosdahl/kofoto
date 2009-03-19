@@ -311,7 +311,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             imageVersion = self.__imageWidgetToImageVersion[widget]
             image = env.shelf.createImage()
             imageVersion.setImage(image)
-            for key, value in self.__image.getAttributeMap().items():
+            for key, value in self.__image.getAttributeMap().iteritems():
                 image.setAttribute(key, value)
             for category in  self.__image.getCategories():
                 image.addCategory(category)

@@ -90,7 +90,7 @@ class SortableObjectCollection(ObjectCollection):
     def __configureSortedModel(self, sortColumnName, sortOrder):
         if (sortOrder != None and sortColumnName != None):
             metaDataMap = self.getObjectMetadataMap()
-            if not metaDataMap.has_key(sortColumnName):
+            if not sortColumnName in metaDataMap:
                 sortColumnName = u"id"
             sortColumnNr = metaDataMap[sortColumnName][self.COLUMN_NR]
             model = self.getModel()
