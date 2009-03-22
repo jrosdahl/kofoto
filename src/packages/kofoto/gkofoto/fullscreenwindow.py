@@ -194,7 +194,8 @@ class FullScreenWindow(gtk.Window):
         else:
             image_stock_id = gtk.STOCK_CANCEL
             self._selected_category_tag = None
-            self._matching_category_label.set_text("No matching category")
+            self._matching_category_label.set_text(
+                "No uniquely matching category")
         self._category_indicator_image.set_from_stock(
             image_stock_id, gtk.ICON_SIZE_MENU)
 
