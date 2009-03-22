@@ -9,6 +9,7 @@ import string
 from kofoto.gkofoto.imageview import ImageView
 from kofoto.gkofoto.environment import env
 from kofoto.shelf import CategoryDoesNotExistError
+from kofoto.common import html_escape
 
 class FullScreenWindow(gtk.Window):
     """A fullscreen window widget."""
@@ -187,8 +188,8 @@ class FullScreenWindow(gtk.Window):
             self._matching_category_label.set_markup(
                 u"Press enter to <b>%s</b> category <b>%s</b> [<b>%s</b>]" % (
                     ["set", "unset"][category_set],
-                    selected_category.getDescription(),
-                    selected_category.getTag()))
+                    html_escape(selected_category.getDescription()),
+                    html_escape(selected_category.getTag())))
             self._selected_category_tag = selected_category.getTag()
         else:
             image_stock_id = gtk.STOCK_CANCEL
@@ -410,12 +411,12 @@ class FullScreenWindow(gtk.Window):
         image = self._image_versions[self._current_index].getImage()
         categories = image.getCategories()
         texts = sorted(x.getTag() for x in categories)
-        markup = u" | ".join(u"<b>%s</b>" % x for x in texts)
+        markup = u" | ".join(u"<b>%s</b>" % html_escape(x) for x in texts)
         self._image_categories_label.set_markup(markup)
 
     def _update_key_assignment_info(self):
         text = u"\n".join(
-            u"<b>%s</b>: <b>%s</b>" % (chr(k), v)
+            u"<b>%s</b>: <b>%s</b>" % (chr(k), html_escape(v))
             for (k, v) in env.fullScreenKeyAssignmentMap.iteritems())
         self._category_keys_info_label.set_markup(u"Assigned keys:\n" + text)
 

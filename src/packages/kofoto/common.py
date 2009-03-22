@@ -40,3 +40,6 @@ def symlink_or_copy_file(source, destination):
             # Handle the case of "ln -s foo dir/bar".
             source = os.path.join(os.path.dirname(destination), source)
         shutil.copy(source, destination)
+
+def html_escape(s):
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
