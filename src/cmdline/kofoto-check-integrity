@@ -2,7 +2,6 @@
 
 import sqlite
 import sys
-from sets import Set
 
 if len(sys.argv) != 2:
     print "Usage: kofoto-check-integrity <path-to-database>"
@@ -10,7 +9,7 @@ if len(sys.argv) != 2:
 
 def getIds(connection, idMapping, tableColumn):
     cursor = connection.cursor()
-    s = Set()
+    s = set()
     table, column = tableColumn.split(".")
     cursor.execute("select %s from %s" % (column, table))
     for row in cursor.fetchall():
