@@ -32,7 +32,6 @@ class ImageVersionsList(gtk.ScrolledWindow):
         self.add_with_viewport(self.__vbox)
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.__image = None
-        self.__tooltips = gtk.Tooltips()
         self.__recentlySelectedImageWidget = None
         self.connect("focus-in-event", self.__focusInEventHandler_cb)
         self.connect("focus-out-event", self.__focusOutEventHandler_cb)
@@ -65,7 +64,6 @@ class ImageVersionsList(gtk.ScrolledWindow):
     def loadImage(self, image):
         self.clear()
         self.__image = image
-        self.__tooltips.enable()
         for iv in image.getImageVersions():
             vbox = gtk.VBox()
             vbox.set_border_width(3)
@@ -88,7 +86,7 @@ class ImageVersionsList(gtk.ScrolledWindow):
             tooltipText = "Location: " + iv.getLocation()
             if iv.getComment():
                 tooltipText += "\nComment: " + iv.getComment()
-            self.__tooltips.set_tip(eventbox, tooltipText)
+            eventbox.set_tooltip_text(tooltipText)
             vbox.add(eventbox)
             if iv.isPrimary():
                 vbox.add(gtk.Label("Primary"))
