@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sqlite
+import sqlite3 as sqlite
 import sys
 
 if len(sys.argv) != 2:

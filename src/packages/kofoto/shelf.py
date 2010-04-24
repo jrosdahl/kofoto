@@ -17,7 +17,7 @@ __all__ = [
 import os
 import re
 import threading
-import sqlite as sql
+import sqlite3 as sql
 from kofoto.dag import DAG, LoopError
 from kofoto.cachedobject import CachedObject
 from kofoto.albumtype import AlbumType
@@ -147,10 +147,6 @@ class Shelf:
         self.orphanImagesCache = None
         self.modified = False
         self.modificationCallbacks = []
-        if False: # Set to True for debug log.
-            self.logfile = file("sql.log", "a")
-        else:
-            self.logfile = None
         self.connection = None
         self.categorydag = None
 
@@ -162,9 +158,7 @@ class Shelf:
             raise FailedWritingError(self.location)
         try:
             self.connection = _UnicodeConnectionDecorator(
-                sql.connect(self.location,
-                            client_encoding="UTF-8",
-                            command_logfile=self.logfile),
+                sql.connect(self.location),
                 "UTF-8")
         except sql.DatabaseError:
             raise FailedWritingError(self.location)
@@ -202,9 +196,7 @@ class Shelf:
             raise ShelfNotFoundError(self.location)
         try:
             self.connection = _UnicodeConnectionDecorator(
-                sql.connect(self.location,
-                            client_encoding="UTF-8",
-                            command_logfile=self.logfile),
+                sql.connect(self.location),
                 "UTF-8")
         except sql.OperationalError:
             raise ShelfLockedError(self.location)
@@ -343,18 +335,16 @@ class Shelf:
             lastrowid = cursor.lastrowid
             cursor.execute(
                 " insert into album (id, tag, deletable, type)"
-                " values (%s, %s, 1, %s)",
-                lastrowid,
-                tag,
-                _albumTypeToIdentifier(albumtype))
+                " values (?, ?, 1, ?)",
+                (lastrowid, tag, _albumTypeToIdentifier(albumtype)))
             self._setModified()
             self.orphanAlbumsCache = None
             return self.getAlbum(lastrowid)
         except sql.IntegrityError:
             cursor.execute(
                 " delete from object"
-                " where id = %s",
-                cursor.lastrowid)
+                " where id = ?",
+                (cursor.lastrowid,))
             raise AlbumExistsError(tag)
 
 
@@ -373,8 +363,8 @@ class Shelf:
         cursor.execute(
             " select id, tag, type"
             " from   album"
-            " where  id = %s",
-            albumid)
+            " where  id = ?",
+            (albumid,))
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError(albumid)
@@ -394,8 +384,8 @@ class Shelf:
         cursor.execute(
             " select id"
             " from   album"
-            " where  tag = %s",
-            tag)
+            " where  tag = ?",
+            (tag,))
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError(tag)
@@ -478,8 +468,8 @@ class Shelf:
             " select id, image, type, hash, directory, filename, mtime,"
             "        width, height, comment"
             " from   image_version"
-            " where  directory = %s",
-            directory)
+            " where  directory = ?",
+            (directory,))
         for (ivid, imageid, ivtype, ivhash, directory, filename,
              mtime, width, height, comment) in cursor:
             location = os.path.join(directory, filename)
@@ -499,8 +489,8 @@ class Shelf:
         cursor.execute(
             " select id, tag"
             " from   album"
-            " where  id = %s",
-            albumid)
+            " where  id = ?",
+            (albumid,))
         row = cursor.fetchone()
         if not row:
             raise AlbumDoesNotExistError(albumid)
@@ -510,25 +500,25 @@ class Shelf:
             raise UndeletableAlbumError(tag)
         cursor.execute(
             " delete from album"
-            " where  id = %s",
-            albumid)
+            " where  id = ?",
+            (albumid,))
         self._deleteObjectFromParents(albumid)
         cursor.execute(
             " delete from member"
-            " where  album = %s",
-            albumid)
+            " where  album = ?",
+            (albumid,))
         cursor.execute(
             " delete from object"
-            " where  id = %s",
-            albumid)
+            " where  id = ?",
+            (albumid,))
         cursor.execute(
             " delete from attribute"
-            " where  object = %s",
-            albumid)
+            " where  object = ?",
+            (albumid,))
         cursor.execute(
             " delete from object_category"
-            " where  object = %s",
-            albumid)
+            " where  object = ?",
+            (albumid,))
         if albumid in self.objectcache:
             del self.objectcache[albumid]
         self._setModified()
@@ -547,8 +537,8 @@ class Shelf:
         imageid = cursor.lastrowid
         cursor.execute(
             " insert into image (id, primary_version)"
-            " values (%s, NULL)",
-            imageid)
+            " values (?, NULL)",
+            (imageid,))
         self._setModified()
         self.orphanImagesCache = None
         return self.getImage(imageid)
@@ -569,8 +559,8 @@ class Shelf:
         cursor.execute(
             " select id, primary_version"
             " from   image"
-            " where  id = %s",
-            imageid)
+            " where  id = ?",
+            (imageid,))
         row = cursor.fetchone()
         if not row:
             raise ImageDoesNotExistError(imageid)
@@ -604,15 +594,15 @@ class Shelf:
                 "     (image, type, hash, directory, filename,"
                 "      mtime, width, height, comment)"
                 " values"
-                "     (%s, %s, %s, %s, %s, %s, %s, %s, '')",
-                image.getId(),
-                _imageVersionTypeToIdentifier(ivtype),
-                ivhash,
-                os.path.dirname(location),
-                os.path.basename(location),
-                mtime,
-                width,
-                height)
+                "     (?, ?, ?, ?, ?, ?, ?, ?, '')",
+                (image.getId(),
+                 _imageVersionTypeToIdentifier(ivtype),
+                 ivhash,
+                 os.path.dirname(location),
+                 os.path.basename(location),
+                 mtime,
+                 width,
+                 height))
         except sql.IntegrityError:
             raise ImageVersionExistsError(location)
         ivid = cursor.lastrowid
@@ -645,8 +635,8 @@ class Shelf:
             " select id, image, type, hash, directory, filename, mtime,"
             "        width, height, comment"
             " from   image_version"
-            " where  id = %s",
-            ivid)
+            " where  id = ?",
+            (ivid,))
         row = cursor.fetchone()
         if not row:
             raise ImageVersionDoesNotExistError(ivid)
@@ -670,8 +660,8 @@ class Shelf:
         cursor.execute(
             " select id"
             " from   image_version"
-            " where  hash = %s",
-            ivhash)
+            " where  hash = ?",
+            (ivhash,))
         row = cursor.fetchone()
         if not row:
             raise ImageVersionDoesNotExistError(ivhash)
@@ -694,9 +684,8 @@ class Shelf:
         cursor.execute(
             " select id"
             " from   image_version"
-            " where  directory = %s and filename = %s",
-            os.path.dirname(location),
-            os.path.basename(location))
+            " where  directory = ? and filename = ?",
+            (os.path.dirname(location), os.path.basename(location)))
         if cursor.rowcount > 1:
             raise MultipleImageVersionsAtOneLocationError(location)
         row = cursor.fetchone()
@@ -713,39 +702,39 @@ class Shelf:
         cursor.execute(
             " select 1"
             " from   image"
-            " where  id = %s",
-            imageid)
+            " where  id = ?",
+            (imageid,))
         if cursor.rowcount == 0:
             raise ImageDoesNotExistError(imageid)
         cursor.execute(
             " select id"
             " from   image_version"
-            " where  image = %s",
-            imageid)
+            " where  image = ?",
+            (imageid,))
         for (ivid,) in cursor:
             if ivid in self.imageversioncache:
                 del self.imageversioncache[ivid]
         cursor.execute(
             " delete from image_version"
-            " where  image = %s",
-            imageid)
+            " where  image = ?",
+            (imageid,))
         cursor.execute(
             " delete from image"
-            " where  id = %s",
-            imageid)
+            " where  id = ?",
+            (imageid,))
         self._deleteObjectFromParents(imageid)
         cursor.execute(
             " delete from object"
-            " where  id = %s",
-            imageid)
+            " where  id = ?",
+            (imageid,))
         cursor.execute(
             " delete from attribute"
-            " where  object = %s",
-            imageid)
+            " where  object = ?",
+            (imageid,))
         cursor.execute(
             " delete from object_category"
-            " where  object = %s",
-            imageid)
+            " where  object = ?",
+            (imageid,))
         if imageid in self.objectcache:
             del self.objectcache[imageid]
         self._setModified()
@@ -761,8 +750,8 @@ class Shelf:
         cursor = self.connection.cursor()
         cursor.execute(
             " delete from image_version"
-            " where  id = %s",
-            ivid)
+            " where  id = ?",
+            (ivid,))
         if primary_version_id == ivid:
             image._makeNewPrimaryVersion()
         if ivid in self.imageversioncache:
@@ -820,9 +809,8 @@ class Shelf:
             cursor = self.connection.cursor()
             cursor.execute(
                 " insert into category (tag, description)"
-                " values (%s, %s)",
-                tag,
-                desc)
+                " values (?, ?)",
+                (tag, desc))
             self.categorydag.get().add(cursor.lastrowid)
             self._setModified()
             return self.getCategory(cursor.lastrowid)
@@ -838,34 +826,34 @@ class Shelf:
         cursor.execute(
             " select tag"
             " from   category"
-            " where  id = %s",
-            catid)
+            " where  id = ?",
+            (catid,))
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError(catid)
         cursor.execute(
             " delete from category_child"
-            " where  parent = %s",
-            catid)
+            " where  parent = ?",
+            (catid,))
         cursor.execute(
             " delete from category_child"
-            " where  child = %s",
-            catid)
+            " where  child = ?",
+            (catid,))
         cursor.execute(
             " select object from object_category"
-            " where  category = %s",
-            catid)
+            " where  category = ?",
+            (catid,))
         for (objectid,) in cursor:
             if objectid in self.objectcache:
                 self.objectcache[objectid]._categoriesDirty()
         cursor.execute(
             " delete from object_category"
-            " where  category = %s",
-            catid)
+            " where  category = ?",
+            (catid,))
         cursor.execute(
             " delete from category"
-            " where  id = %s",
-            catid)
+            " where  id = ?",
+            (catid,))
         catdag = self.categorydag.get()
         if catid in catdag:
             catdag.remove(catid)
@@ -886,8 +874,8 @@ class Shelf:
         cursor.execute(
             " select tag, description"
             " from   category"
-            " where  id = %s",
-            catid)
+            " where  id = ?",
+            (catid,))
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError(catid)
@@ -907,8 +895,8 @@ class Shelf:
         cursor.execute(
             " select id"
             " from   category"
-            " where  tag = %s",
-            tag)
+            " where  tag = ?",
+            (tag,))
         row = cursor.fetchone()
         if not row:
             raise CategoryDoesNotExistError(tag)
@@ -959,17 +947,16 @@ class Shelf:
         cursor.execute(shelfschema.schema)
         cursor.execute(
             " insert into dbinfo (version)"
-            " values (%s)",
-            _SHELF_FORMAT_VERSION)
+            " values (?)",
+            (_SHELF_FORMAT_VERSION,))
         cursor.execute(
             " insert into object (id)"
-            " values (%s)",
-            _ROOT_ALBUM_ID)
+            " values (?)",
+            (_ROOT_ALBUM_ID,))
         cursor.execute(
             " insert into album (id, tag, deletable, type)"
-            " values (%s, %s, 0, 'plain')",
-            _ROOT_ALBUM_ID,
-            u"root")
+            " values (?, ?, 0, 'plain')",
+            (_ROOT_ALBUM_ID, u"root"))
         self.connection.commit()
 
         self.begin()
@@ -1065,30 +1052,27 @@ class Shelf:
         cursor.execute(
             " select distinct album.id, album.tag"
             " from   member, album"
-            " where  member.object = %s and member.album = album.id",
-            objid)
+            " where  member.object = ? and member.album = album.id",
+            (objid,))
         parentinfolist = cursor.fetchall()
         for parentid, _ in parentinfolist:
             cursor.execute(
                 " select position"
                 " from   member"
-                " where  album = %s and object = %s"
+                " where  album = ? and object = ?"
                 " order by position desc",
-                parentid,
-                objid)
+                (parentid, objid))
             positions = [x[0] for x in cursor.fetchall()]
             for position in positions:
                 cursor.execute(
                     " delete from member"
-                    " where  album = %s and position = %s",
-                    parentid,
-                    position)
+                    " where  album = ? and position = ?",
+                    (parentid, position))
                 cursor.execute(
                     " update member"
                     " set    position = position - 1"
-                    " where  album = %s and position > %s",
-                    parentid,
-                    position)
+                    " where  album = ? and position > ?",
+                    (parentid, position))
             if parentid in self.objectcache:
                 del self.objectcache[parentid]
 
@@ -1159,10 +1143,9 @@ class Category:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update category"
-            " set    tag = %s"
-            " where  id = %s",
-            newtag,
-            self.getId())
+            " set    tag = ?"
+            " where  id = ?",
+            (newtag, self.getId()))
         self.tag = newtag
         self.shelf._setModified()
 
@@ -1177,10 +1160,9 @@ class Category:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update category"
-            " set    description = %s"
-            " where  id = %s",
-            newdesc,
-            self.getId())
+            " set    description = ?"
+            " where  id = ?",
+            (newdesc, self.getId()))
         self.description = newdesc
         self.shelf._setModified()
 
@@ -1253,9 +1235,8 @@ class Category:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " insert into category_child (parent, child)"
-            " values (%s, %s)",
-            parentid,
-            childid)
+            " values (?, ?)",
+            (parentid, childid))
         self.shelf._setModified()
 
 
@@ -1267,9 +1248,8 @@ class Category:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " delete from category_child"
-            " where  parent = %s and child = %s",
-            parentid,
-            childid)
+            " where  parent = ? and child = ?",
+            (parentid, childid))
         self.shelf._setModified()
 
 
@@ -1321,9 +1301,9 @@ class _Object:
         cursor.execute(
             " select distinct album.id"
             " from   member, album"
-            " where  member.object = %s and"
+            " where  member.object = ? and"
             "        member.album = album.id",
-            self.getId())
+            (self.getId(),))
         for (albumid,) in cursor:
             yield self.shelf.getAlbum(albumid)
 
@@ -1340,9 +1320,8 @@ class _Object:
         cursor.execute(
             " select value"
             " from   attribute"
-            " where  object = %s and name = %s",
-            self.getId(),
-            name)
+            " where  object = ? and name = ?",
+            (self.getId(), name))
         if cursor.rowcount > 0:
             value = cursor.fetchone()[0]
             self.attributes[name] = value
@@ -1359,8 +1338,8 @@ class _Object:
         cursor.execute(
             " select name, value"
             " from   attribute"
-            " where  object = %s",
-            self.getId())
+            " where  object = ?",
+            (self.getId(),))
         amap = {}
         for key, value in cursor:
             amap[key] = value
@@ -1393,11 +1372,8 @@ class _Object:
             " insert or " + method + " into attribute"
             "     (object, name, value, lcvalue)"
             " values"
-            "     (%s, %s, %s, %s)",
-            self.getId(),
-            name,
-            value,
-            value.lower())
+            "     (?, ?, ?, ?)",
+            (self.getId(), name, value, value.lower()))
         if cursor.rowcount > 0:
             self.attributes[name] = value
             self.shelf._setModified()
@@ -1408,9 +1384,8 @@ class _Object:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " delete from attribute"
-            " where  object = %s and name = %s",
-            self.getId(),
-            name)
+            " where  object = ? and name = ?",
+            (self.getId(), name))
         if name in self.attributes:
             del self.attributes[name]
         self.shelf._setModified()
@@ -1424,9 +1399,8 @@ class _Object:
             cursor = self.shelf._getConnection().cursor()
             cursor.execute(
                 " insert into object_category (object, category)"
-                " values (%s, %s)",
-                objid,
-                catid)
+                " values (?, ?)",
+                (objid, catid))
             self.categories.add(catid)
             self.shelf._setModified()
         except sql.IntegrityError:
@@ -1439,9 +1413,8 @@ class _Object:
         catid = category.getId()
         cursor.execute(
             " delete from object_category"
-            " where object = %s and category = %s",
-            self.getId(),
-            catid)
+            " where object = ? and category = ?",
+            (self.getId(), catid))
         self.categories.discard(catid)
         self.shelf._setModified()
 
@@ -1454,8 +1427,8 @@ class _Object:
             cursor = self.shelf._getConnection().cursor()
             cursor.execute(
                 " select category from object_category"
-                " where  object = %s",
-                self.getId())
+                " where  object = ?",
+                (self.getId(),))
             self.categories = set([x[0] for x in cursor])
             self.allCategoriesFetched = True
         if recursive:
@@ -1527,10 +1500,9 @@ class Album(_Object):
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update album"
-            " set    tag = %s"
-            " where  id = %s",
-            newtag,
-            self.getId())
+            " set    tag = ?"
+            " where  id = ?",
+            (newtag, self.getId()))
         self.tag = newtag
         self.shelf._setModified()
 
@@ -1560,9 +1532,9 @@ class Album(_Object):
         cursor.execute(
             " select distinct member.album"
             " from   member, album"
-            " where  member.object = %s and"
+            " where  member.object = ? and"
             "        member.album = album.id",
-            self.getId())
+            (self.getId(),))
         for (objid,) in cursor:
             yield self.shelf.getAlbum(objid)
 
@@ -1617,9 +1589,9 @@ class PlainAlbum(Album):
         cursor.execute(
             " select object"
             " from   member"
-            " where  album = %s"
+            " where  album = ?"
             " order by position",
-            self.getId())
+            (self.getId(),))
         self.children = []
         for (objid,) in cursor:
             child = self.shelf.getObject(objid)
@@ -1642,10 +1614,10 @@ class PlainAlbum(Album):
         cursor.execute(
             " select member.object"
             " from   member, album"
-            " where  member.album = %s and"
+            " where  member.album = ? and"
             "        member.object = album.id"
             " order by position",
-            self.getId())
+            (self.getId(),))
         for (objid,) in cursor:
             yield self.shelf.getAlbum(objid)
 
@@ -1664,8 +1636,8 @@ class PlainAlbum(Album):
         cursor.execute(
             " select count(position)"
             " from   member"
-            " where  album = %s",
-            albumid)
+            " where  album = ?",
+            (albumid,))
         oldchcnt = cursor.fetchone()[0]
         newchcnt = len(children)
         for ix in range(newchcnt):
@@ -1673,23 +1645,18 @@ class PlainAlbum(Album):
             if ix < oldchcnt:
                 cursor.execute(
                     " update member"
-                    " set    object = %s"
-                    " where  album = %s and position = %s",
-                    childid,
-                    albumid,
-                    ix)
+                    " set    object = ?"
+                    " where  album = ? and position = ?",
+                    (childid, albumid, ix))
             else:
                 cursor.execute(
                     " insert into member (album, position, object)"
-                    " values (%s, %s, %s)",
-                    albumid,
-                    ix,
-                    childid)
+                    " values (?, ?, ?)",
+                    (albumid, ix, childid))
         cursor.execute(
             " delete from member"
-            " where  album = %s and position >= %s",
-            albumid,
-            newchcnt)
+            " where  album = ? and position >= ?",
+            (albumid, newchcnt))
         self.shelf._setModified()
         self.shelf._setOrphanAlbumsCache(None)
         self.shelf._setOrphanImagesCache(None)
@@ -1724,9 +1691,9 @@ class Image(_Object):
         cursor.execute(
             " select id"
             " from   image_version"
-            " where  image = %s"
+            " where  image = ?"
             " order by id",
-            self.getId())
+            (self.getId(),))
         for (ivid,) in cursor:
             yield self.shelf.getImageVersion(ivid)
 
@@ -1763,10 +1730,9 @@ class Image(_Object):
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image"
-            " set    primary_version = %s"
-            " where  id = %s",
-            self.primary_version_id,
-            self.getId())
+            " set    primary_version = ?"
+            " where  id = ?",
+            (self.primary_version_id, self.getId()))
 
 
     def _setPrimaryVersion(self, imageversion):
@@ -1836,10 +1802,9 @@ class ImageVersion:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image_version"
-            " set    image = %s"
-            " where  id = %s",
-            self.imageid,
-            self.id)
+            " set    image = ?"
+            " where  id = ?",
+            (self.imageid, self.id))
         if image.getPrimaryVersion() == None:
             image._makeNewPrimaryVersion()
         if oldImageNeedsNewPrimaryVersion:
@@ -1858,10 +1823,9 @@ class ImageVersion:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image_version"
-            " set    type = %s"
-            " where  id = %s",
-            _imageVersionTypeToIdentifier(ivtype),
-            self.id)
+            " set    type = ?"
+            " where  id = ?",
+            (_imageVersionTypeToIdentifier(ivtype), self.id))
         self.shelf._setModified()
 
 
@@ -1871,10 +1835,9 @@ class ImageVersion:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image_version"
-            " set    comment = %s"
-            " where  id = %s",
-            comment,
-            self.id)
+            " set    comment = ?"
+            " where  id = ?",
+            (comment, self.id))
         self.shelf._setModified()
 
 
@@ -1883,10 +1846,9 @@ class ImageVersion:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image"
-            " set    primary_version = %s"
-            " where  id = %s",
-            self.id,
-            self.imageid)
+            " set    primary_version = ?"
+            " where  id = ?",
+            (self.id, self.imageid))
         self.getImage()._setPrimaryVersion(self)
         self.shelf._setModified()
 
@@ -1914,13 +1876,9 @@ class ImageVersion:
         cursor = self.shelf._getConnection().cursor()
         cursor.execute(
             " update image_version"
-            " set    hash = %s, width = %s, height = %s, mtime = %s"
-            " where  id = %s",
-            self.hash,
-            self.size[0],
-            self.size[1],
-            self.mtime,
-            self.getId())
+            " set    hash = ?, width = ?, height = ?, mtime = ?"
+            " where  id = ?",
+            (self.hash, self.size[0], self.size[1], self.mtime, self.getId()))
         self.shelf._setModified()
 
 
@@ -1936,12 +1894,12 @@ class ImageVersion:
             self.mtime = 0
         cursor.execute(
             " update image_version"
-            " set    directory = %s, filename = %s, mtime = %s"
-            " where  id = %s",
-            os.path.dirname(location),
-            os.path.basename(location),
-            self.mtime,
-            self.getId())
+            " set    directory = ?, filename = ?, mtime = ?"
+            " where  id = ?",
+            (os.path.dirname(location),
+             os.path.basename(location),
+             self.mtime,
+             self.getId()))
         self.location = location
         self.shelf._setModified()
 
@@ -2101,9 +2059,9 @@ class OrphansAlbum(MagicAlbum):
                 " select   id"
                 " from     album"
                 " where    id not in (select object from member) and"
-                "          id != %s"
+                "          id != ?"
                 " order by tag",
-                _ROOT_ALBUM_ID)
+                (_ROOT_ALBUM_ID,))
             albums = []
             for (albumid,) in cursor:
                 album = self.shelf.getAlbum(albumid)

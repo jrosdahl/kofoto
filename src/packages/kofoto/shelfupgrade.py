@@ -3,7 +3,7 @@
 __all__ = ["isUpgradable", "upgradeShelf"]
 
 import os
-import sqlite as sql
+import sqlite3 as sql
 import time
 import kofoto.shelfschema
 from kofoto.shelfexceptions import ShelfLockedError, ShelfNotFoundError
@@ -75,20 +75,20 @@ def tryUpgrade(location, toVersion):
             aids_str = ",".join([str(x) for x in aids])
             cursor.execute(
                 " delete from album"
-                " where  id in (%s)" % aids_str)
+                " where  id in (?)" % (aids_str,))
             cursor.execute(
                 " delete from object"
-                " where  id in (%s)" % aids_str)
+                " where  id in (?)" % (aids_str,))
             cursor.execute(
                 " delete from member"
-                " where  album in (%s)" % aids_str)
+                " where  album in (?)" % (aids_str,))
             cursor.execute(
                 " delete from attribute"
-                " where  object in (%s)" % aids_str)
+                " where  object in (?)" % (aids_str,))
         cursor.execute(
             " update dbinfo"
-            " set    version = %s",
-            toVersion)
+            " set    version = ?",
+            (toVersion,))
         connection.commit()
         del connection # Drop file handle; needed on Windows.
         os.rename(location, "%s-backup-%s" % (
