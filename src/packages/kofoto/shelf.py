@@ -14,6 +14,7 @@ __all__ = [
 ######################################################################
 ### Libraries.
 
+import hashlib
 import os
 import re
 import threading
@@ -71,8 +72,7 @@ _SHELF_FORMAT_VERSION = 3
 
 def computeImageHash(filename):
     """Compute the canonical image ID for an image file."""
-    import md5
-    m = md5.new()
+    m = hashlib.md5()
     f = file(filename, "rb")
     while True:
         data = f.read(2**16)
