@@ -194,7 +194,7 @@ class InsertionOrderedDict:
         node.insert_before(self._keylist_tail)
 
     def items(self):
-        return self.items()
+        return list(self.iteritems())
 
     def iteritems(self):
         node = self._keylist_head.next
@@ -215,7 +215,7 @@ class InsertionOrderedDict:
             node = node.next
 
     def keys(self):
-        return self.keys()
+        return list(self.iterkeys())
 
     def pop(self, key, default=None):
         if key in self._map:
@@ -266,7 +266,7 @@ class InsertionOrderedDict:
             self[key] = value
 
     def values(self):
-        return self.values()
+        return list(self.itervalues())
 
     def _insert_after_or_before(self, refkey, key, value, after):
         refnode = self._map[refkey][0]
