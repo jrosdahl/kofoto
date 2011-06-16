@@ -157,9 +157,7 @@ class Shelf:
         if os.path.exists(self.location):
             raise FailedWritingError(self.location)
         try:
-            self.connection = _UnicodeConnectionDecorator(
-                sql.connect(self.location),
-                "UTF-8")
+            self.connection = sql.connect(self.location)
         except sql.DatabaseError:
             raise FailedWritingError(self.location)
         self._createShelf()
@@ -195,9 +193,7 @@ class Shelf:
         if not os.path.exists(self.location):
             raise ShelfNotFoundError(self.location)
         try:
-            self.connection = _UnicodeConnectionDecorator(
-                sql.connect(self.location),
-                "UTF-8")
+            self.connection = sql.connect(self.location)
         except sql.OperationalError:
             raise ShelfLockedError(self.location)
         except sql.DatabaseError:
@@ -686,12 +682,12 @@ class Shelf:
             " from   image_version"
             " where  directory = ? and filename = ?",
             (os.path.dirname(location), os.path.basename(location)))
-        if cursor.rowcount > 1:
+        rows = cursor.fetchall()
+        if len(rows) > 1:
             raise MultipleImageVersionsAtOneLocationError(location)
-        row = cursor.fetchone()
-        if not row:
+        if not rows:
             raise ImageVersionDoesNotExistError(location)
-        return self.getImageVersion(row[0])
+        return self.getImageVersion(rows[0][0])
 
 
     def deleteImage(self, imageid):
@@ -704,7 +700,8 @@ class Shelf:
             " from   image"
             " where  id = ?",
             (imageid,))
-        if cursor.rowcount == 0:
+        rows = cursor.fetchall()
+        if not rows:
             raise ImageDoesNotExistError(imageid)
         cursor.execute(
             " select id"
@@ -1322,8 +1319,9 @@ class _Object:
             " from   attribute"
             " where  object = ? and name = ?",
             (self.getId(), name))
-        if cursor.rowcount > 0:
-            value = cursor.fetchone()[0]
+        rows = cursor.fetchall()
+        if rows:
+            value = rows[0][0]
             self.attributes[name] = value
         else:
             value = None
@@ -1374,7 +1372,8 @@ class _Object:
             " values"
             "     (?, ?, ?, ?)",
             (self.getId(), name, value, value.lower()))
-        if cursor.rowcount > 0:
+        rows = cursor.fetchall()
+        if rows:
             self.attributes[name] = value
             self.shelf._setModified()
 
@@ -2219,105 +2218,3 @@ def _imageVersionTypeToIdentifier(ivtype):
             }[ivtype]
     except KeyError:
         raise UnknownImageVersionTypeError(ivtype)
-
-
-class _UnicodeConnectionDecorator:
-    """A class that makes a database connection Unicode-aware."""
-
-    def __init__(self, connection, encoding):
-        """Constructor.
-
-        Arguments:
-
-        connection -- The database connection to wrap.
-        encoding   -- The encoding (e.g. utf-8) to use.
-        """
-        self.connection = connection
-        self.encoding = encoding
-
-    def __getattr__(self, attrname):
-        return getattr(self.connection, attrname)
-
-    def cursor(self):
-        """Return a _UnicodeConnectionDecorator."""
-        return _UnicodeCursorDecorator(
-            self.connection.cursor(), self.encoding)
-
-
-class _UnicodeCursorDecorator:
-    """A class that makes database cursor Unicode-aware."""
-
-    def __init__(self, cursor, encoding):
-        """Constructor.
-
-        Arguments:
-
-        cursor   -- The database cursor to wrap.
-        encoding -- The encoding (e.g. utf-8) to use.
-        """
-        self.cursor = cursor
-        self.encoding = encoding
-
-    def __getattr__(self, attrname):
-        if attrname in ["lastrowid", "rowcount"]:
-            return getattr(self.cursor, attrname)
-        else:
-            raise AttributeError
-
-    def __iter__(self):
-        while True:
-            rows = self.cursor.fetchmany(17)
-            if not rows:
-                break
-            for row in rows:
-                yield self._unicodifyRow(row)
-
-    def _unicodifyRow(self, row):
-        """Helper method that decodes fields of a row into Unicode."""
-        result = []
-        for col in row:
-            if isinstance(col, str):
-                result.append(unicode(col, self.encoding))
-            else:
-                result.append(col)
-        return result
-
-    def _assertUnicode(self, obj):
-        """Check that all strings in an object are in Unicode.
-
-        Lists, tuples and maps are recursively checked.
-        """
-        if isinstance(obj, str):
-            raise AssertionError("non-Unicode string", obj)
-        elif isinstance(obj, (list, tuple)):
-            for elem in obj:
-                self._assertUnicode(elem)
-        elif isinstance(obj, dict):
-            for val in obj.itervalues():
-                self._assertUnicode(val)
-
-    def execute(self, statement, *parameters):
-        """Execute an SQL statement.
-
-        The SQL string must be Unicode.
-        """
-        self._assertUnicode(parameters)
-        return self.cursor.execute(statement, *parameters)
-
-    def fetchone(self):
-        """Fetch a row from the result set.
-
-        The returned row contains Unicode strings.
-        """
-        row = self.cursor.fetchone()
-        if row:
-            return self._unicodifyRow(row)
-        else:
-            return None
-
-    def fetchall(self):
-        """Fetch all row of the result set.
-
-        The returned rows contain Unicode strings.
-        """
-        return list(self)
