@@ -194,6 +194,7 @@ class Shelf:
             raise ShelfNotFoundError(self.location)
         try:
             self.connection = sql.connect(self.location)
+            cursor = self.connection.execute("BEGIN EXCLUSIVE")
         except sql.OperationalError:
             raise ShelfLockedError(self.location)
         except sql.DatabaseError:
@@ -941,7 +942,7 @@ class Shelf:
     def _createShelf(self):
         """Helper method for Shelf.create."""
         cursor = self.connection.cursor()
-        cursor.execute(shelfschema.schema)
+        cursor.executescript(shelfschema.schema)
         cursor.execute(
             " insert into dbinfo (version)"
             " values (?)",
@@ -979,10 +980,11 @@ class Shelf:
             cursor.execute(
                 " select version"
                 " from   dbinfo")
-        except sql.OperationalError:
-            raise ShelfLockedError(self.location)
-        except sql.DatabaseError:
-            raise UnsupportedShelfError(self.location)
+        except sql.OperationalError, e:
+            if e.message == "database is locked":
+                raise ShelfLockedError(self.location)
+            else:
+                raise UnsupportedShelfError(self.location)
         version = cursor.fetchone()[0]
         if version != _SHELF_FORMAT_VERSION:
             raise UnsupportedShelfError(self.location)
@@ -1372,8 +1374,7 @@ class _Object:
             " values"
             "     (?, ?, ?, ?)",
             (self.getId(), name, value, value.lower()))
-        rows = cursor.fetchall()
-        if rows:
+        if cursor.rowcount == 1:
             self.attributes[name] = value
             self.shelf._setModified()
 

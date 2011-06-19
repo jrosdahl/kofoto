@@ -39,6 +39,8 @@ schema = """
     -- where \|/ is supposed to look like the subclass relation symbol.
     --        |
 
+    BEGIN;
+
     -- Administrative information about the database.
     CREATE TABLE dbinfo (
         version     INTEGER NOT NULL
@@ -194,4 +196,6 @@ schema = """
     );
 
     CREATE INDEX object_category_category ON object_category (category);
+
+    COMMIT;
 """
