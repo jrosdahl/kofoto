@@ -235,8 +235,6 @@ image_frameset_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=%(charenc)s" />
 <link rel="stylesheet" href="../woolly.css" type="text/css" />
-%(nextlink)s
-%(previouslink)s
 %(uplink)s
 <title>%(albumtitle)s</title>
 </head>
@@ -284,7 +282,7 @@ image_frame_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 </tr>
 <tr>
 <td width="50%%"></td>
-<td align="center"><img class="thinborder" src="%(imgref)s" width="%(imgwidth)s" height="%(imgheight)s" align="center" alt="The image" /></td>
+<td align="center"><a %(nextlink)s><img class="thinborder" src="%(imgref)s" width="%(imgwidth)s" height="%(imgheight)s" align="center" alt="The image" /></a></td>
 <td width="50%%"></td>
 </tr>
 <tr><td></td><td class="info">%(info)s</td><td></td></tr>
@@ -561,11 +559,6 @@ class OutputGenerator(OutputEngine):
                     hlim)
 
             if number > 0:
-                previouslink = \
-                    '<link rel="previous" href="%s-%dx%d-frame.html" />' % (
-                        number - 1,
-                        wlim,
-                        hlim)
                 previoustext = (
                     '<a href="%s"><img class="icon" src="../%s/previous.png"'
                     ' alt="Previous image" /></a>' % (
@@ -577,15 +570,13 @@ class OutputGenerator(OutputEngine):
                         "../" + self.getImageReference(
                             images[number - 1], wlim, hlim)[0]))
             else:
-                previouslink = ""
                 previoustext = (
                     '<img class="icon" src="../%s/noprevious.png"'
                     ' alt="No previous image" />' % self.iconsdir)
                 cpi_text = ""
 
             if number < len(images) - 1:
-                nextlink = '<link rel="next" href="%s-%dx%d-frame.html" />' % (
-                    number + 1, wlim, hlim)
+                nextlink = 'href="%s-%dx%d.html"' % (number + 1, wlim, hlim)
                 nexttext = (
                     '<a href="%s"><img class="icon" src="../%s/next.png"'
                     ' alt="Next image" /></a>' % (
@@ -696,8 +687,6 @@ class OutputGenerator(OutputEngine):
                         wlim,
                         hlim),
                     "imagenumber": number,
-                    "nextlink": nextlink,
-                    "previouslink": previouslink,
                     "thumbnailsframeref": "thumbnails-%dx%d.html" % (
                         wlim, hlim),
                     "thumbnailsframewidth": \
@@ -725,6 +714,7 @@ class OutputGenerator(OutputEngine):
                     "info": infotext,
                     "larger": largertext,
                     "next": nexttext,
+                    "nextlink": nextlink,
                     "paths": pathtext,
                     "previous": previoustext,
                     "smaller": smallertext,
