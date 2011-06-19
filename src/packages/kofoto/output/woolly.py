@@ -163,8 +163,6 @@ album_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <tr>
 <td class="footer" colspan="3">
 <p>&nbsp;</p>
-<hr/>
-<small>%(blurb)s</small>
 </td>
 </tr>
 </table>
@@ -291,8 +289,6 @@ image_frame_template = u'''<?xml version="1.0" encoding="%(charenc)s"?>
 <p>&nbsp;</p>
 %(cache_previous_image)s
 %(cache_next_image)s
-<hr/>
-<small>%(blurb)s Image ID: %(imgid)s.</small>
 </td>
 </tr>
 </table>
@@ -472,7 +468,6 @@ class OutputGenerator(OutputEngine):
             self.writeFile(
                 filename,
                 album_template % {
-                    "blurb": self.blurb,
                     "charenc": self.charEnc,
                     "description": desc,
                     "imageentries": imagetext,
@@ -701,7 +696,6 @@ class OutputGenerator(OutputEngine):
                 os.path.join(str(album.getId()),
                              "%s-%dx%d.html" % (number, wlim, hlim)),
                 image_frame_template % {
-                    "blurb": self.blurb,
                     "cache_previous_image": cpi_text,
                     "cache_next_image": cni_text,
                     "charenc": self.charEnc,
