@@ -182,7 +182,7 @@ other_image_size_limits = 400 1024x800
 
 # Size limit of thumbnails. Use the same size limit as in the album
 # generation section above to share cached thumbnails.
-thumbnail_size_limit = 128
+thumbnail_size_limit = 256
 
 # The columns that should be shown in the table view by default.
 default_table_columns = thumbnail versions @captured @title @description albumtag

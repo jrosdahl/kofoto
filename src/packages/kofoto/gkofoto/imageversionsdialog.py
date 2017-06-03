@@ -160,7 +160,7 @@ class ImageVersionsDialog:
         image = gtk.Image()
         try:
             thumbnailLocation, _, _ = env.imageCache.get(
-                imageVersion.getLocation(), 128, 128)
+                imageVersion.getLocation(), *env.thumbnailSize)
             image.set_from_file(thumbnailLocation)
         except OSError:
             image.set_from_pixbuf(env.unknownImageIconPixbuf)
