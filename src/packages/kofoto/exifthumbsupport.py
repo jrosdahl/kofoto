@@ -1,7 +1,7 @@
 """Read-only support for files with embedded JPEG thumbnail in EXIF header."""
 
 import Image
-import JpegImagePlugin
+from PIL import JpegImagePlugin
 from kofoto import EXIF
 from cStringIO import StringIO
 
