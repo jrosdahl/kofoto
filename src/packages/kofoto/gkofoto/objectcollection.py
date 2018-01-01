@@ -637,7 +637,8 @@ class ObjectCollection(object):
                     nr_of_albums_before_index += 1
                 current_row += 1
             window = FullScreenWindow(imageVersions,
-                                      index - nr_of_albums_before_index)
+                                      index - nr_of_albums_before_index,
+                                      self.__objectSelection)
         window.show_all()
 
 ######################################################################

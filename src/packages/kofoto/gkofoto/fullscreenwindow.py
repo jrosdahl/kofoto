@@ -14,7 +14,7 @@ from kofoto.common import html_escape
 class FullScreenWindow(gtk.Window):
     """A fullscreen window widget."""
 
-    def __init__(self, image_versions, current_index=0):
+    def __init__(self, image_versions, current_index=0, object_selection=None):
         """Constructor.
 
         Arguments:
@@ -28,6 +28,7 @@ class FullScreenWindow(gtk.Window):
         self._last_allocated_size = None
         self._image_versions = image_versions
         self._current_index = current_index
+        self._object_selection = object_selection
         self._latest_handle = None
         self._latest_size = (0, 0)
         self._selected_category_tag = None
@@ -121,6 +122,11 @@ class FullScreenWindow(gtk.Window):
         """Destroy the widget."""
 
         self._maybe_cancel_load()
+
+        if self._object_selection:
+            index = min(self._current_index, len(self._image_versions) - 1)
+            self._object_selection.setSelection([index])
+
         gtk.Window.destroy(self)
 
     # ----------------------------------------
