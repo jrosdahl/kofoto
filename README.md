@@ -1,12 +1,19 @@
+# Kofoto
+
+```
  _  __      __       _
 | |/ /___  / _| ___ | |_ ___
 | ' // _ \| |_ / _ \| __/ _ \
 | . \ (_) |  _| (_) | || (_) |
 |_|\_\___/|_|  \___/ \__\___/
+```
 
+## No longer developed
 
-OVERVIEW
-========
+**NOTE**: Kofoto is no longer being used or developed by the authors, so this
+repository is archived.
+
+## Overview
 
 Kofoto is an open source tool for organizing and viewing digital
 images, typically photographs from a digital camera. Both graphical
@@ -21,21 +28,11 @@ With Kofoto, you can:
     * Search for images matching a search expression.
     * View images.
     * Rotate images.
-    * Generate HTML pages of an album tree. 
+    * Generate HTML pages of an album tree.
 
 Kofoto is currently a bit rough on the edges, yet functional. But
 please go ahead and try it, if you like!
 
+## License
 
-LICENSE
-=======
-
-See COPYING.txt. The license is a BSD-like open source license (see
-http://www.opensource.org).
-
-
-CONTACT
-=======
-
-Web page: http://kofoto.rosdahl.net
-Mailing lists: http://kofoto.rosdahl.net/mailman/listinfo
+See COPYING.txt.
